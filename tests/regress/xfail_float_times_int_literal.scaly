@@ -1,0 +1,10 @@
+; Regression (2026-11-12): an integer LITERAL beside a floating-point number
+; takes no float type either -- `x * 2` was an instruction over two types,
+; a broken module. The literal is written with a point.
+;
+; xfail: no operator * between f64 and int
+
+let x 2.5
+let y x * 2
+if y = 5.0
+    print "PASS"

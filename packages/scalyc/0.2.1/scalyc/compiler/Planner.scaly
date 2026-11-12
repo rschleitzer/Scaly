@@ -19702,6 +19702,9 @@ define Planner
                 ; ... and an operator no scalar has (`x += 1`) reached the
                 ; emitter, exit 14 without a file -- report_unknown_scalar_operator#
                 this.report_unknown_scalar_operator(result.result_type, rhs.result_type, op_name, result.loc)
+                ; ... and an integer beside a floating-point number has none
+                ; either: report_mixed_number_operator#
+                this.report_mixed_number_operator(result.result_type, rhs.result_type, op_name, result.loc)
 
                 ; s90: built-in comparison operators on primitive
                 ; types return bool. Without this, the fresh type
@@ -38581,6 +38584,48 @@ define Planner
             sb.append rhs.name
             if op_name.get_length() = 2 and op_name.get(1) = 61
                 sb.append " - an assignment is written x := x + 1"
+            let msg sb.to_string()
+            this.add_diagnostic(at, String^this(msg))
+        }
+
+        ; An integer and a floating-point number in one operator: neither
+        ; side is converted, so the emitter wrote an integer instruction over
+        ; the float's BITS (`1 + x` with an f64 x printed garbage, a u32 plus
+        ; an f32 added 1 to 0x40200000) or an instruction over two types that
+        ; LLVM refused (`x * 2`, `x < 3`: a broken module, or "Cannot
+        ; select" in a function at -O2) -- at rc 0 (2026-11-12). The
+        ; conversion is written, as between the arms of a value `if`.
+        procedure report_mixed_number_operator(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span)
+        {
+            var whole: String ""
+            var real: String ""
+            if Planner.is_integer_type(lhs.name) and Planner.type_is_float_like(rhs)
+            {
+                whole := lhs.name
+                real := rhs.name
+            }
+            if Planner.type_is_float_like(lhs) and Planner.is_integer_type(rhs.name)
+            {
+                whole := rhs.name
+                real := lhs.name
+            }
+            if whole.get_length() = 0
+                return
+            match op_name
+                case "+" case "-" case "*" case "/" case "%" case "div" case "mod": 0
+                case "<<" case ">>" case "&" case "|" case "xor" case "^": 0
+                case "=" case "<>" case "<" case ">" case "<=" case ">=": 0
+                else return
+            var sb StringBuilder()
+            sb.append "no operator "
+            sb.append op_name
+            sb.append " between "
+            sb.append lhs.name
+            sb.append " and "
+            sb.append rhs.name
+            sb.append " - an integer is not converted to a floating-point number by itself: write the conversion (n as "
+            sb.append real
+            sb.append "), or a literal with a point (2.0)"
             let msg sb.to_string()
             this.add_diagnostic(at, String^this(msg))
         }

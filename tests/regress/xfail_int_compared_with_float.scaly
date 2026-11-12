@@ -1,0 +1,11 @@
+; Regression (2026-11-12): a comparison between an integer and a
+; floating-point number compared the float's bits at rc 0.
+;
+; xfail: no operator < between int and f64
+
+let n 3
+let x 2.5
+if n < x
+    print "FAIL"
+else
+    print "PASS"

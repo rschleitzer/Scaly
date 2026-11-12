@@ -1,0 +1,12 @@
+; Regression (2026-11-12): an integer and a floating-point number in one
+; operator are not converted by themselves. `as` takes the whole operation
+; before it, so this sum is a u32 plus an f32 -- which was an integer `add`
+; of the float's BITS at rc 0 (and "Cannot select" in LLVM at -O2).
+;
+; xfail: no operator + between u32 and f32
+
+var r: u32 1
+let x: f32 2.5
+r := r + x as u32
+if r = 3
+    print "PASS"
