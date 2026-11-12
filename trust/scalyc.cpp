@@ -16402,6 +16402,7 @@ void Planner_report_null_test_on_ref(Planner&, PlannedOperand&, PlannedOperand&,
 void Planner_report_ref_arithmetic(Planner&, PlannedType&, PlannedType&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_221report_ref_arithmeticE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_26String4SpanB6scalycB4v0_2");
 void Planner_report_record_scalar_compare(Planner&, PlannedType&, PlannedType&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_228report_record_scalar_compareE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_26String4SpanB6scalycB4v0_2");
 void Planner_report_unknown_scalar_operator(Planner&, PlannedType&, PlannedType&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_230report_unknown_scalar_operatorE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_26String4SpanB6scalycB4v0_2");
+void Planner_report_mixed_number_operator(Planner&, PlannedType&, PlannedType&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_228report_mixed_number_operatorE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_26String4SpanB6scalycB4v0_2");
 void Planner_report_number_in_logic(Planner&, PlannedOperand&, PlannedOperand&, String&) asm("_ZN7PlannerB6scalycB4v0_222report_number_in_logicE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_26String");
 PlannedType Planner_wider_integer_operand_type(scaly_frame*, String&, PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_226wider_integer_operand_typeEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 PlannedType Planner_plan_simd_binary(scaly_frame*, Planner&, String&, PlannedType&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_216plan_simd_binaryEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
@@ -55250,6 +55251,7 @@ __attribute__((weak)) PlannedOperand Planner_raw_operation(scaly_frame* scaly_rp
         Planner_report_ref_arithmetic(*(this_), (result).result_type, (rhs).result_type, op_name, (result).loc);
         Planner_report_record_scalar_compare(*(this_), (result).result_type, (rhs).result_type, op_name, (result).loc);
         Planner_report_unknown_scalar_operator(*(this_), (result).result_type, (rhs).result_type, op_name, (result).loc);
+        Planner_report_mixed_number_operator(*(this_), (result).result_type, (rhs).result_type, op_name, (result).loc);
         if (String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001="})))
         {
             combined_type = Planner_make_bool_type(scaly_rp);
@@ -73400,6 +73402,60 @@ __attribute__((weak)) void Planner_report_unknown_scalar_operator(Planner& scaly
     {
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\046 - an assignment is written x := x + 1"}));
     }
+    String msg = StringBuilder_to_string(&scaly_local.f, (*sb));
+    Planner_add_diagnostic(*(this_), at, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), msg); scaly_t3; }))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_report_mixed_number_operator(Planner& scaly_self, PlannedType& lhs, PlannedType& rhs, String& op_name, Span& at)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    String whole = String{nullptr};
+    String real = String{nullptr};
+    if ((Planner_is_integer_type((lhs).name) ? Planner_type_is_float_like(rhs) : false))
+    {
+        whole = (lhs).name;
+        real = (rhs).name;
+    }
+    if ((Planner_type_is_float_like(lhs) ? Planner_is_integer_type((rhs).name) : false))
+    {
+        whole = (rhs).name;
+        real = (lhs).name;
+    }
+    if ((String_get_length(whole) == 0ULL))
+    {
+        return;
+    }
+    {
+        auto&& scaly_t1 = true;
+        if (scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001+"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001-"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001*"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001/"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001%"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\003div"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\003mod"})))
+        {
+            0LL;
+        }
+        else if (scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\002<<"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\002>>"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001&"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001|"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\003xor"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001^"})))
+        {
+            0LL;
+        }
+        else if (scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001="})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\002<>"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001<"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\001>"})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\002<="})) || scaly_t1 == String_equals(op_name, scaly_lvalue(String{(uint8_t*)"\002>="})))
+        {
+            0LL;
+        }
+        else
+        {
+            return;
+        }
+    }
+    StringBuilder* sb = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\014no operator "}));
+    StringBuilder_append2((*sb), op_name);
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\011 between "}));
+    StringBuilder_append2((*sb), (lhs).name);
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\005 and "}));
+    StringBuilder_append2((*sb), (rhs).name);
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\140 - an integer is not converted to a floating-point number by itself: write the conversion (n as "}));
+    StringBuilder_append2((*sb), real);
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\042), or a literal with a point (2.0)"}));
     String msg = StringBuilder_to_string(&scaly_local.f, (*sb));
     Planner_add_diagnostic(*(this_), at, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), msg); scaly_t3; }))));
 }
