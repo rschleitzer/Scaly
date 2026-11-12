@@ -8,7 +8,7 @@
 //   { type: 'hello', gpu }               -> { type: 'ready', card, why }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'watch', memory, address, width, height }, then
-//                                           { type: 'done', status, stdout, stderr, picture, cards, compiled }
+//                                           { type: 'done', status, stdout, stderr, picture, cards, compiled, parts }
 //
 // `gpu`, where given, is a MessagePort to the page's own card worker
 // (gpu-worker.mjs): the page ends this worker to break a run off and makes
@@ -71,6 +71,8 @@ async function answer(data) {
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
+  const PARTS = ['card_ms', 'there_ms', 'errors_ms', 'read_ms', 'back_ms'];
+  const partsBefore = PARTS.map(sum);
   const files = new MemoryFiles();
   // what the program writes, read as it comes: the line that says where its
   // picture lies is handed to the page at once
@@ -113,9 +115,13 @@ async function answer(data) {
   const cards = sum('card') - before;
   // of the run: compiling the card's kernels, which only a kernel's first run pays
   const compiled = sum('compile_ms') - compiledBefore;
+  // where the card's time went: all of it, the way there, the browser's
+  // word on errors, the results, the way back
+  const [card_ms, there, errors, read, back] = PARTS.map((what, i) => sum(what) - partsBefore[i]);
+  const parts = cards > 0 ? { card_ms, compiled, there, errors, read, back } : null;
   const all = new Uint8Array(written.reduce((n, b) => n + b.length, 0));
   written.reduce((at, b) => (all.set(b, at), at + b.length), 0);
   const text = new TextDecoder().decode(all);
-  self.postMessage({ type: 'done', status, stdout: text, stderr: wasi.stderr_text(), picture, width, height, cards, compiled },
+  self.postMessage({ type: 'done', status, stdout: text, stderr: wasi.stderr_text(), picture, width, height, cards, compiled, parts },
                    picture ? [picture.buffer] : []);
 }

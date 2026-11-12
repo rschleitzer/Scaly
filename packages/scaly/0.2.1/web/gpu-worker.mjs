@@ -16,7 +16,11 @@
 //   word 1   where it ran: how long compiling its kernel took, in
 //            microseconds (0: compiled before); where it did not: the bytes
 //            of the reason that follow the outputs
-//   byte 8   the outputs, one after the other, `count` words each
+//   byte 8   four doubles, the times of the run: when it arrived here and
+//            when it was through (milliseconds since 1970, a clock both
+//            workers share), how long the browser took to say the card met
+//            no error, and to hand back the results
+//   byte 40  the outputs, one after the other, `count` words each
 //
 // The first message this worker posts says whether the page has a card:
 // { card: true | false, why } -- `why`, where it has none, the reason
@@ -29,10 +33,15 @@
 // worker's own messages do; the kernels compiled so far stay.
 import { Card } from './gpu.mjs';
 
+// where the outputs begin in `shared` (gpu-host.mjs says the same)
+const HEAD = 40;
+const now = () => performance.timeOrigin + performance.now();
+
 const opened = Card.open().catch(e => { Card.why = String(e && e.message || e); return null; });
 const hello = card => ({ card: card !== null, why: card ? '' : Card.why });
 
 async function serve(event) {
+  const arrived = now();
   const { wgsl, count, words, inputs, outputs, shared } = event.data;
   const state = new Int32Array(shared, 0, 2);
   let answer;
@@ -45,11 +54,12 @@ async function serve(event) {
   } catch (e) {
     answer = { ran: false, stopped: false, why: String(e && e.message || e) };
   }
-  const data = 8 + outputs.length * count * 4;
+  const data = HEAD + outputs.length * count * 4;
   if (answer.ran) {
     state[1] = Math.round((answer.compile_ms ?? 0) * 1000);
     outputs.forEach((o, i) =>
-      new Uint32Array(shared, 8 + i * count * 4, count).set(new Uint32Array(o.buffer, o.byteOffset, count)));
+      new Uint32Array(shared, HEAD + i * count * 4, count).set(new Uint32Array(o.buffer, o.byteOffset, count)));
+    new Float64Array(shared, 8, 4).set([arrived, now(), answer.errors_ms ?? 0, answer.read_ms ?? 0]);
   } else {
     const why = new TextEncoder().encode(answer.why).subarray(0, shared.byteLength - data);
     new Uint8Array(shared, data, why.length).set(why);

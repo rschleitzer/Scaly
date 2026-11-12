@@ -12,6 +12,8 @@
 //   answer.ran       // every round ran and `outputs` hold the results
 //   answer.stopped   // a round met what the processor would stop at
 //   answer.why       // where it did not run, why
+//   answer.errors_ms, answer.read_ms   // how long the two waits on the browser took:
+//                    // its word on errors, and the results (the card's work included)
 //
 // `words` is a Uint32Array, the kernel's scalars as the program lays them
 // out; `inputs` and `outputs` are arrays of Uint32Array, Int32Array or
@@ -137,20 +139,24 @@ export class Card {
     encoder.copyBufferToBuffer(held[1], 0, reader, 0, 4);
     outputs.forEach((o, i) => encoder.copyBufferToBuffer(held[2 + inputs.length + i], 0, reader, 4 + i * count * 4, count * 4));
     device.queue.submit([encoder.finish()]);
+    const submitted = performance.now();
     const error = await device.popErrorScope();
+    const checked = performance.now();
     let answer;
     if (error) {
       this.said.push(error.message);
       answer = no('the card refused');
     } else {
       await reader.mapAsync(GPUMapMode.READ);
+      const read_ms = performance.now() - checked;
       const result = reader.getMappedRange();
       if (new Uint32Array(result, 0, 1)[0] !== 0) {
         answer = { ran: false, stopped: true, why: 'a round stopped' };
       } else {
         // all or nothing: every output is here
         outputs.forEach((o, i) => new Uint32Array(o.buffer, o.byteOffset, count).set(new Uint32Array(result, 4 + i * count * 4, count)));
-        answer = { ran: true, stopped: false, why: '', compile_ms: this.compile_ms };
+        answer = { ran: true, stopped: false, why: '', compile_ms: this.compile_ms,
+                   errors_ms: checked - submitted, read_ms };
       }
       reader.unmap();
     }

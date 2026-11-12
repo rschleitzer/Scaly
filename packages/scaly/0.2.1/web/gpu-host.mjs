@@ -27,7 +27,8 @@
 // outlives the program's worker.
 //
 // WHO DECIDES is this module, as the native host does (gpu_darwin.c, whose
-// account this follows line by line). `mode`:
+// account this follows line by line -- but for the cap on a run that stalled,
+// in run(): a native card does not stall). `mode`:
 //
 //   'on'    the card is tried at every loop's head, and nowhere else
 //   'off'   every loop stays on the processor
@@ -62,6 +63,9 @@ const MARGIN = 1.25;
 const AGAIN = 32;
 // a run the card's worker does not answer in this time is given up, and the card with it
 const PATIENCE_MS = 120000;
+// where the outputs begin in a run's shared buffer (gpu-worker.mjs says the same)
+const HEAD = 40;
+const now = () => performance.timeOrigin + performance.now();
 
 const decoder = new TextDecoder();
 
@@ -144,6 +148,9 @@ export class GpuHost {
         cpu_round_ns: 0,           // ONE core's time for a round, as it took (0: not told yet)
         gate_workers: 0,           // the cores the gate last spoke of: a kept run's time is theirs
         kept_since: 0,             // runs kept since the card last ran
+        // of card_ns: the way to the card's worker, the browser's word on
+        // errors, the results (the card's work in it), the way back
+        there_ns: 0, errors_ns: 0, read_ns: 0, back_ns: 0,
       };
       this.sites.set(key, site);
     }
@@ -215,11 +222,11 @@ export class GpuHost {
     const inputs = [], outputs = [];
     for (let i = 0; i < n_in; i++) inputs.push(copy_words(memory, buffer_at(i), elements(i)));
     for (let i = 0; i < n_out; i++) outputs.push(copy_words(memory, buffer_at(n_in + i), count));
-    const data = 8 + n_out * count * 4;
+    const data = HEAD + n_out * count * 4;
     const shared = new SharedArrayBuffer(data + 256);
     const state = new Int32Array(shared, 0, 2);
 
-    const begun = performance.now();
+    const begun = performance.now(), posted = now();
     this.worker.postMessage({ wgsl: site.wgsl, count, words, inputs, outputs, shared },
                             [words.buffer, ...inputs.map(b => b.buffer), ...outputs.map(b => b.buffer)]);
     if (Atomics.wait(state, 0, 0, PATIENCE_MS) === 'timed-out') {
@@ -227,7 +234,7 @@ export class GpuHost {
       this.say('processor (the card did not answer)');
       return 0;
     }
-    const all_ns = (performance.now() - begun) * 1e6;
+    const all_ns = (performance.now() - begun) * 1e6, woken = now();
 
     if (state[0] !== 1) {
       const why = decoder.decode(new Uint8Array(shared, data, state[1]).slice());
@@ -239,7 +246,12 @@ export class GpuHost {
     }
     const mem = new Uint8Array(memory.buffer);
     for (let i = 0; i < n_out; i++)
-      mem.set(new Uint8Array(shared, 8 + i * count * 4, count * 4), buffer_at(n_in + i));
+      mem.set(new Uint8Array(shared, HEAD + i * count * 4, count * 4), buffer_at(n_in + i));
+    const [arrived, through, errors_ms, read_ms] = new Float64Array(shared, 8, 4);
+    site.there_ns += Math.max(0, arrived - posted) * 1e6;
+    site.errors_ns += errors_ms * 1e6;
+    site.read_ns += read_ms * 1e6;
+    site.back_ns += Math.max(0, woken - through) * 1e6;
 
     // a part for the call, the rest by the round; halfway between this run
     // and the ones before. A kernel's first run pays what no later one
@@ -250,6 +262,12 @@ export class GpuHost {
       if (all_ns < this.least_ns) this.least_ns = all_ns;
       let fixed = this.least_ns;
       let round = (all_ns - fixed) / count;
+      // a run far slower than the ones before teaches at most twice what
+      // they did: a browser's card can stall now and then (Safari, for a
+      // second), and one such run would keep the loop off the card for
+      // dozens of runs to come. A card that is slow for good still shows,
+      // twice as slow with every run.
+      if (site.measured >= 2 && site.round_ns > 0) round = Math.min(round, 2 * site.round_ns);
       if (site.measured >= 2) {
         fixed = (fixed + site.fixed_ns) / 2;
         round = (round + site.round_ns) / 2;
@@ -273,6 +291,7 @@ export class GpuHost {
     return [...this.sites.values()].map(s => ({
       where: s.where, card: s.cards, card_rounds: s.card_rounds, card_ms: s.card_ns / 1e6,
       compile_ms: s.compile_ns / 1e6,
+      there_ms: s.there_ns / 1e6, errors_ms: s.errors_ns / 1e6, read_ms: s.read_ns / 1e6, back_ms: s.back_ns / 1e6,
       processor: s.kept, given_back: s.stops,
     }));
   }
