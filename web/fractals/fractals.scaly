@@ -235,8 +235,9 @@ function settled(k: i32, before: f32, last: f32, near: f32) returns f32
 
 ; Newton's method for z^3 = 1 from (zr, zi), the step moved by (cr, ci) --
 ; 0 for Newton's fractal, the place for the Nova. Where it comes to rest,
-; Newton's fractal is coloured by the root it found, darker the longer it
-; took; the Nova by how long it took. Black where it never does.
+; Newton's fractal is coloured by the root it found, in shades of its hue
+; that run through as the turns it took grow; the Nova by how long it took.
+; Black where it never does.
 function newton(zr0: f32, zi0: f32, cr: f32, ci: f32, turns: i32, nova: bool) returns u32
 {
     var zr zr0
@@ -269,9 +270,10 @@ function newton(zr0: f32, zi0: f32, cr: f32, ci: f32, turns: i32, nova: bool) re
     let v settled(k, before, d, 0.000001)
     if nova
         return palette(v * 0.045, 7)
-    let root if zr > 0.0: rgb(235, 60, 80) else if zi > 0.0: rgb(255, 200, 60) else rgb(40, 130, 235)
-    let dark 1.0 / (1.0 + 0.2 * magnitude(v))
-    blend(rgb(8, 6, 20), root, dark)
+    let t v * 0.12
+    if zr > 0.0: ramp(t, rgb(60, 0, 20), rgb(200, 20, 60), rgb(255, 110, 100), rgb(255, 225, 200), rgb(140, 0, 50))
+    else if zi > 0.0: ramp(t, rgb(50, 25, 0), rgb(215, 130, 0), rgb(255, 210, 50), rgb(255, 250, 200), rgb(150, 70, 0))
+    else ramp(t, rgb(0, 10, 50), rgb(20, 80, 210), rgb(70, 190, 255), rgb(210, 245, 255), rgb(10, 40, 140))
 }
 
 ; The Magnet: z from 0, c the place. It runs away or comes to rest at 1;
