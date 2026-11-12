@@ -155,7 +155,7 @@
     <div id="chartbox" hidden>
       <h2 data-t="chartTitle">Speedup against cores</h2>
       <svg id="chart" viewBox="0 0 360 220" role="img" aria-label="Speedup against the number of cores" data-t-label="chartLabel"></svg>
-      <p class="note" data-t="chartNote">The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line.</p>
+      <p class="note" data-t="chartNote">Both axes are logarithmic. The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line. Where a processor has fast cores and economical ones, as Apple’s have, the curve bends once the fast ones are all at work.</p>
     </div>
   </section>
 
@@ -244,7 +244,7 @@ const TEXT = {
     race: 'Race them: 1, 2, 4 … cores, and the card', wrote: 'What the program wrote', runsOf: 'Runs of this picture',
     thWhere: 'Where', thLoop: 'The loop', thSpeedup: 'Speedup', thPicture: 'Picture', none: 'None yet.',
     chartTitle: 'Speedup against cores', chartLabel: 'Speedup against the number of cores',
-    chartNote: 'The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line.',
+    chartNote: 'Both axes are logarithmic. The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line. Where a processor has fast cores and economical ones, as Apple’s have, the curve bends once the fast ones are all at work.',
     chartCard: s => `the card: ${s}×`, chartCores: 'cores',
     what: 'What runs here', program: 'The program', original: 'Back to the original', build: 'Build my version',
     theOriginal: '— the original', yourVersion: 'your version',
@@ -281,7 +281,7 @@ const TEXT = {
     race: 'Wettlauf: 1, 2, 4 … Kerne und die Karte', wrote: 'Was das Programm ausgegeben hat', runsOf: 'Läufe dieses Bildes',
     thWhere: 'Wo', thLoop: 'Die Schleife', thSpeedup: 'Beschleunigung', thPicture: 'Bild', none: 'Noch keine.',
     chartTitle: 'Beschleunigung nach Kernen', chartLabel: 'Die Beschleunigung gegen die Zahl der Kerne',
-    chartNote: 'Die gestrichelte Linie ist die vollkommene Beschleunigung: doppelt so viele Kerne, halbe Zeit. Die Karte hat eine eigene Linie.',
+    chartNote: 'Beide Achsen sind logarithmisch. Die gestrichelte Linie ist die vollkommene Beschleunigung: doppelt so viele Kerne, halbe Zeit. Die Karte hat eine eigene Linie. Wo ein Prozessor schnelle und sparsame Kerne hat, wie die von Apple, knickt die Kurve ab, sobald alle schnellen arbeiten.',
     chartCard: s => `die Karte: ${s}×`, chartCores: 'Kerne',
     what: 'Was hier läuft', program: 'Das Programm', original: 'Zurück zum Original', build: 'Meine Fassung bauen',
     theOriginal: '— das Original', yourVersion: 'deine Fassung',
@@ -391,6 +391,7 @@ async function runOnce(way, workers, gpu, given = args(), seen = { ...view }) {
     exit: s => resolve({ status: String(s), stdout: '', picture: null, cards: 0 }),
     env,
   });
+  runner.onerror = e => resolve({ status: 'ended: ' + (e.message || 'the worker stopped'), stdout: '', picture: null, cards: 0 });
   runner.onmessage = ({ data }) => {
     if (threads.handle(data)) return;
     if (data.type === 'watch' && seen) watch(data, seen);
@@ -578,15 +579,18 @@ function chart() {
   if (!one || cores.length < 2) { $('chartbox').hidden = true; return; }
   $('chartbox').hidden = false;
   const speed = r => one.ms / r.ms;
+  // both axes logarithmic: a perfect speedup is the diagonal, and the card,
+  // often a hundred times one core, does not press the cores to the floor
   const L = 34, B = 196, W = 310, H = 180;
   const maxX = Math.max(...cores.map(r => r.workers));
-  const maxY = Math.max(maxX, ...cores.map(speed), cardRun ? speed(cardRun) : 0) * 1.08;
-  const x = n => L + (n - 1) / Math.max(1, maxX - 1) * W;
-  const y = s => B - s / maxY * H;
+  const maxY = Math.max(maxX, ...cores.map(speed), cardRun ? speed(cardRun) : 0) * 1.3;
+  const minY = Math.min(1, ...cores.map(speed)) / 1.3;
+  const x = n => L + Math.log(n) / Math.log(Math.max(2, maxX)) * W;
+  const y = s => B - Math.log(s / minY) / Math.log(maxY / minY) * H;
   const parts = [];
   parts.push(`<line class="axis" x1="${L}" y1="${B}" x2="${L + W}" y2="${B}"/><line class="axis" x1="${L}" y1="${B}" x2="${L}" y2="${B - H}"/>`);
   for (const r of cores) parts.push(`<text x="${x(r.workers)}" y="${B + 14}" text-anchor="middle">${r.workers}</text>`);
-  const ticks = [1, ...[2, 5, 10, 20, 50, 100, 200, 500, 1000].filter(t => t < maxY)];
+  const ticks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].filter(t => t < maxY);
   for (const t of ticks) parts.push(`<text x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}×</text>`);
   parts.push(`<polyline class="ideal" points="${x(1)},${y(1)} ${x(maxX)},${y(Math.min(maxX, maxY))}"/>`);
   parts.push(`<polyline class="measured" points="${cores.map(r => `${x(r.workers)},${y(speed(r))}`).join(' ')}"/>`);
@@ -878,8 +882,12 @@ async function warm() {
 
 // the module to run, into the runner: the reader's, or the original's
 function load(bytes) {
-  return new Promise(resolve => {
-    runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(data); };
+  return new Promise((resolve, reject) => {
+    runner.onmessage = ({ data }) => {
+      if (data.type !== 'loaded') return;
+      if (data.failed) reject(new Error(data.failed));
+      else resolve(data);
+    };
     runner.postMessage({ type: 'load', bytes }, [bytes.buffer]);
   });
 }

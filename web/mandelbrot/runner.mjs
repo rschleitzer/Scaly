@@ -28,7 +28,7 @@
 // shared: the page then reads the picture as the threads and the card write
 // it.
 import { MemoryFiles, Wasi } from './wasi.mjs';
-import { ThreadHost, threadMemory } from './threads.mjs';
+import { ThreadHost, threadMemory, threaded, PAGE_MEMORY } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
 
 let program = null;     // { bytes, module }
@@ -44,18 +44,30 @@ async function prepare(port) {
 }
 
 self.onmessage = async ({ data }) => {
+  try {
+    await answer(data);
+  } catch (e) {
+    // what went wrong is said, never left unanswered: the page waits for it
+    const why = 'ended: ' + (e && e.message || e);
+    if (data.type === 'run') self.postMessage({ type: 'done', status: why, stdout: '', stderr: '', picture: null, cards: 0, compiled: 0 });
+    else if (data.type === 'load') self.postMessage({ type: 'loaded', failed: why });
+    else self.postMessage({ type: 'ready', failed: why });
+  }
+};
+
+async function answer(data) {
   if (data.type === 'load') {
     program = { bytes: data.bytes, module: await WebAssembly.compile(data.bytes) };
-    self.postMessage({ type: 'loaded', threads: threadMemory(program.bytes) !== null });
+    self.postMessage({ type: 'loaded', threads: threaded(program.bytes) });
     return;
   }
   await prepare(data.gpu);
   if (data.type === 'hello') {
     self.postMessage({ type: 'ready', card: card !== null, why: card ? '' : (GpuHost.why || 'the card did not open'),
-                       threads: threadMemory(program.bytes) !== null });
+                       threads: threaded(program.bytes) });
     return;
   }
-  const memory = threadMemory(program.bytes);
+  const memory = threadMemory(program.bytes, { most: PAGE_MEMORY });
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
@@ -106,4 +118,4 @@ self.onmessage = async ({ data }) => {
   const text = new TextDecoder().decode(all);
   self.postMessage({ type: 'done', status, stdout: text, stderr: wasi.stderr_text(), picture, width, height, cards, compiled },
                    picture ? [picture.buffer] : []);
-};
+}

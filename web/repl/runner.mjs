@@ -18,13 +18,25 @@
 // `drawings` are what worker.mjs hands back for a program `scaly run` ran:
 // the `.<w>x<h>.rgba` files and the SVG files it wrote.
 import { MemoryFiles, Wasi } from './wasi.mjs';
-import { ThreadHost, threadMemory } from './threads.mjs';
+import { ThreadHost, threadMemory, threaded, PAGE_MEMORY } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
 
 let program = null;     // { bytes, module }
 let card;               // the GpuHost, or null where the page has no card
 
 self.onmessage = async ({ data }) => {
+  try {
+    await answer(data);
+  } catch (e) {
+    // what went wrong is said, never left unanswered: the page waits for it
+    const why = 'ended: ' + (e && e.message || e);
+    if (data.type === 'run') self.postMessage({ type: 'done', status: why, stdout: '', stderr: '', ms: 0, pictures: [], drawings: [], cards: 0, compiled: 0 });
+    else if (data.type === 'load') self.postMessage({ type: 'loaded', failed: why });
+    else self.postMessage({ type: 'ready', card: false, why });
+  }
+};
+
+async function answer(data) {
   if (card === undefined)
     card = await GpuHost.open(new URL('./gpu-worker.mjs', import.meta.url), { mode: 'off' }).catch(() => null);
   if (data.type === 'hello') {
@@ -33,10 +45,10 @@ self.onmessage = async ({ data }) => {
   }
   if (data.type === 'load') {
     program = { bytes: data.bytes, module: await WebAssembly.compile(data.bytes) };
-    self.postMessage({ type: 'loaded', threads: threadMemory(program.bytes) !== null });
+    self.postMessage({ type: 'loaded', threads: threaded(program.bytes) });
     return;
   }
-  const memory = threadMemory(program.bytes);
+  const memory = threadMemory(program.bytes, { most: PAGE_MEMORY });
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
@@ -69,4 +81,4 @@ self.onmessage = async ({ data }) => {
   const compiled = sum('compile_ms') - compiledBefore;
   self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), ms,
                      pictures, drawings, cards, compiled }, pictures.map(p => p.bytes.buffer));
-};
+}

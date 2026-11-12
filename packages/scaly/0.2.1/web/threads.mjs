@@ -27,7 +27,7 @@
 //   const threads = await Threads.create({ out, err, exit });
 //   program.onmessage = ({ data }) => { if (threads.handle(data)) return; ... };
 //   // the program's worker
-//   const memory = threadMemory(bytes);                    // null: no threads in this module
+//   const memory = threadMemory(bytes, { most: PAGE_MEMORY });   // null: no threads in this module
 //   const wasi = new Wasi({ ..., env: { SCALY_CPUS: n }, threads: new ThreadHost({ memory, post: m => postMessage(m) }) });
 //   wasi.start(await WebAssembly.instantiate(module, wasi.imports()));
 //
@@ -74,13 +74,37 @@ export function memoryImport(bytes) {
   return null;
 }
 
-// The memory of a module built for threads, as it asks for it; null where
-// the module imports none (a program built for wasm32-wasip1).
-export function threadMemory(bytes) {
+// Whether a module is built for threads: it imports a shared memory.
+export function threaded(bytes) {
+  const limits = memoryImport(bytes);
+  return !!(limits && limits.shared);
+}
+
+// The memory of a module built for threads; null where the module imports
+// none (a program built for wasm32-wasip1). A shared memory cannot move when
+// it grows, so the browser sets aside its whole maximum when it is made --
+// the four gigabytes a module asks for (`--max-memory`) are more than a
+// phone's browser gives a page more than once, and a memory is freed only
+// when it is collected. So `most` (in pages of 64 KiB) caps the maximum
+// below what the module asks, and where even that is refused, half of it is
+// asked, and so on down to what the module needs to start.
+export function threadMemory(bytes, { most = Infinity } = {}) {
   const limits = memoryImport(bytes);
   if (!limits || !limits.shared) return null;
-  return new WebAssembly.Memory({ initial: limits.initial, maximum: limits.maximum, shared: true });
+  const { initial } = limits;
+  let maximum = Math.max(initial, Math.min(limits.maximum ?? 65536, most));
+  for (;;) {
+    try {
+      return new WebAssembly.Memory({ initial, maximum, shared: true });
+    } catch (e) {
+      if (!(e instanceof RangeError) || maximum <= initial) throw e;
+      maximum = Math.max(initial, Math.floor(maximum / 2));
+    }
+  }
 }
+
+// What a page asks for a program's memory at most: a gigabyte.
+export const PAGE_MEMORY = 16384;
 
 // What one instance of the module -- the program's or a thread's -- imports
 // for its threads: the memory, and the start of a new thread, which goes to
