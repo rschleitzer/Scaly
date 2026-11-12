@@ -10,6 +10,9 @@
 ;
 ;   fractals <width> <height> <turns> <cx> <cy> <span> [<samples> [<fractal>]]
 ;
+; turns is how many turns a place may take -- in space, how many steps a
+; ray.
+;
 ; cx and cy, the picture's centre, and span, its width in the plane, are
 ; whole numbers of billionths. samples, 1 if not given, says how finely a
 ; point is looked at: samples x samples places within it, whose colours are
@@ -30,14 +33,27 @@
 ;   10  Lyapunov's Zircon City    the logistic map, its growth rate switched
 ;                                 between a and b in the pattern BBBBBBAAAAAA
 ;
+; and in space, seen by a camera that goes round the centre -- there cx is
+; how far it is turned about the upright and cy how far it is lifted, both
+; in radians, and span how far it is from the centre:
+;
+;   11  the Mandelbulb            the Mandelbrot set's map in space, power 8
+;   12  the Mandelbox             fold into a box, fold through a sphere,
+;                                 stretch by -2
+;   13  the Menger sponge         a cube with the middle of each face taken
+;                                 out, in each of the 20 cubes left again
+;   14  the Sierpinski tetrahedron  four tetrahedra in its corners, again
+;   15  a quaternion Julia set    q := q^2 + c with quaternions
+;
 ; Before the loop the program says where the picture lies in its memory, so
 ; that the page can watch it grow. The picture goes into the file
 ; fractal.<width>x<height>.rgba, four bytes per point -- red, green, blue,
 ; opacity, what a canvas takes --, and the program writes how long the loop
 ; took.
 ;
-; A card has no logarithm here, no absolute value and no colour table: what
-; the loop needs of them is written below in the four operations.
+; A card has no logarithm here, no square root, no absolute value and no
+; colour table: what the loop needs of them is written below in the four
+; operations.
 
 ; A whole number from an argument, a minus sign in front allowed.
 function whole(text: Slice[u8]) returns int
@@ -175,7 +191,17 @@ function palette(t: f32, which: i32) returns u32
     ; the Magnet, run away: steel blue
     else if which = 9: ramp(t, rgb(5, 10, 30), rgb(40, 80, 150), rgb(170, 210, 250), rgb(255, 255, 255), rgb(60, 50, 120))
     ; the Magnet, come to rest at 1: rose
-    else ramp(t, rgb(40, 0, 20), rgb(200, 40, 90), rgb(255, 190, 200), rgb(255, 245, 235), rgb(120, 20, 60))
+    else if which = 10: ramp(t, rgb(40, 0, 20), rgb(200, 40, 90), rgb(255, 190, 200), rgb(255, 245, 235), rgb(120, 20, 60))
+    ; the Mandelbulb: bronze and teal
+    else if which = 11: ramp(t, rgb(120, 60, 20), rgb(230, 160, 80), rgb(255, 235, 190), rgb(60, 170, 170), rgb(20, 80, 100))
+    ; the Mandelbox: steel and ice
+    else if which = 12: ramp(t, rgb(70, 90, 120), rgb(170, 200, 230), rgb(250, 250, 255), rgb(230, 120, 60), rgb(120, 60, 90))
+    ; the Menger sponge: sandstone
+    else if which = 13: ramp(t, rgb(150, 90, 50), rgb(220, 170, 110), rgb(250, 230, 190), rgb(200, 120, 70), rgb(120, 70, 40))
+    ; the Sierpinski tetrahedron: jade
+    else if which = 14: ramp(t, rgb(20, 110, 80), rgb(90, 200, 150), rgb(220, 255, 230), rgb(60, 150, 190), rgb(20, 70, 90))
+    ; the quaternion Julia set: pearl and violet
+    else ramp(t, rgb(90, 50, 160), rgb(200, 150, 240), rgb(255, 245, 250), rgb(120, 200, 230), rgb(60, 80, 170))
 }
 
 ; --- the fractals --------------------------------------------------------------
@@ -340,6 +366,360 @@ function lyapunov(a: f32, b: f32, turns: i32) returns u32
     }
 }
 
+; --- three dimensions ----------------------------------------------------------
+;
+; A fractal in space is drawn by a ray from the eye through each place of the
+; picture: it goes forward in steps, each as long as the distance the
+; fractal's estimate says is free around it, until it comes close enough to
+; the surface -- or runs past everything. Where it met the surface, the light
+; is worked out from the surface's slope, a shadow and how deep in a fold it
+; lies.
+
+; The square root, from the four operations: x brought into [1, 4) by
+; quarters -- each a factor 2 of the root --, then three of Newton's steps.
+; 0 for 0 and for anything not a number.
+function root(x: f32) returns f32
+{
+    if not (x > 0.0)
+        return 0.0
+    var m x
+    if m > 1000000000000000000000000000000.0
+        m := 1000000000000000000000000000000.0
+    var s: f32 1.0
+    while m >= 65536.0
+    {
+        m := m * 0.0000152587890625
+        s := s * 256.0
+    }
+    while m >= 4.0
+    {
+        m := m * 0.25
+        s := s * 2.0
+    }
+    while m < 0.0000152587890625
+    {
+        m := m * 65536.0
+        s := s * 0.00390625
+    }
+    while m < 1.0
+    {
+        m := m * 4.0
+        s := s * 0.5
+    }
+    var y 1.0 + (m - 1.0) * 0.33333334
+    y := 0.5 * (y + m / y)
+    y := 0.5 * (y + m / y)
+    y := 0.5 * (y + m / y)
+    y * s
+}
+
+; The larger and the smaller of two.
+function most(a: f32, b: f32) returns f32
+{
+    if a > b: a else b
+}
+function least(a: f32, b: f32) returns f32
+{
+    if a < b: a else b
+}
+
+; The Mandelbulb, the power 8 of Daniel White and Paul Nylander, in its
+; algebraic form (Inigo Quilez's), which needs no sine: how far (x, y, z)
+; is from it at least -- or, where `trap` is asked, how close the point's
+; orbit came to the origin.
+function bulb(px: f32, py: f32, pz: f32, trap: bool) returns f32
+{
+    var x px
+    var y py
+    var z pz
+    var m x * x + y * y + z * z
+    var dz: f32 1.0
+    var near m
+    var i: i32 0
+    while i < 6 and m <= 256.0
+    {
+        dz := 8.0 * m * m * m * root(m) * dz + 1.0
+        let x2 x * x
+        let y2 y * y
+        let z2 z * z
+        let x4 x2 * x2
+        let y4 y2 * y2
+        let z4 z2 * z2
+        let k3 most(x2 + z2, 0.000000000001)
+        let k2 1.0 / root(k3 * k3 * k3 * k3 * k3 * k3 * k3)
+        let k1 x4 + y4 + z4 - 6.0 * y2 * z2 - 6.0 * x2 * y2 + 2.0 * z2 * x2
+        let k4 x2 - y2 + z2
+        let nx px + 64.0 * x * y * z * (x2 - z2) * k4 * (x4 - 6.0 * x2 * z2 + z4) * k1 * k2
+        let ny py - 16.0 * y2 * k3 * k4 * k4 + k1 * k1
+        let nz pz - 8.0 * y * k4 * (x4 * x4 - 28.0 * x4 * x2 * z2 + 70.0 * x4 * z4 - 28.0 * x2 * z2 * z4 + z4 * z4) * k1 * k2
+        x := nx
+        y := ny
+        z := nz
+        m := x * x + y * y + z * z
+        near := least(near, m)
+        i := i + 1
+    }
+    if trap: near
+    else log2(m) * 0.17328680 * root(m) / dz
+}
+
+; The Mandelbox of Tom Lowe, scale -2: a fold into a box, a fold through a
+; sphere, a stretch, again and again.
+function box(px: f32, py: f32, pz: f32, trap: bool) returns f32
+{
+    var x px
+    var y py
+    var z pz
+    var dr: f32 1.0
+    var near: f32 1000.0
+    var i: i32 0
+    while i < 12
+    {
+        if x > 1.0
+            x := 2.0 - x
+        else if 0.0 - x > 1.0
+            x := (0.0 - x) - 2.0
+        if y > 1.0
+            y := 2.0 - y
+        else if 0.0 - y > 1.0
+            y := (0.0 - y) - 2.0
+        if z > 1.0
+            z := 2.0 - z
+        else if 0.0 - z > 1.0
+            z := (0.0 - z) - 2.0
+        let r2 x * x + y * y + z * z
+        near := least(near, r2)
+        let f if r2 < 0.25: 4.0 as f32 else if r2 < 1.0: 1.0 / r2 else 1.0 as f32
+        x := px - x * f * 2.0
+        y := py - y * f * 2.0
+        z := pz - z * f * 2.0
+        dr := dr * f * 2.0 + 1.0
+        i := i + 1
+    }
+    if trap: near
+    else root(x * x + y * y + z * z) / dr
+}
+
+; The whole number below x.
+function below(x: f32) returns f32
+{
+    let i (x as i32) as f32
+    if i > x: i - 1.0 else i
+}
+
+; The Menger sponge: a cube, from which each step takes the middle of every
+; face and the centre, in each of the 27 smaller cubes again (after Inigo
+; Quilez).
+function sponge(px: f32, py: f32, pz: f32, trap: bool) returns f32
+{
+    let qx magnitude(px) - 1.0
+    let qy magnitude(py) - 1.0
+    let qz magnitude(pz) - 1.0
+    let ox most(qx, 0.0)
+    let oy most(qy, 0.0)
+    let oz most(qz, 0.0)
+    var d root(ox * ox + oy * oy + oz * oz) + least(most(qx, most(qy, qz)), 0.0)
+    var s: f32 1.0
+    var near: f32 1.0
+    var i: i32 0
+    while i < 5
+    {
+        ; where the point lies in its small cube, from -1 to 1
+        let ax px * s - 2.0 * below(px * s * 0.5) - 1.0
+        let ay py * s - 2.0 * below(py * s * 0.5) - 1.0
+        let az pz * s - 2.0 * below(pz * s * 0.5) - 1.0
+        s := s * 3.0
+        let rx magnitude(1.0 - 3.0 * magnitude(ax))
+        let ry magnitude(1.0 - 3.0 * magnitude(ay))
+        let rz magnitude(1.0 - 3.0 * magnitude(az))
+        let c (least(most(rx, ry), least(most(ry, rz), most(rz, rx))) - 1.0) / s
+        if c > d
+        {
+            d := c
+            near := (i as f32) * 0.2
+        }
+        i := i + 1
+    }
+    if trap: near + 0.1 * magnitude(px + py + pz)
+    else d
+}
+
+; The Sierpinski tetrahedron: the space folded onto one of its four corners
+; and stretched towards it, ten times.
+function tetrahedron(px: f32, py: f32, pz: f32, trap: bool) returns f32
+{
+    var x px
+    var y py
+    var z pz
+    var scale: f32 1.0
+    var near: f32 1000.0
+    var i: i32 0
+    while i < 10
+    {
+        if x + y < 0.0
+        {
+            let t x
+            x := 0.0 - y
+            y := 0.0 - t
+        }
+        if x + z < 0.0
+        {
+            let t x
+            x := 0.0 - z
+            z := 0.0 - t
+        }
+        if y + z < 0.0
+        {
+            let t y
+            y := 0.0 - z
+            z := 0.0 - t
+        }
+        x := x * 2.0 - 1.0
+        y := y * 2.0 - 1.0
+        z := z * 2.0 - 1.0
+        scale := scale * 0.5
+        near := least(near, x * x + y * y + z * z)
+        i := i + 1
+    }
+    if trap: 0.15 + root(near) * 0.04
+    else root(x * x + y * y + z * z) * scale
+}
+
+; A Julia set of the quaternions, q := q^2 + c, cut where the fourth part of
+; q is 0.
+function quaternion(px: f32, py: f32, pz: f32, trap: bool) returns f32
+{
+    var a px
+    var b py
+    var c pz
+    var d: f32 0.0
+    var mq a * a + b * b + c * c
+    var md: f32 1.0
+    var near mq
+    var i: i32 0
+    while i < 11 and mq <= 16.0
+    {
+        md := md * 4.0 * mq
+        let na a * a - b * b - c * c - d * d - 0.125
+        let nb 2.0 * a * b - 0.256
+        let nc 2.0 * a * c + 0.847
+        let nd 2.0 * a * d + 0.0895
+        a := na
+        b := nb
+        c := nc
+        d := nd
+        mq := a * a + b * b + c * c + d * d
+        near := least(near, mq)
+        i := i + 1
+    }
+    if trap: near * 0.35
+    else 0.25 * root(mq / md) * 0.6931472 * log2(mq)
+}
+
+; How far (x, y, z) is from the fractal `kind` at least; with `trap`, what
+; colours the surface there.
+function field(kind: i32, x: f32, y: f32, z: f32, trap: bool) returns f32
+{
+    if kind = 11: bulb(x, y, z, trap)
+    else if kind = 12: box(x, y, z, trap)
+    else if kind = 13: sponge(x, y, z, trap)
+    else if kind = 14: tetrahedron(x, y, z, trap)
+    else quaternion(x, y, z, trap)
+}
+
+; A colour lit: each part times `light`, plus `shine` of white, at most 255.
+function lit(c: u32, light: f32, shine: f32) returns u32
+{
+    let r least((c & 255) as f32 * light + 255.0 * shine, 255.0)
+    let g least(((c >> 8) & 255) as f32 * light + 255.0 * shine, 255.0)
+    let b least(((c >> 16) & 255) as f32 * light + 255.0 * shine, 255.0)
+    rgb(r as u32, g as u32, b as u32)
+}
+
+; The colour of the ray from the eye (ex, ey, ez) through the place (re, im)
+; of the screen in front of it -- forward (fx, fy, fz), the screen's right
+; (rx, ry, rz) and up (ux, uy, uz) --, the light coming from (lx, ly, lz).
+; `turns` is how many steps it may take, `pix` how wide a point is at the
+; distance 1.
+function ray(kind: i32, re: f32, im: f32, turns: i32, pix: f32, ex: f32, ey: f32, ez: f32, fx: f32, fy: f32, fz: f32,
+             rx: f32, ry: f32, rz: f32, ux: f32, uy: f32, uz: f32, lx: f32, ly: f32, lz: f32) returns u32
+{
+    let vx fx + re * rx - im * ux
+    let vy fy + re * ry - im * uy
+    let vz fz + re * rz - im * uz
+    let vl root(vx * vx + vy * vy + vz * vz)
+    let dx vx / vl
+    let dy vy / vl
+    let dz vz / vl
+    var t: f32 0.0
+    var k: i32 0
+    var hit false
+    while k < turns and not hit and t < 40.0
+    {
+        let d field(kind, ex + t * dx, ey + t * dy, ez + t * dz, false)
+        if d < 0.5 * pix * t + 0.00001
+            hit := true
+        else
+            t := t + d
+        k := k + 1
+    }
+    ; the sky: deep blue above, black below, and a glow where the ray
+    ; passed close to the fractal and took many steps
+    let glow (k as f32) / (turns as f32)
+    let sky blend(rgb(2, 3, 10), rgb(20, 35, 70), 0.5 + 0.5 * dy)
+    if not hit
+        return blend(sky, rgb(120, 170, 255), glow * glow * 1.5)
+    let x ex + t * dx
+    let y ey + t * dy
+    let z ez + t * dz
+    ; the slope of the surface: the normal, from the distances around
+    let e most(pix * t, 0.00002)
+    let nx0 field(kind, x + e, y, z, false) - field(kind, x - e, y, z, false)
+    let ny0 field(kind, x, y + e, z, false) - field(kind, x, y - e, z, false)
+    let nz0 field(kind, x, y, z + e, false) - field(kind, x, y, z - e, false)
+    let nl most(root(nx0 * nx0 + ny0 * ny0 + nz0 * nz0), 0.000000001)
+    let nx nx0 / nl
+    let ny ny0 / nl
+    let nz nz0 / nl
+    ; how deep in a fold: less light comes there
+    var ao: f32 1.0
+    var j: i32 1
+    while j <= 5
+    {
+        let h 0.02 * (j as f32) * most(t * 0.3, 0.1)
+        ao := ao - (h - field(kind, x + nx * h, y + ny * h, z + nz * h, false)) / h * 0.12
+        j := j + 1
+    }
+    let open most(least(ao, 1.0), 0.0)
+    ; the shadow, soft: how nearly a ray towards the light passes the fractal
+    var shade: f32 1.0
+    var s: f32 e * 4.0
+    var q: i32 0
+    while q < 32 and s < 8.0 and shade > 0.01
+    {
+        let d field(kind, x + nx * e * 2.0 + lx * s, y + ny * e * 2.0 + ly * s, z + nz * e * 2.0 + lz * s, false)
+        shade := least(shade, 10.0 * d / s)
+        s := s + most(d, e)
+        q := q + 1
+    }
+    let sun most(nx * lx + ny * ly + nz * lz, 0.0) * most(shade, 0.0)
+    ; a gloss where the light is mirrored towards the eye
+    let hx lx - dx
+    let hy ly - dy
+    let hz lz - dz
+    let hl most(root(hx * hx + hy * hy + hz * hz), 0.000000001)
+    var g most((nx * hx + ny * hy + nz * hz) / hl, 0.0)
+    g := g * g
+    g := g * g
+    g := g * g
+    g := g * g
+    g := g * g
+    let base palette(field(kind, x, y, z, true) * 1.3, kind)
+    let surface lit(base, 0.35 * open + sun, 0.4 * g * most(shade, 0.0))
+    ; far away the sky takes over
+    blend(surface, sky, least(t * t * 0.002, 0.8))
+}
+
 ; The colour of one place of the plane in the fractal `kind`.
 function place(kind: i32, re: f32, im: f32, turns: i32) returns u32
 {
@@ -366,8 +746,12 @@ function place(kind: i32, re: f32, im: f32, turns: i32) returns u32
     }
 }
 
-; The colour of one point: the average over samples x samples places in it.
-function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0: f32, step: f32) returns u32
+; The colour of one point: the average over samples x samples places in it
+; -- of the plane, or for a fractal in space, of the screen (the camera:
+; ray).
+function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0: f32, step: f32,
+                ex: f32, ey: f32, ez: f32, fx: f32, fy: f32, fz: f32, rx: f32, ry: f32, rz: f32,
+                ux: f32, uy: f32, uz: f32, lx: f32, ly: f32, lz: f32) returns u32
 {
     let sub step / (samples as f32)
     var r: u32 0
@@ -378,7 +762,8 @@ function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0
     {
         let re x0 + (x as f32) * step + (((s % samples) as f32) + 0.5) * sub
         let im y0 + (y as f32) * step + (((s / samples) as f32) + 0.5) * sub
-        let c place(kind, re, im, turns)
+        let c if kind >= 11: ray(kind, re, im, turns, sub, ex, ey, ez, fx, fy, fz, rx, ry, rz, ux, uy, uz, lx, ly, lz)
+            else place(kind, re, im, turns)
         r := r + (c & 255)
         g := g + ((c >> 8) & 255)
         b := b + ((c >> 16) & 255)
@@ -386,6 +771,28 @@ function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0
     }
     let n (samples * samples) as u32
     0xFF000000 | ((b / n) << 16) | ((g / n) << 8) | (r / n)
+}
+
+; The sine, from its series, in double precision -- for the camera, outside
+; the loop; the same on every engine.
+function sine(x: f64) returns f64
+{
+    var a x
+    while a > 3.141592653589793
+        a := a - 6.283185307179586
+    while 0.0 - a > 3.141592653589793
+        a := a + 6.283185307179586
+    let a2 a * a
+    var term a
+    var sum a
+    var n 1.0
+    while n < 20.0
+    {
+        term := 0.0 - term * a2 / ((n + 1.0) * (n + 2.0))
+        sum := sum + term
+        n := n + 2.0
+    }
+    sum
 }
 
 let args os.arguments()
@@ -412,16 +819,44 @@ if args.length >= 8
     kind := whole(args[7]) as i32
 if samples < 1
     samples := 1
-let step span / (w as f64)
-let x0 (cx - span / 2.0) as f32
-let y0 (cy - step * (h as f64) / 2.0) as f32
+; In space the eye goes round the centre -- cx turns it about the upright,
+; cy lifts it, span is how far it is --, looking at the centre: forward f,
+; the screen's right r and up u; the light comes from above, a little right
+; and from the eye's side. (Worked out for the plane as well, and not used.)
+let sy sine(cx)
+let cyaw sine(cx + 1.5707963267948966)
+let sp sine(cy)
+let cp sine(cy + 1.5707963267948966)
+let ex (span * cp * sy) as f32
+let ey (span * sp) as f32
+let ez (span * cp * cyaw) as f32
+let fx (0.0 - cp * sy) as f32
+let fy (0.0 - sp) as f32
+let fz (0.0 - cp * cyaw) as f32
+let rx cyaw as f32
+let ry: f32 0.0
+let rz (0.0 - sy) as f32
+let ux (0.0 - sy * sp) as f32
+let uy cp as f32
+let uz (0.0 - cyaw * sp) as f32
+let lx ((0.7 * (0.0 - sy * sp) + 0.4 * cyaw + 0.6 * cp * sy) * 0.9950371902099892) as f32
+let ly ((0.7 * cp + 0.6 * sp) * 0.9950371902099892) as f32
+let lz ((0.7 * (0.0 - cyaw * sp) - 0.4 * sy + 0.6 * cp * cyaw) * 0.9950371902099892) as f32
+
+; The width of a point and the top-left corner: of the plane, or in space
+; of the screen in front of the eye, at the distance 1 and 1.5 high.
+let space kind >= 11
+let step if space: 1.5 / (h as f64) else span / (w as f64)
+let x0 (if space: 0.0 - 0.75 * (w as f64) / (h as f64) else cx - span / 2.0) as f32
+let y0 (if space: 0.0 - 0.75 else cy - step * (h as f64) / 2.0) as f32
 let st step as f32
 
 var picture Vector[u32]((w * h) as size_t)
 print "picture at `picture.as_bytes().data as size_t`"
 let begun scaly_eio_now_ns()
 relaxed for p in w * h
-    picture.put(p as size_t, colour(p % w, p / w, turns, samples, kind, x0, y0, st))
+    picture.put(p as size_t, colour(p % w, p / w, turns, samples, kind, x0, y0, st, ex, ey, ez, fx, fy, fz, rx, ry, rz,
+                                    ux, uy, uz, lx, ly, lz))
 let took scaly_eio_now_ns() - begun
 if File.write_bytes("fractal.`w`x`h`.rgba", picture.as_bytes()) = false
     print "no picture written"

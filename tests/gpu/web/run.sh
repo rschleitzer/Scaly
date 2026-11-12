@@ -318,8 +318,8 @@ want = 4 if r['card'] else 2
 if len(r['runs']) != want:
     fails.append('%d runs, not %d' % (len(r['runs']), want))
 gallery = r.get('gallery') or []
-if len(gallery) != 10:
-    fails.append('%d other fractals in the self-test, not 10' % len(gallery))
+if len(gallery) != 15:
+    fails.append('%d other fractals in the self-test, not 15' % len(gallery))
 said = []
 for g in gallery:
     picture = os.path.join(cwd, 'fractal.%sx%s.rgba' % (g['args'][0], g['args'][1]))

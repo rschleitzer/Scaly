@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fractals in Scaly</title>
-<meta name="description" content="One Scaly program in the browser draws eleven fractals, on one core, on all of them and on the graphics card.">
+<meta name="description" content="One Scaly program in the browser draws sixteen fractals, in the plane and in space, on one core, on all of them and on the graphics card.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
 <style>
@@ -124,7 +124,7 @@
     <div class="under">
       <span id="where">−0.5 + 0i, 3 wide</span>
       <span class="spacer"></span>
-      <span data-t="gestures">Drag to move, scroll or pinch to zoom, double-click to zoom in.</span>
+      <span id="gestures">Drag to move, scroll or pinch to zoom, double-click to zoom in.</span>
       <a href="#" id="reset" data-t="reset">Reset the view</a>
     </div>
     <p class="note" id="deep" hidden data-t="deep">This deep, the 32-bit numbers the card computes with — and so the program on
@@ -172,8 +172,8 @@
 
   <section class="about">
     <h2 data-t="what">What runs here</h2>
-    <p data-h="about1">One Scaly program, compiled to WebAssembly, draws all eleven fractals — the arrows above the picture go
-      from one to the next. Its work is a single <code>for</code> over the points of the
+    <p data-h="about1">One Scaly program, compiled to WebAssembly, draws sixteen fractals — eleven in the plane, five in space; the
+      arrows above the picture go from one to the next. Its work is a single <code>for</code> over the points of the
       picture. Nothing in it says “in parallel” or “on the graphics card”: the rounds of the loop do not depend
       on each other, so the runtime may hand them to other cores; and its body is arithmetic on 32-bit numbers,
       so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what
@@ -199,6 +199,11 @@
       turns it took to run away — or, for Newton’s fractal, the Nova and the Magnet, to come to rest — but how far
       its last turn went beyond the bound, with a logarithm it writes itself in the four operations: a kernel on
       the card has no other. The palettes are the program’s own too, five colours each, blended point by point.</p>
+    <p data-h="about5">The five in space are drawn as a camera sees them: from the eye a ray goes through each point of the
+      picture, in steps, each as long as the fractal’s distance estimate says is free around it, until it meets
+      the surface. There the program works out the light — the surface’s slope from six more estimates, a soft
+      shadow towards the sun, how deep in a fold the place lies —, with a square root that, like the logarithm,
+      it writes itself. Drag to turn the camera round the fractal; zoom to come nearer.</p>
   </section>
 
   <section class="code">
@@ -214,7 +219,7 @@
       the page — for threads and for the card, as the original was. The first build loads the compiler (about
       8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the
       same arguments — width, height, iterations, the centre and width of the picture in billionths, and the
-      samples per side of a point and which fractal (0 to 10, in the order of the arrows) — and shows the picture it writes to a file whose name ends in
+      samples per side of a point and which fractal (0 to 15, in the order of the arrows; for one in space the centre and the width are the camera’s: its turn and its lift in radians, and how far it is) — and shows the picture it writes to a file whose name ends in
       <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>; where it prints <code>picture at</code> and the address of
       the picture in its memory before its loop, the page watches it grow. What else it prints appears under the
       buttons.</p>
@@ -253,6 +258,18 @@ const FRACTALS = [
     home: { cx: 1.3, cy: 0, span: 5 }, turns: 250 },
   { slug: 'lyapunov', en: 'Lyapunov’s Zircon City', de: 'Ljapunows Zircon City', map: 'x ↦ r x (1 − x), r: b⁶a⁶',
     home: { cx: 3.2, cy: 3.65, span: 1 }, turns: 100 },
+  // in space: the view is the camera's -- turned about the upright (cx),
+  // lifted (cy), and how far from the centre (span), not nearer than `near`
+  { slug: 'mandelbulb', en: 'The Mandelbulb', de: 'Die Mandelbulb', map: 'power 8, in space', space: true,
+    home: { cx: 0.6, cy: 0.4, span: 2.2 }, near: 1.25, turns: 200 },
+  { slug: 'mandelbox', en: 'The Mandelbox', de: 'Die Mandelbox', map: 'fold, fold, stretch by −2', space: true,
+    home: { cx: 0.7, cy: 0.5, span: 6 }, near: 3, turns: 200 },
+  { slug: 'menger', en: 'The Menger sponge', de: 'Der Menger-Schwamm', map: '20 of 27 cubes, again and again', space: true,
+    home: { cx: 0.6, cy: 0.5, span: 3.6 }, near: 1.8, turns: 200 },
+  { slug: 'sierpinski', en: 'The Sierpinski tetrahedron', de: 'Das Sierpinski-Tetraeder', map: '4 of 8 corners, again and again', space: true,
+    home: { cx: 0.5, cy: 0.55, span: 2.6 }, near: 1.8, turns: 200 },
+  { slug: 'quaternion', en: 'A quaternion Julia set', de: 'Eine Quaternionen-Julia-Menge', map: 'q ↦ q² − 0.125 − 0.256i + 0.847j + 0.0895k', space: true,
+    home: { cx: 0.9, cy: 0.3, span: 2.3 }, near: 1.4, turns: 200 },
 ];
 // the fractal a link names (?fractal=), else the Mandelbrot set
 let kind = Math.max(0, FRACTALS.findIndex(f => f.slug === new URLSearchParams(location.search).get('fractal')));
@@ -278,13 +295,17 @@ const TEXT = {
     allButton: "On all <span class=\"cpus\">your</span> cores<small>its loop on every one</small>",
     cardButton: "On the graphics card<small>its loop as a kernel</small>",
     autoButton: "Let Scaly decide<small>where it pays</small>",
-    about1: "One Scaly program, compiled to WebAssembly, draws all eleven fractals — the arrows above the picture go\n      from one to the next. Its work is a single <code>for</code> over the points of the\n      picture. Nothing in it says “in parallel” or “on the graphics card”: the rounds of the loop do not depend\n      on each other, so the runtime may hand them to other cores; and its body is arithmetic on 32-bit numbers,\n      so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what\n      the host gives the program — one core, all of them, the card — and the picture comes out the same.\n      <code>relaxed</code> before the loop allows the card's floating point, which rounds a little more loosely:\n      on the card some points come out a shade different — a few in a hundred in the Mandelbrot set, more\n      where a fractal is wilder, as the Burning Ship and Lyapunov’s —, and one on the very edge of a set may\n      fall to the other side. The table says how many.",
+    about1: "One Scaly program, compiled to WebAssembly, draws sixteen fractals — eleven in the plane, five in space; the\n      arrows above the picture go from one to the next. Its work is a single <code>for</code> over the points of the\n      picture. Nothing in it says “in parallel” or “on the graphics card”: the rounds of the loop do not depend\n      on each other, so the runtime may hand them to other cores; and its body is arithmetic on 32-bit numbers,\n      so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what\n      the host gives the program — one core, all of them, the card — and the picture comes out the same.\n      <code>relaxed</code> before the loop allows the card's floating point, which rounds a little more loosely:\n      on the card some points come out a shade different — a few in a hundred in the Mandelbrot set, more\n      where a fractal is wilder, as the Burning Ship and Lyapunov’s —, and one on the very edge of a set may\n      fall to the other side. The table says how many.",
     about2: "While it runs, the page reads the picture straight out of the program's memory, where its threads and the\n      card put the points, and paints what is there: one core goes row by row, all of them fill their parts of\n      the picture at once, and the card is done before the eye can follow. Each point is the average of several\n      places in it — nine unless you choose otherwise —, which smooths the edges and multiplies the work: enough\n      to see the difference, not only to read it.",
     about3: "“Let Scaly decide” gives the program both: the runtime measures the first rounds on the\n      processor, remembers how long each run on the cores took, and sends the loop to the card where that pays —\n      a small picture with few iterations may stay on the cores. The times are those of the loop alone, measured\n      by the program. The card needs its kernel compiled once — a browser translates it into the card's own\n      language, and Safari takes far longer for that than for a run —, so the page does that in the background\n      as soon as a program is loaded; where you are quicker, the table says how much of a time it was. The first\n      run on the cores includes starting their threads; a run on the cores whose picture you move or zoom away is\n      broken off.",
     about4: "The colours flow instead of standing in bands: for each place the program measures not only how many\n      turns it took to run away — or, for Newton’s fractal, the Nova and the Magnet, to come to rest — but how far\n      its last turn went beyond the bound, with a logarithm it writes itself in the four operations: a kernel on\n      the card has no other. The palettes are the program’s own too, five colours each, blended point by point.",
-    codeNote: "Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in\n      the page — for threads and for the card, as the original was. The first build loads the compiler (about\n      8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the\n      same arguments — width, height, iterations, the centre and width of the picture in billionths, and the\n      samples per side of a point and which fractal (0 to 10, in the order of the arrows) — and shows the picture it writes to a file whose name ends in\n      <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>; where it prints <code>picture at</code> and the address of\n      the picture in its memory before its loop, the page watches it grow. What else it prints appears under the\n      buttons.",
+    about5: "The five in space are drawn as a camera sees them: from the eye a ray goes through each point of the\n      picture, in steps, each as long as the fractal’s distance estimate says is free around it, until it meets\n      the surface. There the program works out the light — the surface’s slope from six more estimates, a soft\n      shadow towards the sun, how deep in a fold the place lies —, with a square root that, like the logarithm,\n      it writes itself. Drag to turn the camera round the fractal; zoom to come nearer.",
+    codeNote: "Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in\n      the page — for threads and for the card, as the original was. The first build loads the compiler (about\n      8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the\n      same arguments — width, height, iterations, the centre and width of the picture in billionths, and the\n      samples per side of a point and which fractal (0 to 15, in the order of the arrows; for one in space the centre and the width are the camera’s: its turn and its lift in radians, and how far it is) — and shows the picture it writes to a file whose name ends in\n      <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>; where it prints <code>picture at</code> and the address of\n      the picture in its memory before its loop, the page watches it grow. What else it prints appears under the\n      buttons.",
     chapter: 'The chapter on the card', playground: 'The playground', language: 'Language',
-    title: 'Fractals in Scaly', prev: 'The fractal before (←)', next: 'The next fractal (→)', gestures: 'Drag to move, scroll or pinch to zoom, double-click to zoom in.',
+    title: 'Fractals in Scaly', prev: 'The fractal before (←)', next: 'The next fractal (→)',
+    gestures3d: 'Drag to turn the camera, scroll or pinch to come nearer, double-click to come nearer.',
+    orbit: (turn, lift, far) => `turned ${turn}°, lifted ${lift}°, ${far} away`,
+    gestures: 'Drag to move, scroll or pinch to zoom, double-click to zoom in.',
     reset: 'Reset the view',
     deep: 'This deep, the 32-bit numbers the card computes with — and so the program on every engine — run out of digits: the picture turns to blocks.',
     same: 'Run the same program', iterations: 'Iterations', size: 'Size', samples: 'Samples per point',
@@ -319,13 +340,17 @@ const TEXT = {
     allButton: "Auf allen <span class=\"cpus\">deinen</span> Kernen<small>die Schleife auf jedem</small>",
     cardButton: "Auf der Grafikkarte<small>die Schleife als Kernel</small>",
     autoButton: "Lass Scaly entscheiden<small>wo es sich lohnt</small>",
-    about1: "Ein Scaly-Programm, nach WebAssembly übersetzt, zeichnet alle elf Fraktale — die Pfeile über dem Bild\n      führen von einem zum nächsten. Seine Arbeit ist ein einziges <code>for</code> über die\n      Punkte des Bildes. Nichts darin sagt „parallel“ oder „auf der Grafikkarte“: Die Runden der Schleife hängen\n      nicht voneinander ab, also darf die Laufzeit sie anderen Kernen geben; und ihr Rumpf rechnet mit\n      32-Bit-Zahlen, also schreibt der Compiler ihn auch als Kernel, den die Karte ausführen kann. Zwischen den\n      Knöpfen ändert sich nur, was der Host dem Programm gibt — einen Kern, alle, die Karte —, und das Bild kommt\n      gleich heraus. <code>relaxed</code> vor der Schleife erlaubt die Gleitkommazahlen der Karte, die etwas\n      lockerer runden: Auf der Karte kommen einige Punkte eine Nuance anders heraus — ein paar von hundert in der\n      Mandelbrot-Menge, mehr, wo ein Fraktal wilder ist, wie das brennende Schiff und Ljapunows —, und einer\n      ganz am Rand einer Menge kann auf die andere Seite fallen. Die Tabelle sagt, wie viele.",
+    about1: "Ein Scaly-Programm, nach WebAssembly übersetzt, zeichnet sechzehn Fraktale — elf in der Ebene, fünf im Raum;\n      die Pfeile über dem Bild führen von einem zum nächsten. Seine Arbeit ist ein einziges <code>for</code> über die\n      Punkte des Bildes. Nichts darin sagt „parallel“ oder „auf der Grafikkarte“: Die Runden der Schleife hängen\n      nicht voneinander ab, also darf die Laufzeit sie anderen Kernen geben; und ihr Rumpf rechnet mit\n      32-Bit-Zahlen, also schreibt der Compiler ihn auch als Kernel, den die Karte ausführen kann. Zwischen den\n      Knöpfen ändert sich nur, was der Host dem Programm gibt — einen Kern, alle, die Karte —, und das Bild kommt\n      gleich heraus. <code>relaxed</code> vor der Schleife erlaubt die Gleitkommazahlen der Karte, die etwas\n      lockerer runden: Auf der Karte kommen einige Punkte eine Nuance anders heraus — ein paar von hundert in der\n      Mandelbrot-Menge, mehr, wo ein Fraktal wilder ist, wie das brennende Schiff und Ljapunows —, und einer\n      ganz am Rand einer Menge kann auf die andere Seite fallen. Die Tabelle sagt, wie viele.",
     about2: "Während es läuft, liest die Seite das Bild direkt aus dem Speicher des Programms, wo seine Threads und\n      die Karte die Punkte ablegen, und malt, was schon da ist: Ein Kern geht Zeile für Zeile, alle Kerne füllen\n      ihre Teile des Bildes zugleich, und die Karte ist fertig, bevor das Auge folgen kann. Jeder Punkt ist der\n      Mittelwert mehrerer Stellen in ihm — neun, wenn du nichts anderes wählst —; das glättet die Kanten und\n      vervielfacht die Arbeit: genug, um den Unterschied zu sehen, nicht nur zu lesen.",
     about3: "„Lass Scaly entscheiden“ gibt dem Programm beides: Die Laufzeit misst die ersten Runden auf dem\n      Prozessor, merkt sich, wie lange jeder Lauf auf den Kernen gedauert hat, und schickt die Schleife zur Karte,\n      wo sich das lohnt — ein kleines Bild mit wenigen Iterationen kann auf den Kernen bleiben. Die Zeiten sind die\n      der Schleife allein, vom Programm gemessen. Die Karte braucht ihren Kernel einmal übersetzt — ein Browser\n      übersetzt ihn in die eigene Sprache der Karte, und Safari braucht dafür weit länger als für einen Lauf —,\n      also erledigt die Seite das im Hintergrund, sobald ein Programm geladen ist; wo du schneller bist, sagt die\n      Tabelle, wie viel einer Zeit es war. Der erste Lauf auf den Kernen enthält den Start ihrer Threads; ein Lauf\n      auf den Kernen, dessen Bild du wegschiebst oder wegzoomst, wird abgebrochen.",
     about4: "Die Farben fließen, statt in Bändern zu stehen: Für jede Stelle misst das Programm nicht nur, nach wie\n      vielen Runden sie davonlief — oder, beim Newton-Fraktal, bei Nova und Magnet, zur Ruhe kam —, sondern auch,\n      wie weit ihre letzte Runde über die Grenze hinausging, mit einem Logarithmus, den es selbst aus den vier\n      Grundrechenarten baut: Ein Kernel auf der Karte hat keinen anderen. Auch die Paletten sind die des Programms,\n      je fünf Farben, Punkt für Punkt gemischt.",
-    codeNote: "Ändere es und baue es: Der Scaly-Compiler, für WebAssembly gebaut, übersetzt deine Fassung hier in der\n      Seite — für Threads und für die Karte, wie das Original. Der erste Bau lädt den Compiler (etwa 8 MB);\n      danach dauert ein Bau einen Bruchteil einer Sekunde. Die Knöpfe oben führen dann deine Fassung aus. Sie\n      bekommt dieselben Argumente — Breite, Höhe, Iterationen, Mitte und Breite des Bildes in Milliardsteln und\n      die Abtastungen je Seite eines Punktes und welches Fraktal (0 bis 10, in der Reihenfolge der Pfeile) — und zeigt das Bild, das sie in eine Datei schreibt, deren Name auf\n      <code>.&lt;Breite&gt;x&lt;Höhe&gt;.rgba</code> endet; wo sie vor ihrer Schleife <code>picture at</code> und\n      die Adresse des Bildes in ihrem Speicher ausgibt, sieht die Seite ihm beim Wachsen zu. Was sie sonst\n      ausgibt, erscheint unter den Knöpfen.",
+    about5: "Die fünf im Raum werden gezeichnet, wie eine Kamera sie sieht: Vom Auge geht durch jeden Punkt des Bildes\n      ein Strahl, in Schritten, jeder so lang, wie die Abstandsschätzung des Fraktals frei um ihn herum sagt, bis er\n      die Oberfläche trifft. Dort rechnet das Programm das Licht aus — die Neigung der Oberfläche aus sechs\n      weiteren Schätzungen, einen weichen Schatten zur Sonne hin, wie tief in einer Falte die Stelle liegt —, mit\n      einer Quadratwurzel, die es wie den Logarithmus selbst baut. Ziehen dreht die Kamera um das\n      Fraktal, Zoomen bringt sie näher.",
+    codeNote: "Ändere es und baue es: Der Scaly-Compiler, für WebAssembly gebaut, übersetzt deine Fassung hier in der\n      Seite — für Threads und für die Karte, wie das Original. Der erste Bau lädt den Compiler (etwa 8 MB);\n      danach dauert ein Bau einen Bruchteil einer Sekunde. Die Knöpfe oben führen dann deine Fassung aus. Sie\n      bekommt dieselben Argumente — Breite, Höhe, Iterationen, Mitte und Breite des Bildes in Milliardsteln und\n      die Abtastungen je Seite eines Punktes und welches Fraktal (0 bis 15, in der Reihenfolge der Pfeile; bei einem im Raum sind Mitte und Breite die der Kamera: ihre Drehung und ihre Neigung im Bogenmaß und wie weit sie entfernt ist) — und zeigt das Bild, das sie in eine Datei schreibt, deren Name auf\n      <code>.&lt;Breite&gt;x&lt;Höhe&gt;.rgba</code> endet; wo sie vor ihrer Schleife <code>picture at</code> und\n      die Adresse des Bildes in ihrem Speicher ausgibt, sieht die Seite ihm beim Wachsen zu. Was sie sonst\n      ausgibt, erscheint unter den Knöpfen.",
     chapter: 'Das Kapitel über die Karte (englisch)', playground: 'Der Playground', language: 'Sprache',
-    title: 'Fraktale in Scaly', prev: 'Das Fraktal davor (←)', next: 'Das nächste Fraktal (→)', gestures: 'Ziehen verschiebt, Mausrad oder zwei Finger zoomen, Doppelklick zoomt hinein.',
+    title: 'Fraktale in Scaly', prev: 'Das Fraktal davor (←)', next: 'Das nächste Fraktal (→)',
+    gestures3d: 'Ziehen dreht die Kamera, Mausrad oder zwei Finger bringen sie näher, Doppelklick auch.',
+    orbit: (turn, lift, far) => `gedreht ${turn}°, geneigt ${lift}°, Abstand ${far}`,
+    gestures: 'Ziehen verschiebt, Mausrad oder zwei Finger zoomen, Doppelklick zoomt hinein.',
     reset: 'Ansicht zurücksetzen',
     deep: 'So tief gehen den 32-Bit-Zahlen, mit denen die Karte rechnet — und damit dem Programm auf jedem Weg —, die Stellen aus: Das Bild zerfällt in Blöcke.',
     same: 'Dasselbe Programm ausführen', iterations: 'Iterationen', size: 'Größe', samples: 'Abtastungen je Punkt',
@@ -435,9 +460,17 @@ function args() {
 function key() { return args().join(' '); }
 
 function describe() {
+  if (fractal().space) {
+    const deg = x => Math.round(x * 180 / Math.PI);
+    $('where').textContent = t('orbit')(deg(view.cx), deg(view.cy), view.span.toPrecision(3));
+    $('deep').hidden = true;
+    $('gestures').textContent = t('gestures3d');
+    return;
+  }
   const im = view.cy === 0 ? '0' : Math.abs(view.cy).toPrecision(6);
   $('where').textContent = t('wide')(view.cx.toPrecision(6), view.cy < 0 ? '−' : '+', im, view.span.toPrecision(3));
   $('deep').hidden = view.span / settings().w > 4e-7 * Math.max(1, Math.abs(view.cx), Math.abs(view.cy));
+  $('gestures').textContent = t('gestures');
 }
 
 // One run of the program: the page is the coordinator of its threads.
@@ -548,6 +581,9 @@ function frame(v, w, h) {
 
 // where a layer lies on the canvas in the current view
 function place(l) {
+  // in space a picture does not move with the camera: it stays until the
+  // next one covers it
+  if (fractal().space) return [0, 0, canvas.width, canvas.height];
   const f = frame(view, canvas.width, canvas.height), g = frame(l.view, l.w, l.h);
   const k = g.step / f.step;
   return [(g.x0 - f.x0) / f.step, (g.y0 - f.y0) / f.step, l.w * k, l.h * k];
@@ -811,6 +847,17 @@ function at(e) {
 // view, and not so narrow that the 32-bit numbers have nothing left to tell
 // apart
 function moved(start, from, to, factor) {
+  // in space: a drag turns the camera round the centre, a zoom brings it
+  // nearer
+  if (fractal().space) {
+    const f = fractal();
+    const turn = start.cx - (to.x - from.x) / canvas.width * Math.PI * 1.5;
+    return {
+      cx: Math.atan2(Math.sin(turn), Math.cos(turn)),
+      cy: Math.max(-1.45, Math.min(1.45, start.cy + (to.y - from.y) / canvas.height * Math.PI)),
+      span: Math.min(2 * f.home.span, Math.max(f.near, f.near + (start.span - f.near) * factor)),
+    };
+  }
   const f = frame(start, canvas.width, canvas.height);
   const px = f.x0 + from.x * f.step, py = f.y0 + from.y * f.step;
   const finest = canvas.width * 3e-8 * Math.max(1, Math.abs(px), Math.abs(py));
