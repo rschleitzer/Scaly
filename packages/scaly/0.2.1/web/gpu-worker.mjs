@@ -20,11 +20,17 @@
 //
 // The first message this worker posts says whether the page has a card:
 // { card: true | false }.
+//
+// A page that keeps its card while a program's worker is ended and made
+// again -- a run broken off -- makes this worker itself and hands each
+// program's worker one end of a MessageChannel, the other end here:
+// { port }. The port then carries the runs and the first answer, as the
+// worker's own messages do; the kernels compiled so far stay.
 import { Card } from './gpu.mjs';
 
 const opened = Card.open().catch(() => null);
 
-self.onmessage = async event => {
+async function serve(event) {
   const { wgsl, count, words, inputs, outputs, shared } = event.data;
   const state = new Int32Array(shared, 0, 2);
   let answer;
@@ -49,6 +55,13 @@ self.onmessage = async event => {
   }
   Atomics.store(state, 0, answer.ran ? 1 : answer.stopped ? 3 : 2);
   Atomics.notify(state, 0);
+}
+
+self.onmessage = event => {
+  const port = event.data && event.data.port;
+  if (!port) return serve(event);
+  port.onmessage = serve;
+  opened.then(card => port.postMessage({ card: card !== null }));
 };
 
 opened.then(card => self.postMessage({ card: card !== null }));

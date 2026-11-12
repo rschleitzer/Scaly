@@ -22,7 +22,9 @@
 // (no SharedArrayBuffer: the page must be served with
 // Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy:
 // require-corp), or where the browser has no WebGPU. Instead of a URL it
-// takes a Worker the page made from gpu-worker.mjs.
+// takes a Worker the page made from gpu-worker.mjs, or a MessagePort whose
+// other end the page handed such a worker ({ port }): the card then
+// outlives the program's worker.
 //
 // WHO DECIDES is this module, as the native host does (gpu_darwin.c, whose
 // account this follows line by line). `mode`:

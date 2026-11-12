@@ -5,10 +5,15 @@
 // worker of its own (gpu-host.mjs, gpu-worker.mjs), opened once and kept, so
 // that a kernel is compiled once.
 //
-//   { type: 'hello' }                    -> { type: 'ready', card }
+//   { type: 'hello', gpu }               -> { type: 'ready', card }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'watch', memory, address, width, height }, then
 //                                           { type: 'done', status, stdout, stderr, picture, cards, compiled }
+//
+// `gpu`, where given, is a MessagePort to the page's own card worker
+// (gpu-worker.mjs): the page ends this worker to break a run off and makes
+// another, and the card, its kernels compiled, stays. Without it this
+// worker opens a card of its own.
 //
 // `load` puts another module in the place of mandelbrot.wasm: the reader's
 // own version, built in the page (index.html). `threads` says whether it
@@ -29,13 +34,13 @@ import { GpuHost } from './gpu-host.mjs';
 let program = null;     // { bytes, module }
 let card;               // the GpuHost, or null where the page has no card
 
-async function prepare() {
+async function prepare(port) {
   if (!program) {
     const bytes = new Uint8Array(await (await fetch('mandelbrot.wasm')).arrayBuffer());
     program = { bytes, module: await WebAssembly.compile(bytes) };
   }
   if (card === undefined)
-    card = await GpuHost.open(new URL('./gpu-worker.mjs', import.meta.url), { mode: 'off' }).catch(() => null);
+    card = await GpuHost.open(port ?? new URL('./gpu-worker.mjs', import.meta.url), { mode: 'off' }).catch(() => null);
 }
 
 self.onmessage = async ({ data }) => {
@@ -44,7 +49,7 @@ self.onmessage = async ({ data }) => {
     self.postMessage({ type: 'loaded', threads: threadMemory(program.bytes) !== null });
     return;
   }
-  await prepare();
+  await prepare(data.gpu);
   if (data.type === 'hello') {
     self.postMessage({ type: 'ready', card: card !== null, threads: threadMemory(program.bytes) !== null });
     return;
