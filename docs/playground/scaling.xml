@@ -42,7 +42,7 @@ print "`w * h` points"</programlisting>
       and how opaque it is — and the picture goes into a file whose name says
       its size; the playground shows such a file. The
       <link xlink:href="https://scaly.io/play/fractals/">fractal
-      showcase</link> lets you zoom into it and ten more fractals, and race
+      showcase</link> lets you zoom into it and fifteen more fractals, and race
       the cores against the card.</para>
   </section>
 </chapter>
