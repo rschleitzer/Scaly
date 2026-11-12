@@ -28,6 +28,7 @@
   header h1 { font-size: 18px; margin: 0; }
   header .spacer { flex: 1; }
   header nav { display: flex; flex-wrap: wrap; gap: 16px; }
+  header select { padding: 2px 6px; }
   a { color: var(--accent); }
   header a { text-decoration: none; font-size: 14px; }
   main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
@@ -98,65 +99,69 @@
   <span class="spacer"></span>
   <nav>
     <a href="https://scaly.io/scaly/">Scaly</a>
-    <a href="https://scaly.io/lang/scaling-gpu.htm">The chapter on the card</a>
-    <a href="/play/playground.html">The playground</a>
+    <a href="https://scaly.io/lang/scaling-gpu.htm" data-t="chapter">The chapter on the card</a>
+    <a href="/play/playground.html" data-t="playground">The playground</a>
   </nav>
+  <select id="lang" aria-label="Language">
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+  </select>
 </header>
 <main>
   <section class="picture">
-    <canvas id="canvas" width="900" height="600" aria-label="The Mandelbrot set"></canvas>
+    <canvas id="canvas" width="900" height="600" aria-label="The Mandelbrot set" data-t-label="set"></canvas>
     <div class="under">
       <span id="where">−0.5 + 0i, 3 wide</span>
       <span class="spacer"></span>
-      <span>Drag to move, scroll or pinch to zoom, double-click to zoom in.</span>
-      <a href="#" id="reset">Reset the view</a>
+      <span data-t="gestures">Drag to move, scroll or pinch to zoom, double-click to zoom in.</span>
+      <a href="#" id="reset" data-t="reset">Reset the view</a>
     </div>
-    <p class="note" id="deep" hidden>This deep, the 32-bit numbers the card computes with — and so the program on
+    <p class="note" id="deep" hidden data-t="deep">This deep, the 32-bit numbers the card computes with — and so the program on
       every engine — run out of digits: the picture turns to blocks.</p>
   </section>
 
   <section class="side">
     <div>
-      <h2>Run the same program</h2>
+      <h2 data-t="same">Run the same program</h2>
       <div class="ways">
-        <button id="one" disabled>On one core<small>as a plain program runs</small></button>
-        <button id="all" disabled>On all <span class="cpus">your</span> cores<small>its loop on every one</small></button>
-        <button id="card" disabled>On the graphics card<small>its loop as a kernel</small></button>
-        <button id="auto" disabled>Let Scaly decide<small>where it pays</small></button>
+        <button id="one" disabled data-h="oneButton">On one core<small>as a plain program runs</small></button>
+        <button id="all" disabled data-h="allButton">On all <span class="cpus">your</span> cores<small>its loop on every one</small></button>
+        <button id="card" disabled data-h="cardButton">On the graphics card<small>its loop as a kernel</small></button>
+        <button id="auto" disabled data-h="autoButton">Let Scaly decide<small>where it pays</small></button>
       </div>
     </div>
     <div class="settings">
-      <label>Iterations <select id="turns">
+      <label><span data-t="iterations">Iterations</span> <select id="turns">
         <option>100</option><option>250</option><option selected>500</option><option>1000</option><option>2000</option>
       </select></label>
-      <label>Size <select id="size">
+      <label><span data-t="size">Size</span> <select id="size">
         <option value="600x400">600 × 400</option><option value="900x600" selected>900 × 600</option>
         <option value="1500x1000">1500 × 1000</option>
       </select></label>
-      <label title="How many places within a point are computed and averaged: smoother edges, and as many times the work">Samples per point <select id="samples">
+      <label title="How many places within a point are computed and averaged: smoother edges, and as many times the work" data-t-title="samplesTitle"><span data-t="samples">Samples per point</span> <select id="samples">
         <option value="1">1</option><option value="2">4</option><option value="3" selected>9</option><option value="4">16</option>
       </select></label>
     </div>
-    <button class="primary" id="race" disabled>Race them: 1, 2, 4 … cores, and the card</button>
+    <button class="primary" id="race" disabled data-t="race">Race them: 1, 2, 4 … cores, and the card</button>
     <div id="status">Loading…</div>
-    <pre id="output" hidden aria-label="What the program wrote"></pre>
+    <pre id="output" hidden aria-label="What the program wrote" data-t-label="wrote"></pre>
     <div>
-      <h2>Runs of this picture</h2>
+      <h2 data-t="runsOf">Runs of this picture</h2>
       <table>
-        <thead><tr><th>Where</th><th class="num">The loop</th><th></th><th class="num">Speedup</th><th>Picture</th></tr></thead>
+        <thead><tr><th data-t="thWhere">Where</th><th class="num" data-t="thLoop">The loop</th><th></th><th class="num" data-t="thSpeedup">Speedup</th><th data-t="thPicture">Picture</th></tr></thead>
         <tbody id="runs"><tr><td colspan="5" class="note">None yet.</td></tr></tbody>
       </table>
     </div>
     <div id="chartbox" hidden>
-      <h2>Speedup against cores</h2>
-      <svg id="chart" viewBox="0 0 360 220" role="img" aria-label="Speedup against the number of cores"></svg>
-      <p class="note">The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line.</p>
+      <h2 data-t="chartTitle">Speedup against cores</h2>
+      <svg id="chart" viewBox="0 0 360 220" role="img" aria-label="Speedup against the number of cores" data-t-label="chartLabel"></svg>
+      <p class="note" data-t="chartNote">The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line.</p>
     </div>
   </section>
 
   <section class="about">
-    <h2>What runs here</h2>
-    <p>One Scaly program, compiled to WebAssembly. Its work is a single <code>for</code> over the points of the
+    <h2 data-t="what">What runs here</h2>
+    <p data-h="about1">One Scaly program, compiled to WebAssembly. Its work is a single <code>for</code> over the points of the
       picture. Nothing in it says “in parallel” or “on the graphics card”: the rounds of the loop do not depend
       on each other, so the runtime may hand them to other cores; and its body is arithmetic on 32-bit numbers,
       so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what
@@ -164,29 +169,31 @@
       <code>relaxed</code> before the loop allows the card's floating point, which rounds a little more loosely:
       on the card some points come out a shade different — a few in a hundred where several samples make a
       point —, and one on the very edge of the set may fall to the other side. The table says how many.</p>
-    <p>While it runs, the page reads the picture straight out of the program's memory, where its threads and the
+    <p data-h="about2">While it runs, the page reads the picture straight out of the program's memory, where its threads and the
       card put the points, and paints what is there: one core goes row by row, all of them fill their parts of
       the picture at once, and the card is done before the eye can follow. Each point is the average of several
       places in it — nine unless you choose otherwise —, which smooths the edges and multiplies the work: enough
       to see the difference, not only to read it.</p>
-    <p>“Let Scaly decide” gives the program both: the runtime measures the first rounds on the processor and
-      sends the loop to the card where that pays — a small picture with few iterations may stay on the cores.
-      The times are those of the loop alone, measured by the program. The card needs its kernel compiled once —
-      a browser translates it into the card's own language, and Safari takes far longer for that than for a
-      run —, so the page does that in the background as soon as a program is loaded; where you are quicker, the
-      table says how much of a time it was. The first run on the cores includes starting their threads.</p>
+    <p data-h="about3">“Let Scaly decide” gives the program both: the runtime measures the first rounds on the
+      processor, remembers how long each run on the cores took, and sends the loop to the card where that pays —
+      a small picture with few iterations may stay on the cores. The times are those of the loop alone, measured
+      by the program. The card needs its kernel compiled once — a browser translates it into the card's own
+      language, and Safari takes far longer for that than for a run —, so the page does that in the background
+      as soon as a program is loaded; where you are quicker, the table says how much of a time it was. The first
+      run on the cores includes starting their threads; a run on the cores whose picture you move or zoom away is
+      broken off.</p>
   </section>
 
   <section class="code">
-    <h2>The program <span id="which">— the original</span></h2>
-    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="The program">Loading…</textarea>
+    <h2><span data-t="program">The program</span> <span id="which">— the original</span></h2>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="The program" data-t-label="program">Loading…</textarea>
     <div class="toolbar">
-      <button class="primary" id="build">Build my version</button>
-      <button id="original">Back to the original</button>
+      <button class="primary" id="build" data-t="build">Build my version</button>
+      <button id="original" data-t="original">Back to the original</button>
       <span id="buildstatus"></span>
     </div>
     <pre id="diagnostics" hidden></pre>
-    <p class="note">Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in
+    <p class="note" data-h="codeNote">Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in
       the page — for threads and for the card, as the original was. The first build loads the compiler (about
       8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the
       same arguments — width, height, iterations, the centre and width of the picture in billionths, and the
@@ -212,11 +219,144 @@ let compiler = null;      // the compiler for the page, once loaded: { module, f
 const runs = [];          // the runs of the current picture
 const selftest = new URLSearchParams(location.search).has('selftest');
 
-for (const e of document.querySelectorAll('.cpus')) e.textContent = String(cpus);
+// --- the language ----------------------------------------------------------
+// English or German, as the playground chooses it: ?lang=, else the switch
+// (kept in this browser for every page of the playground), else the first
+// of the browser's languages there is. The program stays as it is: its
+// names and words are the language's, English.
+const LANGS = ['en', 'de'];
+const TEXT = {
+  en: {
+    oneButton: "On one core<small>as a plain program runs</small>",
+    allButton: "On all <span class=\"cpus\">your</span> cores<small>its loop on every one</small>",
+    cardButton: "On the graphics card<small>its loop as a kernel</small>",
+    autoButton: "Let Scaly decide<small>where it pays</small>",
+    about1: "One Scaly program, compiled to WebAssembly. Its work is a single <code>for</code> over the points of the\n      picture. Nothing in it says “in parallel” or “on the graphics card”: the rounds of the loop do not depend\n      on each other, so the runtime may hand them to other cores; and its body is arithmetic on 32-bit numbers,\n      so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what\n      the host gives the program — one core, all of them, the card — and the picture comes out the same.\n      <code>relaxed</code> before the loop allows the card's floating point, which rounds a little more loosely:\n      on the card some points come out a shade different — a few in a hundred where several samples make a\n      point —, and one on the very edge of the set may fall to the other side. The table says how many.",
+    about2: "While it runs, the page reads the picture straight out of the program's memory, where its threads and the\n      card put the points, and paints what is there: one core goes row by row, all of them fill their parts of\n      the picture at once, and the card is done before the eye can follow. Each point is the average of several\n      places in it — nine unless you choose otherwise —, which smooths the edges and multiplies the work: enough\n      to see the difference, not only to read it.",
+    about3: "“Let Scaly decide” gives the program both: the runtime measures the first rounds on the\n      processor, remembers how long each run on the cores took, and sends the loop to the card where that pays —\n      a small picture with few iterations may stay on the cores. The times are those of the loop alone, measured\n      by the program. The card needs its kernel compiled once — a browser translates it into the card's own\n      language, and Safari takes far longer for that than for a run —, so the page does that in the background\n      as soon as a program is loaded; where you are quicker, the table says how much of a time it was. The first\n      run on the cores includes starting their threads; a run on the cores whose picture you move or zoom away is\n      broken off.",
+    codeNote: "Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in\n      the page — for threads and for the card, as the original was. The first build loads the compiler (about\n      8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the\n      same arguments — width, height, iterations, the centre and width of the picture in billionths, and the\n      samples per side of a point — and shows the picture it writes to a file whose name ends in\n      <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>; where it prints <code>picture at</code> and the address of\n      the picture in its memory before its loop, the page watches it grow. What else it prints appears under the\n      buttons.",
+    chapter: 'The chapter on the card', playground: 'The playground', language: 'Language',
+    set: 'The Mandelbrot set', gestures: 'Drag to move, scroll or pinch to zoom, double-click to zoom in.',
+    reset: 'Reset the view',
+    deep: 'This deep, the 32-bit numbers the card computes with — and so the program on every engine — run out of digits: the picture turns to blocks.',
+    same: 'Run the same program', iterations: 'Iterations', size: 'Size', samples: 'Samples per point',
+    samplesTitle: 'How many places within a point are computed and averaged: smoother edges, and as many times the work',
+    race: 'Race them: 1, 2, 4 … cores, and the card', wrote: 'What the program wrote', runsOf: 'Runs of this picture',
+    thWhere: 'Where', thLoop: 'The loop', thSpeedup: 'Speedup', thPicture: 'Picture', none: 'None yet.',
+    chartTitle: 'Speedup against cores', chartLabel: 'Speedup against the number of cores',
+    chartNote: 'The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line.',
+    chartCard: s => `the card: ${s}×`, chartCores: 'cores',
+    what: 'What runs here', program: 'The program', original: 'Back to the original', build: 'Build my version',
+    theOriginal: '— the original', yourVersion: 'your version',
+    loading: 'Loading…', ready: 'Ready.', preparing: 'Preparing the graphics card…',
+    oneCore: 'One core', cores: n => `${n} cores`, theCard: 'The card', decides: 'Scaly decides',
+    choseCard: 'Scaly chose the card', choseCores: n => `Scaly chose ${n} cores`, yours: ' (yours)',
+    ended: (what, s, err) => `${what}: the program ended with ${s} ${err}`,
+    compiling: ms => ` (${ms} of it compiling the kernel, once)`, theSame: 'the same', differ: n => `${n} points differ`,
+    wide: (cx, sign, im, span) => `${cx} ${sign} ${im}i, ${span} wide`,
+    needs: 'Loading what a build needs…', building: 'Building…', notBuilt: 'It did not build.',
+    compilerEnded: s => `the compiler ended with ${s}`,
+    built: (ms, threads) => `Built in ${ms} ms${threads ? '' : ' (without threads)'}.`,
+    cannotBuild: m => `Could not build: ${m}`,
+    isolation: 'This page needs a cross-origin isolated server (COOP and COEP): it shares memory between its threads.',
+    cannotStart: m => `Could not start the program: ${m}`,
+    noCard: 'This browser gives the page no graphics card (WebGPU).',
+    readyNoCard: 'Ready. This browser gives the page no graphics card (WebGPU): the card buttons rest.',
+  },
+  de: {
+    oneButton: "Auf einem Kern<small>wie ein gewöhnliches Programm</small>",
+    allButton: "Auf allen <span class=\"cpus\">deinen</span> Kernen<small>die Schleife auf jedem</small>",
+    cardButton: "Auf der Grafikkarte<small>die Schleife als Kernel</small>",
+    autoButton: "Lass Scaly entscheiden<small>wo es sich lohnt</small>",
+    about1: "Ein Scaly-Programm, nach WebAssembly übersetzt. Seine Arbeit ist ein einziges <code>for</code> über die\n      Punkte des Bildes. Nichts darin sagt „parallel“ oder „auf der Grafikkarte“: Die Runden der Schleife hängen\n      nicht voneinander ab, also darf die Laufzeit sie anderen Kernen geben; und ihr Rumpf rechnet mit\n      32-Bit-Zahlen, also schreibt der Compiler ihn auch als Kernel, den die Karte ausführen kann. Zwischen den\n      Knöpfen ändert sich nur, was der Host dem Programm gibt — einen Kern, alle, die Karte —, und das Bild kommt\n      gleich heraus. <code>relaxed</code> vor der Schleife erlaubt die Gleitkommazahlen der Karte, die etwas\n      lockerer runden: Auf der Karte kommen einige Punkte eine Nuance anders heraus — ein paar von hundert, wo\n      mehrere Abtastungen einen Punkt ergeben —, und einer ganz am Rand der Menge kann auf die andere Seite\n      fallen. Die Tabelle sagt, wie viele.",
+    about2: "Während es läuft, liest die Seite das Bild direkt aus dem Speicher des Programms, wo seine Threads und\n      die Karte die Punkte ablegen, und malt, was schon da ist: Ein Kern geht Zeile für Zeile, alle Kerne füllen\n      ihre Teile des Bildes zugleich, und die Karte ist fertig, bevor das Auge folgen kann. Jeder Punkt ist der\n      Mittelwert mehrerer Stellen in ihm — neun, wenn du nichts anderes wählst —; das glättet die Kanten und\n      vervielfacht die Arbeit: genug, um den Unterschied zu sehen, nicht nur zu lesen.",
+    about3: "„Lass Scaly entscheiden“ gibt dem Programm beides: Die Laufzeit misst die ersten Runden auf dem\n      Prozessor, merkt sich, wie lange jeder Lauf auf den Kernen gedauert hat, und schickt die Schleife zur Karte,\n      wo sich das lohnt — ein kleines Bild mit wenigen Iterationen kann auf den Kernen bleiben. Die Zeiten sind die\n      der Schleife allein, vom Programm gemessen. Die Karte braucht ihren Kernel einmal übersetzt — ein Browser\n      übersetzt ihn in die eigene Sprache der Karte, und Safari braucht dafür weit länger als für einen Lauf —,\n      also erledigt die Seite das im Hintergrund, sobald ein Programm geladen ist; wo du schneller bist, sagt die\n      Tabelle, wie viel einer Zeit es war. Der erste Lauf auf den Kernen enthält den Start ihrer Threads; ein Lauf\n      auf den Kernen, dessen Bild du wegschiebst oder wegzoomst, wird abgebrochen.",
+    codeNote: "Ändere es und baue es: Der Scaly-Compiler, für WebAssembly gebaut, übersetzt deine Fassung hier in der\n      Seite — für Threads und für die Karte, wie das Original. Der erste Bau lädt den Compiler (etwa 8 MB);\n      danach dauert ein Bau einen Bruchteil einer Sekunde. Die Knöpfe oben führen dann deine Fassung aus. Sie\n      bekommt dieselben Argumente — Breite, Höhe, Iterationen, Mitte und Breite des Bildes in Milliardsteln und\n      die Abtastungen je Seite eines Punktes — und zeigt das Bild, das sie in eine Datei schreibt, deren Name auf\n      <code>.&lt;Breite&gt;x&lt;Höhe&gt;.rgba</code> endet; wo sie vor ihrer Schleife <code>picture at</code> und\n      die Adresse des Bildes in ihrem Speicher ausgibt, sieht die Seite ihm beim Wachsen zu. Was sie sonst\n      ausgibt, erscheint unter den Knöpfen.",
+    chapter: 'Das Kapitel über die Karte (englisch)', playground: 'Der Playground', language: 'Sprache',
+    set: 'Die Mandelbrot-Menge', gestures: 'Ziehen verschiebt, Mausrad oder zwei Finger zoomen, Doppelklick zoomt hinein.',
+    reset: 'Ansicht zurücksetzen',
+    deep: 'So tief gehen den 32-Bit-Zahlen, mit denen die Karte rechnet — und damit dem Programm auf jedem Weg —, die Stellen aus: Das Bild zerfällt in Blöcke.',
+    same: 'Dasselbe Programm ausführen', iterations: 'Iterationen', size: 'Größe', samples: 'Abtastungen je Punkt',
+    samplesTitle: 'An wie vielen Stellen in einem Punkt gerechnet und gemittelt wird: glattere Kanten und entsprechend mehr Arbeit',
+    race: 'Wettlauf: 1, 2, 4 … Kerne und die Karte', wrote: 'Was das Programm ausgegeben hat', runsOf: 'Läufe dieses Bildes',
+    thWhere: 'Wo', thLoop: 'Die Schleife', thSpeedup: 'Beschleunigung', thPicture: 'Bild', none: 'Noch keine.',
+    chartTitle: 'Beschleunigung nach Kernen', chartLabel: 'Die Beschleunigung gegen die Zahl der Kerne',
+    chartNote: 'Die gestrichelte Linie ist die vollkommene Beschleunigung: doppelt so viele Kerne, halbe Zeit. Die Karte hat eine eigene Linie.',
+    chartCard: s => `die Karte: ${s}×`, chartCores: 'Kerne',
+    what: 'Was hier läuft', program: 'Das Programm', original: 'Zurück zum Original', build: 'Meine Fassung bauen',
+    theOriginal: '— das Original', yourVersion: 'deine Fassung',
+    loading: 'Lädt…', ready: 'Bereit.', preparing: 'Die Grafikkarte wird vorbereitet…',
+    oneCore: 'Ein Kern', cores: n => `${n} Kerne`, theCard: 'Die Karte', decides: 'Scaly entscheidet',
+    choseCard: 'Scaly wählte die Karte', choseCores: n => `Scaly wählte ${n} Kerne`, yours: ' (deine)',
+    ended: (what, s, err) => `${what}: Das Programm endete mit ${s} ${err}`,
+    compiling: ms => ` (davon ${ms} für das Übersetzen des Kernels, einmal)`, theSame: 'dasselbe', differ: n => `${n} Punkte weichen ab`,
+    wide: (cx, sign, im, span) => `${cx} ${sign} ${im}i, ${span} breit`,
+    needs: 'Lade, was ein Bau braucht…', building: 'Baue…', notBuilt: 'Es ließ sich nicht bauen.',
+    compilerEnded: s => `der Compiler endete mit ${s}`,
+    built: (ms, threads) => `Gebaut in ${ms} ms${threads ? '' : ' (ohne Threads)'}.`,
+    cannotBuild: m => `Bauen ging nicht: ${m}`,
+    isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt Speicher zwischen ihren Threads.',
+    cannotStart: m => `Das Programm ließ sich nicht starten: ${m}`,
+    noCard: 'Dieser Browser gibt der Seite keine Grafikkarte (WebGPU).',
+    readyNoCard: 'Bereit. Dieser Browser gibt der Seite keine Grafikkarte (WebGPU): Die Knöpfe der Karte ruhen.',
+  },
+};
+function storedLang() {
+  try { return localStorage.getItem('scaly-playground:lang'); } catch { return null; }
+}
+function chooseLang() {
+  const asked = new URLSearchParams(location.search).get('lang') ?? storedLang();
+  if (LANGS.includes(asked)) return asked;
+  for (const tag of navigator.languages ?? [navigator.language ?? 'en']) {
+    const primary = String(tag).toLowerCase().split('-')[0];
+    if (LANGS.includes(primary)) return primary;
+  }
+  return 'en';
+}
+let lang = chooseLang();
+const t = key => TEXT[lang][key];
+function translatePage() {
+  document.documentElement.lang = lang;
+  $('lang').value = lang;
+  $('lang').setAttribute('aria-label', t('language'));
+  for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-h]')) e.innerHTML = t(e.dataset.h);
+  for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
+  for (const e of document.querySelectorAll('[data-t-title]')) e.title = t(e.dataset.tTitle);
+  for (const e of document.querySelectorAll('.cpus')) e.textContent = String(cpus);
+  if (!hasCard && runner) $('card').title = $('auto').title = t('noCard');
+  which();
+  describe();
+  table();
+  chart();
+  if (said) $('status').textContent = said();
+}
+$('lang').onchange = () => {
+  lang = $('lang').value;
+  try { localStorage.setItem('scaly-playground:lang', lang); } catch {}
+  translatePage();
+};
 
-function status(text, bad = false) {
-  $('status').textContent = text;
+// the status: a key of TEXT, or a function saying it (asked again when the
+// language changes)
+let said = null;
+function status(what, bad = false) {
+  said = typeof what === 'function' ? what : () => t(what);
+  $('status').textContent = said();
   $('status').className = bad ? 'bad' : '';
+}
+
+// what a run is called: by its way, its cores, and what Scaly chose
+function label(r) {
+  const name = r.way === 'one' ? t('oneCore') : r.way === 'cores' ? t('cores')(r.workers)
+    : r.way === 'card' ? t('theCard') : r.done ? (r.cards > 0 ? t('choseCard') : t('choseCores')(cpus)) : t('decides');
+  return name + (r.yours ? t('yours') : '');
+}
+
+// which program the editor holds
+function which() {
+  if (version > 0) $('which').innerHTML = `— <span class="yours">${t('yourVersion')}</span>`;
+  else $('which').textContent = t('theOriginal');
 }
 
 function settings() {
@@ -235,16 +375,17 @@ function key() { return args().join(' '); }
 
 function describe() {
   const im = view.cy === 0 ? '0' : Math.abs(view.cy).toPrecision(6);
-  $('where').textContent = `${view.cx.toPrecision(6)} ${view.cy < 0 ? '−' : '+'} ${im}i, ${view.span.toPrecision(3)} wide`;
+  $('where').textContent = t('wide')(view.cx.toPrecision(6), view.cy < 0 ? '−' : '+', im, view.span.toPrecision(3));
   $('deep').hidden = view.span / settings().w > 4e-7 * Math.max(1, Math.abs(view.cx), Math.abs(view.cy));
 }
 
 // One run of the program: the page is the coordinator of its threads.
 // `seen` is the view the run draws; null for a run nobody watches.
-async function runOnce(label, workers, gpu, given = args(), seen = { ...view }) {
+async function runOnce(way, workers, gpu, given = args(), seen = { ...view }) {
   const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
   let resolve;
   const done = new Promise(r => { resolve = r; });
+  running = { gpu, resolve };
   const threads = await Threads.create({
     out: () => { }, err: () => { },
     exit: s => resolve({ status: String(s), stdout: '', picture: null, cards: 0 }),
@@ -258,10 +399,50 @@ async function runOnce(label, workers, gpu, given = args(), seen = { ...view }) 
   const t0 = performance.now();
   runner.postMessage({ type: 'run', args: given, env, gpu });
   const answer = await done;
+  running = null;
   threads.end();
   live = null;
+  // broken off: the runner was ended in the middle of the run (breakOff),
+  // and another one takes its place, with the program it ran
+  if (answer.broken) await startRunner();
   const ms = Number((/ms ([0-9.]+)/.exec(answer.stdout) || [])[1]);
-  return { label, workers, gpu, ms, wall: performance.now() - t0, ...answer };
+  return { way, workers, gpu, ms, wall: performance.now() - t0, ...answer };
+}
+
+// The runner: a worker that runs the program, made again where a run is
+// broken off -- the program's loop runs in it without returning to its
+// event loop, so ending the worker is the only way to stop it. The card
+// stays: its worker is the page's (gpu-worker.mjs), and each runner gets a
+// port to it.
+let gpuWorker = null;
+let myBytes = null;       // the reader's build, for a runner made again
+let running = null;       // the run under way: { gpu, resolve }
+function startRunner() {
+  runner = new Worker('runner.mjs', { type: 'module' });
+  let port = null;
+  if (navigator.gpu) {
+    gpuWorker ??= new Worker('gpu-worker.mjs', { type: 'module' });
+    const channel = new MessageChannel();
+    gpuWorker.postMessage({ port: channel.port1 }, [channel.port1]);
+    port = channel.port2;
+  }
+  return new Promise(resolve => {
+    runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data); };
+    runner.onerror = e => resolve({ failed: e.message || 'the worker did not start' });
+    runner.postMessage({ type: 'hello', gpu: port }, port ? [port] : []);
+  }).then(async ready => {
+    if (!ready.failed && version > 0 && myBytes) await load(myBytes.slice());
+    return ready;
+  });
+}
+
+// Break the run under way off -- one on the cores: the card's are done
+// sooner than another runner is made.
+function breakOff() {
+  if (!running || running.gpu !== 'off') return false;
+  runner.terminate();
+  running.resolve({ broken: true, status: 'broken off', stdout: '', picture: null, cards: 0 });
+  return true;
 }
 
 // --- the picture -----------------------------------------------------------
@@ -360,7 +541,7 @@ function table() {
   const body = $('runs');
   body.textContent = '';
   if (!runs.length) {
-    body.innerHTML = '<tr><td colspan="5" class="note">None yet.</td></tr>';
+    body.innerHTML = `<tr><td colspan="5" class="note">${t('none')}</td></tr>`;
     return;
   }
   const one = runs.find(r => r.workers === 1 && r.gpu === 'off');
@@ -368,12 +549,12 @@ function table() {
   for (const r of runs) {
     const tr = document.createElement('tr');
     const td = (text, cls = '') => { const c = document.createElement('td'); c.className = cls; c.textContent = text; tr.appendChild(c); return c; };
-    td(r.label);
+    td(label(r));
     td(Number.isFinite(r.ms) ? `${r.ms < 10 ? r.ms.toFixed(1) : Math.round(r.ms)} ms` : r.status, 'num');
     if (r.compiled >= 1) {
       const note = document.createElement('small');
       note.className = 'note';
-      note.textContent = ` (${Math.round(r.compiled)} of it compiling the kernel, once)`;
+      note.textContent = t('compiling')(Math.round(r.compiled));
       tr.lastChild.appendChild(note);
     }
     const bar = td('', 'bar');
@@ -383,7 +564,7 @@ function table() {
     bar.appendChild(span);
     td(one && r.ms ? `${(one.ms / r.ms).toFixed(1)}×` : '', 'num');
     const d = r.differ;
-    td(d === null ? '' : d === 0 ? 'the same' : `${d} points differ`, d === 0 ? 'same' : 'differs');
+    td(d === null ? '' : d === 0 ? t('theSame') : t('differ')(d), d === 0 ? 'same' : 'differs');
     body.appendChild(tr);
   }
 }
@@ -413,9 +594,9 @@ function chart() {
   if (cardRun) {
     const s = speed(cardRun);
     parts.push(`<line class="cardline" x1="${L}" y1="${y(s)}" x2="${L + W}" y2="${y(s)}"/>`);
-    parts.push(`<text class="cardtext" x="${L + W}" y="${y(s) - 5}" text-anchor="end">the card: ${s.toFixed(0)}×</text>`);
+    parts.push(`<text class="cardtext" x="${L + W}" y="${y(s) - 5}" text-anchor="end">${t('chartCard')(s.toFixed(0))}</text>`);
   }
-  parts.push(`<text x="${L + W / 2}" y="${B + 24}" text-anchor="middle">cores</text>`);
+  parts.push(`<text x="${L + W / 2}" y="${B + 24}" text-anchor="middle">${t('chartCores')}</text>`);
   svg.innerHTML = parts.join('');
 }
 
@@ -431,15 +612,16 @@ async function go(list) {
   const k = key() + ' ' + version;
   if (runs.key !== k) { runs.length = 0; runs.key = k; }
   try {
-    for (const [label, workers, gpu] of list) {
-      status(`${label}…`);
+    for (const [way, workers, gpu] of list) {
+      status(() => label({ way, workers, yours: version > 0 }) + '…');
       const given = args(), seen = { ...view };
       drawn = key();
-      const r = await runOnce(label, workers, gpu, given, seen);
-      if (r.status !== '0') { status(`${label}: the program ended with ${r.status} ${r.stderr || ''}`, true); break; }
+      const r = await runOnce(way, workers, gpu, given, seen);
+      if (r.broken) { drawn = ''; break; }
+      if (r.status !== '0') { status(() => t('ended')(label(r), r.status, r.stderr || ''), true); break; }
       r.differ = differing(r.picture);
-      if (r.gpu === 'auto') r.label = r.cards > 0 ? 'Scaly chose the card' : `Scaly chose ${cpus} cores`;
-      if (version > 0) r.label += ' (yours)';
+      r.done = true;
+      r.yours = version > 0;
       if (r.differ === null && r.workers === 1 && r.gpu === 'off') r.differ = 0;   // the picture the others are held against
       runs.push(r);
       finish(r.picture, r.width, r.height, seen);
@@ -449,7 +631,7 @@ async function go(list) {
       table();
       chart();
     }
-    if (!$('status').classList.contains('bad')) status('Ready.');
+    if (!$('status').classList.contains('bad')) status('ready');
   } finally {
     setBusy(false);
     redraw();
@@ -457,10 +639,10 @@ async function go(list) {
   if (pending) settle(true);
 }
 
-const ONE = ['One core', 1, 'off'];
-const ALL = [`${cpus} cores`, cpus, 'off'];
-const CARD = ['The card', cpus, 'on'];
-const AUTO = ['Scaly decides', cpus, 'auto'];
+const ONE = ['one', 1, 'off'];
+const ALL = ['cores', cpus, 'off'];
+const CARD = ['card', cpus, 'on'];
+const AUTO = ['auto', cpus, 'auto'];
 
 // the way chosen last: a moved or zoomed picture is drawn that way too
 let chosen = null;
@@ -471,7 +653,7 @@ $('card').onclick = choose(CARD);
 $('auto').onclick = choose(AUTO);
 $('race').onclick = () => {
   const list = [ONE];
-  for (let n = 2; n < cpus; n *= 2) list.push([`${n} cores`, n, 'off']);
+  for (let n = 2; n < cpus; n *= 2) list.push(['cores', n, 'off']);
   if (cpus > 1) list.push(ALL);
   if (hasCard) list.push(CARD);
   go(list);
@@ -522,7 +704,9 @@ function settle(now = false) {
   clearTimeout(resting);
   resting = setTimeout(() => {
     if (key() === drawn && !pending) return;
-    if (busy) { pending = true; return; }
+    // a run on the cores for a view that is gone is broken off; the new
+    // view is drawn when the runner is back
+    if (busy) { pending = true; breakOff(); return; }
     pending = false;
     go([chosen ?? (hasCard ? AUTO : ALL)]);
   }, now ? 0 : 250);
@@ -615,7 +799,7 @@ async function selfTest() {
     const t0 = performance.now();
     const ok = await buildMine([ALL]);
     const mine = runs.find(r => r.workers === cpus && r.gpu === 'off');
-    built = { ok, ms: Math.round(performance.now() - t0), status: mine?.status ?? null, label: mine?.label ?? null,
+    built = { ok, ms: Math.round(performance.now() - t0), status: mine?.status ?? null, label: mine ? label(mine) : null,
               diagnostics: $('diagnostics').hidden ? '' : $('diagnostics').textContent, buildstatus: $('buildstatus').textContent,
               same: !!(mine && before && mine.picture && before.picture && mine.picture.length === before.picture.length &&
                        mine.picture.every((b, i) => b === before.picture[i])) };
@@ -625,7 +809,7 @@ async function selfTest() {
     built.broken_said = $('diagnostics').hidden ? '' : $('diagnostics').textContent;
   }
   const report = { cpus, card: hasCard, args: args(), hash, built,
-                   runs: runs.map(({ label, workers, gpu, ms, status, cards, differ }) => ({ label, workers, gpu, ms, status, cards, differ })) };
+                   runs: runs.map(r => ({ label: label(r), workers: r.workers, gpu: r.gpu, ms: r.ms, status: r.status, cards: r.cards, differ: r.differ })) };
   await fetch('/result', { method: 'POST', body: JSON.stringify(report) });
 }
 
@@ -643,8 +827,8 @@ function buildStatus(text, bad = false) {
 async function loadBuilder() {
   if (compiler) return compiler;
   const { loadCompiler } = await import('../load.mjs');
-  const loaded = await loadCompiler(text => buildStatus(text), { base: '../' });
-  buildStatus('Loading what a build needs…');
+  const loaded = await loadCompiler(text => buildStatus(text), { base: '../', lang });
+  buildStatus(t('needs'));
   const listing = await (await fetch('../playground.json')).json();
   for (const [path, b64] of Object.entries(listing))
     loaded.files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -685,11 +869,11 @@ function buildInPage(text) {
 // thing; the threads start with every run.)
 async function warm() {
   if (!hasCard) return;
-  const was = $('status').textContent;
-  status('Preparing the graphics card…');
+  const was = said;
+  status('preparing');
   const [, , turns, cx, cy, span] = args();
   await runOnce('warm', 1, 'on', ['16', '16', turns, cx, cy, span], null).catch(() => null);
-  status(was);
+  if (was) status(was);
 }
 
 // the module to run, into the runner: the reader's, or the original's
@@ -706,22 +890,23 @@ async function buildMine(then = [ALL]) {
   $('diagnostics').hidden = true;
   try {
     await loadBuilder();
-    buildStatus('Building…');
+    buildStatus(t('building'));
     const t0 = performance.now();
     const built = await buildInPage($('editor').value);
     if (built.status !== 0 || !built.bytes) {
-      buildStatus('It did not build.', true);
-      $('diagnostics').textContent = built.said.trim() || `the compiler ended with ${built.status}`;
+      buildStatus(t('notBuilt'), true);
+      $('diagnostics').textContent = built.said.trim() || t('compilerEnded')(built.status);
       $('diagnostics').hidden = false;
       return false;
     }
+    myBytes = built.bytes.slice();
     const loaded = await load(built.bytes);
     await warm();
     version++;
-    $('which').innerHTML = '— <span class="yours">your version</span>';
-    buildStatus(`Built in ${Math.round(performance.now() - t0)} ms${loaded.threads ? '' : ' (without threads)'}.`);
+    which();
+    buildStatus(t('built')(Math.round(performance.now() - t0), loaded.threads));
   } catch (e) {
-    buildStatus(`Could not build: ${e.message || e}`, true);
+    buildStatus(t('cannotBuild')(e.message || e), true);
     return false;
   } finally {
     setBusy(false);
@@ -745,7 +930,8 @@ $('original').onclick = async () => {
     setBusy(false);
   }
   version = 0;
-  $('which').textContent = '— the original';
+  myBytes = null;
+  which();
   $('diagnostics').hidden = true;
   buildStatus('');
   go([ALL]);
@@ -758,27 +944,23 @@ $('editor').onkeydown = e => {
   }
 };
 
-fetch('mandelbrot.scaly').then(r => r.text()).then(t => { original = t; $('editor').value = t; }).catch(() => { });
-describe();
+fetch('mandelbrot.scaly').then(r => r.text()).then(text => { original = text; $('editor').value = text; }).catch(() => { });
+translatePage();
+status('loading');
 if (!crossOriginIsolated) {
-  status('This page needs a cross-origin isolated server (COOP and COEP): it shares memory between its threads.', true);
+  status('isolation', true);
 } else {
-  runner = new Worker('runner.mjs', { type: 'module' });
-  const ready = await new Promise(resolve => {
-    runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data); };
-    runner.onerror = e => resolve({ failed: e.message || 'the worker did not start' });
-    runner.postMessage({ type: 'hello' });
-  });
+  const ready = await startRunner();
   if (ready.failed) {
-    status(`Could not start the program: ${ready.failed}`, true);
+    status(() => t('cannotStart')(ready.failed), true);
   } else {
     hasCard = ready.card;
-    if (!hasCard) $('card').title = $('auto').title = 'This browser gives the page no graphics card (WebGPU).';
+    if (!hasCard) $('card').title = $('auto').title = t('noCard');
     await warm();
     setBusy(false);
     if (selftest) await selfTest();
     else await go([ALL]);
-    if (!hasCard) status('Ready. This browser gives the page no graphics card (WebGPU): the card buttons rest.');
+    if (!hasCard) status('readyNoCard');
   }
 }
 </script>

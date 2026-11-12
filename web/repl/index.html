@@ -24,7 +24,10 @@
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
+  h1 { font-size: 22px; margin: 0; }
+  .top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; margin: 0 0 4px; }
+  select { font: inherit; font-size: 14px; padding: 3px 6px; border-radius: 6px;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
   p.lead { margin: 0 0 20px; color: var(--muted); }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
             padding: 14px; margin-bottom: 16px; }
@@ -59,8 +62,15 @@
 </head>
 <body>
 <main>
-  <h1>The Scaly REPL in the page</h1>
-  <p class="lead">The Scaly compiler and LLVM, compiled to WebAssembly, running in this browser tab.
+  <div class="top">
+    <h1 data-t="title">The Scaly REPL in the page</h1>
+    <span class="spacer"></span>
+    <select id="lang" aria-label="Language">
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+    </select>
+  </div>
+  <p class="lead" data-h="lead">The Scaly compiler and LLVM, compiled to WebAssembly, running in this browser tab.
   Each entry is compiled to a WebAssembly module and loaded into the REPL's own memory, so what an
   entry binds is there for the next one. Nothing leaves the page. New to Scaly? Start in
   the <a href="playground.html">Scaly Playground</a>, watch one loop run on one core, on all of them and on the
@@ -70,16 +80,16 @@
     <div class="row">
       <div class="chips" id="chips"></div>
       <span class="spacer"></span>
-      <button id="restart" disabled>Restart</button>
-      <button id="clear">Clear</button>
+      <button id="restart" disabled data-t="restart">Restart</button>
+      <button id="clear" data-t="clear">Clear</button>
     </div>
     <div id="term">
       <pre id="out"></pre>
       <div class="prompt"><pre id="tail"></pre><input id="line" type="text" spellcheck="false"
-        autocomplete="off" autocapitalize="off" aria-label="Input to the REPL" disabled></div>
+        autocomplete="off" autocapitalize="off" aria-label="Input to the REPL" data-t-label="input" disabled></div>
     </div>
     <p class="hint"><span id="status">Loading…</span></p>
-    <p class="hint">Enter sends a line; an open brace continues the entry on the next one. Up and down
+    <p class="hint" data-h="hint">Enter sends a line; an open brace continues the entry on the next one. Up and down
     walk the lines sent before. <code>:help</code> lists the REPL's commands.</p>
   </section>
 </main>
@@ -93,6 +103,77 @@ const line = document.getElementById('line');
 const statusEl = document.getElementById('status');
 const restartButton = document.getElementById('restart');
 
+// --- the language: English or German, as the playground chooses it (?lang=,
+// the switch -- kept in this browser for every page of the playground --,
+// else the first of the browser's languages there is)
+const LANGS = ['en', 'de'];
+const TEXT = {
+  en: {
+    page: 'Scaly REPL', title: 'The Scaly REPL in the page', language: 'Language',
+    lead: `The Scaly compiler and LLVM, compiled to WebAssembly, running in this browser tab.
+  Each entry is compiled to a WebAssembly module and loaded into the REPL's own memory, so what an
+  entry binds is there for the next one. Nothing leaves the page. New to Scaly? Start in
+  the <a href="playground.html">Scaly Playground</a>, watch one loop run on one core, on all of them and on the
+  graphics card in the <a href="mandelbrot/">Mandelbrot showcase</a>, or read <a href="https://scaly.io/scaly/">about the language</a>.`,
+    hint: `Enter sends a line; an open brace continues the entry on the next one. Up and down
+    walk the lines sent before. <code>:help</code> lists the REPL's commands.`,
+    restart: 'Restart', clear: 'Clear', input: 'Input to the REPL',
+    loading: 'Loading…', working: 'Working…', ready: 'Ready.', starting: 'Starting the session…',
+    ended: 'The session ended.', cannot: m => `Could not load the REPL: ${m}`,
+    exitNote: s => `\n[the session ended with status ${s} -- Restart begins a new one]\n`,
+    crashNote: t => `\n[the session stopped: ${t} -- Restart begins a new one]\n`,
+    workerNote: m => `\n[the worker failed: ${m}]\n`,
+  },
+  de: {
+    page: 'Scaly-REPL', title: 'Die Scaly-REPL in der Seite', language: 'Sprache',
+    lead: `Der Scaly-Compiler und LLVM, nach WebAssembly übersetzt, laufen in diesem Browser-Tab.
+  Jede Eingabe wird zu einem WebAssembly-Modul übersetzt und in den Speicher der REPL geladen: Was eine
+  Eingabe bindet, ist für die nächste da. Nichts verlässt die Seite. Neu bei Scaly? Fang im
+  <a href="playground.html">Scaly Playground</a> an, sieh im <a href="mandelbrot/">Mandelbrot-Showcase</a> zu, wie
+  eine Schleife auf einem Kern, auf allen und auf der Grafikkarte läuft, oder lies
+  <a href="https://scaly.io/scaly/">über die Sprache</a> (englisch).`,
+    hint: `Enter schickt eine Zeile ab; eine offene geschweifte Klammer setzt die Eingabe in der nächsten
+    fort. Pfeil hoch und runter gehen durch die Zeilen, die du schon geschickt hast. <code>:help</code> zeigt
+    die Befehle der REPL.`,
+    restart: 'Neu starten', clear: 'Leeren', input: 'Eingabe an die REPL',
+    loading: 'Lädt…', working: 'Arbeitet…', ready: 'Bereit.', starting: 'Die Sitzung startet…',
+    ended: 'Die Sitzung ist zu Ende.', cannot: m => `Die REPL ließ sich nicht laden: ${m}`,
+    exitNote: s => `\n[die Sitzung endete mit Status ${s} -- Neu starten beginnt eine neue]\n`,
+    crashNote: t => `\n[die Sitzung ist stehen geblieben: ${t} -- Neu starten beginnt eine neue]\n`,
+    workerNote: m => `\n[der Worker ist fehlgeschlagen: ${m}]\n`,
+  },
+};
+function storedLang() {
+  try { return localStorage.getItem('scaly-playground:lang'); } catch { return null; }
+}
+function chooseLang() {
+  const asked = new URLSearchParams(location.search).get('lang') ?? storedLang();
+  if (LANGS.includes(asked)) return asked;
+  for (const tag of navigator.languages ?? [navigator.language ?? 'en']) {
+    const primary = String(tag).toLowerCase().split('-')[0];
+    if (LANGS.includes(primary)) return primary;
+  }
+  return 'en';
+}
+let lang = chooseLang();
+const t = key => TEXT[lang][key];
+const langSwitch = document.getElementById('lang');
+function translatePage() {
+  document.documentElement.lang = lang;
+  document.title = t('page');
+  langSwitch.value = lang;
+  langSwitch.setAttribute('aria-label', t('language'));
+  for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-h]')) e.innerHTML = t(e.dataset.h);
+  for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
+  if (statusKey) status(statusKey, statusEl.className);
+}
+langSwitch.onchange = () => {
+  lang = langSwitch.value;
+  try { localStorage.setItem('scaly-playground:lang', lang); } catch {}
+  translatePage();
+};
+
 const EXAMPLES = [
   'let x 41',
   'function sq(n: int) returns int n * n',
@@ -104,8 +185,12 @@ const EXAMPLES = [
   '"x is `x`"',
 ];
 
+// the status by its key in TEXT (kept, so that a switch of the language
+// says it again), or a text as it is
+let statusKey = 'loading';
 function status(text, kind = '') {
-  statusEl.textContent = text;
+  statusKey = text in TEXT.en ? text : '';
+  statusEl.textContent = statusKey ? t(statusKey) : text;
   statusEl.className = kind;
 }
 
@@ -163,7 +248,7 @@ function feed() {
   bytes.set(b.subarray(0, n));
   state[1] = n;
   wants = false;
-  status('Working…');
+  status('working');
   Atomics.store(state, 0, 1);
   Atomics.notify(state, 0);
 }
@@ -190,28 +275,28 @@ function start() {
       case 'wants':
         wants = true;
         line.disabled = false;
-        status('Ready.', 'ok');
+        status('ready', 'ok');
         feed();
         break;
       case 'exit':
-        append(`\n[the session ended with status ${data.status} -- Restart begins a new one]\n`, 'note');
+        append(t('exitNote')(data.status), 'note');
         end();
         break;
       case 'crash':
-        append(`\n[the session stopped: ${data.text} -- Restart begins a new one]\n`, 'err');
+        append(t('crashNote')(data.text), 'err');
         end();
         break;
     }
   };
   worker.onerror = e => {
-    append(`\n[the worker failed: ${e.message}]\n`, 'err');
+    append(t('workerNote')(e.message), 'err');
     end();
   };
   worker.postMessage({ module, files, stdin });
   restartButton.disabled = false;
   line.disabled = false;
   line.focus();
-  status('Starting the session…');
+  status('starting');
 }
 
 function end() {
@@ -219,7 +304,7 @@ function end() {
   worker = null;
   wants = false;
   line.disabled = true;
-  status('The session ended.', 'bad');
+  status('ended', 'bad');
 }
 
 restartButton.onclick = () => {
@@ -273,12 +358,13 @@ for (const example of EXAMPLES) {
 
 async function load() {
   try {
-    ({ module, files } = await loadCompiler(text => status(text)));
+    ({ module, files } = await loadCompiler(text => status(text), { lang }));
     start();
   } catch (e) {
-    status(`Could not load the REPL: ${e.message}`, 'bad');
+    status(t('cannot')(e.message), 'bad');
   }
 }
+translatePage();
 load();
 </script>
 </body>

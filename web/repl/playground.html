@@ -614,7 +614,7 @@ $('lang').onchange = async () => {
 };
 await loadSteps();
 try {
-  compiler = await loadCompiler(text => status(text));
+  compiler = await loadCompiler(text => status(text), { lang });
   runButton.disabled = false;
   status(t('ready'), 'ok');
 } catch (e) {
