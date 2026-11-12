@@ -126,7 +126,8 @@ struct gpu_site
     int measured;                     /* runs that count: 0 none, 1 the first (a kernel's first run is slow), 2 measured */
     unsigned long long cards, card_rounds, kept, stops;
     double kept_ns;                   /* the processor's time for what was kept here */
-    double cpu_round_ns;              /* the processor's time for a round, as it took (0: not told yet) */
+    double cpu_round_ns;              /* ONE core's time for a round, as it took (0: not told yet) */
+    long long gate_workers;           /* the cores the gate last spoke of: a kept run's time is theirs */
     unsigned long long kept_since;    /* runs kept since the card last ran */
     double card_ns, in_ns, run_ns, out_ns;
     struct gpu_site *next;
@@ -1082,10 +1083,11 @@ static int gpu_pays(struct gpu_site *site, long long count, long long per1k, lon
     if (site->compiled == 2 || site->stopped)
         return 0;
     double left = (double)(count - done);
-    double cpu_ns = left * ((double)per1k / 1024.0) / (double)(workers > 0 ? workers : 1);
+    double cores = (double)(workers > 0 ? workers : 1);
+    double cpu_ns = left * ((double)per1k / 1024.0) / cores;
     /* what the processor took for a round the last times it was kept */
     if (site->cpu_round_ns > 0)
-        cpu_ns = left * site->cpu_round_ns;
+        cpu_ns = left * site->cpu_round_ns / cores;
     double gpu_ns;
     if (site->measured == 1)
         return 1;                     /* tried once: the run that measures comes now */
@@ -1126,7 +1128,8 @@ void scaly_gpu_kept(const char *source, const char *wgsl, const char *where, lon
     struct gpu_site *site = gpu_site_of(source, where);
     if (site)
     {
-        double round = (double)ns / (double)rounds;
+        /* shared out over the cores the gate spoke of: one core's time */
+        double round = (double)ns / (double)rounds * (double)(site->gate_workers > 1 ? site->gate_workers : 1);
         site->cpu_round_ns = site->cpu_round_ns > 0 ? (site->cpu_round_ns + round) / 2 : round;
     }
     pthread_mutex_unlock(&gpu_sites_lock);
@@ -1154,6 +1157,8 @@ int scaly_gpu_run(const char *source, const char *wgsl, long long count,
     if (site)
         site->webgpu = gpu_backend == 1;
     int take = site != 0;
+    if (take && at_gate)
+        site->gate_workers = workers;
     if (take && at_gate && !gpu_pays(site, count, per1k, done, workers))
     {
         site->kept++;

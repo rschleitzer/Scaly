@@ -35,6 +35,13 @@
 //           at this loop before, against the processor's for what is left.
 //           A loop the card has not run is tried where the work left
 //           outweighs a compilation and a call; that run is the measurement.
+//           The processor's side is measured too: every run a gate kept
+//           tells how long the rest took -- in any mode, a run on the cores
+//           alone as well, since the processor is the same --, and that,
+//           shared out over the cores the gate spoke of, is what the card is
+//           weighed against from then on. (The first rounds alone, which the
+//           gate measured, can be far cheaper than the rest: the top rows of
+//           a Mandelbrot picture.)
 //
 // `mode` may be changed between two runs of a program, and during one.
 // `trace`, a function, is told one line per run or refusal.
@@ -121,7 +128,8 @@ export class GpuHost {
         compile_ns: 0,             // of card_ns: compiling the kernel, once
         kept: 0, stops: 0,
         kept_ns: 0,                // the processor's work this loop brought to the gate and kept
-        cpu_round_ns: 0,           // the processor's time for a round, as it took (0: not told yet)
+        cpu_round_ns: 0,           // ONE core's time for a round, as it took (0: not told yet)
+        gate_workers: 0,           // the cores the gate last spoke of: a kept run's time is theirs
         kept_since: 0,             // runs kept since the card last ran
       };
       this.sites.set(key, site);
@@ -133,9 +141,10 @@ export class GpuHost {
   pays(site, count, per1k, done, workers) {
     if (site.refused || site.stopped) return false;
     const left = count - done;
-    let cpu_ns = left * (per1k / 1024) / (workers > 0 ? workers : 1);
+    const cores = workers > 0 ? workers : 1;
+    let cpu_ns = left * (per1k / 1024) / cores;
     // what the processor took for a round the last times it was kept
-    if (site.cpu_round_ns > 0) cpu_ns = left * site.cpu_round_ns;
+    if (site.cpu_round_ns > 0) cpu_ns = left * site.cpu_round_ns / cores;
     if (site.measured === 1) return true;      // tried once: the run that measures comes now
     let gpu_ns;
     if (site.measured) {
@@ -155,11 +164,13 @@ export class GpuHost {
     return false;
   }
 
-  // A loop a gate kept is through: `rounds` of it took the processor `ns`.
+  // A loop a gate kept is through: `rounds` of it took the processor `ns`,
+  // on the cores the gate spoke of. In every mode: the processor is the
+  // same, and the runs on the cores are what teaches the next 'auto' one.
   kept(memory, wgsl_at, where_at, rounds, ns) {
-    if (this.mode !== 'auto' || !(rounds > 0) || !(ns > 0)) return;
+    if (!(rounds > 0) || !(ns > 0)) return;
     const site = this.site(memory, wgsl_at, where_at);
-    const round = ns / rounds;
+    const round = ns / rounds * Math.max(1, site.gate_workers);
     site.cpu_round_ns = site.cpu_round_ns > 0 ? (site.cpu_round_ns + round) / 2 : round;
   }
 
@@ -170,6 +181,9 @@ export class GpuHost {
     const i64 = at => Number(view.getBigInt64(request + at, true));
     const per1k = i64(40);
     const at_gate = per1k > 0;
+    // the cores the gate speaks of, whatever it decides: a kept run's time
+    // is shared by them (kept)
+    if (at_gate && !this.lost) this.site(memory, u32(0), u32(4)).gate_workers = i64(56);
     // off: nowhere. on: at the head, which has asked already where this is
     // the gate. Otherwise: at the gate.
     if (this.lost || this.mode === 'off' || (this.mode === 'on') === at_gate) return 0;
