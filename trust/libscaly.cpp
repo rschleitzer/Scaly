@@ -2839,6 +2839,7 @@ void TcpServer_shutdown(TcpServer&) asm("_ZN9TcpServer8shutdownEv");
 void TcpServer_stop(TcpServer&) asm("_ZN9TcpServer4stopEv");
 void TcpServer_wait(TcpServer&) asm("_ZN9TcpServer4waitEv");
 String svg_text(scaly_frame*, String&) asm("_Z8svg_textPN4scaly6memory4PageE6String");
+String Drawing_attribute(scaly_frame*, String&) asm("_ZN7Drawing9attributeEPN4scaly6memory4PageE6String");
 void Drawing_line(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4lineEiiii6String");
 void Drawing_circle(Drawing&, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing6circleEiii6String");
 void Drawing_rect(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4rectEiiii6String");
@@ -12276,6 +12277,12 @@ __attribute__((weak)) String svg_text(scaly_frame* scaly_rp, String& text)
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String Drawing_attribute(scaly_frame* scaly_rp, String& text)
+{
+    return svg_text(scaly_rp, text);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
 __attribute__((weak)) void Drawing_line(Drawing& scaly_self, int64_t x1, int64_t y1, int64_t x2, int64_t y2, String& colour)
 {
     Drawing* this_ = &scaly_self;
@@ -12317,7 +12324,7 @@ __attribute__((weak)) void Drawing_circle(Drawing& scaly_self, int64_t x, int64_
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 r=\042"}));
             StringBuilder_append8((*isb$), (radius));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
-            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue((Drawing_attribute(&scaly_local.f, colour))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004\042/>\012"}));
             scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }

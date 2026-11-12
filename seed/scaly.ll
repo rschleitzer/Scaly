@@ -39381,12 +39381,18 @@ match.next12:                                     ; preds = %match.next7
   br label %match.end
 }
 
+define linkonce_odr void @_ZN7Drawing9attributeEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
+entry:
+  %call = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %1, ptr %2)
+  store %_Z6String %call, ptr %0, align 1
+  ret void
+}
+
 define linkonce_odr void @_ZN7Drawing4lineEiiii6String(ptr %0, i64 %1, i64 %2, i64 %3, i64 %4, ptr %5) {
 entry:
   %sret.result = alloca %_Z6String, align 8
   %arg.tmp7 = alloca { ptr }, align 8
   %arg.tmp6 = alloca %_Z6String, align 8
-  %tuple = alloca %_Z6String, align 8
   %arg.tmp5 = alloca { ptr }, align 8
   %arg.tmp4 = alloca { ptr }, align 8
   %arg.tmp3 = alloca { ptr }, align 8
@@ -39424,10 +39430,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store { ptr } { ptr @.sconst.255 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp5)
   %call = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %frame, ptr %5)
-  %tuple.field = getelementptr inbounds nuw %_Z6String, ptr %tuple, i32 0, i32 0
-  store %_Z6String %call, ptr %tuple.field, align 1
-  %tuple.val = load %_Z6String, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp6, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  store %_Z6String %call, ptr %arg.tmp6, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp6)
   store { ptr } { ptr @.sconst.256 }, ptr %arg.tmp7, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp7)
@@ -39439,10 +39442,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 define linkonce_odr void @_ZN7Drawing6circleEiii6String(ptr %0, i64 %1, i64 %2, i64 %3, ptr %4) {
 entry:
+  %sret.result6 = alloca %_Z6String, align 8
+  %arg.tmp5 = alloca { ptr }, align 8
   %sret.result = alloca %_Z6String, align 8
-  %arg.tmp6 = alloca { ptr }, align 8
-  %arg.tmp5 = alloca %_Z6String, align 8
-  %tuple = alloca %_Z6String, align 8
   %arg.tmp4 = alloca { ptr }, align 8
   %arg.tmp3 = alloca { ptr }, align 8
   %arg.tmp2 = alloca { ptr }, align 8
@@ -39475,16 +39477,12 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region, i64 %3)
   store { ptr } { ptr @.sconst.260 }, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp4)
-  %call = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %frame, ptr %4)
-  %tuple.field = getelementptr inbounds nuw %_Z6String, ptr %tuple, i32 0, i32 0
-  store %_Z6String %call, ptr %tuple.field, align 1
-  %tuple.val = load %_Z6String, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp5, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7Drawing9attributeEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %sret.result, ptr %frame, ptr %4)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
+  store { ptr } { ptr @.sconst.261 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp5)
-  store { ptr } { ptr @.sconst.261 }, ptr %arg.tmp6, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp6)
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %frame, ptr %struct.region)
-  call void @_ZN13StringBuilder6appendE6String(ptr %field.inplace, ptr %sret.result)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result6, ptr %frame, ptr %struct.region)
+  call void @_ZN13StringBuilder6appendE6String(ptr %field.inplace, ptr %sret.result6)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -39494,7 +39492,6 @@ entry:
   %sret.result = alloca %_Z6String, align 8
   %arg.tmp7 = alloca { ptr }, align 8
   %arg.tmp6 = alloca %_Z6String, align 8
-  %tuple = alloca %_Z6String, align 8
   %arg.tmp5 = alloca { ptr }, align 8
   %arg.tmp4 = alloca { ptr }, align 8
   %arg.tmp3 = alloca { ptr }, align 8
@@ -39532,10 +39529,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store { ptr } { ptr @.sconst.266 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp5)
   %call = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %frame, ptr %5)
-  %tuple.field = getelementptr inbounds nuw %_Z6String, ptr %tuple, i32 0, i32 0
-  store %_Z6String %call, ptr %tuple.field, align 1
-  %tuple.val = load %_Z6String, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp6, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  store %_Z6String %call, ptr %arg.tmp6, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp6)
   store { ptr } { ptr @.sconst.267 }, ptr %arg.tmp7, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp7)
@@ -39548,12 +39542,10 @@ frame.forced:                                     ; preds = %frame.force, %entry
 define linkonce_odr void @_ZN7Drawing4textEii6String6String(ptr %0, i64 %1, i64 %2, ptr %3, ptr %4) {
 entry:
   %sret.result = alloca %_Z6String, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
-  %arg.tmp10 = alloca %_Z6String, align 8
-  %tuple7 = alloca %_Z6String, align 8
+  %arg.tmp8 = alloca { ptr }, align 8
+  %arg.tmp7 = alloca %_Z6String, align 8
   %arg.tmp5 = alloca { ptr }, align 8
   %arg.tmp4 = alloca %_Z6String, align 8
-  %tuple = alloca %_Z6String, align 8
   %arg.tmp3 = alloca { ptr }, align 8
   %arg.tmp2 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
@@ -39583,21 +39575,15 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store { ptr } { ptr @.sconst.270 }, ptr %arg.tmp3, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp3)
   %call = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %frame, ptr %4)
-  %tuple.field = getelementptr inbounds nuw %_Z6String, ptr %tuple, i32 0, i32 0
-  store %_Z6String %call, ptr %tuple.field, align 1
-  %tuple.val = load %_Z6String, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp4, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  store %_Z6String %call, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp4)
   store { ptr } { ptr @.sconst.271 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp5)
   %call6 = call %_Z6String @_Z8svg_textPN4scaly6memory4PageE6String(ptr %frame, ptr %3)
-  %tuple.field8 = getelementptr inbounds nuw %_Z6String, ptr %tuple7, i32 0, i32 0
-  store %_Z6String %call6, ptr %tuple.field8, align 1
-  %tuple.val9 = load %_Z6String, ptr %tuple7, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp10, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp10)
-  store { ptr } { ptr @.sconst.272 }, ptr %arg.tmp11, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp11)
+  store %_Z6String %call6, ptr %arg.tmp7, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp7)
+  store { ptr } { ptr @.sconst.272 }, ptr %arg.tmp8, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp8)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %frame, ptr %struct.region)
   call void @_ZN13StringBuilder6appendE6String(ptr %field.inplace, ptr %sret.result)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
