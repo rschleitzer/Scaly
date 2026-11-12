@@ -436,7 +436,7 @@ function bulb(px: f32, py: f32, pz: f32, trap: bool) returns f32
     var dz: f32 1.0
     var near m
     var i: i32 0
-    while i < 6 and m <= 256.0
+    while i < 10 and m <= 256.0
     {
         dz := 8.0 * m * m * m * root(m) * dz + 1.0
         let x2 x * x
@@ -657,7 +657,7 @@ function ray(kind: i32, re: f32, im: f32, turns: i32, pix: f32, ex: f32, ey: f32
     while k < turns and not hit and t < 40.0
     {
         let d field(kind, ex + t * dx, ey + t * dy, ez + t * dz, false)
-        if d < 0.5 * pix * t + 0.00001
+        if d < 0.5 * pix * t + 0.0000001
             hit := true
         else
             t := t + d
@@ -673,7 +673,7 @@ function ray(kind: i32, re: f32, im: f32, turns: i32, pix: f32, ex: f32, ey: f32
     let y ey + t * dy
     let z ez + t * dz
     ; the slope of the surface: the normal, from the distances around
-    let e most(pix * t, 0.00002)
+    let e most(pix * t, 0.0000002)
     let nx0 field(kind, x + e, y, z, false) - field(kind, x - e, y, z, false)
     let ny0 field(kind, x, y + e, z, false) - field(kind, x, y - e, z, false)
     let nz0 field(kind, x, y, z + e, false) - field(kind, x, y, z - e, false)
@@ -686,7 +686,7 @@ function ray(kind: i32, re: f32, im: f32, turns: i32, pix: f32, ex: f32, ey: f32
     var j: i32 1
     while j <= 5
     {
-        let h 0.02 * (j as f32) * most(t * 0.3, 0.1)
+        let h 2.5 * (j as f32) * e
         ao := ao - (h - field(kind, x + nx * h, y + ny * h, z + nz * h, false)) / h * 0.12
         j := j + 1
     }
@@ -773,6 +773,17 @@ function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0
     0xFF000000 | ((b / n) << 16) | ((g / n) << 8) | (r / n)
 }
 
+; How near the eye may come to the centre of a fractal in space: about where
+; its surface begins.
+function nearest(kind: i32) returns f64
+{
+    if kind = 11: 1.25
+    else if kind = 12: 3.0
+    else if kind = 13: 1.8
+    else if kind = 14: 1.8
+    else 1.4
+}
+
 ; The sine, from its series, in double precision -- for the camera, outside
 ; the loop; the same on every engine.
 function sine(x: f64) returns f64
@@ -823,13 +834,18 @@ if samples < 1
 ; cy lifts it, span is how far it is --, looking at the centre: forward f,
 ; the screen's right r and up u; the light comes from above, a little right
 ; and from the eye's side. (Worked out for the plane as well, and not used.)
+; Nearer than `nearest` the eye would be inside the fractal: there it stays,
+; and a smaller span narrows what it sees instead -- a longer lens.
+let near nearest(kind)
+let far if span > near: span else near
+let narrow if span < near: span / near else 1.0
 let sy sine(cx)
 let cyaw sine(cx + 1.5707963267948966)
 let sp sine(cy)
 let cp sine(cy + 1.5707963267948966)
-let ex (span * cp * sy) as f32
-let ey (span * sp) as f32
-let ez (span * cp * cyaw) as f32
+let ex (far * cp * sy) as f32
+let ey (far * sp) as f32
+let ez (far * cp * cyaw) as f32
 let fx (0.0 - cp * sy) as f32
 let fy (0.0 - sp) as f32
 let fz (0.0 - cp * cyaw) as f32
@@ -844,11 +860,12 @@ let ly ((0.7 * cp + 0.6 * sp) * 0.9950371902099892) as f32
 let lz ((0.7 * (0.0 - cyaw * sp) - 0.4 * sy + 0.6 * cp * cyaw) * 0.9950371902099892) as f32
 
 ; The width of a point and the top-left corner: of the plane, or in space
-; of the screen in front of the eye, at the distance 1 and 1.5 high.
+; of the screen in front of the eye, at the distance 1 and 1.5 high -- less
+; through a longer lens.
 let space kind >= 11
-let step if space: 1.5 / (h as f64) else span / (w as f64)
-let x0 (if space: 0.0 - 0.75 * (w as f64) / (h as f64) else cx - span / 2.0) as f32
-let y0 (if space: 0.0 - 0.75 else cy - step * (h as f64) / 2.0) as f32
+let step if space: 1.5 * narrow / (h as f64) else span / (w as f64)
+let x0 (if space: 0.0 - 0.75 * narrow * (w as f64) / (h as f64) else cx - span / 2.0) as f32
+let y0 (if space: 0.0 - 0.75 * narrow else cy - step * (h as f64) / 2.0) as f32
 let st step as f32
 
 var picture Vector[u32]((w * h) as size_t)
