@@ -329,6 +329,10 @@ for g in gallery:
     subprocess.run([program] + g['args'], cwd=cwd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if g['status'] != '0':
         fails.append('%s: ended with %s' % (g['slug'], g['status']))
+    elif not g['args'][2].isdigit() or int(g['args'][2]) < 1:
+        fails.append('%s: the page asked for %r turns' % (g['slug'], g['args'][2]))
+    elif g.get('colours', 0) < 200:
+        fails.append('%s: a picture of %s colours -- of nothing' % (g['slug'], g.get('colours')))
     elif not os.path.exists(picture) or g['hash'] != fnv(picture):
         fails.append('%s, one core: the picture is not the native program\'s' % g['slug'])
     c = g.get('card')
