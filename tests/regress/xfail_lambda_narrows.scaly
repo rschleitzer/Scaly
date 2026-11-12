@@ -1,0 +1,11 @@
+; Regression (2026-11-12): a lambda made the closure of a delegate returns
+; what the delegate declares -- its body's value is judged as a routine's
+; implicit return is. `x * 2` is an int; the delegate answers an i32, and
+; the closure cut it down at rc 0.
+;
+; xfail: the returned value narrows int into i32
+
+define IntFn delegate(int) returns i32
+let g: IntFn \x: x * 2
+if g(3000000000) = 1705032704
+    print "PASS"

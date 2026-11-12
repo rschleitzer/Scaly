@@ -9348,6 +9348,33 @@ define Planner
             found
         }
 
+        ; concept_needs_this_residency# for a concept named anywhere, whatever
+        ; is visible where it is asked
+        procedure concept_any_needs_residency(mutable this: Planner, name: String) returns bool
+        {
+            let concept_ref this.lookup_concept_any(name)
+            if concept_ref = null
+                return false
+            let c (*concept_ref)
+            if Planner.attributes_have(c.attributes, "resident")
+                return true
+            var found: bool false
+            choose c.definition
+                when s: Structure
+                {
+                    found := this.structure_init_has_this_alloc(s)
+                    if found = false
+                        found := this.structure_members_have_this_alloc(s)
+                    if found = false
+                        found := this.structure_fields_need_residency(s, 0)
+                    if found = false
+                        found := this.structure_init_stores_build(s)
+                }
+                else
+                    0
+            found
+        }
+
         ; structure_fields_need_residency#: a record holding a page-resident
         ; value BY VALUE (`define Bag (var items: Array[int])`) is resident
         ; itself: the field's methods derive their page from the field's
@@ -13404,7 +13431,7 @@ define Planner
                 }
             }
             var lc_at_vec Vector[PlannedType](lc_arg_types)
-            let lc_mono this.monomorphize_lambda(lc_name, lc_lam, lc_at_vec)
+            let lc_mono this.monomorphize_lambda(lc_name, lc_lam, lc_at_vec, null)
             let lc_mangled lc_mono.mangled
             ; Prepend the captured values (looked up at the call site, where they
             ; are in scope) as leading arguments — they map to the synthesized
@@ -26547,7 +26574,12 @@ define Planner
         ; intercept in collapse_operand_sequence#). Cached per mangled name
         ; via has_recorded_function so repeated calls with identical arg
         ; types reuse the same function.
-        procedure monomorphize_lambda(mutable this: Planner, base_name: String, mutable lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
+        ; `declared`: the result a delegate declares where the lambda is made
+        ; its closure (make_closure#), null for a lambda called where it is
+        ; bound -- its body's value is judged against it as a routine's
+        ; implicit return is (report_return_narrowing#): `\x: x * 2` for a
+        ; `delegate(int) returns i32` narrowed the int at rc 0 (2026-11-10).
+        procedure monomorphize_lambda(mutable this: Planner, base_name: String, mutable lam: Lambda, arg_types: Vector[PlannedType], declared: ref[PlannedType]?) returns LambdaMonoResult
         {
             ; ---- Pass 1: discover captures. Plan the body in a scope with the
             ; lambda's own params defined; the enclosing scope is still on the
@@ -26762,10 +26794,50 @@ define Planner
             }
             let planned_body this.plan_action(lam.body)
             this.pop_scope()
+            var body_action planned_body
+            var body_rt planned_body.result_type
+            if declared <> null and planned_body.source <> null
+            {
+                let body_ops (*planned_body.source)
+                let n_body body_ops.length
+                if n_body > 0
+                {
+                    let last_ptr body_ops.get(n_body - 1)
+                    if last_ptr <> null
+                    {
+                        let last (*last_ptr)
+                        this.report_return_narrowing((*declared), last)
+                        ; ... and it answers the delegate's own integer type: the
+                        ; thunk calls it with that result. `\x: 7` for a
+                        ; `delegate(int) returns i32` answered an i64, and the
+                        ; call through the i32 signature was `bitcast_invalid` --
+                        ; unreachable -- on wasm32 (native truncated it in the
+                        ; register, 2026-11-12). A constant takes the type, a
+                        ; narrower value widens by its signedness.
+                        if Planner.is_integer_type(Planner.normalize_type_name((*declared).name)) and Planner.is_integer_type(Planner.normalize_type_name(last.result_type.name))
+                        {
+                            var conv this.narrow_constant_integer_operand((*declared), last)
+                            conv := this.widen_integer_operand((*declared), conv)
+                            var body_src Vector[PlannedOperand](n_body)
+                            var bi: size_t 0
+                            while bi + 1 < n_body
+                            {
+                                let bp body_ops.get bi
+                                if bp <> null
+                                    body_src.put(bi, (*bp))
+                                bi := bi + 1
+                            }
+                            body_src.put(n_body - 1, conv)
+                            body_action := PlannedAction(planned_body.loc, &body_src, planned_body.target, (*declared))
+                            body_rt := (*declared)
+                        }
+                    }
+                }
+            }
 
             var items_holder Vector[PlannedItem](item_arr)
             var rt_holder Vector[PlannedType](1)
-            rt_holder.put(0, planned_body.result_type)
+            rt_holder.put(0, body_rt)
             let synth_fn PlannedFunction(
                 lam.span,
                 false,
@@ -26777,7 +26849,7 @@ define Planner
                 rt_holder.get(0),
                 null,
                 Lifetime.Unspecified(Unspecified()),
-                PlannedImplementation.Action(planned_body),
+                PlannedImplementation.Action(body_action),
                 null,
                 false,
                 false,
@@ -26803,7 +26875,7 @@ define Planner
         ; lifetime (local region, or `#` caller page when the closure escapes).
         procedure make_closure(mutable this: Planner, base_name: String, mutable lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
         {
-            let mono this.monomorphize_lambda(base_name, lam, dparams)
+            let mono this.monomorphize_lambda(base_name, lam, dparams, &dret)
             var cap_ops Array[PlannedOperand]()
             var cap_tys Array[PlannedType]()
             if mono.captures <> null
@@ -43731,7 +43803,15 @@ define Planner
                         return false
                     choose inner.expr
                         when v: Variable
-                            return this.concept_needs_this_residency(v.variable_type.name)
+                        {
+                            if this.concept_needs_this_residency(v.variable_type.name)
+                                return true
+                            ; the escape check runs where the record's name
+                            ; may not be visible (`repl.process(…, &probe, …)`
+                            ; with a ReplProbe of repl.scaly): the emitter
+                            ; hosts it all the same
+                            return this.concept_any_needs_residency(v.variable_type.name)
+                        }
                         else
                             return false
                 }
@@ -46408,6 +46488,8 @@ define Planner
             var has_receiver false
             var receiver String("")
             var qual_used String("")
+            ; `module.f(...)`: a free function of that module, no receiver
+            var module_call false
             choose (*op_ptr).expression
                 when ty: scalyc.compiler.Model.Type
                 {
@@ -46445,6 +46527,25 @@ define Planner
                                         }
                                     if ty.name.length = 2 and owner_name.get_length() = 0
                                         owner_name := this.persist_this_field_concept((*hp0))
+                                    ; ... and where the head is none of those,
+                                    ; a MODULE: `repl.flatten(…)` is the free
+                                    ; function the module `repl` owns. Read as a
+                                    ; receiver, it asked the union of every
+                                    ; `flatten` -- a method of another concept
+                                    ; that keeps its argument among them -- and
+                                    ; took the receiver's slot for its first
+                                    ; argument (2026-11-11)
+                                    if ty.name.length = 2 and owner_name.get_length() = 0 and (*hp0) <> "this"
+                                        if Planner.persist_names_contain(persistence.persist_locals, (*hp0)) = false
+                                            if Planner.persist_names_contain(persistence.persist_pnames, (*hp0)) = false
+                                            {
+                                                let mq "`(*hp0)`.`(*lastp)`"
+                                                if Planner.gi_find(gate.deep_idx.by_name, mq) >= 0 or Planner.gi_find(gate.deep_idx.qualified, mq) >= 0
+                                                {
+                                                    owner_name := (*hp0)
+                                                    module_call := true
+                                                }
+                                            }
                                 }
                                 if owner_name.get_length() > 0
                                 {
@@ -46518,7 +46619,7 @@ define Planner
                         let hp ty.name.get 0
                         if hp <> null
                         {
-                            if this.name_is_capitalized((*hp)) = false
+                            if this.name_is_capitalized((*hp)) = false and module_call = false
                             {
                                 has_receiver := true
                                 receiver := (*hp)

@@ -1,0 +1,54 @@
+; Regression (2026-11-12): a METHOD's name decided what the escape checker
+; believed of a free function of that name. `shapes.flatten(…)` -- a function
+; of the namespace `shapes`, calling itself -- was read as a call on a
+; RECEIVER named `shapes`: the checker asked the union of every `flatten`,
+; `Keeper.flatten` among them, which keeps its argument, and took the
+; receiver's slot for the first argument. The free function was then
+; believed to keep `probe` beyond its frame: rc 4 at the call in `run`,
+; gone when the method was renamed (seen in the compiler: `repl.flatten`
+; beside `TaskPlanner.flatten`, 2026-11-11).
+
+define Probe
+(
+    var names: Array[String]
+    var it_type: String
+)
+
+define shapes
+{
+    procedure flatten(probe: ref[Probe], t: String, depth: int, mutable out: ref[Array[String]])
+    {
+        var i: size_t 0
+        while i < probe.names.length
+        {
+            let n probe.names.at i
+            i := i + 1
+            out.add(String(n))
+            if depth < 2
+                shapes.flatten(probe, t, depth + 1, out)
+        }
+    }
+}
+
+define Keeper
+(
+    var kept: Array[String]
+)
+{
+    procedure flatten(mutable this, op: String)
+        kept.add op
+}
+
+procedure run()
+{
+    var probe Probe(Array[String](), String())
+    probe.names.add(String("a"))
+    var rows Array[String]()
+    shapes.flatten(&probe, String("a"), 0, &rows)
+    if rows.length = 3
+        print "PASS"
+    else
+        print "FAIL"
+}
+
+run()

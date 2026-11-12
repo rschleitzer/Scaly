@@ -1,0 +1,12 @@
+; Regression (2026-11-12), the twin of xfail_lambda_narrows: a lambda
+; literal handed straight to a delegate parameter.
+;
+; xfail: the returned value narrows int into i32
+
+define IntFn delegate(int) returns i32
+
+function apply(f: IntFn, v: int) returns i32
+    f(v)
+
+if apply(\x: x * 2, 3000000000) = 1705032704
+    print "PASS"

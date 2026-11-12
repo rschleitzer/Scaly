@@ -1,0 +1,15 @@
+; Regression (2026-11-12), the twin of the xfail_lambda_*narrows fixtures:
+; with the cast written, or a constant that fits, the lambda's value is the
+; delegate's result.
+
+define IntFn delegate(int) returns i32
+
+function apply(f: IntFn, v: int) returns i32
+    f(v)
+
+let g: IntFn \x: (x * 2) as i32
+let h: IntFn \x: 7
+if g(21) = 42 and h(0) = 7 and apply(\x: (x + 1) as i32, 4) = 5
+    print "PASS"
+else
+    print "FAIL"
