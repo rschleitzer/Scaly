@@ -247,6 +247,7 @@ const TEXT = {
     chartTitle: 'Speedup against cores', chartLabel: 'Speedup against the number of cores',
     chartNote: 'Both axes are logarithmic. The dashed line is a perfect speedup: twice the cores, half the time. The card is its own line. Where a processor has fast cores and economical ones, as Apple’s have, the curve bends once the fast ones are all at work.',
     chartCard: s => `the card: ${s}×`, chartCores: 'cores',
+    partsShort: p => ` (results ${ms(p.read)}, word on errors ${ms(p.errors)}, ways ${ms(p.there + p.back)})`,
     parts: p => `Of the card's ${ms(p.card_ms)}: compiling the kernel ${ms(p.compiled)}, the way to the card's worker ${ms(p.there)}, ` +
       `the browser's word on errors ${ms(p.errors)}, the results (the card's work in it) ${ms(p.read)}, the way back ${ms(p.back)}`,
     what: 'What runs here', program: 'The program', original: 'Back to the original', build: 'Build my version',
@@ -286,6 +287,7 @@ const TEXT = {
     chartTitle: 'Beschleunigung nach Kernen', chartLabel: 'Die Beschleunigung gegen die Zahl der Kerne',
     chartNote: 'Beide Achsen sind logarithmisch. Die gestrichelte Linie ist die vollkommene Beschleunigung: doppelt so viele Kerne, halbe Zeit. Die Karte hat eine eigene Linie. Wo ein Prozessor schnelle und sparsame Kerne hat, wie die von Apple, knickt die Kurve ab, sobald alle schnellen arbeiten.',
     chartCard: s => `die Karte: ${s}×`, chartCores: 'Kerne',
+    partsShort: p => ` (Ergebnisse ${ms(p.read)}, Fehlerprüfung ${ms(p.errors)}, Wege ${ms(p.there + p.back)})`,
     parts: p => `Von den ${ms(p.card_ms)} der Karte: Kernel übersetzen ${ms(p.compiled)}, Weg zum Worker der Karte ${ms(p.there)}, ` +
       `Antwort des Browsers zu Fehlern ${ms(p.errors)}, die Ergebnisse (samt Arbeit der Karte) ${ms(p.read)}, Weg zurück ${ms(p.back)}`,
     what: 'Was hier läuft', program: 'Das Programm', original: 'Zurück zum Original', build: 'Meine Fassung bauen',
@@ -563,6 +565,14 @@ function table() {
       note.className = 'note';
       note.textContent = t('compiling')(Math.round(r.compiled));
       tr.lastChild.appendChild(note);
+    }
+    // a card run that took long says where the time went (all of it in the
+    // tooltip): a browser's card can stall
+    if (r.parts && r.parts.card_ms >= 100) {
+      const note = document.createElement('small');
+      note.className = 'note';
+      note.textContent = t('partsShort')(r.parts);
+      time.appendChild(note);
     }
     const bar = td('', 'bar');
     const span = document.createElement('span');
