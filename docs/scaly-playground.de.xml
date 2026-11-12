@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book SYSTEM "docbook.dtd" [
   <!ENTITY tour SYSTEM "playground/de/tour.xml">
+  <!ENTITY yourturn SYSTEM "playground/de/yourturn.xml">
   <!ENTITY drawing SYSTEM "playground/de/drawing.xml">
   <!ENTITY scaling SYSTEM "playground/de/scaling.xml">
 ]>
@@ -16,6 +17,7 @@
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="de">
   <title>Der Scaly Playground</title>
 &tour;
+&yourturn;
 &drawing;
 &scaling;
 </book>

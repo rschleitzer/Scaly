@@ -37,7 +37,8 @@
 #    that does not compile must show the compiler's message. And the Scaly
 #    Playground's own chapters (playground.html?selftest), in English and in
 #    German (&lang=de): every step runs, the tour's step on values shows
-#    each value beside its line (web/repl/notes.mjs), a drawing step shows
+#    each value beside its line (web/repl/notes.mjs), a task's program as
+#    given is "not yet" and its solution is praised, a drawing step shows
 #    its drawing, and the step for the cores draws on
 #    one core what it draws on all of them -- and what the program draws
 #    natively. One of them
@@ -462,6 +463,18 @@ notes = r.get('notes') or {}
 want = {'1': ['answer', '42'], '2': ['count', '0'], '3': ['count', '1']}
 if any(notes.get(k) != v for k, v in want.items()):
     fails.append('the values beside the code are %s, not %s' % (notes, want))
+# a task (Your Turn, pg-sum): the program as given is not yet what it asks
+# for, its solution is -- and the lizard says so
+task = r.get('task')
+if not task:
+    fails.append('no task found (pg-sum)')
+else:
+    if not task['before']['shown'] or task['before']['ok']:
+        fails.append('the task program as given: %s, not "not yet"' % task['before'])
+    if not task['after']['shown'] or not task['after']['ok']:
+        fails.append('the task solution: %s, not praised' % task['after'])
+    if task['hints'] < 1:
+        fails.append('the task has no hints')
 for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: playground (%s) %s — %d steps of its own chapters ran, %d steps in all, %d lines with values' % (lang, 'FAIL' if fails else 'PASS', len(r['report']), r['steps'], len(notes)))

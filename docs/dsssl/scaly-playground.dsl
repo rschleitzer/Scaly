@@ -25,6 +25,14 @@
 ;; A paragraph marked role="spec-only" -- the pointer to this very page -- is
 ;; left out. A subsection without a program is one step of prose alone.
 ;; tests/tour/run.sh runs every program.
+;;
+;; A step may set the reader a TASK. After its program: a paragraph marked
+;; role="task" (what to change), paragraphs marked role="hint" (the page
+;; shows them one by one, when asked), a screen marked role="expect" (what
+;; the program must print, the page compares after a run and the lizard
+;; praises) and a listing marked role="solution" (one way to do it -- not a
+;; step of its own; tests/tour/run.sh runs it and holds it against the
+;; expected output). They become p.task, p.hint, pre.expect, pre.solution.
 
 (declare-flow-object-class element
   "UNREGISTERED::James Clark//Flow Object Class::element")
@@ -38,12 +46,15 @@
 
 (define (program? nd)
   (and (equal? (gi nd) "programlisting")
-       (not (equal? (attribute-string "role" nd) "fragment"))))
+       (not (equal? (attribute-string "role" nd) "fragment"))
+       (not (equal? (attribute-string "role" nd) "solution"))))
 
 (define (content? nd)
   (or (and (equal? (gi nd) "para")
            (not (equal? (attribute-string "role" nd) "spec-only")))
-      (equal? (gi nd) "programlisting")))
+      (equal? (gi nd) "programlisting")
+      (and (equal? (gi nd) "screen")
+           (equal? (attribute-string "role" nd) "expect"))))
 
 ;; the section's paragraphs and listings, grouped: a list of steps, each
 ;; (prose . program) with program #f for a step of prose alone
@@ -108,9 +119,19 @@
         (process-node-list (select-elements (children (current-node)) "chapter"))))))
 (element chapter (process-node-list (select-elements (children (current-node)) "section")))
 (element section (steps-of (current-node)))
-(element para (make element gi: "p" (process-children)))
+(element para
+  (let ((role (attribute-string "role")))
+    (if (or (equal? role "task") (equal? role "hint"))
+        (make element gi: "p" attributes: (list (list "class" role)) (process-children))
+        (make element gi: "p" (process-children)))))
 (element programlisting
-  (make element gi: "pre" attributes: '(("class" "fragment")) (process-children)))
+  (make element gi: "pre"
+        attributes: (list (list "class" (if (equal? (attribute-string "role") "solution")
+                                            "solution"
+                                            "fragment")))
+    (process-children)))
+(element screen
+  (make element gi: "pre" attributes: '(("class" "expect")) (process-children)))
 (element code (make element gi: "code" (process-children)))
 (element filename (make element gi: "code" (process-children)))
 (element command (make element gi: "code" (process-children)))

@@ -15,7 +15,9 @@
 # end with rc 0 and print or draw. And the playground in German
 # (docs/scaly-playground.de.xml, docs/playground/de/: the tour translated,
 # then the chapters): every section must have the id of its English twin
-# and as many programs (parity.py), and its programs run alike.
+# and as many programs (parity.py), and its programs run alike. A task's
+# solution (role="solution") must print exactly what the task expects
+# (<screen role="expect">).
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -46,7 +48,11 @@ for f in "$TMP"/steps/*.scaly "$TMP"/steps/pg-*/*.scaly; do
   rm -rf "$TMP/cwd"; mkdir -p "$TMP/cwd"
   out=$(cd "$TMP/cwd" && SCALY_HOME="$ROOT" "$SCALY" run "$f" < /dev/null 2>&1); rc=$?
   drew=$(ls "$TMP/cwd" 2>/dev/null)
-  if [ "$rc" = 0 ] && { [ -n "$out" ] || [ -n "$drew" ]; }; then
+  expect="${f%.scaly}.expect"
+  if [ -f "$expect" ] && [ "$out" != "$(cat "$expect")" ]; then
+    fail=$((fail+1))
+    echo "FAIL $name: a task's solution prints $(echo "$out" | head -3 | tr '\n' '|'), not what the task expects ($(head -3 "$expect" | tr '\n' '|'))"
+  elif [ "$rc" = 0 ] && { [ -n "$out" ] || [ -n "$drew" ]; }; then
     pass=$((pass+1))
   else
     fail=$((fail+1))

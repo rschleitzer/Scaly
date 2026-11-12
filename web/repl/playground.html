@@ -44,7 +44,7 @@
   #drawings img { display: block; max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line);
                   background: #fff; margin-bottom: 8px; }
   #drawings:empty { display: none; }
-  .lesson .prose { flex: 1; }
+  .lesson .body { flex: 1; }
   .lesson .prose p { margin: 0 0 12px; }
   .lesson a { color: var(--accent); }
   code, pre, textarea { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -101,6 +101,18 @@
   .runs .bar span.compile { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); opacity: .55; }
   .runs .time { font-variant-numeric: tabular-nums; }
   .runs .what { grid-column: 1 / -1; margin: -2px 0 4px; }
+  /* a task (P4): what to change, hints on request, the lizard's verdict */
+  .lesson .prose p.task { border-left: 3px solid var(--accent); padding: 6px 10px; background: var(--code);
+                          border-radius: 0 6px 6px 0; }
+  .tasktools { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .tasktools button { font-size: 13px; }
+  .lesson .revealed p { border-left: 3px solid var(--line); padding-left: 10px; color: var(--muted); }
+  .praise { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 6px;
+            border: 1px solid var(--ok); color: var(--ok); font-weight: 600; }
+  .praise img { width: 34px; height: 34px; flex: none; }
+  .praise.notyet { border-color: var(--line); color: var(--muted); font-weight: normal; }
+  .praise.notyet img { filter: grayscale(1); opacity: .6; }
+  .praise[hidden] { display: none; }
   /* last: the wide layout overrides the base rules above */
   @media (min-width: 900px) {
     main { grid-template-columns: minmax(300px, 2fr) 3fr; height: calc(100vh - 58px); }
@@ -136,7 +148,14 @@
   <section class="lesson">
     <div class="chapter" id="chapter"></div>
     <h2 id="title">Scaly Playground</h2>
-    <div class="prose" id="prose"><p data-t="loading">Loading the playground…</p></div>
+    <div class="body">
+      <div class="prose" id="prose"><p data-t="loading">Loading the playground…</p></div>
+      <div class="revealed" id="revealed"></div>
+      <div class="tasktools" id="tasktools" hidden>
+        <button id="hintbtn"></button>
+        <button id="solutionbtn" hidden data-t="solution">Show a solution</button>
+      </div>
+    </div>
     <div class="nav">
       <button id="back" data-t="back">‹ Back</button>
       <span class="count" id="count"></span>
@@ -163,6 +182,7 @@
     <div class="hint" data-t="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
       The compiler and the program run in this browser tab.</div>
     <div class="results">
+      <div class="praise" id="praise" hidden><img src="lizard.svg" alt=""><span id="praisetext"></span></div>
       <div class="runs" id="runs" aria-label="The runs of this program" data-t-label="runs"></div>
       <div id="drawings"></div>
       <div id="pictures"></div>
@@ -206,6 +226,10 @@ const TEXT = {
     compiledOnce: ms => `; of the time, ${ms} ms went into compiling its kernel for the card — once: the next run keeps it`,
     points: (w, h) => `${w} × ${h} points`,
     notes: 'The values of the program, line by line', times: n => `${n}×`,
+    showHint: 'Show a hint', moreHint: 'Another hint', solution: 'Show a solution', oneWay: 'One way to do it:',
+    praise: ['That’s it — well done!', 'Exactly right. The lizard is impressed.', 'Perfect — on to the next one?', 'You did it!'],
+    notYet: 'Not quite yet: the task wants a different output. Compare it with the task — or take a hint.',
+    solved: 'solved',
   },
   de: {
     repl: 'Die REPL', spec: 'Die Spezifikation', loading: 'Der Playground lädt…',
@@ -227,6 +251,10 @@ const TEXT = {
     compiledOnce: ms => `; davon ${ms} ms, um ihren Kernel für die Karte zu übersetzen — nur einmal: der nächste Lauf hat ihn schon`,
     points: (w, h) => `${w} × ${h} Punkte`,
     notes: 'Die Werte des Programms, Zeile für Zeile', times: n => `${n}×`,
+    showHint: 'Zeig mir einen Hinweis', moreHint: 'Noch ein Hinweis', solution: 'Zeig mir eine Lösung', oneWay: 'Eine Möglichkeit:',
+    praise: ['Genau so — gut gemacht!', 'Ganz richtig. Die Eidechse staunt.', 'Perfekt — weiter zum nächsten?', 'Geschafft!'],
+    notYet: 'Noch nicht ganz: Die Aufgabe will eine andere Ausgabe. Vergleiche sie mit der Aufgabe — oder hol dir einen Hinweis.',
+    solved: 'gelöst',
   },
 };
 function storedLang() {
@@ -300,6 +328,7 @@ function show(i, push = true) {
   editor.value = step.program === null ? '' : (edited(at) ?? step.program);
   output.textContent = '';
   showNotes(null);
+  showTask();
   $('pictures').textContent = '';
   showDrawings([]);
   $('where').hidden = !step.gpu;
@@ -317,6 +346,64 @@ function stop() {
   worker = null;
   runButton.textContent = t('run');
   if (compiler) status(t('ready'), 'ok');
+}
+
+// --- tasks (P4) -------------------------------------------------------
+// A step may set a task: after a run the page holds what the program printed
+// against what the task expects, and the lizard says how it went. Hints come
+// one by one; after the last, a solution. A solved task keeps its mark in
+// this browser (✓ in the list of steps), in every language.
+let hintsShown = 0;
+const solvedKey = step => `scaly-playground:solved:${step.section}:${step.ordinal}`;
+function solved(step) {
+  try { return localStorage.getItem(solvedKey(step)) === '1'; } catch { return false; }
+}
+function showTask() {
+  const step = steps[at];
+  hintsShown = 0;
+  $('revealed').textContent = '';
+  $('praise').hidden = true;
+  $('tasktools').hidden = !step.expect;
+  $('solutionbtn').hidden = true;
+  $('hintbtn').hidden = step.hints.length === 0;
+  $('hintbtn').textContent = t('showHint');
+}
+$('hintbtn').onclick = () => {
+  const step = steps[at];
+  if (hintsShown >= step.hints.length) return;
+  const p = document.createElement('p');
+  p.innerHTML = step.hints[hintsShown++];
+  $('revealed').appendChild(p);
+  $('hintbtn').textContent = t('moreHint');
+  if (hintsShown >= step.hints.length) {
+    $('hintbtn').hidden = true;
+    $('solutionbtn').hidden = !step.solution;
+  }
+};
+$('solutionbtn').onclick = () => {
+  const step = steps[at];
+  const p = document.createElement('p');
+  p.textContent = t('oneWay');
+  const pre = document.createElement('pre');
+  pre.textContent = step.solution;
+  $('revealed').append(p, pre);
+  $('solutionbtn').hidden = true;
+};
+// after a run that ended well: does it print what the task expects?
+function judge() {
+  const step = steps[at];
+  if (!step.expect) return;
+  const plain = text => text.replace(/[ \t]+$/gm, '').trim();
+  const ok = plain(output.textContent) === plain(step.expect);
+  $('praise').hidden = false;
+  $('praise').classList.toggle('notyet', !ok);
+  const words = t('praise');
+  $('praisetext').textContent = ok ? words[Math.floor(Math.random() * words.length)] : t('notYet');
+  if (ok && !solved(step)) {
+    try { localStorage.setItem(solvedKey(step), '1'); } catch {}
+    const option = $('toc').querySelector(`option[value="${at}"]`);
+    if (option) option.textContent = `✓ ${option.textContent}`;
+  }
 }
 
 // The values beside the code: a row per line of the editor, at its height,
@@ -621,6 +708,7 @@ function run(without = new Set(), attempt = 0) {
         stop();
         if (data.status !== 0) append(t('endedNote')(data.status), 'note');
         status(t('done')(ms), data.status === 0 ? 'ok' : 'bad');
+        if (data.status === 0) judge();
         break;
       }
       case 'crash':
@@ -651,7 +739,7 @@ $('back').onclick = $('prev').onclick = () => show(at - 1);
 $('fwd').onclick = () => show(at + 1);
 $('next').onclick = () => { if (at === steps.length - 1) location.href = 'index.html'; else show(at + 1); };
 $('toc').onchange = () => show(Number($('toc').value));
-editor.oninput = () => { keep(at, editor.value); $('notes').classList.add('stale'); };
+editor.oninput = () => { keep(at, editor.value); $('notes').classList.add('stale'); $('praise').hidden = true; };
 editor.onkeydown = e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
@@ -686,14 +774,24 @@ async function loadSteps() {
       const section = s.dataset.section;
       seen[section] = (seen[section] ?? 0) + 1;
       const program = s.querySelector('pre.program');
+      // a task: what the program must print, one way to do it, the hints --
+      // out of the prose, the page shows them when the time comes
+      const prose = s.querySelector('.prose');
+      const expect = prose.querySelector('pre.expect');
+      const solution = prose.querySelector('pre.solution');
+      const hints = [...prose.querySelectorAll('p.hint')];
+      for (const e of [expect, solution, ...hints]) e?.remove();
       steps.push({
+        expect: expect ? expect.textContent : null,
+        solution: solution ? solution.textContent : null,
+        hints: hints.map(h => h.innerHTML),
         section, ordinal: seen[section],
         chapter: chapter ?? s.dataset.chapter ?? '',
         // the book's tour, in English or translated: not the playground's own
         tour: chapter !== null || s.dataset.chapterId === 'pg-tour',
         chapterId: chapter !== null ? 'pg-tour' : s.dataset.chapterId ?? '',
         title: s.querySelector('h2').textContent,
-        prose: s.querySelector('.prose').innerHTML,
+        prose: prose.innerHTML,
         program: program ? program.textContent : null,
         gpu: program ? program.classList.contains('gpu') : false,
       });
@@ -708,7 +806,7 @@ async function loadSteps() {
     }
     const option = document.createElement('option');
     option.value = String(i);
-    option.textContent = `${i + 1}. ${s.title}`;
+    option.textContent = `${solved(s) ? '✓ ' : ''}${i + 1}. ${s.title}`;
     group.appendChild(option);
   });
   const n = Number(location.hash.slice(1));
@@ -763,7 +861,21 @@ if (new URLSearchParams(location.search).has('selftest') && compiler) {
     await idle();
     notes = lastNotes ? Object.fromEntries([...lastNotes.byLine].map(([l, n]) => [l, [n.name, ...n.values]])) : {};
   }
-  await fetch('/result', { method: 'POST', body: JSON.stringify({ lang, steps: steps.length, report, notes }) });
+  // and a task: its program as given is not yet what it asks, its solution is
+  let task = null;
+  const sum = steps.findIndex(s => s.section === 'pg-sum');
+  if (sum >= 0) {
+    show(sum, false);
+    editor.value = steps[sum].program;
+    run(); await idle();
+    const before = { shown: !$('praise').hidden, ok: !$('praise').classList.contains('notyet') };
+    editor.value = steps[sum].solution;
+    run(); await idle();
+    task = { before, after: { shown: !$('praise').hidden, ok: !$('praise').classList.contains('notyet'), text: $('praisetext').textContent },
+             hints: steps[sum].hints.length };
+    editor.value = steps[sum].program;
+  }
+  await fetch('/result', { method: 'POST', body: JSON.stringify({ lang, steps: steps.length, report, notes, task }) });
 }
 </script>
 </body>
