@@ -65,6 +65,21 @@
             border: 1px solid var(--line); border-radius: 6px; background: var(--code); color: var(--ink);
             tab-size: 4; white-space: pre; overflow: auto; }
   .hint { font-size: 12px; color: var(--muted); }
+  /* results beside the code (notes.mjs): one row per line of the editor */
+  .editwrap { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .editwrap.noted { grid-template-columns: minmax(0, 1fr) minmax(7em, 32%); }
+  #notes { display: none; position: relative; overflow: hidden; border: 1px solid var(--line); border-left: 0;
+           border-radius: 0 6px 6px 0; background: var(--panel); color: var(--muted);
+           font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .editwrap.noted #notes { display: block; }
+  .editwrap.noted #editor { border-radius: 6px 0 0 6px; }
+  #notes .rows { position: absolute; left: 0; right: 0; top: 0; padding: 11px 8px; }
+  #notes .row { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  #notes .row .v { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+  #notes .row .k { font-size: 11px; }
+  #notes svg { flex: none; width: 3.5em; height: 1em; }
+  #notes svg polyline { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  #notes.stale { opacity: .45; }
   #output { margin: 0; padding: 10px; background: var(--code); border-radius: 6px; overflow: auto;
             white-space: pre-wrap; overflow-wrap: anywhere; min-height: 80px; }
   #output .err { color: var(--bad); }
@@ -93,6 +108,7 @@
     .work { display: grid; grid-template-rows: auto minmax(0, 1fr) auto minmax(80px, 30%); }
     .work.card { grid-template-rows: auto minmax(0, 1fr) auto minmax(80px, 55%); }
     #editor { height: 100%; min-height: 0; resize: none; }
+    .editwrap { height: 100%; }
   }
 </style>
 </head>
@@ -139,8 +155,11 @@
       </select>
       <span id="status">Loading…</span>
     </div>
-    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
-              aria-label="The program" data-t-label="program"></textarea>
+    <div class="editwrap" id="editwrap">
+      <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+                aria-label="The program" data-t-label="program"></textarea>
+      <div id="notes" aria-label="The values of the program, line by line" data-t-label="notes"><div class="rows" id="noterows"></div></div>
+    </div>
     <div class="hint" data-t="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
       The compiler and the program run in this browser tab.</div>
     <div class="results">
@@ -154,6 +173,7 @@
 
 <script type="module">
 import { loadCompiler } from './load.mjs';
+import { instrument, relines, failedNotes, Notes } from './notes.mjs';
 
 const $ = id => document.getElementById(id);
 
@@ -170,7 +190,7 @@ const TEXT = {
     repl: 'The REPL', spec: 'The specification', loading: 'Loading the playground…',
     back: '‹ Back', next: 'Next ›', toRepl: 'The REPL ›', run: 'Run', stop: 'Stop', reset: 'Reset',
     one: 'On one core', all: 'On all cores', card: 'On the graphics card', auto: 'Where it pays',
-    hint: 'Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it. The compiler and the program run in this browser tab.',
+    hint: 'Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it. Beside the code: the value each line bound, in a loop its last one and how it went. The compiler and the program run in this browser tab.',
     previous: 'Previous step', forward: 'Next step', toc: 'Steps of the playground', where: 'Where the loops run',
     program: 'The program', runs: 'The runs of this program', language: 'Language',
     tour: 'A Tour of Scaly', ready: 'Ready.', compilerFailed: m => `Could not load the compiler: ${m}`,
@@ -185,12 +205,13 @@ const TEXT = {
     upTo: n => `the loops ran on up to ${n} cores`, onOne: 'the loops ran on one core',
     compiledOnce: ms => `; of the time, ${ms} ms went into compiling its kernel for the card — once: the next run keeps it`,
     points: (w, h) => `${w} × ${h} points`,
+    notes: 'The values of the program, line by line', times: n => `${n}×`,
   },
   de: {
     repl: 'Die REPL', spec: 'Die Spezifikation', loading: 'Der Playground lädt…',
     back: '‹ Zurück', next: 'Weiter ›', toRepl: 'Zur REPL ›', run: 'Ausführen', stop: 'Anhalten', reset: 'Zurücksetzen',
     one: 'Auf einem Kern', all: 'Auf allen Kernen', card: 'Auf der Grafikkarte', auto: 'Wo es sich lohnt',
-    hint: 'Ändere das Programm und lass es noch einmal laufen — Strg+Enter oder ⌘+Enter führt es aus. Der Compiler und das Programm laufen in diesem Browser-Tab.',
+    hint: 'Ändere das Programm und lass es noch einmal laufen — Strg+Enter oder ⌘+Enter führt es aus. Neben dem Code: der Wert, den jede Zeile gebunden hat, in einer Schleife ihr letzter und wie er sich entwickelt hat. Der Compiler und das Programm laufen in diesem Browser-Tab.',
     previous: 'Voriger Schritt', forward: 'Nächster Schritt', toc: 'Die Schritte des Playgrounds', where: 'Wo die Schleifen laufen',
     program: 'Das Programm', runs: 'Die Läufe dieses Programms', language: 'Sprache',
     tour: 'Eine Rundreise durch Scaly', ready: 'Bereit.', compilerFailed: m => `Der Compiler ließ sich nicht laden: ${m}`,
@@ -205,6 +226,7 @@ const TEXT = {
     upTo: n => `die Schleifen liefen auf bis zu ${n} Kernen`, onOne: 'die Schleifen liefen auf einem Kern',
     compiledOnce: ms => `; davon ${ms} ms, um ihren Kernel für die Karte zu übersetzen — nur einmal: der nächste Lauf hat ihn schon`,
     points: (w, h) => `${w} × ${h} Punkte`,
+    notes: 'Die Werte des Programms, Zeile für Zeile', times: n => `${n}×`,
   },
 };
 function storedLang() {
@@ -277,6 +299,7 @@ function show(i, push = true) {
   $('main').classList.toggle('prose-only', step.program === null);
   editor.value = step.program === null ? '' : (edited(at) ?? step.program);
   output.textContent = '';
+  showNotes(null);
   $('pictures').textContent = '';
   showDrawings([]);
   $('where').hidden = !step.gpu;
@@ -295,6 +318,59 @@ function stop() {
   runButton.textContent = t('run');
   if (compiler) status(t('ready'), 'ok');
 }
+
+// The values beside the code: a row per line of the editor, at its height,
+// moved with its scrolling. A line that took several values (in a loop)
+// shows the last, how many there were, and a curve where they are numbers.
+let lastNotes = null;
+function showNotes(notes) {
+  lastNotes = notes;
+  const box = $('notes'), rows = $('noterows');
+  rows.textContent = '';
+  box.classList.remove('stale');
+  $('editwrap').classList.toggle('noted', !!notes && notes.byLine.size > 0);
+  if (!notes || notes.byLine.size === 0) return;
+  const height = parseFloat(getComputedStyle(editor).lineHeight) || 18.85;
+  const count = editor.value.split('\n').length;
+  for (let line = 1; line <= count; line++) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.height = `${height}px`;
+    const entry = notes.byLine.get(line);
+    if (entry) {
+      const values = entry.values;
+      const v = document.createElement('span');
+      v.className = 'v';
+      v.textContent = `${entry.name} = ${values[values.length - 1]}`;
+      row.appendChild(v);
+      const n = values.length + (entry.more ?? 0);
+      if (n > 1) {
+        const k = document.createElement('span');
+        k.className = 'k';
+        k.textContent = t('times')(n);
+        row.appendChild(k);
+        const numbers = values.map(Number);
+        if (numbers.every(Number.isFinite)) row.appendChild(curve(numbers));
+      }
+      row.title = values.slice(0, 50).join(', ') + (n > 50 ? ', …' : '');
+    }
+    rows.appendChild(row);
+  }
+  rows.style.transform = `translateY(${-editor.scrollTop}px)`;
+}
+function curve(numbers) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 100 30');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  const lo = Math.min(...numbers), hi = Math.max(...numbers);
+  const points = numbers.map((n, i) =>
+    `${(i / Math.max(1, numbers.length - 1) * 100).toFixed(1)},${(28 - (hi > lo ? (n - lo) / (hi - lo) : 0.5) * 26).toFixed(1)}`);
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('points', points.join(' '));
+  svg.appendChild(line);
+  return svg;
+}
+editor.addEventListener('scroll', () => { $('noterows').style.transform = `translateY(${-editor.scrollTop}px)`; });
 
 // A picture the program wrote (a file `<name>.<width>x<height>.rgba`, which
 // the worker hands back): onto a canvas, as it is.
@@ -478,7 +554,13 @@ async function runOnCores() {
   }
 }
 
-function run() {
+// Run the step's program -- with its notes (notes.mjs): a call after each
+// binding and assignment of the program. A value whose type has no text
+// makes the compiler refuse its note; the page leaves exactly those out and
+// runs again (`without`, original lines). What the compiler says is held
+// until the program writes something of its own, so a refusal of a note is
+// never seen; its line numbers are the program's own.
+function run(without = new Set(), attempt = 0) {
   if (!compiler) return;
   if (worker) { stop(); append(t('stopped'), 'note'); return; }
   if (steps[at].gpu) { runOnCores(); return; }
@@ -489,22 +571,51 @@ function run() {
   const t0 = performance.now();
   $('pictures').textContent = '';
   showDrawings([]);
-  const files = { ...compiler.files, '/work/main.scaly': editor.value };
+  const instr = instrument(editor.value, without);
+  const noted = instr.count > 0;
+  const notes = new Notes();
+  let held = [], raw = '', speaking = false;
+  const diagnostic = line => line === '' || /^main\.scaly:\d+:\d+:/.test(line) || /^\s/.test(line);
+  const say = (text, cls) => {
+    if (speaking) { append(text, cls); return; }
+    held.push([text, cls]);
+    if (held.map(h => h[0]).join('').split('\n').slice(0, -1).some(l => !diagnostic(l))) flush();
+  };
+  const flush = () => { speaking = true; for (const [text, cls] of held) append(text, cls); held = []; };
+  const files = { ...compiler.files, '/work/main.scaly': noted ? instr.text : editor.value };
   worker = new Worker('worker.mjs', { type: 'module' });
   runButton.textContent = t('stop');
   status(t('compilingRunning'));
   worker.onmessage = ({ data }) => {
     switch (data.type) {
       case 'out':
-      case 'err':
-        append(decoders[data.type].decode(data.bytes, { stream: true }), data.type === 'err' ? 'err' : '');
+      case 'err': {
+        let text = decoders[data.type].decode(data.bytes, { stream: true });
+        if (!speaking) raw += text;
+        if (noted) {
+          if (data.type === 'out') text = notes.take(text);
+          text = relines(text, instr.lines);
+        }
+        if (text !== '') say(text, data.type === 'err' ? 'err' : '');
         break;
+      }
       case 'wants':
         Atomics.store(state, 0, 2);
         Atomics.notify(state, 0);
         break;
       case 'exit': {
+        if (noted && data.status !== 0 && !speaking && attempt < 8) {
+          const failed = failedNotes(raw, instr.text, instr.lines);
+          if (failed.size > 0) {
+            stop();
+            run(new Set([...without, ...failed]), attempt + 1);
+            return;
+          }
+        }
         const ms = Math.round(performance.now() - t0);
+        if (noted) { const rest = notes.take('', true); if (rest) say(rest, ''); }
+        flush();
+        showNotes(noted ? notes : null);
         showPictures(data.pictures);
         showDrawings(data.drawings);
         stop();
@@ -513,6 +624,7 @@ function run() {
         break;
       }
       case 'crash':
+        flush();
         stop();
         append(t('stoppedBy')(data.text), 'err');
         status(t('runFailed'), 'bad');
@@ -520,13 +632,14 @@ function run() {
     }
   };
   worker.onerror = e => {
+    flush();
     stop();
     append(t('workerFailed')(e.message), 'err');
   };
   worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
 }
 
-runButton.onclick = run;
+runButton.onclick = () => run();
 $('reset').onclick = () => {
   const step = steps[at];
   if (step.program === null) return;
@@ -538,7 +651,7 @@ $('back').onclick = $('prev').onclick = () => show(at - 1);
 $('fwd').onclick = () => show(at + 1);
 $('next').onclick = () => { if (at === steps.length - 1) location.href = 'index.html'; else show(at + 1); };
 $('toc').onchange = () => show(Number($('toc').value));
-editor.oninput = () => keep(at, editor.value);
+editor.oninput = () => { keep(at, editor.value); $('notes').classList.add('stale'); };
 editor.onkeydown = e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
@@ -641,7 +754,16 @@ if (new URLSearchParams(location.search).has('selftest') && compiler) {
     }
     report.push({ title: steps[i].title, chapter: steps[i].chapterId, gpu: steps[i].gpu, runs: seen });
   }
-  await fetch('/result', { method: 'POST', body: JSON.stringify({ lang, steps: steps.length, report }) });
+  // and the values beside the code: the tour's step on values and bindings
+  let notes = null;
+  const values = steps.findIndex(s => s.section === 'tut-values');
+  if (values >= 0) {
+    show(values, false);
+    run();
+    await idle();
+    notes = lastNotes ? Object.fromEntries([...lastNotes.byLine].map(([l, n]) => [l, [n.name, ...n.values]])) : {};
+  }
+  await fetch('/result', { method: 'POST', body: JSON.stringify({ lang, steps: steps.length, report, notes }) });
 }
 </script>
 </body>

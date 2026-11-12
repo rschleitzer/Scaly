@@ -36,8 +36,9 @@
 #    cores -- its picture must be the prebuilt program's --, and a version
 #    that does not compile must show the compiler's message. And the Scaly
 #    Playground's own chapters (playground.html?selftest), in English and in
-#    German (&lang=de): every step runs,
-#    a drawing step shows its drawing, and the step for the cores draws on
+#    German (&lang=de): every step runs, the tour's step on values shows
+#    each value beside its line (web/repl/notes.mjs), a drawing step shows
+#    its drawing, and the step for the cores draws on
 #    one core what it draws on all of them -- and what the program draws
 #    natively. One of them
 #    (canvas.scaly) writes a picture, which the page's worker must hand
@@ -455,9 +456,15 @@ for step in r['report']:
             fails.append('%s: the pictures on one core and on all differ (%s)' % (step['title'], hashes))
         elif hashes != {h}:
             fails.append('%s: the picture is not the one the program draws natively' % step['title'])
+# the values beside the code (notes.mjs), of the tour's step on values:
+# `let answer 42`, `var count 0`, `count := count + 1`
+notes = r.get('notes') or {}
+want = {'1': ['answer', '42'], '2': ['count', '0'], '3': ['count', '1']}
+if any(notes.get(k) != v for k, v in want.items()):
+    fails.append('the values beside the code are %s, not %s' % (notes, want))
 for f in fails:
     print('  FAIL ' + f)
-print('gpu-web: playground (%s) %s — %d steps of its own chapters ran, %d steps in all' % (lang, 'FAIL' if fails else 'PASS', len(r['report']), r['steps']))
+print('gpu-web: playground (%s) %s — %d steps of its own chapters ran, %d steps in all, %d lines with values' % (lang, 'FAIL' if fails else 'PASS', len(r['report']), r['steps'], len(notes)))
 sys.exit(1 if fails else 0)
 PY
 done

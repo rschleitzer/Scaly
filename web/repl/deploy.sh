@@ -21,7 +21,7 @@ done
 up() { aws s3 cp --only-show-errors "$HERE/$1" "$B/$2" --cache-control no-cache --content-type "$3" ${4:+--content-encoding "$4"}; }
 for f in index.html playground.html tour.html tour-steps.htm playground-steps.htm playground-steps.de.htm; do up "$f" "$f" 'text/html; charset=utf-8'; done
 up lizard.svg lizard.svg image/svg+xml
-for f in worker.mjs runner.mjs side.mjs load.mjs wasi.mjs threads.mjs thread.mjs; do up "$f" "$f" 'text/javascript; charset=utf-8'; done
+for f in worker.mjs runner.mjs side.mjs load.mjs notes.mjs wasi.mjs threads.mjs thread.mjs; do up "$f" "$f" 'text/javascript; charset=utf-8'; done
 up scaly.wasm.br scaly.wasm application/wasm br
 up stdlib.json.br stdlib.json application/json br
 up playground.json.br playground.json application/json br

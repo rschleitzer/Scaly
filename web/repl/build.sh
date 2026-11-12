@@ -1,7 +1,7 @@
 #!/bin/bash
 # web/repl/build.sh [out-dir] -- the REPL's page and the Scaly Playground:
 # index.html, playground.html (tour.html, the tour's old address, leads
-# there), worker.mjs, side.mjs and load.mjs of this directory, and beside
+# there), worker.mjs, side.mjs, load.mjs and notes.mjs of this directory, and beside
 # them in out-dir (default: this directory) what is built or taken from the
 # tree --
 #   scaly.wasm    the tool built for WebAssembly (tools/wasm/repl.sh build;
@@ -51,7 +51,7 @@ if [ ! -f "$L/scaly.wasm" ]; then
 fi
 mkdir -p "$OUT"
 if [ "$OUT" != "$HERE" ]; then
-  cp "$HERE/index.html" "$HERE/playground.html" "$HERE/tour.html" "$HERE/worker.mjs" "$HERE/runner.mjs" "$HERE/side.mjs" "$HERE/load.mjs" \
+  cp "$HERE/index.html" "$HERE/playground.html" "$HERE/tour.html" "$HERE/worker.mjs" "$HERE/runner.mjs" "$HERE/side.mjs" "$HERE/load.mjs" "$HERE/notes.mjs" \
      "$HERE/serve.mjs" "$HERE/compress.mjs" "$OUT/"
 fi
 "$W/bin/llvm-strip" -o "$OUT/scaly.wasm" "$L/scaly.wasm"
