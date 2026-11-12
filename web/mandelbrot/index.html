@@ -420,28 +420,39 @@ async function runOnce(way, workers, gpu, given = args(), seen = { ...view }) {
 // The runner: a worker that runs the program, made again where a run is
 // broken off -- the program's loop runs in it without returning to its
 // event loop, so ending the worker is the only way to stop it. The card
-// stays: its worker is the page's (gpu-worker.mjs), and each runner gets a
-// port to it.
+// stays: its worker is the page's (gpu-worker.mjs), and the page passes a
+// runner's card runs on to it.
 let gpuWorker = null;
 let myBytes = null;       // the reader's build, for a runner made again
 let running = null;       // the run under way: { gpu, resolve }
 function startRunner() {
   runner = new Worker('runner.mjs', { type: 'module' });
-  let port = null;
-  if (navigator.gpu) {
-    gpuWorker ??= new Worker('gpu-worker.mjs', { type: 'module' });
-    const channel = new MessageChannel();
-    gpuWorker.postMessage({ port: channel.port1 }, [channel.port1]);
-    port = channel.port2;
-  }
-  return new Promise(resolve => {
+  // the card's runs come here and go on to the card's worker: a run's
+  // arrays are handed over (transfer), not copied
+  runner.addEventListener('message', ({ data }) => {
+    if (data && data.type === 'scaly-gpu') gpuWorker.postMessage(data.run, data.transfer);
+  });
+  return cardHello().then(hello => new Promise(resolve => {
     runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data); };
     runner.onerror = e => resolve({ failed: e.message || 'the worker did not start' });
-    runner.postMessage({ type: 'hello', gpu: port }, port ? [port] : []);
-  }).then(async ready => {
+    runner.postMessage({ type: 'hello', gpu: hello });
+  })).then(async ready => {
     if (!ready.failed && version > 0 && myBytes) await load(myBytes.slice());
     return ready;
   });
+}
+
+// The page's card worker, made once, and its first answer, { card, why };
+// null where the page has no WebGPU.
+let cardAnswer = null;
+function cardHello() {
+  if (!navigator.gpu) return Promise.resolve(null);
+  cardAnswer ??= new Promise(resolve => {
+    gpuWorker = new Worker('gpu-worker.mjs', { type: 'module' });
+    gpuWorker.onmessage = ({ data }) => resolve({ card: !!(data && data.card), why: data && data.why || '' });
+    gpuWorker.onerror = e => resolve({ card: false, why: `the card's worker failed: ${e.message || e}` });
+  });
+  return cardAnswer;
 }
 
 // Break the run under way off -- one on the cores: the card's are done

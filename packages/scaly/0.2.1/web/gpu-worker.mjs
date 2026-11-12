@@ -27,10 +27,10 @@
 // (Card.why).
 //
 // A page that keeps its card while a program's worker is ended and made
-// again -- a run broken off -- makes this worker itself and hands each
-// program's worker one end of a MessageChannel, the other end here:
-// { port }. The port then carries the runs and the first answer, as the
-// worker's own messages do; the kernels compiled so far stay.
+// again -- a run broken off -- makes this worker itself and passes the
+// program's runs on to it (gpu-host.mjs, a relay); the kernels compiled so
+// far stay. Not through a MessageChannel between the two workers: Safari
+// delivered a message on such a port a second late, every other run.
 import { Card } from './gpu.mjs';
 
 // where the outputs begin in `shared` (gpu-host.mjs says the same)
@@ -69,11 +69,6 @@ async function serve(event) {
   Atomics.notify(state, 0);
 }
 
-self.onmessage = event => {
-  const port = event.data && event.data.port;
-  if (!port) return serve(event);
-  port.onmessage = serve;
-  opened.then(card => port.postMessage(hello(card)));
-};
+self.onmessage = serve;
 
 opened.then(card => self.postMessage(hello(card)));

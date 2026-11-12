@@ -22,9 +22,12 @@
 // (no SharedArrayBuffer: the page must be served with
 // Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy:
 // require-corp), or where the browser has no WebGPU. Instead of a URL it
-// takes a Worker the page made from gpu-worker.mjs, or a MessagePort whose
-// other end the page handed such a worker ({ port }): the card then
-// outlives the program's worker.
+// takes a Worker the page made from gpu-worker.mjs, or a RELAY: an object
+// with `postMessage(message, transfer)`, which the page passes on to such a
+// worker of its own, and `hello`, the first answer that worker gave
+// ({ card, why }). The card then outlives the program's worker. (A
+// MessagePort between the two workers would be shorter -- but Safari
+// delivered a message on one a second late, every other run.)
 //
 // WHO DECIDES is this module, as the native host does (gpu_darwin.c, whose
 // account this follows line by line -- but for the cap on a run that stalled,
@@ -86,14 +89,21 @@ export class GpuHost {
       if (typeof Worker === 'undefined') { GpuHost.why = 'no worker can be made from a worker here'; return null; }
       worker = new Worker(source, { type: 'module' });
     }
-    const has = await new Promise(resolve => {
-      worker.onmessage = event => {
-        GpuHost.why = event.data && event.data.why || '';
-        resolve(event.data && event.data.card === true);
-      };
-      worker.onerror = e => { GpuHost.why = `the card's worker failed: ${e && e.message || e}`; resolve(false); };
-    });
-    worker.onmessage = null;
+    let has;
+    if (worker.hello) {
+      // a relay: the page's card worker has answered already
+      GpuHost.why = worker.hello.why || '';
+      has = worker.hello.card === true;
+    } else {
+      has = await new Promise(resolve => {
+        worker.onmessage = event => {
+          GpuHost.why = event.data && event.data.why || '';
+          resolve(event.data && event.data.card === true);
+        };
+        worker.onerror = e => { GpuHost.why = `the card's worker failed: ${e && e.message || e}`; resolve(false); };
+      });
+      worker.onmessage = null;
+    }
     if (!has) {
       worker.terminate?.();
       return null;
