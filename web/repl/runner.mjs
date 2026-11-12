@@ -1,7 +1,7 @@
 // The playground's program worker (playground.html): a program the page
 // BUILT for wasm32-wasip1-threads with --gpu (`scaly build` in the page,
 // worker.mjs and playground.json) runs here, once per message -- a new
-// instance over a new memory each time --, its threads in the page's
+// instance each time, over one memory, wiped (threads.mjs, runMemory) --, its threads in the page's
 // workers (the page is their coordinator: threads.mjs) and its card in a
 // worker of its own (gpu-host.mjs, gpu-worker.mjs), opened once and kept, so
 // that a kernel is compiled once.
@@ -18,11 +18,12 @@
 // `drawings` are what worker.mjs hands back for a program `scaly run` ran:
 // the `.<w>x<h>.rgba` files and the SVG files it wrote.
 import { MemoryFiles, Wasi } from './wasi.mjs';
-import { ThreadHost, threadMemory, threaded, PAGE_MEMORY } from './threads.mjs';
+import { ThreadHost, runMemory, threaded, PAGE_MEMORY } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
 
 let program = null;     // { bytes, module }
 let card;               // the GpuHost, or null where the page has no card
+let kept = null;        // the program's memory, { memory, maximum }, kept from run to run
 
 self.onmessage = async ({ data }) => {
   try {
@@ -48,7 +49,8 @@ async function answer(data) {
     self.postMessage({ type: 'loaded', threads: threaded(program.bytes) });
     return;
   }
-  const memory = threadMemory(program.bytes, { most: PAGE_MEMORY });
+  kept = runMemory(program.bytes, kept, { most: PAGE_MEMORY }) ?? kept;
+  const memory = threaded(program.bytes) ? kept.memory : null;
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');

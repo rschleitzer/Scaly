@@ -28,6 +28,7 @@
 //   program.onmessage = ({ data }) => { if (threads.handle(data)) return; ... };
 //   // the program's worker
 //   const memory = threadMemory(bytes, { most: PAGE_MEMORY });   // null: no threads in this module
+//                  // (a program run again and again: runMemory, which keeps one)
 //   const wasi = new Wasi({ ..., env: { SCALY_CPUS: n }, threads: new ThreadHost({ memory, post: m => postMessage(m) }) });
 //   wasi.start(await WebAssembly.instantiate(module, wasi.imports()));
 //
@@ -89,13 +90,41 @@ export function threaded(bytes) {
 // below what the module asks, and where even that is refused, half of it is
 // asked, and so on down to what the module needs to start.
 export function threadMemory(bytes, { most = Infinity } = {}) {
+  const made = runMemory(bytes, null, { most });
+  return made && made.memory;
+}
+
+// The memory for a run of a module built for threads, where `kept` is what
+// this answered for the run before -- { memory, maximum }, null at first --:
+// the same memory, wiped, wherever the module can take it; a new one where
+// not; null where the module imports none. A page that runs one program
+// again and again keeps its memory so: Safari gives the address space of a
+// memory back late, and a page that made a new one per run had none left
+// after a dozen runs -- the next was made smaller (threadMemory), and the
+// program ran out of memory.
+//
+// Wiped, the memory is as a new one is, every byte 0, only larger: the
+// module sets up its data again where it is instantiated, and its threads
+// of the run before must be ended (Threads.end).
+export function runMemory(bytes, kept, { most = Infinity } = {}) {
   const limits = memoryImport(bytes);
   if (!limits || !limits.shared) return null;
   const { initial } = limits;
-  let maximum = Math.max(initial, Math.min(limits.maximum ?? 65536, most));
+  const declared = limits.maximum ?? 65536;
+  if (kept && kept.maximum <= declared && kept.maximum >= initial) {
+    try {
+      const pages = kept.memory.buffer.byteLength / 65536;
+      if (pages < initial) kept.memory.grow(initial - pages);
+      new Uint8Array(kept.memory.buffer).fill(0);
+      return kept;
+    } catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+    }
+  }
+  let maximum = Math.max(initial, Math.min(declared, most));
   for (;;) {
     try {
-      return new WebAssembly.Memory({ initial, maximum, shared: true });
+      return { memory: new WebAssembly.Memory({ initial, maximum, shared: true }), maximum };
     } catch (e) {
       if (!(e instanceof RangeError) || maximum <= initial) throw e;
       maximum = Math.max(initial, Math.floor(maximum / 2));

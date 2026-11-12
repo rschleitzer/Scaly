@@ -1,12 +1,14 @@
 // The showcase's program worker (web/mandelbrot/index.html): mandelbrot.wasm,
 // built for wasm32-wasip1-threads with --gpu, runs here once per message --
-// a new instance over a new memory each time --, its threads in the page's
+// a new instance each time, over one memory, wiped (threads.mjs, runMemory)
+// --, its threads in the page's
 // workers (the page is their coordinator: threads.mjs) and its card in a
 // worker of its own (gpu-host.mjs, gpu-worker.mjs), opened once and kept, so
 // that a kernel is compiled once.
 //
-//   { type: 'hello', gpu }               -> { type: 'ready', card, why }
+//   { type: 'hello', gpu, memory }       -> { type: 'ready', card, why }
 //   (during a run, to the page)          -> { type: 'scaly-gpu', run, transfer }
+//                                           { type: 'memory', kept }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'watch', memory, address, width, height }, then
 //                                           { type: 'done', status, stdout, stderr, picture, cards, compiled, parts }
@@ -17,6 +19,11 @@
 // page ends this worker to break a run off and makes another, and the card,
 // its kernels compiled, stays. Without it this worker opens a card of its
 // own.
+//
+// `memory` (`kept`) is the program's memory, { memory, maximum }: where this
+// worker makes a new one, it tells the page, and the page hands it to the
+// worker it makes after this one -- a page that made a memory per run ran
+// out of them in Safari.
 //
 // `load` puts another module in the place of mandelbrot.wasm: the reader's
 // own version, built in the page (index.html). `threads` says whether it
@@ -31,10 +38,11 @@
 // shared: the page then reads the picture as the threads and the card write
 // it.
 import { MemoryFiles, Wasi } from './wasi.mjs';
-import { ThreadHost, threadMemory, threaded, PAGE_MEMORY } from './threads.mjs';
+import { ThreadHost, runMemory, threaded, PAGE_MEMORY } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
 
 let program = null;     // { bytes, module }
+let kept = null;        // the program's memory, { memory, maximum }, kept from run to run
 
 // the page's card worker, reached through the page
 const relay = hello => ({
@@ -72,11 +80,17 @@ async function answer(data) {
   }
   await prepare(data.gpu);
   if (data.type === 'hello') {
+    if (data.memory) kept = data.memory;
     self.postMessage({ type: 'ready', card: card !== null, why: card ? '' : (GpuHost.why || 'the card did not open'),
                        threads: threaded(program.bytes) });
     return;
   }
-  const memory = threadMemory(program.bytes, { most: PAGE_MEMORY });
+  const got = runMemory(program.bytes, kept, { most: PAGE_MEMORY });
+  if (got && got !== kept) {
+    kept = got;
+    self.postMessage({ type: 'memory', kept });
+  }
+  const memory = got && got.memory;
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');

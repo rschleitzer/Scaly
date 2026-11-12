@@ -424,6 +424,7 @@ async function runOnce(way, workers, gpu, given = args(), seen = { ...view }) {
 // runner's card runs on to it.
 let gpuWorker = null;
 let myBytes = null;       // the reader's build, for a runner made again
+let kept = null;          // the program's memory, { memory, maximum }, for a runner made again
 let running = null;       // the run under way: { gpu, resolve }
 function startRunner() {
   runner = new Worker('runner.mjs', { type: 'module' });
@@ -431,11 +432,12 @@ function startRunner() {
   // arrays are handed over (transfer), not copied
   runner.addEventListener('message', ({ data }) => {
     if (data && data.type === 'scaly-gpu') gpuWorker.postMessage(data.run, data.transfer);
+    else if (data && data.type === 'memory') kept = data.kept;
   });
   return cardHello().then(hello => new Promise(resolve => {
     runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data); };
     runner.onerror = e => resolve({ failed: e.message || 'the worker did not start' });
-    runner.postMessage({ type: 'hello', gpu: hello });
+    runner.postMessage({ type: 'hello', gpu: hello, memory: kept });
   })).then(async ready => {
     if (!ready.failed && version > 0 && myBytes) await load(myBytes.slice());
     return ready;
