@@ -8,10 +8,14 @@
 ; the processor's: a point on the very edge of the set may come out the other
 ; way there.
 ;
-;   mandelbrot <width> <height> <turns> <cx> <cy> <span>
+;   mandelbrot <width> <height> <turns> <cx> <cy> <span> [<samples>]
 ;
 ; cx and cy, the picture's centre, and span, its width in the plane, are
-; whole numbers of billionths. The picture goes into the file
+; whole numbers of billionths. samples, 1 if not given, says how finely a
+; point is looked at: samples x samples places within it, whose colours are
+; averaged -- smooth edges, and samples * samples times the work. Before
+; the loop the program says where the picture lies in its memory, so that
+; the page can watch it grow. The picture goes into the file
 ; mandelbrot.<width>x<height>.rgba, four bytes per point -- red, green, blue,
 ; opacity, what a canvas takes --, and the program writes how long the loop
 ; took.
@@ -37,12 +41,10 @@ function whole(text: Slice[u8]) returns int
     n * sign
 }
 
-; The colour of one point: black inside the set, outside a palette over how
-; soon the point escaped.
-function colour(x: i32, y: i32, w: i32, h: i32, turns: i32, x0: f32, y0: f32, step: f32) returns u32
+; How soon a place of the plane escaped: `turns` where it never did, it
+; then belongs to the set.
+function escape(cr: f32, ci: f32, turns: i32) returns i32
 {
-    let cr x0 + (x as f32) * step
-    let ci y0 + (y as f32) * step
     var zr: f32 0.0
     var zi: f32 0.0
     var k: i32 0
@@ -53,16 +55,37 @@ function colour(x: i32, y: i32, w: i32, h: i32, turns: i32, x0: f32, y0: f32, st
         zr := t
         k := k + 1
     }
-    if k = turns
-        return 0xFF000000
-    ; the palette runs through once in the first 64 iterations and
-    ; again every 64 after: a picture with many iterations keeps its colours
-    let t ((k % 64) as f32) / 64.0
-    let u 1.0 - t
-    let r (9.0 * u * t * t * t * 255.0) as u32
-    let g (15.0 * u * u * t * t * 255.0) as u32
-    let b (8.5 * u * u * u * t * 255.0) as u32
-    0xFF000000 | (b << 16) | (g << 8) | r
+    k
+}
+
+; The colour of one point: the average over samples x samples places in it,
+; each black inside the set and outside from a palette over how soon it
+; escaped. The palette runs through once in the first 64 iterations and
+; again every 64 after: a picture with many iterations keeps its colours.
+function colour(x: i32, y: i32, turns: i32, samples: i32, x0: f32, y0: f32, step: f32) returns u32
+{
+    let sub step / (samples as f32)
+    var r: u32 0
+    var g: u32 0
+    var b: u32 0
+    var s: i32 0
+    while s < samples * samples
+    {
+        let cr x0 + (x as f32) * step + (((s % samples) as f32) + 0.5) * sub
+        let ci y0 + (y as f32) * step + (((s / samples) as f32) + 0.5) * sub
+        let k escape(cr, ci, turns)
+        if k < turns
+        {
+            let t ((k % 64) as f32) / 64.0
+            let u 1.0 - t
+            r := r + ((9.0 * u * t * t * t * 255.0) as u32)
+            g := g + ((15.0 * u * u * t * t * 255.0) as u32)
+            b := b + ((8.5 * u * u * u * t * 255.0) as u32)
+        }
+        s := s + 1
+    }
+    let n (samples * samples) as u32
+    0xFF000000 | ((b / n) << 16) | ((g / n) << 8) | (r / n)
 }
 
 let args os.arguments()
@@ -72,6 +95,7 @@ var turns: i32 200
 var cx -0.5
 var cy 0.0
 var span 3.0
+var samples: i32 1
 if args.length >= 6
 {
     w := whole(args[0]) as i32
@@ -81,15 +105,20 @@ if args.length >= 6
     cy := (whole(args[4]) as f64) / 1000000000.0
     span := (whole(args[5]) as f64) / 1000000000.0
 }
+if args.length >= 7
+    samples := whole(args[6]) as i32
+if samples < 1
+    samples := 1
 let step span / (w as f64)
 let x0 (cx - span / 2.0) as f32
 let y0 (cy - step * (h as f64) / 2.0) as f32
 let st step as f32
 
 var picture Vector[u32]((w * h) as size_t)
+print "picture at `picture.as_bytes().data as size_t`"
 let begun scaly_eio_now_ns()
 relaxed for p in w * h
-    picture.put(p as size_t, colour(p % w, p / w, w, h, turns, x0, y0, st))
+    picture.put(p as size_t, colour(p % w, p / w, turns, samples, x0, y0, st))
 let took scaly_eio_now_ns() - begun
 if File.write_bytes("mandelbrot.`w`x`h`.rgba", picture.as_bytes()) = false
     print "no picture written"

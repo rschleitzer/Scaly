@@ -37,8 +37,9 @@
   code, pre { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
   p code { background: var(--code); padding: 1px 4px; border-radius: 4px; }
   .picture { display: flex; flex-direction: column; gap: 8px; }
-  #canvas { display: block; width: 100%; height: auto; border-radius: 6px; background: #000; cursor: zoom-in;
-            touch-action: manipulation; }
+  #canvas { display: block; width: 100%; height: auto; border-radius: 6px; background: #000; cursor: grab;
+            touch-action: none; user-select: none; -webkit-user-select: none; }
+  #canvas.dragging { cursor: grabbing; }
   .under { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
   .under .spacer { flex: 1; }
   .side { display: flex; flex-direction: column; gap: 16px; }
@@ -107,7 +108,7 @@
     <div class="under">
       <span id="where">−0.5 + 0i, 3 wide</span>
       <span class="spacer"></span>
-      <span>Click to zoom in, Shift-click to zoom out.</span>
+      <span>Drag to move, scroll or pinch to zoom, double-click to zoom in.</span>
       <a href="#" id="reset">Reset the view</a>
     </div>
     <p class="note" id="deep" hidden>This deep, the 32-bit numbers the card computes with — and so the program on
@@ -131,6 +132,9 @@
       <label>Size <select id="size">
         <option value="600x400">600 × 400</option><option value="900x600" selected>900 × 600</option>
         <option value="1500x1000">1500 × 1000</option>
+      </select></label>
+      <label title="How many places within a point are computed and averaged: smoother edges, and as many times the work">Samples per point <select id="samples">
+        <option value="1">1</option><option value="2">4</option><option value="3" selected>9</option><option value="4">16</option>
       </select></label>
     </div>
     <button class="primary" id="race" disabled>Race them: 1, 2, 4 … cores, and the card</button>
@@ -158,8 +162,13 @@
       so the compiler also writes it as a kernel the card can run. What changes between the buttons is only what
       the host gives the program — one core, all of them, the card — and the picture comes out the same.
       <code>relaxed</code> before the loop allows the card's floating point, which rounds a little more loosely:
-      on the card a few points in a thousand come out a shade different, and one on the very edge of the set
-      may fall to the other side. The table says how many.</p>
+      on the card some points come out a shade different — a few in a hundred where several samples make a
+      point —, and one on the very edge of the set may fall to the other side. The table says how many.</p>
+    <p>While it runs, the page reads the picture straight out of the program's memory, where its threads and the
+      card put the points, and paints what is there: one core goes row by row, all of them fill their parts of
+      the picture at once, and the card is done before the eye can follow. Each point is the average of several
+      places in it — nine unless you choose otherwise —, which smooths the edges and multiplies the work: enough
+      to see the difference, not only to read it.</p>
     <p>“Let Scaly decide” gives the program both: the runtime measures the first rounds on the processor and
       sends the loop to the card where that pays — a small picture with few iterations may stay on the cores.
       The times are those of the loop alone, measured by the program. The card needs its kernel compiled once —
@@ -180,9 +189,11 @@
     <p class="note">Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in
       the page — for threads and for the card, as the original was. The first build loads the compiler (about
       8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the
-      same arguments — width, height, iterations, and the centre and width of the picture in billionths — and
-      shows the picture it writes to a file whose name ends in <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>;
-      what it prints appears under the buttons.</p>
+      same arguments — width, height, iterations, the centre and width of the picture in billionths, and the
+      samples per side of a point — and shows the picture it writes to a file whose name ends in
+      <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>; where it prints <code>picture at</code> and the address of
+      the picture in its memory before its loop, the page watches it grow. What else it prints appears under the
+      buttons.</p>
   </section>
 </main>
 
@@ -210,14 +221,14 @@ function status(text, bad = false) {
 
 function settings() {
   const [w, h] = $('size').value.split('x').map(Number);
-  return { w, h, turns: Number($('turns').value) };
+  return { w, h, turns: Number($('turns').value), samples: Number($('samples').value) };
 }
 
 // the program's arguments: whole numbers, the plane in billionths
 function args() {
-  const { w, h, turns } = settings();
+  const { w, h, turns, samples } = settings();
   const b = x => String(Math.round(x * 1e9));
-  return [String(w), String(h), String(turns), b(view.cx), b(view.cy), b(view.span)];
+  return [String(w), String(h), String(turns), b(view.cx), b(view.cy), b(view.span), String(samples)];
 }
 
 function key() { return args().join(' '); }
@@ -229,7 +240,8 @@ function describe() {
 }
 
 // One run of the program: the page is the coordinator of its threads.
-async function runOnce(label, workers, gpu, given = args()) {
+// `seen` is the view the run draws; null for a run nobody watches.
+async function runOnce(label, workers, gpu, given = args(), seen = { ...view }) {
   const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
   let resolve;
   const done = new Promise(r => { resolve = r; });
@@ -240,21 +252,97 @@ async function runOnce(label, workers, gpu, given = args()) {
   });
   runner.onmessage = ({ data }) => {
     if (threads.handle(data)) return;
-    if (data.type === 'done') resolve(data);
+    if (data.type === 'watch' && seen) watch(data, seen);
+    else if (data.type === 'done') resolve(data);
   };
   const t0 = performance.now();
   runner.postMessage({ type: 'run', args: given, env, gpu });
   const answer = await done;
   threads.end();
+  live = null;
   const ms = Number((/ms ([0-9.]+)/.exec(answer.stdout) || [])[1]);
   return { label, workers, gpu, ms, wall: performance.now() - t0, ...answer };
 }
 
-function show(picture, w, h) {
-  if (!picture || !w || !h || picture.length !== w * h * 4) return;
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(picture.buffer, picture.byteOffset, w * h * 4), w, h), 0, 0);
+// --- the picture -----------------------------------------------------------
+//
+// The canvas shows the picture for `view`. Under it lie two layers, each a
+// picture with the view it was computed for, drawn moved and scaled to where
+// its points lie now: `base`, the last finished picture, and `live`, the one
+// a run is writing -- read straight out of the program's memory, where its
+// threads and the card put the points. While a run is on, the old picture
+// is dimmed, and the new one grows over it.
+const ctx = canvas.getContext('2d');
+let base = null;          // { canvas, view, w, h }
+let live = null;          // the same, and { image, memory, address }
+
+function layer(w, h, seen) {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  return { canvas: c, view: seen, w, h };
+}
+
+// a view's step (the width of a point) and its top-left corner in the plane,
+// for a picture w points wide and h high -- as the program computes them
+function frame(v, w, h) {
+  const step = v.span / w;
+  return { step, x0: v.cx - v.span / 2, y0: v.cy - step * h / 2 };
+}
+
+// where a layer lies on the canvas in the current view
+function place(l) {
+  const f = frame(view, canvas.width, canvas.height), g = frame(l.view, l.w, l.h);
+  const k = g.step / f.step;
+  return [(g.x0 - f.x0) / f.step, (g.y0 - f.y0) / f.step, l.w * k, l.h * k];
+}
+
+function compose() {
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (base) {
+    ctx.globalAlpha = live ? 0.3 : 1;
+    ctx.drawImage(base.canvas, ...place(base));
+    ctx.globalAlpha = 1;
+  }
+  if (live) ctx.drawImage(live.canvas, ...place(live));
+}
+
+// the points the run has written so far: the memory is fresh for each run,
+// so a point not yet written is zero -- transparent
+function copyLive() {
+  const n = live.w * live.h * 4, buffer = live.memory.buffer;
+  if (live.address + n > buffer.byteLength) return;
+  live.image.data.set(new Uint8Array(buffer, live.address, n));
+  live.canvas.getContext('2d').putImageData(live.image, 0, 0);
+}
+
+// paint on the next frame -- and on every frame while a run is on
+let painting = false;
+function redraw() {
+  if (painting) return;
+  painting = true;
+  requestAnimationFrame(() => {
+    painting = false;
+    if (live) copyLive();
+    compose();
+    if (live) redraw();
+  });
+}
+
+function watch({ memory, address, width, height }, seen) {
+  if (!memory || !(memory.buffer instanceof SharedArrayBuffer) || !width || !height) return;
+  live = { ...layer(width, height, seen), image: new ImageData(width, height), memory, address };
+  redraw();
+}
+
+function finish(picture, w, h, seen) {
+  if (picture && w && h && picture.length === w * h * 4) {
+    base = layer(w, h, seen);
+    base.canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(picture.buffer, picture.byteOffset, w * h * 4), w, h), 0, 0);
+  }
+  redraw();
 }
 
 // how many points of a picture differ from the first one-core run's
@@ -345,15 +433,17 @@ async function go(list) {
   try {
     for (const [label, workers, gpu] of list) {
       status(`${label}…`);
-      const r = await runOnce(label, workers, gpu);
+      const given = args(), seen = { ...view };
+      drawn = key();
+      const r = await runOnce(label, workers, gpu, given, seen);
       if (r.status !== '0') { status(`${label}: the program ended with ${r.status} ${r.stderr || ''}`, true); break; }
       r.differ = differing(r.picture);
       if (r.gpu === 'auto') r.label = r.cards > 0 ? 'Scaly chose the card' : `Scaly chose ${cpus} cores`;
       if (version > 0) r.label += ' (yours)';
       if (r.differ === null && r.workers === 1 && r.gpu === 'off') r.differ = 0;   // the picture the others are held against
       runs.push(r);
-      show(r.picture, r.width, r.height);
-      const printed = r.stdout.replace(/^ms [0-9.]+\n?/m, '').trim();
+      finish(r.picture, r.width, r.height, seen);
+      const printed = r.stdout.replace(/^ms [0-9.]+\n?/m, '').replace(/^picture at \d+\n?/m, '').trim();
       $('output').hidden = printed === '';
       $('output').textContent = printed;
       table();
@@ -362,7 +452,9 @@ async function go(list) {
     if (!$('status').classList.contains('bad')) status('Ready.');
   } finally {
     setBusy(false);
+    redraw();
   }
+  if (pending) settle(true);
 }
 
 const ONE = ['One core', 1, 'off'];
@@ -370,10 +462,13 @@ const ALL = [`${cpus} cores`, cpus, 'off'];
 const CARD = ['The card', cpus, 'on'];
 const AUTO = ['Scaly decides', cpus, 'auto'];
 
-$('one').onclick = () => go([ONE]);
-$('all').onclick = () => go([ALL]);
-$('card').onclick = () => go([CARD]);
-$('auto').onclick = () => go([AUTO]);
+// the way chosen last: a moved or zoomed picture is drawn that way too
+let chosen = null;
+const choose = way => () => { if (!busy) chosen = way; go([way]); };
+$('one').onclick = choose(ONE);
+$('all').onclick = choose(ALL);
+$('card').onclick = choose(CARD);
+$('auto').onclick = choose(AUTO);
 $('race').onclick = () => {
   const list = [ONE];
   for (let n = 2; n < cpus; n *= 2) list.push([`${n} cores`, n, 'off']);
@@ -381,25 +476,129 @@ $('race').onclick = () => {
   if (hasCard) list.push(CARD);
   go(list);
 };
-$('turns').onchange = $('size').onchange = () => { describe(); };
-$('reset').onclick = e => { e.preventDefault(); view = { ...HOME }; describe(); go([ALL]); };
-canvas.onclick = e => {
-  if (busy) return;
-  const r = canvas.getBoundingClientRect();
+$('turns').onchange = $('samples').onchange = () => describe();
+$('size').onchange = () => {
   const { w, h } = settings();
-  const px = (e.clientX - r.left) / r.width * w, py = (e.clientY - r.top) / r.height * h;
-  const step = view.span / w;
-  view.cx = view.cx - view.span / 2 + px * step;
-  view.cy = view.cy - step * h / 2 + py * step;
-  view.span = e.shiftKey ? Math.min(view.span * 4, 6) : view.span / 4;
+  canvas.width = w;
+  canvas.height = h;
   describe();
-  go([hasCard ? AUTO : ALL]);
+  redraw();
 };
+$('reset').onclick = e => { e.preventDefault(); view = { ...HOME }; changed(); settle(true); };
+
+// --- moving and zooming, as on a map --------------------------------------
+//
+// A gesture moves the pictures there are at once; when it rests, the program
+// draws the new view -- where a run is on, right after it.
+let drawn = '';           // the key of the picture drawn last, or being drawn
+let pending = false;      // the view changed during a run
+let resting = 0;
+
+// a point of an event, in the canvas's own pixels
+function at(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height };
+}
+
+// the view in which the plane's point under `from` in `start` lies under
+// `to`, `factor` times as wide -- not wider than the whole set, and not so
+// narrow that the 32-bit numbers have nothing left to tell apart
+function moved(start, from, to, factor) {
+  const f = frame(start, canvas.width, canvas.height);
+  const px = f.x0 + from.x * f.step, py = f.y0 + from.y * f.step;
+  const finest = canvas.width * 3e-8 * Math.max(1, Math.abs(px), Math.abs(py));
+  const span = Math.min(6, Math.max(finest, start.span * factor));
+  const step = span / canvas.width;
+  return { cx: px - to.x * step + span / 2, cy: py - to.y * step + step * canvas.height / 2, span };
+}
+
+function changed() {
+  describe();
+  redraw();
+}
+
+// draw the view once the gesture rests (at once: now)
+function settle(now = false) {
+  clearTimeout(resting);
+  resting = setTimeout(() => {
+    if (key() === drawn && !pending) return;
+    if (busy) { pending = true; return; }
+    pending = false;
+    go([chosen ?? (hasCard ? AUTO : ALL)]);
+  }, now ? 0 : 250);
+}
+
+const pointers = new Map();
+let gesture = null;       // the view and the pointers when the gesture (or its number of fingers) began
+function begin() {
+  gesture = { view: { ...view }, points: [...pointers.values()].slice(0, 2).map(p => ({ ...p })) };
+}
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, at(e));
+  canvas.classList.add('dragging');
+  begin();
+});
+canvas.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId) || !gesture) return;
+  pointers.set(e.pointerId, at(e));
+  const now = [...pointers.values()].slice(0, 2), was = gesture.points;
+  if (now.length !== was.length) return;
+  if (now.length === 1) view = moved(gesture.view, was[0], now[0], 1);
+  else {
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const apart = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    view = moved(gesture.view, mid(was[0], was[1]), mid(now[0], now[1]), apart(was[0], was[1]) / apart(now[0], now[1]));
+  }
+  changed();
+});
+const lift = e => {
+  if (!pointers.delete(e.pointerId)) return;
+  if (pointers.size) begin();
+  else { gesture = null; canvas.classList.remove('dragging'); }
+  settle();
+};
+canvas.addEventListener('pointerup', lift);
+canvas.addEventListener('pointercancel', lift);
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.height : 1;
+  // a pinch on a trackpad comes as a wheel with Ctrl, in smaller steps
+  const p = at(e);
+  view = moved(view, p, p, Math.exp(e.deltaY * unit * (e.ctrlKey ? 0.01 : 0.002)));
+  changed();
+  settle();
+}, { passive: false });
+canvas.addEventListener('dblclick', e => {
+  const p = at(e);
+  view = moved(view, p, p, e.shiftKey ? 2 : 0.5);
+  changed();
+  settle(true);
+});
+// Safari's pinch on a trackpad (on a touch screen the pointers above do it)
+let pinch = null;
+canvas.addEventListener('gesturestart', e => {
+  e.preventDefault();
+  if (!pointers.size) pinch = { view: { ...view }, p: at(e) };
+});
+canvas.addEventListener('gesturechange', e => {
+  e.preventDefault();
+  if (!pinch) return;
+  view = moved(pinch.view, pinch.p, pinch.p, 1 / e.scale);
+  changed();
+});
+canvas.addEventListener('gestureend', e => {
+  e.preventDefault();
+  if (pinch) { pinch = null; settle(); }
+});
 
 // what a self-test of the page (tests/gpu/web/run.sh) reads: every way once
 async function selfTest() {
   $('size').value = '600x400';
   $('turns').value = '250';
+  $('samples').value = '1';
+  $('size').onchange();
   const list = [ONE, ALL];
   if (hasCard) list.push(CARD, AUTO);
   await go(list);
@@ -489,7 +688,7 @@ async function warm() {
   const was = $('status').textContent;
   status('Preparing the graphics card…');
   const [, , turns, cx, cy, span] = args();
-  await runOnce('warm', 1, 'on', ['16', '16', turns, cx, cy, span]).catch(() => null);
+  await runOnce('warm', 1, 'on', ['16', '16', turns, cx, cy, span], null).catch(() => null);
   status(was);
 }
 

@@ -7,7 +7,8 @@
 //
 //   { type: 'hello' }                    -> { type: 'ready', card }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
-//   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, picture, cards, compiled }
+//   { type: 'run', args, env, gpu }      -> { type: 'watch', memory, address, width, height }, then
+//                                           { type: 'done', status, stdout, stderr, picture, cards, compiled }
 //
 // `load` puts another module in the place of mandelbrot.wasm: the reader's
 // own version, built in the page (index.html). `threads` says whether it
@@ -16,6 +17,11 @@
 // `gpu` is the card's mode for the run: 'off', 'on' or 'auto'. `picture`
 // holds the bytes the program wrote (mandelbrot.<w>x<h>.rgba), `cards` how
 // many loops the card took in this run.
+//
+// `watch` comes while the program runs, where it says where its picture
+// lies (a line `picture at <address>` before its loop) and its memory is
+// shared: the page then reads the picture as the threads and the card write
+// it.
 import { MemoryFiles, Wasi } from './wasi.mjs';
 import { ThreadHost, threadMemory } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
@@ -48,8 +54,23 @@ self.onmessage = async ({ data }) => {
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
   const files = new MemoryFiles();
+  // what the program writes, read as it comes: the line that says where its
+  // picture lies is handed to the page at once
+  const written = [];
+  const decoder = new TextDecoder();
+  let line = '';
+  const stdout = bytes => {
+    written.push(bytes);
+    line += decoder.decode(bytes, { stream: true });
+    for (let nl; (nl = line.indexOf('\n')) >= 0; line = line.slice(nl + 1)) {
+      const at = /^picture at (\d+)$/.exec(line.slice(0, nl));
+      if (at && memory)
+        self.postMessage({ type: 'watch', memory, address: Number(at[1]),
+                           width: Number(data.args[0]), height: Number(data.args[1]) });
+    }
+  };
   const wasi = new Wasi({
-    args: ['mandelbrot', ...data.args], env: data.env, files, gpu: card,
+    args: ['mandelbrot', ...data.args], env: data.env, files, gpu: card, stdout,
     threads: memory ? new ThreadHost({ memory, post: m => self.postMessage(m) }) : null,
   });
   let status;
@@ -74,6 +95,9 @@ self.onmessage = async ({ data }) => {
   const cards = sum('card') - before;
   // of the run: compiling the card's kernels, which only a kernel's first run pays
   const compiled = sum('compile_ms') - compiledBefore;
-  self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), picture, width, height, cards, compiled },
+  const all = new Uint8Array(written.reduce((n, b) => n + b.length, 0));
+  written.reduce((at, b) => (all.set(b, at), at + b.length), 0);
+  const text = new TextDecoder().decode(all);
+  self.postMessage({ type: 'done', status, stdout: text, stderr: wasi.stderr_text(), picture, width, height, cards, compiled },
                    picture ? [picture.buffer] : []);
 };

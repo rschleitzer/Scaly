@@ -277,7 +277,7 @@ if ! web/mandelbrot/build.sh "$T/show" "$STAGE" > "$T/show.build" 2>&1; then
 fi
 "$STAGE" --gpu -o "$T/bin/showcase" web/mandelbrot/mandelbrot.scaly > "$T/bin/showcase.build" 2>&1 ||
   { echo "gpu-web: FAIL — the showcase's program does not build natively"; exit 1; }
-(cd "$T/cwd" && SCALY_GPU=off SCALY_WORKERS=1 "$T/bin/showcase" 600 400 250 -500000000 0 3000000000 > /dev/null 2>&1)
+(cd "$T/cwd" && SCALY_GPU=off SCALY_WORKERS=1 "$T/bin/showcase" 600 400 250 -500000000 0 3000000000 1 > /dev/null 2>&1)
 page "$T/show" "index.html?selftest" 300
 python3 - "$T/result" "$T/cwd/mandelbrot.600x400.rgba" <<'PY' || failed=1
 import json, os, sys
@@ -291,7 +291,7 @@ except Exception as e:
 h = 2166136261
 for b in open(native, 'rb').read():
     h = ((h ^ b) * 16777619) & 0xffffffff
-if r['args'] != ['600', '400', '250', '-500000000', '0', '3000000000']:
+if r['args'] != ['600', '400', '250', '-500000000', '0', '3000000000', '1']:
     fails.append('the self-test ran %s, not what was compared natively' % r['args'])
 if r['hash'] != h:
     fails.append('one core: the picture is not the native program\'s')
