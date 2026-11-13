@@ -765,7 +765,11 @@ async function go(list) {
       r.done = true;
       r.yours = version > 0;
       if (r.differ === null && r.workers === 1 && r.gpu === 'off') r.differ = 0;   // the picture the others are held against
-      runs.push(r);
+      // a way run again takes its row: the table holds each way once, and the
+      // page does not keep a picture per click
+      const again = runs.findIndex(x => x.way === r.way && x.workers === r.workers && x.gpu === r.gpu && x.yours === r.yours);
+      if (again >= 0) runs[again] = r;
+      else runs.push(r);
       finish(r.picture, r.width, r.height, seen);
       const printed = r.stdout.replace(/^ms [0-9.]+\n?/m, '').replace(/^picture at \d+\n?/m, '').trim();
       $('output').hidden = printed === '';
