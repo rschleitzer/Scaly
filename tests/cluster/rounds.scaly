@@ -1,0 +1,84 @@
+; Rounds on other machines (ROADMAP-cluster.md, stage C2). Built with
+; --cluster, a parallel `for` whose captures can travel is offered to the
+; helpers of this build first (SCALY_CLUSTER=on sends it): each takes a
+; stretch of rounds, runs it on its cores and sends back what the rounds
+; put. Whatever happens to the helpers, the program prints the same.
+;
+; Three loops: one in a procedure over a Slice parameter and a record
+; parameter, putting into a Vector parameter; one over an Array and a
+; record value; one capturing a String, which stays on this machine.
+;
+; Expected: map 7.5378426665540825
+; Expected: array 80959504500
+; Expected: string 11
+
+define Affine(a: f64, b: f64, n: int)
+
+function f(x: f64, t: Affine) returns f64
+{
+    var s x
+    var k 0
+    while k < t.n
+    {
+        s := s * t.a + t.b / (1.0 + (k as f64))
+        k := k + 1
+    }
+    s
+}
+
+procedure map(xs: Slice[f64], t: Affine, mutable out: Vector[f64])
+{
+    for i in xs.length
+        out.put(i, f(xs[i], t))
+}
+
+procedure counts(n: int) returns Array[int]
+{
+    var arr Array[int]()
+    var i 0
+    while i < n
+    {
+        arr.add(i * 3)
+        i := i + 1
+    }
+    arr
+}
+
+let n 3000
+var xs Vector[f64](n as size_t)
+var j 0
+while j < n
+{
+    xs.put(j as size_t, (j as f64) / 100.0)
+    j := j + 1
+}
+let t Affine(0.999, 0.5, 200000)
+var out Vector[f64](n as size_t)
+map(xs.as_slice(), t, out)
+var sum 0.0
+var m 0
+while m < n
+{
+    sum := sum + out[m as size_t]
+    m := m + 1
+}
+print "map `sum`"
+
+let arr counts(n)
+var sq Vector[int](n as size_t)
+for i in n
+    sq.put(i as size_t, arr[i as size_t] * arr[i as size_t] + (f(1.0, t) as int))
+var total 0
+m := 0
+while m < n
+{
+    total := total + sq[m as size_t]
+    m := m + 1
+}
+print "array `total`"
+
+let word "x"
+var lens Vector[int](n as size_t)
+for i in n
+    lens.put(i as size_t, word.get_length() as int + i)
+print "string `lens[10 as size_t]`"

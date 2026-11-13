@@ -197,6 +197,7 @@ define Emitter
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
         gpu: bool                   ; --gpu: a parallel loop that is a kernel goes to the graphics card first
+        cluster: bool               ; --cluster: a parallel loop whose rounds can travel is offered to helpers first
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
         release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
@@ -220,6 +221,7 @@ define Emitter
             page_size := 0
             portable_simd := false
             gpu := false
+            cluster := false
             library_linkage := false
             keep_main_frame := false
             release := false
@@ -534,6 +536,14 @@ define Emitter
         ; would rescan into the same arrays).
         parfor_locals: ref[Array[String]]?
         parfor_captures: ref[Array[String]]?
+        ; --cluster: beside each capture its type, and every use of a
+        ; capture by name ("=name" a put at exactly the loop's counter,
+        ; "!name" a put anywhere else) -- what says whether its rounds can
+        ; run on another machine; and the descriptors of the module's loops
+        ; that can, made known by one constructor (emit_cluster_ctor)
+        parfor_cap_types: ref[Array[PlannedType]]?
+        parfor_uses: ref[Array[String]]?
+        cluster_loops: ref[Array[LLVMValueRef]]?
         ; Milestone 4.2: static body-weight memo (mangled name -> saturated
         ; weight) plus the stack of names currently being weighed (recursion
         ; falls back to the flat call cost instead of diverging).
@@ -679,6 +689,9 @@ define Emitter
             parfor_locals := Array[String]^this()
             region_walkers := Array[String]^this()
             parfor_captures := Array[String]^this()
+            parfor_cap_types := Array[PlannedType]^this()
+            parfor_uses := Array[String]^this()
+            cluster_loops := Array[LLVMValueRef]^this()
             fj_mode := 0
             fj_self := String()
             fj_seen := false
@@ -8699,13 +8712,19 @@ define Emitter
             ; cast (the s-main func_cstr pattern): a String constant's c_data()
             ; has no NUL terminator, and this lookup DEPENDS on matching.
             let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
+            var ctors Array[LLVMValueRef]()
             if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
             {
                 this.hand_over_arguments(stamp_main)
                 emit_build_stamp()
                 if target_is_coff
-                    this.emit_stdio_binary_ctor()
+                    ctors.add(this.emit_stdio_binary_ctor())
             }
+            let cluster_ctor this.emit_cluster_ctor()
+            if cluster_ctor <> null
+                ctors.add cluster_ctor
+            if ctors.length > 0
+                this.emit_global_ctors(ctors)
             ; the compiler's own global, under the name its package gives it
             ; (Planner.plan_global#)
             let pkg_stamp this.package_stamp_global()
@@ -9032,7 +9051,7 @@ define Emitter
         ; (LNK2001, the first CI run of the day). The executables built from the
         ; target-neutral seed (compiler, tool) get the same from the runtime's
         ; own hook in scaly/fiber/eio_windows.c; setting a mode twice is free.
-        procedure emit_stdio_binary_ctor(mutable this)
+        procedure emit_stdio_binary_ctor(mutable this) returns LLVMValueRef
         {
             let void_ty LLVMVoidTypeInContext(context)
             let i32_ty LLVMInt32TypeInContext(context)
@@ -9065,21 +9084,35 @@ define Emitter
             LLVMBuildRetVoid builder
             if saved_block <> null
                 LLVMPositionBuilderAtEnd(builder, saved_block)
+            ctor
+        }
 
+        ; llvm.global_ctors: the module's constructors, in this order, each
+        ; at the default priority.
+        procedure emit_global_ctors(mutable this, ctors: Array[LLVMValueRef])
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
             var fields Vector[LLVMTypeRef](3)
             fields.put(0, i32_ty)
             fields.put(1, ptr_ty)
             fields.put(2, ptr_ty)
             let entry_ty LLVMStructTypeInContext(context, fields.data, 3, 0)
-            var vals Vector[LLVMValueRef](3)
-            vals.put(0, LLVMConstInt(i32_ty, 65535, 0))
-            vals.put(1, ctor)
-            vals.put(2, LLVMConstPointerNull(ptr_ty))
-            var entries Vector[LLVMValueRef](1)
-            entries.put(0, LLVMConstStructInContext(context, vals.data, 3, 0))
-            let ctors LLVMAddGlobal(llvm_module, LLVMArrayType2(entry_ty, 1), "llvm.global_ctors")
-            LLVMSetLinkage(ctors, LLVMLinkage.Appending())
-            LLVMSetInitializer(ctors, LLVMConstArray2(entry_ty, entries.data, 1))
+            let n ctors.length
+            var entries Vector[LLVMValueRef](n)
+            var i: size_t 0
+            while i < n
+            {
+                var vals Vector[LLVMValueRef](3)
+                vals.put(0, LLVMConstInt(i32_ty, 65535, 0))
+                vals.put(1, ctors[i])
+                vals.put(2, LLVMConstPointerNull(ptr_ty))
+                entries.put(i, LLVMConstStructInContext(context, vals.data, 3, 0))
+                i := i + 1
+            }
+            let gc LLVMAddGlobal(llvm_module, LLVMArrayType2(entry_ty, n), "llvm.global_ctors")
+            LLVMSetLinkage(gc, LLVMLinkage.Appending())
+            LLVMSetInitializer(gc, LLVMConstArray2(entry_ty, entries.data, n))
         }
 
         ; the compiler's own stamp global in this module, under the name its
@@ -19744,10 +19777,14 @@ define Emitter
         ; already recorded, and actually resolves to a local of the
         ; enclosing function (names that resolve to nothing here are
         ; globals, functions, or namespaces — not frame state).
-        procedure parfor_add_capture(mutable this, name: String)
+        procedure parfor_add_capture(mutable this, name: String, t: PlannedType)
         {
             if parfor_is_local(name)
                 return
+            let v lookup_variable name
+            if v = null
+                return
+            parfor_uses.add name
             var i: size_t 0
             while i < parfor_captures.length
             {
@@ -19756,10 +19793,84 @@ define Emitter
                     return
                 i := i + 1
             }
-            let v lookup_variable name
-            if v = null
-                return
             parfor_captures.add name
+            parfor_cap_types.add t
+        }
+
+        ; `out.put(i, v)` in a scanned body: noted against `out` as a put at
+        ; exactly the loop's counter or as one anywhere else.
+        procedure parfor_note_put(mutable this, call: PlannedCall)
+        {
+            if call.args = null or call.args.length <> 3
+                return
+            let recv_ptr call.args.get 0
+            let idx_ptr call.args.get 1
+            if recv_ptr = null or idx_ptr = null
+                return
+            let recv recv_ptr.unwrap()
+            choose recv.expr
+                when v: Variable
+                {
+                    if parfor_is_local(v.name)
+                        return
+                    let members recv.member_access <> null and recv.member_access.length > 0
+                    ; on this emitter's page: the array outlives this routine
+                    var text "!`v.name`"
+                    if members = false and parfor_is_counter(idx_ptr.unwrap())
+                        text := "=`v.name`"
+                    parfor_uses.add(String^this(text))
+                }
+                else
+                    0
+        }
+
+        ; The scanned loop's own counter (the first name the scan bound, not
+        ; bound again inside), under groupings and casts.
+        function parfor_is_counter(this, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null and op.member_access.length > 0
+                return false
+            choose op.expr
+                when v: Variable
+                {
+                    let first parfor_locals.get 0
+                    if first = null or (*first) <> v.name
+                        return false
+                    var i: size_t 1
+                    while i < parfor_locals.length
+                    {
+                        let p parfor_locals.get i
+                        if p <> null and (*p) = v.name
+                            return false
+                        i := i + 1
+                    }
+                    return true
+                }
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    return parfor_is_counter((*r))
+                }
+                when tp: Tuple
+                {
+                    if tp.is_region_alloc or tp.components = null or tp.components.length <> 1
+                        return false
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return false
+                    let c c_ptr.unwrap()
+                    if c.name <> null or c.value = null or c.value.length <> 1
+                        return false
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return false
+                    return parfor_is_counter(in_ptr.unwrap())
+                }
+                else
+                    0
+            false
         }
 
         procedure parfor_scan_operands(mutable this, ops: ref[Vector[PlannedOperand]]?)
@@ -19817,9 +19928,13 @@ define Emitter
         {
             choose op.expr
                 when v: Variable
-                    parfor_add_capture(v.name)
+                    parfor_add_capture(v.name, v.variable_type)
                 when call: Call
+                {
+                    if call.name = "put" and call.is_intrinsic = false and call.is_indirect = false
+                        parfor_note_put(call)
                     parfor_scan_operands(call.args)
+                }
                 when tp: Tuple
                 {
                     if tp.components <> null
@@ -20629,9 +20744,12 @@ define Emitter
             ; may meet a NESTED promoted for, which rescans.
             parfor_locals.length := 0
             parfor_captures.length := 0
+            parfor_cap_types.length := 0
+            parfor_uses.length := 0
             parfor_add_local(for_expr.identifier)
             parfor_scan_action(for_expr.body)
             var cap_names Array[String]()
+            var cap_types Array[PlannedType]()
             var ci: size_t 0
             while ci < parfor_captures.length
             {
@@ -20640,7 +20758,15 @@ define Emitter
                 {
                     let nm (*nm_ptr)
                     cap_names.add nm
+                    cap_types.add(parfor_cap_types[ci])
                 }
+                ci := ci + 1
+            }
+            var cap_uses Array[String]()
+            ci := 0
+            while ci < parfor_uses.length
+            {
+                cap_uses.add(parfor_uses[ci])
                 ci := ci + 1
             }
             let cap_count cap_names.length
@@ -21072,6 +21198,47 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, saved_block)
             if config.emit_debug_info
                 set_debug_location(for_expr.loc)
+
+            ; --cluster: rounds that can travel are offered to helpers first
+            ; (scaly_cluster_offer); where it answers 1 they all ran there,
+            ; and the loop below is jumped over.
+            var cluster_after: LLVMBasicBlockRef null
+            if config.cluster and for_expr.is_iterator_loop = false and keeps = false and n_red = 0 and pointer_bytes = 8
+            {
+                let desc this.cluster_descriptor(for_expr, task_fn, cell_ty, base_fields, cap_names, cap_types, cap_uses, cap_slot_tys)
+                if desc <> null
+                {
+                    let count LLVMBuildIntCast2(builder, seq_value, i64_ty, 1, "cluster.count")
+                    let tcell entry_alloca(cell_ty, "cluster.cell")
+                    LLVMBuildStore(builder, LLVMConstInt(i64_ty, 0, 0), LLVMBuildStructGEP2(builder, cell_ty, tcell, 0, "cluster.lo"))
+                    LLVMBuildStore(builder, count, LLVMBuildStructGEP2(builder, cell_ty, tcell, 1, "cluster.hi"))
+                    ci := 0
+                    while ci < cap_count
+                    {
+                        let cv_ptr cap_values.get ci
+                        LLVMBuildStore(builder, (*cv_ptr), LLVMBuildStructGEP2(builder, cell_ty, tcell, (base_fields + ci) as u32, "cluster.cap"))
+                        ci := ci + 1
+                    }
+                    LLVMBuildStore(builder, LLVMConstNull(ptr_ty), LLVMBuildStructGEP2(builder, cell_ty, tcell, (base_fields + cap_count) as u32, "cluster.cancel"))
+                    var of_tys Vector[LLVMTypeRef](3)
+                    of_tys.put(0, ptr_ty)
+                    of_tys.put(1, ptr_ty)
+                    of_tys.put(2, i64_ty)
+                    let i32_ty LLVMInt32TypeInContext(context)
+                    let of_ty LLVMFunctionType(i32_ty, of_tys.data, 3, 0)
+                    let of_fn get_parfor_runtime_fn("_Z19scaly_cluster_offerPvPvi", of_ty)
+                    var of_args Vector[LLVMValueRef](3)
+                    of_args.put(0, desc)
+                    of_args.put(1, tcell)
+                    of_args.put(2, count)
+                    let taken LLVMBuildCall2(builder, of_ty, of_fn, of_args.data, 3, "cluster.taken")
+                    let ran LLVMBuildICmp(builder, LLVMIntPredicate.NE(), taken, LLVMConstInt(i32_ty, 0, 0), "cluster.ran")
+                    cluster_after := create_block("cluster.after")
+                    let here create_block("cluster.here")
+                    LLVMBuildCondBr(builder, ran, cluster_after, here)
+                    LLVMPositionBuilderAtEnd(builder, here)
+                }
+            }
 
             ; ---- The deferred adaptive driver (4.2), back at the loop
             ; site. Iterations run INLINE in the enclosing function (the
@@ -22164,8 +22331,206 @@ define Emitter
             LLVMBuildBr(builder, done_block)
 
             LLVMPositionBuilderAtEnd(builder, done_block)
+            if cluster_after <> null
+            {
+                LLVMBuildBr(builder, cluster_after)
+                LLVMPositionBuilderAtEnd(builder, cluster_after)
+            }
 
             null
+        }
+
+        ; --cluster: the descriptor of a parallel loop whose rounds can run
+        ; on a helper (scaly/cluster.scaly, scaly_cluster_register), or null
+        ; where one of its captures cannot travel. Every capture is a plain
+        ; value (numbers, and records and arrays of them: its bytes travel),
+        ; a buffer the rounds only read (a Vector, Slice or Array of plain
+        ; elements: its elements travel to the helper), or one they write
+        ; only with `put` at exactly the counter (its stretch travels back).
+        ; Anything holding an address -- a String, a reference, a record
+        ; with one -- keeps the loop on this machine.
+        procedure cluster_descriptor(mutable this, for_expr: PlannedFor, mutable task_fn: LLVMValueRef, mutable cell_ty: LLVMTypeRef, base_fields: size_t, cap_names: Array[String], cap_types: Array[PlannedType], cap_uses: Array[String], mutable cap_slot_tys: Vector[LLVMTypeRef]) returns LLVMValueRef
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let ncap cap_names.length
+            ; the cell's field offsets, laid out as LLVM lays out the struct
+            let nfields LLVMCountStructElementTypes(cell_ty) as size_t
+            var offsets Vector[size_t](nfields + 1)
+            var off: size_t 0
+            var f: size_t 0
+            while f < nfields
+            {
+                let fty LLVMStructGetTypeAtIndex(cell_ty, f as u32)
+                let a llvm_type_abi_align(fty)
+                off := (off + a - 1) / a * a
+                offsets.put(f, off)
+                off := off + llvm_type_abi_size(fty)
+                f := f + 1
+            }
+            var words Vector[LLVMValueRef](6 + ncap * 3)
+            let site "`parfor_file`@`for_expr.loc.start`"
+            let hash Modeler.fnv_string(0xcbf29ce484222325, site)
+            words.put(0, LLVMConstInt(i64_ty, hash as size_t, 0))
+            words.put(1, LLVMConstInt(i64_ty, llvm_type_abi_size(cell_ty), 0))
+            words.put(2, LLVMConstInt(i64_ty, offsets[0], 0))
+            words.put(3, LLVMConstInt(i64_ty, offsets[1], 0))
+            words.put(4, LLVMConstInt(i64_ty, offsets[base_fields + ncap], 0))
+            words.put(5, LLVMConstInt(i64_ty, ncap, 0))
+            var c: size_t 0
+            while c < ncap
+            {
+                let nm cap_names[c]
+                let slot_ty cap_slot_tys[c]
+                let is_addr LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
+                var t cap_types[c]
+                if (t.name = "ref" or t.name = "pointer") and t.generics <> null and t.generics.length = 1
+                    t := t.generics[0]
+                var puts: size_t 0
+                var uses: size_t 0
+                let at_counter "=`nm`"
+                let elsewhere "!`nm`"
+                var u: size_t 0
+                while u < cap_uses.length
+                {
+                    let use_text cap_uses[u]
+                    if use_text = nm
+                        uses := uses + 1
+                    if use_text = at_counter
+                        puts := puts + 1
+                    if use_text = elsewhere
+                        return null
+                    u := u + 1
+                }
+                ; a put's receiver is a use of its own: written only by puts,
+                ; or not written at all
+                if puts > 0 and puts <> uses
+                    return null
+                var kind: size_t 0
+                var bytes: size_t 0
+                let container t.name = "Vector" or t.name = "Slice" or t.name = "Array"
+                if container and t.generics <> null and t.generics.length = 1
+                {
+                    let elem_ty map_type(t.generics[0])
+                    if this.llvm_type_is_plain(elem_ty) = false
+                        return null
+                    bytes := llvm_type_abi_size(elem_ty)
+                    if bytes = 0
+                        return null
+                    kind := 2
+                    var record_bytes: size_t 16
+                    if t.name = "Array"
+                    {
+                        kind := 3
+                        record_bytes := 24
+                    }
+                    if puts > 0
+                        kind := kind + 2
+                    if is_addr
+                        kind := kind + 16
+                    else
+                    {
+                        if llvm_type_abi_size(slot_ty) <> record_bytes
+                            return null
+                    }
+                }
+                else if is_addr
+                {
+                    ; a record the cell holds by its address (a parameter):
+                    ; its bytes travel, and the helper's cell points at them
+                    if puts > 0
+                        return null
+                    let rec_ty map_type(t)
+                    if this.llvm_type_is_plain(rec_ty) = false
+                        return null
+                    kind := 17
+                    bytes := llvm_type_abi_size(rec_ty)
+                    if bytes = 0
+                        return null
+                }
+                else
+                {
+                    if puts > 0 or this.llvm_type_is_plain(slot_ty) = false
+                        return null
+                    kind := 1
+                    bytes := llvm_type_abi_size(slot_ty)
+                }
+                words.put(6 + c * 3, LLVMConstInt(i64_ty, offsets[base_fields + c], 0))
+                words.put(7 + c * 3, LLVMConstInt(i64_ty, kind, 0))
+                words.put(8 + c * 3, LLVMConstInt(i64_ty, bytes, 0))
+                c := c + 1
+            }
+            let nwords 6 + ncap * 3
+            let arr_ty LLVMArrayType2(i64_ty, nwords)
+            var desc_tys Vector[LLVMTypeRef](2)
+            desc_tys.put(0, ptr_ty)
+            desc_tys.put(1, arr_ty)
+            let desc_ty LLVMStructTypeInContext(context, desc_tys.data, 2, 0)
+            var desc_vals Vector[LLVMValueRef](2)
+            desc_vals.put(0, task_fn)
+            desc_vals.put(1, LLVMConstArray2(i64_ty, words.data, nwords))
+            let desc LLVMAddGlobal(llvm_module, desc_ty, "cluster.loop")
+            LLVMSetLinkage(desc, LLVMLinkage.Private())
+            LLVMSetGlobalConstant(desc, 1)
+            LLVMSetInitializer(desc, LLVMConstStructInContext(context, desc_vals.data, 2, 0))
+            cluster_loops.add desc
+            desc
+        }
+
+        ; Numbers, and arrays and records of numbers: bytes that mean the
+        ; same on another machine of the same build.
+        procedure llvm_type_is_plain(this, mutable ty: LLVMTypeRef) returns bool
+        {
+            var t ty
+            let kind LLVMGetTypeKind(t)
+            if kind = LLVMTypeKind.Integer() or kind = LLVMTypeKind.Double() or kind = LLVMTypeKind.Float() or kind = LLVMTypeKind.Half() or kind = LLVMTypeKind.VectorKind()
+                return true
+            if kind = LLVMTypeKind.ArrayKind()
+                return this.llvm_type_is_plain(LLVMGetElementType t)
+            if kind = LLVMTypeKind.Struct()
+            {
+                let n LLVMCountStructElementTypes(t)
+                var i: int 0
+                while i < n
+                {
+                    if this.llvm_type_is_plain(LLVMStructGetTypeAtIndex(t, i as u32)) = false
+                        return false
+                    i := i + 1
+                }
+                return true
+            }
+            false
+        }
+
+        ; --cluster: one constructor that makes every loop of this module a
+        ; helper can run known to the runtime before main.
+        procedure emit_cluster_ctor(mutable this) returns LLVMValueRef
+        {
+            if cluster_loops.length = 0
+                return null
+            let void_ty LLVMVoidTypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let ctor LLVMAddFunction(llvm_module, "scaly.cluster.loops", LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0))
+            LLVMSetLinkage(ctor, LLVMLinkage.Internal())
+            let saved_block LLVMGetInsertBlock(builder)
+            clear_debug_location()
+            LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlockInContext(context, ctor, "entry"))
+            var r_tys Vector[LLVMTypeRef](1)
+            r_tys.put(0, ptr_ty)
+            let r_ty LLVMFunctionType(void_ty, r_tys.data, 1, 0)
+            let r_fn get_parfor_runtime_fn("_Z22scaly_cluster_registerPv", r_ty)
+            var i: size_t 0
+            while i < cluster_loops.length
+            {
+                var args Vector[LLVMValueRef](1)
+                args.put(0, cluster_loops[i])
+                LLVMBuildCall2(builder, r_ty, r_fn, args.data, 1, "")
+                i := i + 1
+            }
+            LLVMBuildRetVoid builder
+            if saved_block <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+            ctor
         }
 
         ; Emit a while loop

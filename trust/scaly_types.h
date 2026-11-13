@@ -57,6 +57,8 @@ struct Drawing;
 struct Chart;
 struct Chart;
 struct NodeDown;
+struct ClusterJob;
+struct ClusterResult;
 struct HelperFound;
 struct HelperState;
 struct NodePeer;
@@ -2044,6 +2046,110 @@ template <> struct Vector<uint32_t>
 struct NodeDown
 {
     int64_t reason;
+};
+#endif
+
+#ifndef SCALY_TYPE_VectorIterator_LVector_Luint8__t_R_R
+#define SCALY_TYPE_VectorIterator_LVector_Luint8__t_R_R
+template <> struct VectorIterator<Vector<uint8_t>>
+{
+    Vector<Vector<uint8_t>>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_LVector_Luint8__t_R_R
+#define SCALY_TYPE_Slice_LVector_Luint8__t_R_R
+template <> struct Slice<Vector<uint8_t>>
+{
+    uint64_t length;
+    Vector<uint8_t>* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_LVector_Luint8__t_R_R
+#define SCALY_TYPE_SliceIterator_LVector_Luint8__t_R_R
+template <> struct SliceIterator<Vector<uint8_t>>
+{
+    Slice<Vector<uint8_t>> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_LVector_Luint8__t_R_R
+#define SCALY_TYPE_ArrayIterator_LVector_Luint8__t_R_R
+template <> struct ArrayIterator<Vector<uint8_t>>
+{
+    Array<Vector<uint8_t>>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_LVector_Luint8__t_R_R
+#define SCALY_TYPE_Array_LVector_Luint8__t_R_R
+template <> struct Array<Vector<uint8_t>>
+{
+    uint64_t length;
+    uint64_t capacity;
+    Vector<uint8_t>* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_LVector_Luint8__t_R_R
+#define SCALY_TYPE_Node_LVector_Luint8__t_R_R
+template <> struct Node<Vector<uint8_t>>
+{
+    Vector<uint8_t> element;
+    Node<Vector<uint8_t>>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_LVector_Luint8__t_R_R
+#define SCALY_TYPE_ListIterator_LVector_Luint8__t_R_R
+template <> struct ListIterator<Vector<uint8_t>>
+{
+    Node<Vector<uint8_t>>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_LVector_Luint8__t_R_R
+#define SCALY_TYPE_List_LVector_Luint8__t_R_R
+template <> struct List<Vector<uint8_t>>
+{
+    Node<Vector<uint8_t>>* head;
+    Node<Vector<uint8_t>>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_LVector_Luint8__t_R_R
+#define SCALY_TYPE_Vector_LVector_Luint8__t_R_R
+template <> struct Vector<Vector<uint8_t>>
+{
+    uint64_t length;
+    Vector<uint8_t>* data;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z10ClusterJob
+#define SCALY_TYPE__Z10ClusterJob
+struct ClusterJob
+{
+    uint64_t hash;
+    int64_t lo;
+    int64_t hi;
+    Vector<uint8_t> cell;
+    Vector<Vector<uint8_t>> inputs;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z13ClusterResult
+#define SCALY_TYPE__Z13ClusterResult
+struct ClusterResult
+{
+    int64_t lo;
+    int64_t hi;
+    bool ok;
+    Vector<Vector<uint8_t>> outputs;
 };
 #endif
 

@@ -97,6 +97,7 @@ define Options
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
     gpu: bool                       ; --gpu: a parallel loop that is a kernel may run on the graphics card
+    cluster: bool                   ; --cluster: a parallel loop whose rounds can travel may run on helpers
     emit_cpp: bool                  ; --emit-cpp: the plan written as C++ (compiler/CppEmitter.scaly, ROADMAP-trust)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
@@ -158,6 +159,7 @@ define Options
         opt_level := 0
         portable_simd := false
         gpu := false
+        cluster := false
         emit_cpp := false
         library := false
         tool_build := false
@@ -417,6 +419,10 @@ define cli
                 {
                     opts.gpu := true
                 }
+                else if arg = "--cluster"
+                {
+                    opts.cluster := true
+                }
                 else if arg.starts_with("-mcpu=")
                 {
                     ; The CPU the object code is generated and optimized for
@@ -540,6 +546,7 @@ define cli
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
         Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
         Console.println "  --portable-simd  SIMD operations in their target-neutral form (the seed)"
+        Console.println "  --cluster      Let the program hand the rounds of a parallel for loop to helpers of its own build (the same program started with --scaly-helper; SCALY_CLUSTER=on sends them; not with --jit or --run)"
         Console.println "  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)"
     }
 
@@ -1457,6 +1464,7 @@ define cli
         ; the card's host is linked into a program, not into this compiler:
         ; code that runs in this process keeps its loops on the processor
         config.gpu := opts.gpu and opts.run_mode = false and opts.jit_program = false and opts.test_mode = false
+        config.cluster := opts.cluster and opts.run_mode = false and opts.jit_program = false and opts.test_mode = false
         config.page_size := planner.page_size_constant()
         config.library_linkage := opts.library
         config.code_parts := opts.code_parts

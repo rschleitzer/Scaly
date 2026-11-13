@@ -35,6 +35,15 @@
 ; the frames after it, and their confidentiality, come with TLS (still
 ; to be built): the key keeps strangers out, not eavesdroppers.
 ;
+; Helpers and rounds. A program started with --scaly-helper is a helper
+; (scaly_helper_main: it announces itself to the helpers' multicast group
+; and serves coordinators); Helpers.find# is how a coordinator finds those
+; of its own build. Built with `scalyc --cluster`, a parallel `for` whose
+; captures can travel has a descriptor (scaly_cluster_register), and its
+; head asks scaly_cluster_offer# first: with SCALY_CLUSTER=on and helpers
+; there, its rounds go to them in stretches and what they put comes back;
+; otherwise -- no helper, or none left -- the loop runs here as always.
+
 ; The handshake preamble [magic, protocol version, build stamp] (all
 ; u64, 24 bytes, sent immediately in BOTH directions) is the one wire
 ; structure whose layout is FROZEN FOREVER — it must stay parseable
@@ -111,6 +120,55 @@ define HELPER_ANNOUNCE u64 0x4552504c45484c53
 define HELPER_ASK u64 0x4b5341594c414353
 define HELPER_DATAGRAM size_t 96
 define HELPER_CHANNEL u64 900
+
+; Rounds on other machines (ROADMAP-cluster.md, C2). A parallel `for` the
+; compiler (--cluster) found fit has a DESCRIPTOR: its task function -- the
+; outlined body the cores run -- and the layout of its cell, words of i64:
+;   [hash, cell bytes, offset of lo, of hi, of the cancel word, captures,
+;    then per capture: offset, kind, bytes]
+; kind 1 a plain value of `bytes` bytes (17: the cell holds its address);
+; 2 a buffer the rounds read and 4
+; one they put into at their counter, both (length, data) -- a Vector or a
+; Slice --, 3 and 5 the same as an Array (length, capacity, buffer), `bytes`
+; an element's; +16 where the cell holds the buffer record's address, not
+; the record. The hash names the loop the same in every build of the program.
+define CLUSTER_RESULT u64 901
+define CLUSTER_TABLE_MOST size_t 4096
+
+; A stretch of rounds for a helper: the loop, the rounds, the cell as the
+; coordinator filled it, and every buffer the rounds read, whole. Like
+; every message it is the FIRST object on its page (Cluster.send sends the
+; region from the page the message lies on), so its parts are given to it
+; after it is made.
+define ClusterJob
+(
+    hash: u64
+    lo: i64
+    hi: i64
+    var cell: Vector[u8]
+    var inputs: Vector[Vector[u8]]
+)
+
+; What a helper's rounds put: one stretch per buffer they write, lo to hi.
+define ClusterResult
+(
+    lo: i64
+    hi: i64
+    ok: bool
+    var outputs: Vector[Vector[u8]]
+)
+
+; The loops of this program a helper can run (scaly_cluster_register), and
+; the helpers a coordinator holds connections to (Cluster.helpers#).
+shared cluster_table: pointer[pointer[void]] null
+shared cluster_table_count: size_t 0
+shared cluster_peers: pointer[pointer[NodePeer]] null
+shared cluster_peer_count: size_t 0
+shared cluster_peers_asked: bool false
+; One offer at a time, and none in a helper: a loop inside a loop's rounds
+; -- on a worker of this machine or in a helper -- runs where its rounds
+; run (1 while an offer is under way, 2 for good in a helper).
+shared atomic cluster_offering: u64 0
 
 ; A helper a coordinator found: where it listens, how many cores it has.
 define HelperFound
@@ -925,6 +983,370 @@ define Cluster
         close(p.fd)
         Cluster.wrelease(p)
     }
+
+    ; SCALY_CLUSTER_TRACE=1: a line per loop offered and per stretch run.
+    procedure tracing() returns bool
+    {
+        getenv("SCALY_CLUSTER_TRACE") <> null
+    }
+
+    ; Are the rounds of a fit loop to go to helpers (SCALY_CLUSTER=on)?
+    procedure forced() returns bool
+    {
+        let v getenv("SCALY_CLUSTER")
+        if v = null
+            return false
+        v[0] = ("o" as char) and v[1] = ("n" as char) and v[2] = (0 as char)
+    }
+
+    ; The helpers of this program this coordinator is connected to: found
+    ; and connected the first time a loop asks, kept for the program's life.
+    procedure helpers() returns size_t
+    {
+        if cluster_peers_asked
+            return cluster_peer_count
+        cluster_peers_asked := true
+        let found Helpers.find(1000)
+        let p Page.allocate_page()
+        cluster_peers := p.allocate((found.length + 1) * 8, 8) as pointer[pointer[NodePeer]]
+        for h in found
+        {
+            let peer Cluster.connect(h.host.to_c_string(), h.port)
+            if peer <> null
+            {
+                cluster_peers[cluster_peer_count] := peer as pointer[NodePeer]
+                cluster_peer_count := cluster_peer_count + 1
+            }
+        }
+        cluster_peer_count
+    }
+
+    ; The descriptor of the loop of that hash; null where this build has none.
+    procedure find_loop(hash: u64) returns pointer[void]
+    {
+        var i: size_t 0
+        while i < cluster_table_count
+        {
+            let d cluster_table[i]
+            if (Cluster.desc_word(d, 0) as u64) = hash
+                return d
+            i := i + 1
+        }
+        null
+    }
+
+    ; Word k of a descriptor (after its task function's address).
+    function desc_word(desc: pointer[void], k: size_t) returns i64
+    {
+        let w ((desc as size_t) + 8) as pointer[i64]
+        w[k]
+    }
+
+    ; Where the record of capture c lies: in the cell, or where the cell
+    ; points.
+    function capture_record(desc: pointer[void], cell: pointer[void], c: size_t) returns pointer[u8]
+    {
+        let off Cluster.desc_word(desc, 6 + c * 3) as size_t
+        let kind Cluster.desc_word(desc, 7 + c * 3)
+        let at ((cell as size_t) + off) as pointer[u8]
+        if (kind & 16) <> 0
+            return (at as pointer[pointer[u8]])[0]
+        at
+    }
+
+    ; Does a capture of this kind travel to the helper beside the cell? A
+    ; buffer the rounds read (whole), one they put into (the stretch, as it
+    ; is here: a round may put or not, and where none puts the value stays),
+    ; a record the cell holds by its address; a plain value is in the cell.
+    function travels_out(kind: i64) returns bool
+    {
+        kind <> 1
+    }
+
+    ; The length and the data of a buffer's record (an Array's buffer is its
+    ; third word).
+    function buffer_of(rec: pointer[u8], kind: i64) returns (length: size_t, data: pointer[u8])
+    {
+        let words rec as pointer[size_t]
+        let base kind & 15
+        if base = 3 or base = 5
+            return (length: words[0], data: (words[2] as pointer[u8]))
+        (length: words[0], data: (words[1] as pointer[u8]))
+    }
+
+    ; A stretch for a helper: the cell, every buffer the rounds read, and
+    ; the stretch of every one they put into.
+    procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], lo: i64, hi: i64)
+    {
+        let size Cluster.desc_word(desc, 1) as size_t
+        let ncap Cluster.desc_word(desc, 5) as size_t
+        var nin: size_t 0
+        var c: size_t 0
+        while c < ncap
+        {
+            if Cluster.travels_out(Cluster.desc_word(desc, 7 + c * 3))
+                nin := nin + 1
+            c := c + 1
+        }
+        let mp Page.allocate_page()
+        let job &ClusterJob^mp(Cluster.desc_word(desc, 0) as u64, lo, hi, Vector[u8]^mp(0), Vector[Vector[u8]]^mp(0))
+        var cv Vector[u8]^mp(size)
+        memcpy(cv.data as pointer[void], cell, size as c_size)
+        var ins Vector[Vector[u8]]^mp(nin)
+        var j: size_t 0
+        c := 0
+        while c < ncap
+        {
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            if Cluster.travels_out(kind)
+            {
+                let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
+                let rec Cluster.capture_record(desc, cell, c)
+                var from rec
+                var bytes elem
+                if kind <> 17
+                {
+                    let b Cluster.buffer_of(rec, kind)
+                    let base kind & 15
+                    from := b.data
+                    bytes := b.length * elem
+                    if base = 4 or base = 5
+                    {
+                        from := ((b.data as size_t) + (lo as size_t) * elem) as pointer[u8]
+                        bytes := ((hi - lo) as size_t) * elem
+                    }
+                }
+                var bv Vector[u8]^mp(bytes)
+                memcpy(bv.data as pointer[void], from as pointer[void], bytes as c_size)
+                ins.put(j, bv)
+                j := j + 1
+            }
+            c := c + 1
+        }
+        job.cell := cv
+        job.inputs := ins
+        Cluster.send(peer, HELPER_CHANNEL, job as pointer[void])
+    }
+
+    ; What a helper's stretch put, into this program's buffers.
+    procedure take_result(desc: pointer[void], cell: pointer[void], res: ref[ClusterResult])
+    {
+        let ncap Cluster.desc_word(desc, 5) as size_t
+        var j: size_t 0
+        var c: size_t 0
+        while c < ncap
+        {
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            let base kind & 15
+            if base = 4 or base = 5
+            {
+                let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
+                let b Cluster.buffer_of(Cluster.capture_record(desc, cell, c), kind)
+                let part res.outputs[j]
+                let at ((b.data as size_t) + (res.lo as size_t) * elem) as pointer[void]
+                memcpy(at, part.data as pointer[void], part.length as c_size)
+                j := j + 1
+            }
+            c := c + 1
+        }
+    }
+
+    ; The pointers of a received job, swizzled by hand: the runtime does not
+    ; call fix_graph, whose walkers the compiler writes into the programs
+    ; that call it, and not into the C++ the trust chain builds the
+    ; compiler from. A job has two levels of buffers, a result one.
+    procedure fix_job(rr: ref[ReceivedRegion], mutable job: ref[ClusterJob])
+    {
+        rr.fix(&job.cell.data as pointer[void])
+        Cluster.fix_parts(rr, &job.inputs.data as pointer[void], job.inputs.length)
+    }
+
+    procedure fix_result(rr: ref[ReceivedRegion], mutable res: ref[ClusterResult])
+    {
+        Cluster.fix_parts(rr, &res.outputs.data as pointer[void], res.outputs.length)
+    }
+
+    ; The slot of a Vector[Vector[u8]]'s data, then each part's own.
+    procedure fix_parts(rr: ref[ReceivedRegion], mutable slot: pointer[void], count: size_t)
+    {
+        rr.fix(slot)
+        let parts (slot as pointer[pointer[Vector[u8]]])[0]
+        var i: size_t 0
+        while i < count
+        {
+            let part parts + i
+            rr.fix(&part.data as pointer[void])
+            i := i + 1
+        }
+    }
+
+    ; A helper's side: every stretch a coordinator sends is run and answered,
+    ; until the coordinator lets go.
+    procedure serve(mutable peer: pointer[NodePeer])
+    {
+        let ch Cluster.channel(peer, HELPER_CHANNEL)
+        repeat
+        {
+            let raw Channel.receive(ch)
+            if raw = null
+                break
+            let rr raw as ref[ReceivedRegion]
+            let job rr.root as pointer[ClusterJob]
+            Cluster.fix_job(rr, job as ref[ClusterJob])
+            let rp Page.allocate_page()
+            let res Cluster.run_job(rp, job as ref[ClusterJob])
+            Cluster.send(peer, CLUSTER_RESULT, res as pointer[void])
+            rp.deallocate_extensions()
+            Page.release_page(rp)
+            Cluster.dispose_message(rr)
+        }
+    }
+
+    ; One stretch, here: the cell built again -- its plain values as the
+    ; coordinator had them, a read buffer pointing at the bytes that came
+    ; with the stretch, a written one at a buffer of the stretch's own, set
+    ; so that the round's counter indexes it as it indexes the
+    ; coordinator's --, then the loop's own task function, and what it put.
+    procedure run_job(rp: ref[Page], job: ref[ClusterJob]) returns ref[ClusterResult]
+    {
+        ; the answer on a page of its own, first on it; rp holds the
+        ; stretch's scratch and is given back after the answer went
+        let ap Page.allocate_page()
+        let desc Cluster.find_loop(job.hash)
+        if desc = null
+            return &ClusterResult^ap(job.lo, job.hi, false, Vector[Vector[u8]]^ap(0))
+        let res &ClusterResult^ap(job.lo, job.hi, true, Vector[Vector[u8]]^ap(0))
+        let task (desc as pointer[pointer[void]])[0]
+        let size Cluster.desc_word(desc, 1) as size_t
+        let ncap Cluster.desc_word(desc, 5) as size_t
+        let cell rp.allocate(size, 16)
+        memcpy(cell, job.cell.data as pointer[void], size as c_size)
+        let lo job.lo
+        let hi job.hi
+        (((cell as size_t) + (Cluster.desc_word(desc, 2) as size_t)) as pointer[i64])[0] := lo
+        (((cell as size_t) + (Cluster.desc_word(desc, 3) as size_t)) as pointer[i64])[0] := hi
+        (((cell as size_t) + (Cluster.desc_word(desc, 4) as size_t)) as pointer[pointer[void]])[0] := null
+        var nout: size_t 0
+        var c: size_t 0
+        while c < ncap
+        {
+            let base Cluster.desc_word(desc, 7 + c * 3) & 15
+            if base = 4 or base = 5
+                nout := nout + 1
+            c := c + 1
+        }
+        let bufs rp.allocate((nout + 1) * 8, 8) as pointer[pointer[u8]]
+        let lens rp.allocate((nout + 1) * 8, 8) as pointer[size_t]
+        var j: size_t 0
+        var o: size_t 0
+        c := 0
+        while c < ncap
+        {
+            let off Cluster.desc_word(desc, 6 + c * 3) as size_t
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            let base kind & 15
+            let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
+            if kind = 17
+            {
+                ; the record came beside the cell: the cell points at it
+                let part job.inputs[j]
+                (((cell as size_t) + off) as pointer[pointer[u8]])[0] := part.data
+                j := j + 1
+            }
+            else if base >= 2
+            {
+                ; the record: in the cell, or one of this stretch's own
+                var rec ((cell as size_t) + off) as pointer[size_t]
+                if (kind & 16) <> 0
+                {
+                    rec := rp.allocate(24, 8) as pointer[size_t]
+                    (((cell as size_t) + off) as pointer[pointer[size_t]])[0] := rec
+                }
+                var length: size_t 0
+                var data: size_t 0
+                if base = 2 or base = 3
+                {
+                    let part job.inputs[j]
+                    length := part.length / elem
+                    data := part.data as size_t
+                    j := j + 1
+                }
+                else
+                {
+                    ; the stretch as the coordinator has it: what no round
+                    ; puts goes back unchanged
+                    let bytes ((hi - lo) as size_t) * elem
+                    let buf rp.allocate(bytes + 1, 16) as pointer[u8]
+                    let part job.inputs[j]
+                    memcpy(buf as pointer[void], part.data as pointer[void], bytes as c_size)
+                    j := j + 1
+                    bufs[o] := buf
+                    lens[o] := bytes
+                    o := o + 1
+                    length := hi as size_t
+                    if (kind & 16) = 0
+                        length := rec[0]
+                    data := (buf as size_t) - (lo as size_t) * elem
+                }
+                rec[0] := length
+                if base = 3 or base = 5
+                {
+                    rec[1] := length
+                    rec[2] := data
+                }
+                else
+                    rec[1] := data
+            }
+            c := c + 1
+        }
+        ; the stretch on this machine's cores, as any loop of the program
+        ; would run: a part per core twice over, each with its own cell
+        if Cluster.tracing()
+        {
+            scaly_eputs "helper: rounds "
+            scaly_eputi(lo)
+            scaly_eputs " to "
+            scaly_eputi(hi)
+            scaly_eputnl()
+        }
+        var parts TaskPool.ncpu() * 2
+        if parts > hi - lo
+            parts := hi - lo
+        if parts <= 1
+            scaly_call_ptr(task, cell)
+        else
+        {
+            let pool TaskPool.default_pool()
+            let g TaskGroup.create()
+            let step (hi - lo + parts - 1) / parts
+            var a lo
+            while a < hi
+            {
+                var b a + step
+                if b > hi
+                    b := hi
+                let sub rp.allocate(size, 16)
+                memcpy(sub, cell, size as c_size)
+                (((sub as size_t) + (Cluster.desc_word(desc, 2) as size_t)) as pointer[i64])[0] := a
+                (((sub as size_t) + (Cluster.desc_word(desc, 3) as size_t)) as pointer[i64])[0] := b
+                TaskPool.submit(pool, task, sub, g)
+                a := b
+            }
+            TaskGroup.wait(g)
+            TaskGroup.dispose(g)
+        }
+        var outs Vector[Vector[u8]]^ap(nout)
+        o := 0
+        while o < nout
+        {
+            var b Vector[u8]^ap(lens[o])
+            memcpy(b.data as pointer[void], bufs[o] as pointer[void], lens[o] as c_size)
+            outs.put(o, b)
+            o := o + 1
+        }
+        res.outputs := outs
+        res
+    }
 }
 
 ; A channel to and from a peer that carries messages of ONE type, by
@@ -1023,6 +1445,7 @@ procedure helper_announcer_entry(mutable arg: pointer[void]) returns pointer[voi
 ; other until it is ended from outside.
 procedure scaly_helper_main()
 {
+    scaly_atomic_store_u64(&cluster_offering, 2 as u64)
     let page Page.allocate_page()
     if current_scheduler = null
         Scheduler.create(page)
@@ -1057,14 +1480,7 @@ procedure scaly_helper_main()
         let peer Cluster.accept(lfd)
         if peer <> null
         {
-            let ch Cluster.channel(peer, HELPER_CHANNEL)
-            repeat
-            {
-                let raw Channel.receive(ch)
-                if raw = null
-                    break
-                Cluster.dispose_message(raw as ref[ReceivedRegion])
-            }
+            Cluster.serve(peer)
             Cluster.disconnect(peer)
         }
     }
@@ -1119,3 +1535,169 @@ define Helpers
         Vector[HelperFound](found)
     }
 }
+
+; --- rounds on other machines (stage C2) -------------------------------------
+
+; A loop of this program, made known before main runs: the compiler's
+; constructor calls this once for every descriptor of the module.
+procedure scaly_cluster_register(desc: pointer[void])
+{
+    if cluster_table = null
+    {
+        let p Page.allocate_page()
+        cluster_table := p.allocate(CLUSTER_TABLE_MOST * 8, 8) as pointer[pointer[void]]
+    }
+    if cluster_table_count < CLUSTER_TABLE_MOST
+    {
+        cluster_table[cluster_table_count] := desc
+        cluster_table_count := cluster_table_count + 1
+    }
+}
+
+; The coordinator's offer, asked at the head of such a loop: where it is
+; forced (SCALY_CLUSTER=on) and helpers are there, the rounds 0 to count go
+; to them in stretches, a helper taking the next as it sends one back, and
+; what they put lands in this program's buffers. 1 where every round ran so;
+; 0 where they did not -- no helper, or none left --: the processor's loop
+; then runs as always and computes the same, the rounds being pure.
+procedure scaly_cluster_offer(desc: pointer[void], cell: pointer[void], count: int) returns i32
+{
+    if count <= 0 or Cluster.forced() = false
+        return 0
+    if scaly_atomic_cas_u64(&cluster_offering, 0 as u64, 1 as u64) <> 0
+        return 0
+    let answer cluster_offer_rounds(desc, cell, count)
+    scaly_atomic_store_u64(&cluster_offering, 0 as u64)
+    answer
+}
+
+; The offer itself, while it is the only one.
+procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: int) returns i32
+{
+    let n Cluster.helpers()
+    if n = 0
+        return 0
+    if current_scheduler = null
+        Scheduler.create(Page.allocate_page())
+    var chunk (count + (n as i64) * 4 - 1) / ((n as i64) * 4)
+    if chunk < 1
+        chunk := 1
+    let stretches (count + chunk - 1) / chunk
+    let qp Page.allocate_page()
+    let queue qp.allocate((stretches as size_t) * 8, 8) as pointer[i64]
+    let busy qp.allocate(n * 8, 8) as pointer[i64]
+    let live qp.allocate(n, 1) as pointer[u8]
+    var q: i64 0
+    while q < stretches
+    {
+        queue[q as size_t] := (stretches - 1 - q) * chunk
+        q := q + 1
+    }
+    var queued stretches
+    var k: size_t 0
+    while k < n
+    {
+        busy[k] := 0 - 1
+        let peer cluster_peers[k]
+        live[k] := if peer.alive: (1 as u8) else 0
+        k := k + 1
+    }
+    var done: i64 0
+    var ok true
+    repeat
+    {
+        ; every live helper without a stretch gets the next
+        k := 0
+        while k < n
+        {
+            if live[k] = 1 and busy[k] < 0 and queued > 0
+            {
+                queued := queued - 1
+                let lo queue[queued as size_t]
+                var hi lo + chunk
+                if hi > count
+                    hi := count
+                Cluster.send_job(cluster_peers[k], desc, cell, lo, hi)
+                busy[k] := lo
+            }
+            k := k + 1
+        }
+        if done = stretches
+            break
+        var any false
+        k := 0
+        while k < n
+        {
+            if live[k] = 1
+                any := true
+            k := k + 1
+        }
+        if any = false
+        {
+            ok := false
+            break
+        }
+        ; what came back
+        var got false
+        k := 0
+        while k < n
+        {
+            if live[k] = 1 and busy[k] >= 0
+            {
+                var timed false
+                let raw Channel.receive_timeout(Cluster.channel(cluster_peers[k], CLUSTER_RESULT), 0 as i32, &timed)
+                if raw <> null
+                {
+                    let rr raw as ref[ReceivedRegion]
+                    let res rr.root as pointer[ClusterResult]
+                    Cluster.fix_result(rr, res as ref[ClusterResult])
+                    if res.ok
+                    {
+                        Cluster.take_result(desc, cell, res as ref[ClusterResult])
+                        done := done + 1
+                        busy[k] := 0 - 1
+                    }
+                    else
+                    {
+                        ; a helper that does not know the loop: its stretch goes back
+                        queue[queued as size_t] := busy[k]
+                        queued := queued + 1
+                        busy[k] := 0 - 1
+                        live[k] := 0
+                    }
+                    Cluster.dispose_message(rr)
+                    got := true
+                }
+                else if timed = false
+                {
+                    ; the helper is gone: its stretch goes back
+                    queue[queued as size_t] := busy[k]
+                    queued := queued + 1
+                    busy[k] := 0 - 1
+                    live[k] := 0
+                    got := true
+                }
+            }
+            k := k + 1
+        }
+        if got = false
+            poll(null as pointer[pollfd], 0, 1)
+    }
+    Page.release_page(qp)
+    if Cluster.tracing()
+    {
+        scaly_eputs "cluster: "
+        scaly_eputi(count)
+        scaly_eputs " rounds in "
+        scaly_eputi(stretches)
+        scaly_eputs " stretches on "
+        scaly_eputi(n as i64)
+        if ok
+            scaly_eputs " helpers, all there"
+        else
+            scaly_eputs " helpers, none left: this machine runs them"
+        scaly_eputnl()
+    }
+    if ok: 1 else 0
+}
+

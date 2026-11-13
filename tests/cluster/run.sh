@@ -299,5 +299,51 @@ else
   if [ "$got" = "found 1, connected 1" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("helpers, another build and a late one: '$got'"); fi
 fi
 
+# ---- rounds on other machines (ROADMAP-cluster.md, C2): a program built
+# with --cluster offers a fit loop's rounds to the helpers of its build
+# (SCALY_CLUSTER=on); each runs its stretches on its cores and sends back
+# what they put. The output is the program's own: with two helpers, with
+# one of them killed while it computes, and with none. Built by the
+# compiler itself (the tool's `build` takes no --cluster yet). ----
+t=rounds
+RB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$RB"
+expected=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
+if ! "$STAGE" --cluster -O2 -o "$RB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  # rounds_check <what> <out file> <expected trace>
+  rounds_check() {
+    local out; out=$(scaly_lf < "$2" | grep -v '^cluster: ')
+    if [ "$out" = "$expected" ] && grep -q "$3" "$2"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, $1: '$(tr '\n' '|' < "$2")'"); fi
+  }
+  # the loops that travel, and only those: two descriptors, none without --cluster
+  "$STAGE" --cluster -S -o "$OUT/cluster_$t.ll" tests/cluster/$t.scaly >/dev/null 2>&1
+  "$STAGE" -S -o "$OUT/cluster_${t}_plain.ll" tests/cluster/$t.scaly >/dev/null 2>&1
+  n_with=$(grep -c '^@cluster.loop.* = private constant' "$OUT/cluster_$t.ll")
+  n_without=$(grep -c 'cluster' "$OUT/cluster_${t}_plain.ll")
+  if [ "$n_with" = "2" ] && [ "$n_without" = "0" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t: descriptors $n_with with --cluster, $n_without lines without"); fi
+  # on this machine
+  "$RB" > "$OUT/cluster_${t}_alone.log" 2>&1
+  rounds_check "alone" "$OUT/cluster_${t}_alone.log" "^string"
+  # two helpers
+  SCALY_CLUSTER_TRACE=1 "$RB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & H1=$!
+  SCALY_CLUSTER_TRACE=1 "$RB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & H2=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$RB" > "$OUT/cluster_${t}_two.log" 2>&1
+  rounds_check "two helpers" "$OUT/cluster_${t}_two.log" "rounds in .* stretches on 2 helpers, all there"
+  # one killed while it computes: its stretch goes to the other
+  : > "$OUT/cluster_${t}_h1.log"
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$RB" > "$OUT/cluster_${t}_kill.log" 2>&1 & CPID=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: rounds" && kill -9 $H1 2>/dev/null
+  wait $CPID
+  wait $H1 2>/dev/null
+  rounds_check "a helper killed" "$OUT/cluster_${t}_kill.log" "all there"
+  kill $H2 2>/dev/null; wait $H2 2>/dev/null
+  # none: the loops run here
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$RB" > "$OUT/cluster_${t}_none.log" 2>&1
+  rounds_check "no helper" "$OUT/cluster_${t}_none.log" "^string"
+fi
+
 echo "cluster: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

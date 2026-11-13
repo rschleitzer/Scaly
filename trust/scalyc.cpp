@@ -14485,6 +14485,7 @@ struct Emitter_EmitterConfig
     uint64_t page_size;
     bool portable_simd;
     bool gpu;
+    bool cluster;
     bool library_linkage;
     bool keep_main_frame;
     bool release;
@@ -14918,6 +14919,9 @@ struct Emitter
     Array<LLVMOpaqueValue*>* temp_pinned;
     Array<String>* parfor_locals;
     Array<String>* parfor_captures;
+    Array<PlannedType>* parfor_cap_types;
+    Array<String>* parfor_uses;
+    Array<LLVMOpaqueValue*>* cluster_loops;
     Array<String>* weight_memo_names;
     Array<uint64_t>* weight_memo_vals;
     Array<String>* weight_stack;
@@ -15138,6 +15142,7 @@ struct Options
     int64_t opt_level;
     bool portable_simd;
     bool gpu;
+    bool cluster;
     bool emit_cpp;
     bool library;
     bool tool_build;
@@ -18459,7 +18464,9 @@ LLVMOpaqueBasicBlock* Emitter_create_block(Emitter&, String&) asm("_ZN7EmitterB6
 bool Emitter_is_test_function(Emitter&, PlannedFunction&) asm("_ZN7EmitterB6scalycB4v0_216is_test_functionE15PlannedFunctionB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_global_initializer_of_type(Emitter&, LLVMOpaqueValue*, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_226global_initializer_of_typeEP15LLVMOpaqueValueB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
 void Emitter_hand_over_arguments(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_219hand_over_argumentsEP15LLVMOpaqueValueB6scalycB4v0_2");
-void Emitter_emit_stdio_binary_ctor(Emitter&) asm("_ZN7EmitterB6scalycB4v0_222emit_stdio_binary_ctorEv");
+LLVMOpaqueValue* Emitter_emit_stdio_binary_ctor(Emitter&) asm("_ZN7EmitterB6scalycB4v0_222emit_stdio_binary_ctorEv");
+LLVMOpaqueValue* Emitter_emit_cluster_ctor(Emitter&) asm("_ZN7EmitterB6scalycB4v0_217emit_cluster_ctorEv");
+void Emitter_emit_global_ctors(Emitter&, Array<LLVMOpaqueValue*>&) asm("_ZN7EmitterB6scalycB4v0_217emit_global_ctorsE5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E");
 LLVMOpaqueValue* Emitter_package_stamp_global(Emitter&) asm("_ZN7EmitterB6scalycB4v0_220package_stamp_globalEv");
 void Emitter_stamp_target_cpu(Emitter&) asm("_ZN7EmitterB6scalycB4v0_216stamp_target_cpuEv");
 void Emitter_type_wasm_declarations(Emitter&) asm("_ZN7EmitterB6scalycB4v0_222type_wasm_declarationsEv");
@@ -18625,7 +18632,9 @@ LLVMOpaqueValue* Emitter_emit_for_integer_range(Emitter&, PlannedFor&) asm("_ZN7
 LLVMOpaqueValue* Emitter_emit_for_iterator(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_217emit_for_iteratorE10PlannedForB6scalycB4v0_2");
 void Emitter_parfor_add_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_216parfor_add_localE6String");
 bool Emitter_parfor_is_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_215parfor_is_localE6String");
-void Emitter_parfor_add_capture(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_218parfor_add_captureE6String");
+void Emitter_parfor_add_capture(Emitter&, String&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_218parfor_add_captureE6String11PlannedTypeB6scalycB4v0_2");
+void Emitter_parfor_note_put(Emitter&, PlannedCall&) asm("_ZN7EmitterB6scalycB4v0_215parfor_note_putE11PlannedCallB6scalycB4v0_2");
+bool Emitter_parfor_is_counter(Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_217parfor_is_counterE14PlannedOperandB6scalycB4v0_2");
 void Emitter_parfor_scan_operands(Emitter&, Vector<PlannedOperand>*) asm("_ZN7EmitterB6scalycB4v0_220parfor_scan_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
 void Emitter_parfor_scan_statement_ref(Emitter&, PlannedStatement*) asm("_ZN7EmitterB6scalycB4v0_225parfor_scan_statement_refE6OptionIR16PlannedStatementB6scalycB4v0_2E");
 void Emitter_parfor_scan_action(Emitter&, PlannedAction&) asm("_ZN7EmitterB6scalycB4v0_218parfor_scan_actionE13PlannedActionB6scalycB4v0_2");
@@ -18645,7 +18654,9 @@ LLVMOpaqueValue* Emitter_red_identity(Emitter&, int64_t, LLVMOpaqueType*) asm("_
 LLVMOpaqueValue* Emitter_fp_identity(Emitter&, int64_t, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_211fp_identityEiP14LLVMOpaqueTypeB6scalycB4v0_2");
 Array<LLVMOpaqueValue*> Emitter_fp_iteration_partials(scaly_frame*, Emitter&, Array<String>&, Array<int64_t>&, Array<LLVMOpaqueValue*>&) asm("_ZN7EmitterB6scalycB4v0_221fp_iteration_partialsEPN4scaly6memory4PageE5ArrayI6StringE5ArrayIiE5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E");
 void Emitter_fp_fold_partials(Emitter&, Array<int64_t>&, Array<LLVMOpaqueValue*>&, Array<LLVMOpaqueValue*>&) asm("_ZN7EmitterB6scalycB4v0_216fp_fold_partialsE5ArrayIiE5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E");
+LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter&, PlannedFor&, LLVMOpaqueValue*, LLVMOpaqueType*, uint64_t, Array<String>&, Array<PlannedType>&, Array<String>&, Vector<LLVMOpaqueType*>&) asm("_ZN7EmitterB6scalycB4v0_218cluster_descriptorE10PlannedForB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2m5ArrayI6StringE5ArrayI11PlannedTypeB6scalycB4v0_2E5ArrayI6StringE6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E");
 LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2");
+bool Emitter_llvm_type_is_plain(Emitter&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_218llvm_type_is_plainEP14LLVMOpaqueTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_while(Emitter&, PlannedWhile&) asm("_ZN7EmitterB6scalycB4v0_210emit_whileE12PlannedWhileB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_repeat(Emitter&, PlannedRepeat&) asm("_ZN7EmitterB6scalycB4v0_211emit_repeatE13PlannedRepeatB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_try_value_at_end(Emitter&, PlannedTry&, LLVMOpaqueValue*, LLVMOpaqueBasicBlock*, LLVMOpaqueBasicBlock*) asm("_ZN7EmitterB6scalycB4v0_216try_value_at_endE10PlannedTryB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2");
@@ -139518,6 +139529,7 @@ __attribute__((weak)) void Emitter_EmitterConfig_init(Emitter_EmitterConfig& sca
     this_->page_size = 0ULL;
     this_->portable_simd = false;
     this_->gpu = false;
+    this_->cluster = false;
     this_->library_linkage = false;
     this_->keep_main_frame = false;
     this_->release = false;
@@ -147095,14 +147107,24 @@ __attribute__((weak)) bool Emitter_emit(Emitter& scaly_self, Plan& plan, String&
         LLVMDIBuilderFinalize(this_->di_builder);
     }
     LLVMOpaqueValue* stamp_main = LLVMGetNamedFunction(this_->llvm_module, ((const char*)"main"));
+    Array<LLVMOpaqueValue*>* ctors = ({ Array<LLVMOpaqueValue*>* scaly_t11 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t11 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t11; });
     if ((((stamp_main) != (nullptr)) ? (LLVMIsDeclaration(stamp_main) == (int32_t)0ULL) : false))
     {
         Emitter_hand_over_arguments(*(this_), stamp_main);
         Emitter_emit_build_stamp(*(this_));
         if (this_->target_is_coff)
         {
-            Emitter_emit_stdio_binary_ctor(*(this_));
+            Array_add182<LLVMOpaqueValue*>((*ctors), Emitter_emit_stdio_binary_ctor(*(this_)));
         }
+    }
+    LLVMOpaqueValue* cluster_ctor = Emitter_emit_cluster_ctor(*(this_));
+    if (((cluster_ctor) != (nullptr)))
+    {
+        Array_add182<LLVMOpaqueValue*>((*ctors), cluster_ctor);
+    }
+    if ((((*ctors)).length > 0ULL))
+    {
+        Emitter_emit_global_ctors(*(this_), (*ctors));
     }
     LLVMOpaqueValue* pkg_stamp = Emitter_package_stamp_global(*(this_));
     if ((((pkg_stamp) != (nullptr)) ? (LLVMIsDeclaration(pkg_stamp) == (int32_t)0ULL) : false))
@@ -147432,7 +147454,7 @@ __attribute__((weak)) void Emitter_emit_build_stamp(Emitter& scaly_self)
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
-__attribute__((weak)) void Emitter_emit_stdio_binary_ctor(Emitter& scaly_self)
+__attribute__((weak)) LLVMOpaqueValue* Emitter_emit_stdio_binary_ctor(Emitter& scaly_self)
 {
     Emitter* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
@@ -147467,20 +147489,36 @@ __attribute__((weak)) void Emitter_emit_stdio_binary_ctor(Emitter& scaly_self)
     {
         LLVMPositionBuilderAtEnd(this_->builder, saved_block);
     }
-    Vector<LLVMOpaqueType*>* fields = ({ Vector<LLVMOpaqueType*>* scaly_t3 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t3 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t3), 3ULL); scaly_t3; });
+    return ctor;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_emit_global_ctors(Emitter& scaly_self, Array<LLVMOpaqueValue*>& ctors)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    LLVMOpaqueType* i32_ty = LLVMInt32TypeInContext(this_->context);
+    LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+    Vector<LLVMOpaqueType*>* fields = ({ Vector<LLVMOpaqueType*>* scaly_t1 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t1 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t1), 3ULL); scaly_t1; });
     Vector_put62<LLVMOpaqueType*>((*fields), 0ULL, i32_ty);
     Vector_put62<LLVMOpaqueType*>((*fields), 1ULL, ptr_ty);
     Vector_put62<LLVMOpaqueType*>((*fields), 2ULL, ptr_ty);
     LLVMOpaqueType* entry_ty = LLVMStructTypeInContext(this_->context, ((*fields)).data, (uint32_t)3ULL, (int32_t)0ULL);
-    Vector<LLVMOpaqueValue*>* vals = ({ Vector<LLVMOpaqueValue*>* scaly_t4 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t4 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t4), 3ULL); scaly_t4; });
-    Vector_put62<LLVMOpaqueValue*>((*vals), 0ULL, LLVMConstInt(i32_ty, 65535ULL, (int32_t)0ULL));
-    Vector_put62<LLVMOpaqueValue*>((*vals), 1ULL, ctor);
-    Vector_put62<LLVMOpaqueValue*>((*vals), 2ULL, LLVMConstPointerNull(ptr_ty));
-    Vector<LLVMOpaqueValue*>* entries = ({ Vector<LLVMOpaqueValue*>* scaly_t5 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t5 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t5), 1ULL); scaly_t5; });
-    Vector_put62<LLVMOpaqueValue*>((*entries), 0ULL, LLVMConstStructInContext(this_->context, ((*vals)).data, (uint32_t)3ULL, (int32_t)0ULL));
-    LLVMOpaqueValue* ctors = LLVMAddGlobal(this_->llvm_module, LLVMArrayType2(entry_ty, 1ULL), ((const char*)"llvm.global_ctors"));
-    LLVMSetLinkage(ctors, LLVMLinkage_Appending());
-    LLVMSetInitializer(ctors, LLVMConstArray2(entry_ty, ((*entries)).data, 1ULL));
+    uint64_t n = (ctors).length;
+    Vector<LLVMOpaqueValue*>* entries = ({ Vector<LLVMOpaqueValue*>* scaly_t2 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t2 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t2), n); scaly_t2; });
+    uint64_t i = 0ULL;
+    while ((i < n))
+    {
+        Vector<LLVMOpaqueValue*>* vals = ({ Vector<LLVMOpaqueValue*>* scaly_t3 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t3 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t3), 3ULL); scaly_t3; });
+        Vector_put62<LLVMOpaqueValue*>((*vals), 0ULL, LLVMConstInt(i32_ty, 65535ULL, (int32_t)0ULL));
+        Vector_put62<LLVMOpaqueValue*>((*vals), 1ULL, Array22<LLVMOpaqueValue*>(ctors, i));
+        Vector_put62<LLVMOpaqueValue*>((*vals), 2ULL, LLVMConstPointerNull(ptr_ty));
+        Vector_put62<LLVMOpaqueValue*>((*entries), i, LLVMConstStructInContext(this_->context, ((*vals)).data, (uint32_t)3ULL, (int32_t)0ULL));
+        i = (i + 1ULL);
+    }
+    LLVMOpaqueValue* gc = LLVMAddGlobal(this_->llvm_module, LLVMArrayType2(entry_ty, n), ((const char*)"llvm.global_ctors"));
+    LLVMSetLinkage(gc, LLVMLinkage_Appending());
+    LLVMSetInitializer(gc, LLVMConstArray2(entry_ty, ((*entries)).data, n));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -157635,13 +157673,19 @@ __attribute__((weak)) bool Emitter_parfor_is_local(Emitter& scaly_self, String& 
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
-__attribute__((weak)) void Emitter_parfor_add_capture(Emitter& scaly_self, String& name)
+__attribute__((weak)) void Emitter_parfor_add_capture(Emitter& scaly_self, String& name, PlannedType& t)
 {
     Emitter* this_ = &scaly_self;
     if (Emitter_parfor_is_local(*(this_), name))
     {
         return;
     }
+    LLVMOpaqueValue* v = Emitter_lookup_variable(*(this_), name);
+    if (((v) == (nullptr)))
+    {
+        return;
+    }
+    Array_add<String>(*(this_->parfor_uses), name);
     uint64_t i = 0ULL;
     while ((i < this_->parfor_captures->length))
     {
@@ -157652,12 +157696,138 @@ __attribute__((weak)) void Emitter_parfor_add_capture(Emitter& scaly_self, Strin
         }
         i = (i + 1ULL);
     }
-    LLVMOpaqueValue* v = Emitter_lookup_variable(*(this_), name);
-    if (((v) == (nullptr)))
+    Array_add<String>(*(this_->parfor_captures), name);
+    Array_add<PlannedType>(*(this_->parfor_cap_types), t);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_parfor_note_put(Emitter& scaly_self, PlannedCall& call)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((((call).args) == (nullptr)) ? true : ((call).args->length != 3ULL)))
     {
         return;
     }
-    Array_add<String>(*(this_->parfor_captures), name);
+    PlannedOperand* recv_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+    PlannedOperand* idx_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+    if ((((recv_ptr) == (nullptr)) ? true : ((idx_ptr) == (nullptr))))
+    {
+        return;
+    }
+    PlannedOperand* recv = ((PlannedOperand*)(recv_ptr));
+    {
+        auto&& scaly_t1 = recv->expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            if (Emitter_parfor_is_local(*(this_), (v).name))
+            {
+                return;
+            }
+            bool members = (((recv->member_access) != (nullptr)) ? (recv->member_access->length > 0ULL) : false);
+            String text = ({
+        String scaly_t2{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+            StringBuilder_append((*isb$), ((uint8_t)'!'));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            scaly_t2 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t2;
+    });
+            if ((((members) == (false)) ? Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(((PlannedOperand*)(idx_ptr)))))) : false))
+            {
+                text = ({
+        String scaly_t4{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+            StringBuilder_append((*isb$), ((uint8_t)'='));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            scaly_t4 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t4;
+    });
+            }
+            Array_add<String>(*(this_->parfor_uses), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), text); scaly_t6; }))));
+        }
+        else
+        {
+            0LL;
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) bool Emitter_parfor_is_counter(Emitter& scaly_self, PlannedOperand& op)
+{
+    Emitter* this_ = &scaly_self;
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            String* first = Array_get<String>(*(this_->parfor_locals), 0ULL);
+            if ((((first) == (nullptr)) ? true : (!(String_equals(scaly_lvalue(((*(first)))), (v).name)))))
+            {
+                return false;
+            }
+            uint64_t i = 1ULL;
+            while ((i < this_->parfor_locals->length))
+            {
+                String* p = Array_get<String>(*(this_->parfor_locals), i);
+                if ((((p) != (nullptr)) ? String_equals(scaly_lvalue(((*(p)))), (v).name) : false))
+                {
+                    return false;
+                }
+                i = (i + 1ULL);
+            }
+            return true;
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t1);
+            if ((((as_expr).value) == (nullptr)))
+            {
+                return false;
+            }
+            PlannedOperand* r = (as_expr).value;
+            return Emitter_parfor_is_counter(*(this_), scaly_lvalue(((*(r)))));
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t1);
+            if ((((tp).is_region_alloc ? true : (((tp).components) == (nullptr))) ? true : ((tp).components->length != 1ULL)))
+            {
+                return false;
+            }
+            PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+            if (((c_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+            if (((((c->name) != (nullptr)) ? true : ((c->value) == (nullptr))) ? true : (c->value->length != 1ULL)))
+            {
+                return false;
+            }
+            PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+            if (((in_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            return Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))));
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return false;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -157755,11 +157925,15 @@ __attribute__((weak)) void Emitter_parfor_scan_operand(Emitter& scaly_self, Plan
         if (scaly_t1.tag == 2)
         {
             PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
-            Emitter_parfor_add_capture(*(this_), (v).name);
+            Emitter_parfor_add_capture(*(this_), (v).name, (v).variable_type);
         }
         else if (scaly_t1.tag == 4)
         {
             PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            if (((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\003put"})) ? (((call).is_intrinsic) == (false)) : false) ? (((call).is_indirect) == (false)) : false))
+            {
+                Emitter_parfor_note_put(*(this_), call);
+            }
             Emitter_parfor_scan_operands(*(this_), (call).args);
         }
         else if (scaly_t1.tag == 5)
@@ -158693,9 +158867,12 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     }
     this_->parfor_locals->length = 0ULL;
     this_->parfor_captures->length = 0ULL;
+    this_->parfor_cap_types->length = 0ULL;
+    this_->parfor_uses->length = 0ULL;
     Emitter_parfor_add_local(*(this_), (for_expr).identifier);
     Emitter_parfor_scan_action(*(this_), (for_expr).body);
     Array<String>* cap_names = ({ Array<String>* scaly_t5 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t5 = Array<String>{}; (void)0; scaly_t5; });
+    Array<PlannedType>* cap_types = ({ Array<PlannedType>* scaly_t6 = (Array<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<PlannedType>), alignof(Array<PlannedType>)); *scaly_t6 = Array<PlannedType>{}; (void)0; scaly_t6; });
     uint64_t ci = 0ULL;
     while ((ci < this_->parfor_captures->length))
     {
@@ -158704,7 +158881,15 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         {
             String nm = ((*(nm_ptr)));
             Array_add<String>((*cap_names), nm);
+            Array_add<PlannedType>((*cap_types), scaly_lvalue(Array26(*(this_->parfor_cap_types), ci)));
         }
+        ci = (ci + 1ULL);
+    }
+    Array<String>* cap_uses = ({ Array<String>* scaly_t7 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t7 = Array<String>{}; (void)0; scaly_t7; });
+    ci = 0ULL;
+    while ((ci < this_->parfor_uses->length))
+    {
+        Array_add<String>((*cap_uses), scaly_lvalue(Array5(*(this_->parfor_uses), ci)));
         ci = (ci + 1ULL);
     }
     uint64_t cap_count = ((*cap_names)).length;
@@ -158716,9 +158901,9 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
     LLVMOpaqueType* i64_ty = LLVMInt64TypeInContext(this_->context);
     LLVMOpaqueType* void_ty = LLVMVoidTypeInContext(this_->context);
-    Vector<LLVMOpaqueValue*>* cap_values = ({ Vector<LLVMOpaqueValue*>* scaly_t6 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t6 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t6), (cap_count + 1ULL)); scaly_t6; });
-    Vector<LLVMOpaqueType*>* cap_slot_tys = ({ Vector<LLVMOpaqueType*>* scaly_t7 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t7 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t7), (cap_count + 1ULL)); scaly_t7; });
-    Vector<uint64_t>* cap_from_slot = ({ Vector<uint64_t>* scaly_t8 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t8 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t8), (cap_count + 1ULL)); scaly_t8; });
+    Vector<LLVMOpaqueValue*>* cap_values = ({ Vector<LLVMOpaqueValue*>* scaly_t8 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t8 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t8), (cap_count + 1ULL)); scaly_t8; });
+    Vector<LLVMOpaqueType*>* cap_slot_tys = ({ Vector<LLVMOpaqueType*>* scaly_t9 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t9 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t9), (cap_count + 1ULL)); scaly_t9; });
+    Vector<uint64_t>* cap_from_slot = ({ Vector<uint64_t>* scaly_t10 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t10 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t10), (cap_count + 1ULL)); scaly_t10; });
     ci = 0ULL;
     while ((ci < cap_count))
     {
@@ -158766,7 +158951,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     {
         n_tail = 2ULL;
     }
-    Vector<LLVMOpaqueType*>* cell_field_tys = ({ Vector<LLVMOpaqueType*>* scaly_t9 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t9 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t9), (((base_fields + cap_count) + n_tail) + n_red)); scaly_t9; });
+    Vector<LLVMOpaqueType*>* cell_field_tys = ({ Vector<LLVMOpaqueType*>* scaly_t11 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t11 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t11), (((base_fields + cap_count) + n_tail) + n_red)); scaly_t11; });
     if ((for_expr).is_iterator_loop)
     {
         Vector_put62<LLVMOpaqueType*>((*cell_field_tys), 0ULL, ptr_ty);
@@ -158801,7 +158986,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         rk = (rk + 1ULL);
     }
     LLVMOpaqueType* cell_ty = LLVMStructTypeInContext(this_->context, ((*cell_field_tys)).data, ((uint32_t)(((((base_fields + cap_count) + n_tail) + n_red)))), (int32_t)0ULL);
-    Vector<LLVMOpaqueType*>* pf_param_tys = ({ Vector<LLVMOpaqueType*>* scaly_t10 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t10 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t10), 1ULL); scaly_t10; });
+    Vector<LLVMOpaqueType*>* pf_param_tys = ({ Vector<LLVMOpaqueType*>* scaly_t12 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t12 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t12), 1ULL); scaly_t12; });
     Vector_put62<LLVMOpaqueType*>((*pf_param_tys), 0ULL, ptr_ty);
     LLVMOpaqueType* pf_fn_ty = LLVMFunctionType(ptr_ty, ((*pf_param_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
     LLVMOpaqueValue* task_fn = LLVMAddFunction(this_->llvm_module, ((const char*)"parfor"), pf_fn_ty);
@@ -158897,8 +159082,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* kpage = LLVMBuildCall2(this_->builder, ap_ty, ap_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.keep.page"));
         LLVMBuildStore(this_->builder, kpage, keep_frame);
     }
-    Array<LLVMOpaqueValue*>* red_task_slots = ({ Array<LLVMOpaqueValue*>* scaly_t11 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t11 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t11; });
-    Array<LLVMOpaqueValue*>* red_sub_ptrs = ({ Array<LLVMOpaqueValue*>* scaly_t12 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t12 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t12; });
+    Array<LLVMOpaqueValue*>* red_task_slots = ({ Array<LLVMOpaqueValue*>* scaly_t13 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t13 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t13; });
+    Array<LLVMOpaqueValue*>* red_sub_ptrs = ({ Array<LLVMOpaqueValue*>* scaly_t14 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t14 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t14; });
     rk = 0ULL;
     while ((rk < n_red))
     {
@@ -158938,7 +159123,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* pf_loop_bind = iv;
     if ((for_expr).is_iterator_loop)
     {
-        Vector<LLVMOpaqueValue*>* ev_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t13 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t13 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t13), 1ULL); scaly_t13; });
+        Vector<LLVMOpaqueValue*>* ev_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t15 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t15 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t15), 1ULL); scaly_t15; });
         Vector_put62<LLVMOpaqueValue*>((*ev_idx), 0ULL, iv);
         LLVMOpaqueValue* elem_addr = LLVMBuildGEP2(this_->builder, ptr_ty, chunk_buf, ((*ev_idx)).data, (uint32_t)1ULL, ((const char*)"parfor.elem.addr"));
         LLVMOpaqueValue* elem_ptr = LLVMBuildLoad2(this_->builder, ptr_ty, elem_addr, String_c_data((for_expr).identifier));
@@ -158988,7 +159173,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
             LLVMOpaqueValue* fts = Array22<LLVMOpaqueValue*>((*red_task_slots), rk);
             LLVMOpaqueType* fty = LLVMGetAllocatedType(fts);
             LLVMOpaqueValue* fpart = LLVMBuildLoad2(this_->builder, fty, fts, ((const char*)"parfor.fp.part"));
-            Vector<LLVMOpaqueValue*>* fidx = ({ Vector<LLVMOpaqueValue*>* scaly_t14 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t14 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t14), 1ULL); scaly_t14; });
+            Vector<LLVMOpaqueValue*>* fidx = ({ Vector<LLVMOpaqueValue*>* scaly_t16 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t16 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t16), 1ULL); scaly_t16; });
             Vector_put62<LLVMOpaqueValue*>((*fidx), 0ULL, iv_cur);
             LLVMOpaqueValue* fdst = LLVMBuildGEP2(this_->builder, fty, Array22<LLVMOpaqueValue*>((*red_sub_ptrs), rk), ((*fidx)).data, (uint32_t)1ULL, ((const char*)"parfor.fp.slot"));
             LLVMBuildStore(this_->builder, fpart, fdst);
@@ -159014,12 +159199,12 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     if (keeps)
     {
         LLVMOpaqueValue* kp = LLVMBuildLoad2(this_->builder, ptr_ty, keep_frame, ((const char*)"parfor.keep.done"));
-        Vector<LLVMOpaqueType*>* push_tys = ({ Vector<LLVMOpaqueType*>* scaly_t15 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t15 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t15), 2ULL); scaly_t15; });
+        Vector<LLVMOpaqueType*>* push_tys = ({ Vector<LLVMOpaqueType*>* scaly_t17 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t17 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t17), 2ULL); scaly_t17; });
         Vector_put62<LLVMOpaqueType*>((*push_tys), 0ULL, ptr_ty);
         Vector_put62<LLVMOpaqueType*>((*push_tys), 1ULL, ptr_ty);
         LLVMOpaqueType* push_ty = LLVMFunctionType(void_ty, ((*push_tys)).data, (uint32_t)2ULL, (int32_t)0ULL);
         LLVMOpaqueValue* push_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\046_Z23scaly_region_adopt_pushP3u64R4Page"}), push_ty);
-        Vector<LLVMOpaqueValue*>* push_args = ({ Vector<LLVMOpaqueValue*>* scaly_t16 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t16 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t16), 2ULL); scaly_t16; });
+        Vector<LLVMOpaqueValue*>* push_args = ({ Vector<LLVMOpaqueValue*>* scaly_t18 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t18 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t18), 2ULL); scaly_t18; });
         Vector_put62<LLVMOpaqueValue*>((*push_args), 0ULL, adopt_head);
         Vector_put62<LLVMOpaqueValue*>((*push_args), 1ULL, kp);
         LLVMBuildCall2(this_->builder, push_ty, push_fn, ((*push_args)).data, (uint32_t)2ULL, ((const char*)""));
@@ -159066,24 +159251,61 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     {
         Emitter_set_debug_location(*(this_), (for_expr).loc);
     }
+    LLVMOpaqueBasicBlock* cluster_after = (LLVMOpaqueBasicBlock*)(nullptr);
+    if ((((((this_->config).cluster ? (((for_expr).is_iterator_loop) == (false)) : false) ? ((keeps) == (false)) : false) ? (n_red == 0ULL) : false) ? (this_->pointer_bytes == 8ULL) : false))
+    {
+        LLVMOpaqueValue* desc = Emitter_cluster_descriptor(*(this_), for_expr, task_fn, cell_ty, base_fields, (*cap_names), (*cap_types), (*cap_uses), (*cap_slot_tys));
+        if (((desc) != (nullptr)))
+        {
+            LLVMOpaqueValue* count = LLVMBuildIntCast2(this_->builder, seq_value, i64_ty, (int32_t)1ULL, ((const char*)"cluster.count"));
+            LLVMOpaqueValue* tcell = Emitter_entry_alloca(*(this_), cell_ty, ((const char*)"cluster.cell"));
+            LLVMBuildStore(this_->builder, LLVMConstInt(i64_ty, 0ULL, (int32_t)0ULL), LLVMBuildStructGEP2(this_->builder, cell_ty, tcell, (uint32_t)0ULL, ((const char*)"cluster.lo")));
+            LLVMBuildStore(this_->builder, count, LLVMBuildStructGEP2(this_->builder, cell_ty, tcell, (uint32_t)1ULL, ((const char*)"cluster.hi")));
+            ci = 0ULL;
+            while ((ci < cap_count))
+            {
+                LLVMOpaqueValue** cv_ptr = Vector_get<LLVMOpaqueValue*>((*cap_values), ci);
+                LLVMBuildStore(this_->builder, ((*(cv_ptr))), LLVMBuildStructGEP2(this_->builder, cell_ty, tcell, ((uint32_t)(((base_fields + ci)))), ((const char*)"cluster.cap")));
+                ci = (ci + 1ULL);
+            }
+            LLVMBuildStore(this_->builder, LLVMConstNull(ptr_ty), LLVMBuildStructGEP2(this_->builder, cell_ty, tcell, ((uint32_t)(((base_fields + cap_count)))), ((const char*)"cluster.cancel")));
+            Vector<LLVMOpaqueType*>* of_tys = ({ Vector<LLVMOpaqueType*>* scaly_t19 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t19 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t19), 3ULL); scaly_t19; });
+            Vector_put62<LLVMOpaqueType*>((*of_tys), 0ULL, ptr_ty);
+            Vector_put62<LLVMOpaqueType*>((*of_tys), 1ULL, ptr_ty);
+            Vector_put62<LLVMOpaqueType*>((*of_tys), 2ULL, i64_ty);
+            LLVMOpaqueType* i32_ty = LLVMInt32TypeInContext(this_->context);
+            LLVMOpaqueType* of_ty = LLVMFunctionType(i32_ty, ((*of_tys)).data, (uint32_t)3ULL, (int32_t)0ULL);
+            LLVMOpaqueValue* of_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\034_Z19scaly_cluster_offerPvPvi"}), of_ty);
+            Vector<LLVMOpaqueValue*>* of_args = ({ Vector<LLVMOpaqueValue*>* scaly_t20 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t20 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t20), 3ULL); scaly_t20; });
+            Vector_put62<LLVMOpaqueValue*>((*of_args), 0ULL, desc);
+            Vector_put62<LLVMOpaqueValue*>((*of_args), 1ULL, tcell);
+            Vector_put62<LLVMOpaqueValue*>((*of_args), 2ULL, count);
+            LLVMOpaqueValue* taken = LLVMBuildCall2(this_->builder, of_ty, of_fn, ((*of_args)).data, (uint32_t)3ULL, ((const char*)"cluster.taken"));
+            LLVMOpaqueValue* ran = LLVMBuildICmp(this_->builder, LLVMIntPredicate_NE(), taken, LLVMConstInt(i32_ty, 0ULL, (int32_t)0ULL), ((const char*)"cluster.ran"));
+            cluster_after = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\015cluster.after"}));
+            LLVMOpaqueBasicBlock* here = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\014cluster.here"}));
+            LLVMBuildCondBr(this_->builder, ran, cluster_after, here);
+            LLVMPositionBuilderAtEnd(this_->builder, here);
+        }
+    }
     LLVMOpaqueType* dp_ty = LLVMFunctionType(ptr_ty, ((LLVMOpaqueType**)(nullptr)), (uint32_t)0ULL, (int32_t)0ULL);
     LLVMOpaqueValue* dp_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\034_ZN8TaskPool12default_poolEv"}), dp_ty);
     LLVMOpaqueType* gc_ty = LLVMFunctionType(ptr_ty, ((LLVMOpaqueType**)(nullptr)), (uint32_t)0ULL, (int32_t)0ULL);
     LLVMOpaqueValue* gc_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\026_ZN9TaskGroup6createEv"}), gc_ty);
-    Vector<LLVMOpaqueType*>* p1_tys = ({ Vector<LLVMOpaqueType*>* scaly_t17 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t17 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t17), 1ULL); scaly_t17; });
+    Vector<LLVMOpaqueType*>* p1_tys = ({ Vector<LLVMOpaqueType*>* scaly_t21 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t21 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t21), 1ULL); scaly_t21; });
     Vector_put62<LLVMOpaqueType*>((*p1_tys), 0ULL, ptr_ty);
     LLVMOpaqueType* pget_ty = LLVMFunctionType(ptr_ty, ((*p1_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
     LLVMOpaqueValue* pget_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\010_Z3getPv"}), pget_ty);
     LLVMOpaqueType* gv_ty = LLVMFunctionType(void_ty, ((*p1_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
     LLVMOpaqueValue* gw_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\036_ZN9TaskGroup4waitEP9TaskGroup"}), gv_ty);
     LLVMOpaqueValue* gd_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\041_ZN9TaskGroup7disposeEP9TaskGroup"}), gv_ty);
-    Vector<LLVMOpaqueType*>* alloc_tys = ({ Vector<LLVMOpaqueType*>* scaly_t18 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t18 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t18), 3ULL); scaly_t18; });
+    Vector<LLVMOpaqueType*>* alloc_tys = ({ Vector<LLVMOpaqueType*>* scaly_t22 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t22 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t22), 3ULL); scaly_t22; });
     Vector_put62<LLVMOpaqueType*>((*alloc_tys), 0ULL, ptr_ty);
     Vector_put62<LLVMOpaqueType*>((*alloc_tys), 1ULL, i64_ty);
     Vector_put62<LLVMOpaqueType*>((*alloc_tys), 2ULL, i64_ty);
     LLVMOpaqueType* alloc_ty = LLVMFunctionType(ptr_ty, ((*alloc_tys)).data, (uint32_t)3ULL, (int32_t)0ULL);
     LLVMOpaqueValue* alloc_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\024_ZN4Page8allocateEmm"}), alloc_ty);
-    Vector<LLVMOpaqueType*>* sub_tys = ({ Vector<LLVMOpaqueType*>* scaly_t19 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t19 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t19), 4ULL); scaly_t19; });
+    Vector<LLVMOpaqueType*>* sub_tys = ({ Vector<LLVMOpaqueType*>* scaly_t23 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t23 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t23), 4ULL); scaly_t23; });
     Vector_put62<LLVMOpaqueType*>((*sub_tys), 0ULL, ptr_ty);
     Vector_put62<LLVMOpaqueType*>((*sub_tys), 1ULL, ptr_ty);
     Vector_put62<LLVMOpaqueType*>((*sub_tys), 2ULL, ptr_ty);
@@ -159237,7 +159459,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMBuildCondBr(this_->builder, hs_one, rg_prom_seq, rg_prom_go);
         LLVMPositionBuilderAtEnd(this_->builder, rg_prom_go);
         LLVMOpaqueValue* hf_group = LLVMBuildCall2(this_->builder, gc_ty, gc_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.group"));
-        Vector<LLVMOpaqueValue*>* hf_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t20 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t20 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t20), 1ULL); scaly_t20; });
+        Vector<LLVMOpaqueValue*>* hf_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t24 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t24 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t24), 1ULL); scaly_t24; });
         Vector_put62<LLVMOpaqueValue*>((*hf_pget_args), 0ULL, hf_group);
         LLVMOpaqueValue* hf_gpage = LLVMBuildCall2(this_->builder, pget_ty, pget_fn, ((*hf_pget_args)).data, (uint32_t)1ULL, ((const char*)"parfor.gpage"));
         LLVMBuildStore(this_->builder, c0, st_slot);
@@ -159390,7 +159612,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* rf_pub = LLVMBuildSelect(this_->builder, rf_isq, rf_cur, rc_p1k, ((const char*)"parfor.publish"));
         LLVMBuildStore(this_->builder, rf_pub, site_p1k);
         LLVMOpaqueValue* rf_group = LLVMBuildCall2(this_->builder, gc_ty, gc_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.group"));
-        Vector<LLVMOpaqueValue*>* rf_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t21 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t21 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t21), 1ULL); scaly_t21; });
+        Vector<LLVMOpaqueValue*>* rf_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t25 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t25 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t25), 1ULL); scaly_t25; });
         Vector_put62<LLVMOpaqueValue*>((*rf_pget_args), 0ULL, rf_group);
         LLVMOpaqueValue* rf_gpage = LLVMBuildCall2(this_->builder, pget_ty, pget_fn, ((*rf_pget_args)).data, (uint32_t)1ULL, ((const char*)"parfor.gpage"));
         LLVMBuildStore(this_->builder, il_i, st_slot);
@@ -159423,8 +159645,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         {
             return (LLVMOpaqueValue*)(nullptr);
         }
-        Vector<LLVMOpaqueValue*>* gi_args = ({ Vector<LLVMOpaqueValue*>* scaly_t22 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t22 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t22), 3ULL); scaly_t22; });
-        Vector<LLVMOpaqueType*>* gi_tys = ({ Vector<LLVMOpaqueType*>* scaly_t23 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t23 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t23), 3ULL); scaly_t23; });
+        Vector<LLVMOpaqueValue*>* gi_args = ({ Vector<LLVMOpaqueValue*>* scaly_t26 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t26 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t26), 3ULL); scaly_t26; });
+        Vector<LLVMOpaqueType*>* gi_tys = ({ Vector<LLVMOpaqueType*>* scaly_t27 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t27 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t27), 3ULL); scaly_t27; });
         Vector_put62<LLVMOpaqueValue*>((*gi_args), 0ULL, iter_alloca);
         Vector_put62<LLVMOpaqueValue*>((*gi_args), 1ULL, page_arg);
         Vector_put62<LLVMOpaqueValue*>((*gi_args), 2ULL, collection_ptr);
@@ -159434,8 +159656,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueType* gi_fn_ty = LLVMFunctionType(void_ty, ((*gi_tys)).data, (uint32_t)3ULL, (int32_t)0ULL);
         LLVMBuildCall2(this_->builder, gi_fn_ty, get_iter_fn, ((*gi_args)).data, (uint32_t)3ULL, ((const char*)""));
         LLVMOpaqueValue* next_fn = Emitter_iterator_function(*(this_), (for_expr).next_method, false, iter_type);
-        Vector<LLVMOpaqueValue*>* next_args = ({ Vector<LLVMOpaqueValue*>* scaly_t24 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t24 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t24), 1ULL); scaly_t24; });
-        Vector<LLVMOpaqueType*>* next_tys = ({ Vector<LLVMOpaqueType*>* scaly_t25 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t25 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t25), 1ULL); scaly_t25; });
+        Vector<LLVMOpaqueValue*>* next_args = ({ Vector<LLVMOpaqueValue*>* scaly_t28 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t28 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t28), 1ULL); scaly_t28; });
+        Vector<LLVMOpaqueType*>* next_tys = ({ Vector<LLVMOpaqueType*>* scaly_t29 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t29 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t29), 1ULL); scaly_t29; });
         Vector_put62<LLVMOpaqueValue*>((*next_args), 0ULL, iter_alloca);
         Vector_put62<LLVMOpaqueType*>((*next_tys), 0ULL, ptr_ty);
         LLVMOpaqueType* next_fn_ty = LLVMFunctionType(ptr_ty, ((*next_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
@@ -159590,7 +159812,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* if_pub = LLVMBuildSelect(this_->builder, if_isq, if_cur, if_fp, ((const char*)"parfor.publish"));
         LLVMBuildStore(this_->builder, if_pub, site_p1k);
         LLVMOpaqueValue* if_group = LLVMBuildCall2(this_->builder, gc_ty, gc_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.group"));
-        Vector<LLVMOpaqueValue*>* if_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t26 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t26 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t26), 1ULL); scaly_t26; });
+        Vector<LLVMOpaqueValue*>* if_pget_args = ({ Vector<LLVMOpaqueValue*>* scaly_t30 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t30 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t30), 1ULL); scaly_t30; });
         Vector_put62<LLVMOpaqueValue*>((*if_pget_args), 0ULL, if_group);
         LLVMOpaqueValue* if_gpage = LLVMBuildCall2(this_->builder, pget_ty, pget_fn, ((*if_pget_args)).data, (uint32_t)1ULL, ((const char*)"parfor.gpage"));
         LLVMOpaqueValue* dr_cap = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.dr.cap"));
@@ -159601,7 +159823,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* dr_c256 = LLVMConstInt(i64_ty, 256ULL, (int32_t)0ULL);
         LLVMOpaqueValue* dr_bytes0 = LLVMConstInt(i64_ty, 2048ULL, (int32_t)0ULL);
         LLVMBuildStore(this_->builder, dr_c256, dr_cap);
-        Vector<LLVMOpaqueValue*>* dr_a0 = ({ Vector<LLVMOpaqueValue*>* scaly_t27 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t27 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t27), 3ULL); scaly_t27; });
+        Vector<LLVMOpaqueValue*>* dr_a0 = ({ Vector<LLVMOpaqueValue*>* scaly_t31 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t31 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t31), 3ULL); scaly_t31; });
         Vector_put62<LLVMOpaqueValue*>((*dr_a0), 0ULL, if_gpage);
         Vector_put62<LLVMOpaqueValue*>((*dr_a0), 1ULL, dr_bytes0);
         Vector_put62<LLVMOpaqueValue*>((*dr_a0), 2ULL, dr_c8);
@@ -159630,7 +159852,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMPositionBuilderAtEnd(this_->builder, dr_grow);
         LLVMOpaqueValue* dg_cap2 = LLVMBuildMul(this_->builder, dh_cap, c2, ((const char*)"parfor.dr.cap2"));
         LLVMOpaqueValue* dg_bytes = LLVMBuildMul(this_->builder, dg_cap2, dr_c8, ((const char*)"parfor.dr.gbytes"));
-        Vector<LLVMOpaqueValue*>* dg_args = ({ Vector<LLVMOpaqueValue*>* scaly_t28 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t28 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t28), 3ULL); scaly_t28; });
+        Vector<LLVMOpaqueValue*>* dg_args = ({ Vector<LLVMOpaqueValue*>* scaly_t32 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t32 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t32), 3ULL); scaly_t32; });
         Vector_put62<LLVMOpaqueValue*>((*dg_args), 0ULL, if_gpage);
         Vector_put62<LLVMOpaqueValue*>((*dg_args), 1ULL, dg_bytes);
         Vector_put62<LLVMOpaqueValue*>((*dg_args), 2ULL, dr_c8);
@@ -159643,7 +159865,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* dc_more = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), dc_i, dh_n, ((const char*)"parfor.dr.cmore"));
         LLVMBuildCondBr(this_->builder, dc_more, dr_copy_body, dr_copy_done);
         LLVMPositionBuilderAtEnd(this_->builder, dr_copy_body);
-        Vector<LLVMOpaqueValue*>* dc_sidx = ({ Vector<LLVMOpaqueValue*>* scaly_t29 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t29 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t29), 1ULL); scaly_t29; });
+        Vector<LLVMOpaqueValue*>* dc_sidx = ({ Vector<LLVMOpaqueValue*>* scaly_t33 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t33 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t33), 1ULL); scaly_t33; });
         Vector_put62<LLVMOpaqueValue*>((*dc_sidx), 0ULL, dc_i);
         LLVMOpaqueValue* dc_src = LLVMBuildGEP2(this_->builder, ptr_ty, dg_obuf, ((*dc_sidx)).data, (uint32_t)1ULL, ((const char*)"parfor.dr.src"));
         LLVMOpaqueValue* dc_val = LLVMBuildLoad2(this_->builder, ptr_ty, dc_src, ((const char*)"parfor.dr.val"));
@@ -159659,7 +159881,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMPositionBuilderAtEnd(this_->builder, dr_put);
         LLVMOpaqueValue* du_buf = LLVMBuildLoad2(this_->builder, ptr_ty, dr_buf, ((const char*)"parfor.dr.bufv"));
         LLVMOpaqueValue* du_n = LLVMBuildLoad2(this_->builder, i64_ty, dr_n, ((const char*)"parfor.dr.n2"));
-        Vector<LLVMOpaqueValue*>* du_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t30 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t30 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t30), 1ULL); scaly_t30; });
+        Vector<LLVMOpaqueValue*>* du_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t34 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t34 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t34), 1ULL); scaly_t34; });
         Vector_put62<LLVMOpaqueValue*>((*du_idx), 0ULL, du_n);
         LLVMOpaqueValue* du_slot = LLVMBuildGEP2(this_->builder, ptr_ty, du_buf, ((*du_idx)).data, (uint32_t)1ULL, ((const char*)"parfor.dr.slot"));
         LLVMBuildStore(this_->builder, dr_e, du_slot);
@@ -159724,7 +159946,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* ds_grp = LLVMBuildLoad2(this_->builder, ptr_ty, grp_slot, ((const char*)"parfor.d.grp"));
     LLVMOpaqueValue* ds_gpage = LLVMBuildLoad2(this_->builder, ptr_ty, gpage_slot, ((const char*)"parfor.d.gpage"));
     LLVMOpaqueValue* ds_buf = LLVMBuildLoad2(this_->builder, ptr_ty, buf_slot, ((const char*)"parfor.d.buf"));
-    Array<LLVMOpaqueValue*>* fp_bases = ({ Array<LLVMOpaqueValue*>* scaly_t31 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t31 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t31; });
+    Array<LLVMOpaqueValue*>* fp_bases = ({ Array<LLVMOpaqueValue*>* scaly_t35 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t35 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t35; });
     rk = 0ULL;
     while ((rk < n_red))
     {
@@ -159734,13 +159956,13 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
             LLVMOpaqueValue* fsz = LLVMConstInt(i64_ty, ((uint64_t)(Emitter_llvm_type_abi_size(*(this_), fty))), (int32_t)0ULL);
             LLVMOpaqueValue* fcount = LLVMBuildSub(this_->builder, ds_n, ds_lo0, ((const char*)"parfor.fp.count"));
             LLVMOpaqueValue* fbytes = LLVMBuildMul(this_->builder, fcount, fsz, ((const char*)"parfor.fp.bytes"));
-            Vector<LLVMOpaqueValue*>* fa_args = ({ Vector<LLVMOpaqueValue*>* scaly_t32 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t32 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t32), 3ULL); scaly_t32; });
+            Vector<LLVMOpaqueValue*>* fa_args = ({ Vector<LLVMOpaqueValue*>* scaly_t36 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t36 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t36), 3ULL); scaly_t36; });
             Vector_put62<LLVMOpaqueValue*>((*fa_args), 0ULL, ds_gpage);
             Vector_put62<LLVMOpaqueValue*>((*fa_args), 1ULL, fbytes);
             Vector_put62<LLVMOpaqueValue*>((*fa_args), 2ULL, LLVMConstInt(i64_ty, 8ULL, (int32_t)0ULL));
             LLVMOpaqueValue* fbuf = LLVMBuildCall2(this_->builder, alloc_ty, alloc_fn, ((*fa_args)).data, (uint32_t)3ULL, ((const char*)"parfor.fp.buf"));
             LLVMOpaqueValue* fneg = LLVMBuildSub(this_->builder, c0, ds_lo0, ((const char*)"parfor.fp.neg"));
-            Vector<LLVMOpaqueValue*>* fb_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t33 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t33 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t33), 1ULL); scaly_t33; });
+            Vector<LLVMOpaqueValue*>* fb_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t37 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t37 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t37), 1ULL); scaly_t37; });
             Vector_put62<LLVMOpaqueValue*>((*fb_idx), 0ULL, fneg);
             Array_add182<LLVMOpaqueValue*>((*fp_bases), LLVMBuildGEP2(this_->builder, fty, fbuf, ((*fb_idx)).data, (uint32_t)1ULL, ((const char*)"parfor.fp.base")));
         }
@@ -159782,7 +160004,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* sb_hi0 = LLVMBuildAdd(this_->builder, sb_lo, ds_chunk, ((const char*)"parfor.chunk.hi0"));
     LLVMOpaqueValue* sb_hilt = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), sb_hi0, ds_n, ((const char*)"parfor.hilt"));
     LLVMOpaqueValue* sb_hi = LLVMBuildSelect(this_->builder, sb_hilt, sb_hi0, ds_n, ((const char*)"parfor.chunk.hi"));
-    Vector<LLVMOpaqueValue*>* sb_alloc_args = ({ Vector<LLVMOpaqueValue*>* scaly_t34 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t34 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t34), 3ULL); scaly_t34; });
+    Vector<LLVMOpaqueValue*>* sb_alloc_args = ({ Vector<LLVMOpaqueValue*>* scaly_t38 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t38 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t38), 3ULL); scaly_t38; });
     Vector_put62<LLVMOpaqueValue*>((*sb_alloc_args), 0ULL, ds_gpage);
     Vector_put62<LLVMOpaqueValue*>((*sb_alloc_args), 1ULL, cell_size_const);
     Vector_put62<LLVMOpaqueValue*>((*sb_alloc_args), 2ULL, cell_align_const);
@@ -159806,7 +160028,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMBuildStore(this_->builder, ((*(cv_ptr))), sb_cap_gep);
         ci = (ci + 1ULL);
     }
-    Vector<LLVMOpaqueValue*>* sb_cw_args = ({ Vector<LLVMOpaqueValue*>* scaly_t35 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t35 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t35), 1ULL); scaly_t35; });
+    Vector<LLVMOpaqueValue*>* sb_cw_args = ({ Vector<LLVMOpaqueValue*>* scaly_t39 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t39 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t39), 1ULL); scaly_t39; });
     Vector_put62<LLVMOpaqueValue*>((*sb_cw_args), 0ULL, ds_grp);
     LLVMOpaqueValue* sb_cw = LLVMBuildCall2(this_->builder, cw_ty, cw_fn, ((*sb_cw_args)).data, (uint32_t)1ULL, ((const char*)"parfor.cw"));
     LLVMOpaqueValue* sb_cw_gep = LLVMBuildStructGEP2(this_->builder, cell_ty, sb_cell, ((uint32_t)(((base_fields + cap_count)))), ((const char*)"parfor.cell.cancel"));
@@ -159830,7 +160052,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         }
         rk = (rk + 1ULL);
     }
-    Vector<LLVMOpaqueValue*>* sb_sub_args = ({ Vector<LLVMOpaqueValue*>* scaly_t36 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t36 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t36), 4ULL); scaly_t36; });
+    Vector<LLVMOpaqueValue*>* sb_sub_args = ({ Vector<LLVMOpaqueValue*>* scaly_t40 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t40 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t40), 4ULL); scaly_t40; });
     Vector_put62<LLVMOpaqueValue*>((*sb_sub_args), 0ULL, ds_pool);
     Vector_put62<LLVMOpaqueValue*>((*sb_sub_args), 1ULL, task_fn);
     Vector_put62<LLVMOpaqueValue*>((*sb_sub_args), 2ULL, sb_cell);
@@ -159839,7 +160061,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMBuildStore(this_->builder, sb_hi, sb_slot);
     LLVMBuildBr(this_->builder, sb_cond);
     LLVMPositionBuilderAtEnd(this_->builder, sb_done);
-    Vector<LLVMOpaqueValue*>* gw_args = ({ Vector<LLVMOpaqueValue*>* scaly_t37 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t37 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t37), 1ULL); scaly_t37; });
+    Vector<LLVMOpaqueValue*>* gw_args = ({ Vector<LLVMOpaqueValue*>* scaly_t41 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t41 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t41), 1ULL); scaly_t41; });
     Vector_put62<LLVMOpaqueValue*>((*gw_args), 0ULL, ds_grp);
     LLVMBuildCall2(this_->builder, gv_ty, gw_fn, ((*gw_args)).data, (uint32_t)1ULL, ((const char*)""));
     if ((n_fp > 0ULL))
@@ -159862,7 +160084,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
             {
                 LLVMOpaqueValue* fslot = Array22<LLVMOpaqueValue*>((*red_slots), rk);
                 LLVMOpaqueType* fty = LLVMGetAllocatedType(fslot);
-                Vector<LLVMOpaqueValue*>* fk_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t38 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t38 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t38), 1ULL); scaly_t38; });
+                Vector<LLVMOpaqueValue*>* fk_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t42 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t42 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t42), 1ULL); scaly_t42; });
                 Vector_put62<LLVMOpaqueValue*>((*fk_idx), 0ULL, fk);
                 LLVMOpaqueValue* fsrc = LLVMBuildGEP2(this_->builder, fty, Array22<LLVMOpaqueValue*>((*fp_bases), rk), ((*fk_idx)).data, (uint32_t)1ULL, ((const char*)"parfor.fp.src"));
                 LLVMOpaqueValue* fpart = LLVMBuildLoad2(this_->builder, fty, fsrc, ((const char*)"parfor.fp.part"));
@@ -159878,22 +160100,279 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     if (keeps)
     {
         LLVMOpaqueValue* host_page = Emitter_get_or_create_local_page(*(this_));
-        Vector<LLVMOpaqueType*>* dr_tys = ({ Vector<LLVMOpaqueType*>* scaly_t39 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t39 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t39), 2ULL); scaly_t39; });
+        Vector<LLVMOpaqueType*>* dr_tys = ({ Vector<LLVMOpaqueType*>* scaly_t43 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t43 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t43), 2ULL); scaly_t43; });
         Vector_put62<LLVMOpaqueType*>((*dr_tys), 0ULL, ptr_ty);
         Vector_put62<LLVMOpaqueType*>((*dr_tys), 1ULL, ptr_ty);
         LLVMOpaqueType* dr_ty = LLVMFunctionType(void_ty, ((*dr_tys)).data, (uint32_t)2ULL, (int32_t)0ULL);
         LLVMOpaqueValue* dr_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\047_Z24scaly_region_adopt_drainR4PageP3u64"}), dr_ty);
-        Vector<LLVMOpaqueValue*>* dr_args = ({ Vector<LLVMOpaqueValue*>* scaly_t40 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t40 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t40), 2ULL); scaly_t40; });
+        Vector<LLVMOpaqueValue*>* dr_args = ({ Vector<LLVMOpaqueValue*>* scaly_t44 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t44 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t44), 2ULL); scaly_t44; });
         Vector_put62<LLVMOpaqueValue*>((*dr_args), 0ULL, host_page);
         Vector_put62<LLVMOpaqueValue*>((*dr_args), 1ULL, adopt_slot);
         LLVMBuildCall2(this_->builder, dr_ty, dr_fn, ((*dr_args)).data, (uint32_t)2ULL, ((const char*)""));
     }
-    Vector<LLVMOpaqueValue*>* gd_args = ({ Vector<LLVMOpaqueValue*>* scaly_t41 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t41 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t41), 1ULL); scaly_t41; });
+    Vector<LLVMOpaqueValue*>* gd_args = ({ Vector<LLVMOpaqueValue*>* scaly_t45 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t45 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t45), 1ULL); scaly_t45; });
     Vector_put62<LLVMOpaqueValue*>((*gd_args), 0ULL, ds_grp);
     LLVMBuildCall2(this_->builder, gv_ty, gd_fn, ((*gd_args)).data, (uint32_t)1ULL, ((const char*)""));
     LLVMBuildBr(this_->builder, done_block);
     LLVMPositionBuilderAtEnd(this_->builder, done_block);
+    if (((cluster_after) != (nullptr)))
+    {
+        LLVMBuildBr(this_->builder, cluster_after);
+        LLVMPositionBuilderAtEnd(this_->builder, cluster_after);
+    }
     return (LLVMOpaqueValue*)(nullptr);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly_self, PlannedFor& for_expr, LLVMOpaqueValue* task_fn, LLVMOpaqueType* cell_ty, uint64_t base_fields, Array<String>& cap_names, Array<PlannedType>& cap_types, Array<String>& cap_uses, Vector<LLVMOpaqueType*>& cap_slot_tys)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    LLVMOpaqueType* i64_ty = LLVMInt64TypeInContext(this_->context);
+    LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+    uint64_t ncap = (cap_names).length;
+    uint64_t nfields = ((uint64_t)(LLVMCountStructElementTypes(cell_ty)));
+    Vector<uint64_t>* offsets = ({ Vector<uint64_t>* scaly_t1 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t1 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t1), (nfields + 1ULL)); scaly_t1; });
+    uint64_t off = 0ULL;
+    uint64_t f = 0ULL;
+    while ((f < nfields))
+    {
+        LLVMOpaqueType* fty = LLVMStructGetTypeAtIndex(cell_ty, ((uint32_t)(f)));
+        uint64_t a = Emitter_llvm_type_abi_align(*(this_), fty);
+        off = (((((off + a) - 1ULL)) / a) * a);
+        Vector_put30<uint64_t>((*offsets), f, off);
+        off = (off + Emitter_llvm_type_abi_size(*(this_), fty));
+        f = (f + 1ULL);
+    }
+    Vector<LLVMOpaqueValue*>* words = ({ Vector<LLVMOpaqueValue*>* scaly_t2 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t2 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t2), (6ULL + (ncap * 3ULL))); scaly_t2; });
+    String site = ({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue((this_->parfor_file)));
+            StringBuilder_append((*isb$), ((uint8_t)'@'));
+            StringBuilder_append4((*isb$), (((for_expr).loc).start));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    });
+    uint64_t hash = Modeler_fnv_string(14695981039346656037ULL, site);
+    Vector_put62<LLVMOpaqueValue*>((*words), 0ULL, LLVMConstInt(i64_ty, ((uint64_t)(hash)), (int32_t)0ULL));
+    Vector_put62<LLVMOpaqueValue*>((*words), 1ULL, LLVMConstInt(i64_ty, Emitter_llvm_type_abi_size(*(this_), cell_ty), (int32_t)0ULL));
+    Vector_put62<LLVMOpaqueValue*>((*words), 2ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), 0LL), (int32_t)0ULL));
+    Vector_put62<LLVMOpaqueValue*>((*words), 3ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), 1LL), (int32_t)0ULL));
+    Vector_put62<LLVMOpaqueValue*>((*words), 4ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), (base_fields + ncap)), (int32_t)0ULL));
+    Vector_put62<LLVMOpaqueValue*>((*words), 5ULL, LLVMConstInt(i64_ty, ncap, (int32_t)0ULL));
+    uint64_t c = 0ULL;
+    while ((c < ncap))
+    {
+        String nm = Array5(cap_names, c);
+        LLVMOpaqueType* slot_ty = Vector26<LLVMOpaqueType*>(cap_slot_tys, c);
+        bool is_addr = ((int64_t)LLVMGetTypeKind(slot_ty) == LLVMTypeKind_Pointer());
+        PlannedType t = Array26(cap_types, c);
+        if (((((String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\003ref"})) ? true : String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\007pointer"})))) ? (((t).generics) != (nullptr)) : false) ? ((t).generics->length == 1ULL) : false))
+        {
+            t = Vector11<PlannedType>(*((t).generics), 0LL);
+        }
+        uint64_t puts = 0ULL;
+        uint64_t uses = 0ULL;
+        String at_counter = ({
+        String scaly_t5{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t6 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t6 = StringBuilder{}; StringBuilder_init((*scaly_t6)); scaly_t6; });
+            StringBuilder_append((*isb$), ((uint8_t)'='));
+            StringBuilder_append2((*isb$), scaly_lvalue((nm)));
+            scaly_t5 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t5;
+    });
+        String elsewhere = ({
+        String scaly_t7{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t8 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t8 = StringBuilder{}; StringBuilder_init((*scaly_t8)); scaly_t8; });
+            StringBuilder_append((*isb$), ((uint8_t)'!'));
+            StringBuilder_append2((*isb$), scaly_lvalue((nm)));
+            scaly_t7 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t7;
+    });
+        uint64_t u = 0ULL;
+        while ((u < (cap_uses).length))
+        {
+            String use_text = Array5(cap_uses, u);
+            if (String_equals(use_text, nm))
+            {
+                uses = (uses + 1ULL);
+            }
+            if (String_equals(use_text, at_counter))
+            {
+                puts = (puts + 1ULL);
+            }
+            if (String_equals(use_text, elsewhere))
+            {
+                return (LLVMOpaqueValue*)(nullptr);
+            }
+            u = (u + 1ULL);
+        }
+        if (((puts > 0ULL) ? (puts != uses) : false))
+        {
+            return (LLVMOpaqueValue*)(nullptr);
+        }
+        uint64_t kind = 0ULL;
+        uint64_t bytes = 0ULL;
+        bool container = ((String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\006Vector"})) ? true : String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\005Slice"}))) ? true : String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\005Array"})));
+        if (((container ? (((t).generics) != (nullptr)) : false) ? ((t).generics->length == 1ULL) : false))
+        {
+            LLVMOpaqueType* elem_ty = Emitter_map_type(*(this_), scaly_lvalue(Vector11<PlannedType>(*((t).generics), 0LL)));
+            if (((Emitter_llvm_type_is_plain(*(this_), elem_ty)) == (false)))
+            {
+                return (LLVMOpaqueValue*)(nullptr);
+            }
+            bytes = Emitter_llvm_type_abi_size(*(this_), elem_ty);
+            if ((bytes == 0ULL))
+            {
+                return (LLVMOpaqueValue*)(nullptr);
+            }
+            kind = 2ULL;
+            uint64_t record_bytes = 16ULL;
+            if (String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\005Array"})))
+            {
+                kind = 3ULL;
+                record_bytes = 24ULL;
+            }
+            if ((puts > 0ULL))
+            {
+                kind = (kind + 2ULL);
+            }
+            if (is_addr)
+            {
+                kind = (kind + 16ULL);
+            }
+            else
+            {
+                if ((Emitter_llvm_type_abi_size(*(this_), slot_ty) != record_bytes))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+            }
+        }
+        else
+        {
+            if (is_addr)
+            {
+                if ((puts > 0ULL))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+                LLVMOpaqueType* rec_ty = Emitter_map_type(*(this_), t);
+                if (((Emitter_llvm_type_is_plain(*(this_), rec_ty)) == (false)))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+                kind = 17ULL;
+                bytes = Emitter_llvm_type_abi_size(*(this_), rec_ty);
+                if ((bytes == 0ULL))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+            }
+            else
+            {
+                if (((puts > 0ULL) ? true : ((Emitter_llvm_type_is_plain(*(this_), slot_ty)) == (false))))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+                kind = 1ULL;
+                bytes = Emitter_llvm_type_abi_size(*(this_), slot_ty);
+            }
+        }
+        Vector_put62<LLVMOpaqueValue*>((*words), (6ULL + (c * 3ULL)), LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), (base_fields + c)), (int32_t)0ULL));
+        Vector_put62<LLVMOpaqueValue*>((*words), (7ULL + (c * 3ULL)), LLVMConstInt(i64_ty, kind, (int32_t)0ULL));
+        Vector_put62<LLVMOpaqueValue*>((*words), (8ULL + (c * 3ULL)), LLVMConstInt(i64_ty, bytes, (int32_t)0ULL));
+        c = (c + 1ULL);
+    }
+    uint64_t nwords = (6ULL + (ncap * 3ULL));
+    LLVMOpaqueType* arr_ty = LLVMArrayType2(i64_ty, nwords);
+    Vector<LLVMOpaqueType*>* desc_tys = ({ Vector<LLVMOpaqueType*>* scaly_t9 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t9 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t9), 2ULL); scaly_t9; });
+    Vector_put62<LLVMOpaqueType*>((*desc_tys), 0ULL, ptr_ty);
+    Vector_put62<LLVMOpaqueType*>((*desc_tys), 1ULL, arr_ty);
+    LLVMOpaqueType* desc_ty = LLVMStructTypeInContext(this_->context, ((*desc_tys)).data, (uint32_t)2ULL, (int32_t)0ULL);
+    Vector<LLVMOpaqueValue*>* desc_vals = ({ Vector<LLVMOpaqueValue*>* scaly_t10 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t10 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t10), 2ULL); scaly_t10; });
+    Vector_put62<LLVMOpaqueValue*>((*desc_vals), 0ULL, task_fn);
+    Vector_put62<LLVMOpaqueValue*>((*desc_vals), 1ULL, LLVMConstArray2(i64_ty, ((*words)).data, nwords));
+    LLVMOpaqueValue* desc = LLVMAddGlobal(this_->llvm_module, desc_ty, ((const char*)"cluster.loop"));
+    LLVMSetLinkage(desc, LLVMLinkage_Private());
+    LLVMSetGlobalConstant(desc, (int32_t)1ULL);
+    LLVMSetInitializer(desc, LLVMConstStructInContext(this_->context, ((*desc_vals)).data, (uint32_t)2ULL, (int32_t)0ULL));
+    Array_add182<LLVMOpaqueValue*>(*(this_->cluster_loops), desc);
+    return desc;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) bool Emitter_llvm_type_is_plain(Emitter& scaly_self, LLVMOpaqueType* ty)
+{
+    Emitter* this_ = &scaly_self;
+    LLVMOpaqueType* t = ty;
+    int32_t kind = LLVMGetTypeKind(t);
+    if (((((((int64_t)kind == LLVMTypeKind_Integer()) ? true : ((int64_t)kind == LLVMTypeKind_Double())) ? true : ((int64_t)kind == LLVMTypeKind_Float())) ? true : ((int64_t)kind == LLVMTypeKind_Half())) ? true : ((int64_t)kind == LLVMTypeKind_VectorKind())))
+    {
+        return true;
+    }
+    if (((int64_t)kind == LLVMTypeKind_ArrayKind()))
+    {
+        return Emitter_llvm_type_is_plain(*(this_), LLVMGetElementType(t));
+    }
+    if (((int64_t)kind == LLVMTypeKind_Struct()))
+    {
+        uint32_t n = LLVMCountStructElementTypes(t);
+        int64_t i = 0LL;
+        while ((i < (int64_t)(uint64_t)n))
+        {
+            if (((Emitter_llvm_type_is_plain(*(this_), LLVMStructGetTypeAtIndex(t, ((uint32_t)(i))))) == (false)))
+            {
+                return false;
+            }
+            i = (i + 1LL);
+        }
+        return true;
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) LLVMOpaqueValue* Emitter_emit_cluster_ctor(Emitter& scaly_self)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((this_->cluster_loops->length == 0ULL))
+    {
+        return (LLVMOpaqueValue*)(nullptr);
+    }
+    LLVMOpaqueType* void_ty = LLVMVoidTypeInContext(this_->context);
+    LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+    LLVMOpaqueValue* ctor = LLVMAddFunction(this_->llvm_module, ((const char*)"scaly.cluster.loops"), LLVMFunctionType(void_ty, ((LLVMOpaqueType**)(nullptr)), (uint32_t)0ULL, (int32_t)0ULL));
+    LLVMSetLinkage(ctor, LLVMLinkage_Internal());
+    LLVMOpaqueBasicBlock* saved_block = LLVMGetInsertBlock(this_->builder);
+    Emitter_clear_debug_location(*(this_));
+    LLVMPositionBuilderAtEnd(this_->builder, LLVMAppendBasicBlockInContext(this_->context, ctor, ((const char*)"entry")));
+    Vector<LLVMOpaqueType*>* r_tys = ({ Vector<LLVMOpaqueType*>* scaly_t1 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t1 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t1), 1ULL); scaly_t1; });
+    Vector_put62<LLVMOpaqueType*>((*r_tys), 0ULL, ptr_ty);
+    LLVMOpaqueType* r_ty = LLVMFunctionType(void_ty, ((*r_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* r_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\034_Z22scaly_cluster_registerPv"}), r_ty);
+    uint64_t i = 0ULL;
+    while ((i < this_->cluster_loops->length))
+    {
+        Vector<LLVMOpaqueValue*>* args = ({ Vector<LLVMOpaqueValue*>* scaly_t2 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t2 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t2), 1ULL); scaly_t2; });
+        Vector_put62<LLVMOpaqueValue*>((*args), 0ULL, Array22<LLVMOpaqueValue*>(*(this_->cluster_loops), i));
+        LLVMBuildCall2(this_->builder, r_ty, r_fn, ((*args)).data, (uint32_t)1ULL, ((const char*)""));
+        i = (i + 1ULL);
+    }
+    LLVMBuildRetVoid(this_->builder);
+    if (((saved_block) != (nullptr)))
+    {
+        LLVMPositionBuilderAtEnd(this_->builder, saved_block);
+    }
+    return ctor;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -163178,15 +163657,18 @@ __attribute__((weak)) void Emitter_init(Emitter& scaly_self, Emitter_EmitterConf
     this_->parfor_locals = (Array<String>*)&((*({ Array<String>* scaly_t33 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t33 = Array<String>{}; (void)0; scaly_t33; })));
     this_->region_walkers = (Array<String>*)&((*({ Array<String>* scaly_t34 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t34 = Array<String>{}; (void)0; scaly_t34; })));
     this_->parfor_captures = (Array<String>*)&((*({ Array<String>* scaly_t35 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t35 = Array<String>{}; (void)0; scaly_t35; })));
+    this_->parfor_cap_types = (Array<PlannedType>*)&((*({ Array<PlannedType>* scaly_t36 = (Array<PlannedType>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedType>), alignof(Array<PlannedType>)); *scaly_t36 = Array<PlannedType>{}; (void)0; scaly_t36; })));
+    this_->parfor_uses = (Array<String>*)&((*({ Array<String>* scaly_t37 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t37 = Array<String>{}; (void)0; scaly_t37; })));
+    this_->cluster_loops = (Array<LLVMOpaqueValue*>*)&((*({ Array<LLVMOpaqueValue*>* scaly_t38 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t38 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t38; })));
     this_->fj_mode = 0LL;
-    this_->fj_self = (*({ String* scaly_t36 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t36 = String{}; String_init3((*scaly_t36)); scaly_t36; }));
+    this_->fj_self = (*({ String* scaly_t39 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t39 = String{}; String_init3((*scaly_t39)); scaly_t39; }));
     this_->fj_seen = false;
-    this_->fj_name = (*({ String* scaly_t37 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t37 = String{}; String_init3((*scaly_t37)); scaly_t37; }));
-    this_->fj_file = (*({ String* scaly_t38 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t38 = String{}; String_init3((*scaly_t38)); scaly_t38; }));
-    this_->fork_files = (*({ Array<String>* scaly_t39 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t39 = Array<String>{}; (void)0; scaly_t39; }));
-    this_->fork_offsets = (*({ Array<uint64_t>* scaly_t40 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t40 = Array<uint64_t>{}; (void)0; scaly_t40; }));
-    this_->fork_texts = (*({ Array<String>* scaly_t41 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t41 = Array<String>{}; (void)0; scaly_t41; }));
-    this_->main_ir = (*({ String* scaly_t42 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t42 = String{}; String_init3((*scaly_t42)); scaly_t42; }));
+    this_->fj_name = (*({ String* scaly_t40 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t40 = String{}; String_init3((*scaly_t40)); scaly_t40; }));
+    this_->fj_file = (*({ String* scaly_t41 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t41 = String{}; String_init3((*scaly_t41)); scaly_t41; }));
+    this_->fork_files = (*({ Array<String>* scaly_t42 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t42 = Array<String>{}; (void)0; scaly_t42; }));
+    this_->fork_offsets = (*({ Array<uint64_t>* scaly_t43 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t43 = Array<uint64_t>{}; (void)0; scaly_t43; }));
+    this_->fork_texts = (*({ Array<String>* scaly_t44 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t44 = Array<String>{}; (void)0; scaly_t44; }));
+    this_->main_ir = (*({ String* scaly_t45 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t45 = String{}; String_init3((*scaly_t45)); scaly_t45; }));
     this_->run_ns = 0LL;
     this_->fj_seq_fn = (LLVMOpaqueValue*)(nullptr);
     this_->fj_fj_fn = (LLVMOpaqueValue*)(nullptr);
@@ -163195,17 +163677,17 @@ __attribute__((weak)) void Emitter_init(Emitter& scaly_self, Emitter_EmitterConf
     this_->fj_ctx = (LLVMOpaqueValue*)(nullptr);
     this_->fj_preset = (LLVMOpaqueValue*)(nullptr);
     this_->broken_join = (LLVMOpaqueValue*)(nullptr);
-    this_->store_effects = (*({ StoreEffects* scaly_t43 = (StoreEffects*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StoreEffects), alignof(StoreEffects)); *scaly_t43 = StoreEffects{}; StoreEffects_init((*scaly_t43)); scaly_t43; }));
-    this_->stack_vectors = (*({ StackVectors* scaly_t44 = (StackVectors*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StackVectors), alignof(StackVectors)); *scaly_t44 = StackVectors{}; StackVectors_init((*scaly_t44)); scaly_t44; }));
+    this_->store_effects = (*({ StoreEffects* scaly_t46 = (StoreEffects*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StoreEffects), alignof(StoreEffects)); *scaly_t46 = StoreEffects{}; StoreEffects_init((*scaly_t46)); scaly_t46; }));
+    this_->stack_vectors = (*({ StackVectors* scaly_t47 = (StackVectors*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StackVectors), alignof(StackVectors)); *scaly_t47 = StackVectors{}; StackVectors_init((*scaly_t47)); scaly_t47; }));
     this_->stack_vectors_fn = (LLVMOpaqueValue*)(nullptr);
-    this_->weight_memo_names = (Array<String>*)&((*({ Array<String>* scaly_t45 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t45 = Array<String>{}; (void)0; scaly_t45; })));
-    this_->weight_memo_vals = (Array<uint64_t>*)&((*({ Array<uint64_t>* scaly_t46 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t46 = Array<uint64_t>{}; (void)0; scaly_t46; })));
-    this_->weight_stack = (Array<String>*)&((*({ Array<String>* scaly_t47 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t47 = Array<String>{}; (void)0; scaly_t47; })));
-    this_->parfor_checker = (*({ TaskPlanner* scaly_t48 = (TaskPlanner*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(TaskPlanner), alignof(TaskPlanner)); *scaly_t48 = TaskPlanner{}; TaskPlanner_init((*scaly_t48)); scaly_t48; }));
-    this_->parfor_file = (*({ String* scaly_t49 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t49 = String{}; String_init3((*scaly_t49)); scaly_t49; }));
-    this_->gpu_pending = (*({ Emitter_GpuOffer* scaly_t50 = (Emitter_GpuOffer*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Emitter_GpuOffer), alignof(Emitter_GpuOffer)); *scaly_t50 = Emitter_GpuOffer{}; Emitter_GpuOffer_init((*scaly_t50)); scaly_t50; }));
+    this_->weight_memo_names = (Array<String>*)&((*({ Array<String>* scaly_t48 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t48 = Array<String>{}; (void)0; scaly_t48; })));
+    this_->weight_memo_vals = (Array<uint64_t>*)&((*({ Array<uint64_t>* scaly_t49 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t49 = Array<uint64_t>{}; (void)0; scaly_t49; })));
+    this_->weight_stack = (Array<String>*)&((*({ Array<String>* scaly_t50 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t50 = Array<String>{}; (void)0; scaly_t50; })));
+    this_->parfor_checker = (*({ TaskPlanner* scaly_t51 = (TaskPlanner*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(TaskPlanner), alignof(TaskPlanner)); *scaly_t51 = TaskPlanner{}; TaskPlanner_init((*scaly_t51)); scaly_t51; }));
+    this_->parfor_file = (*({ String* scaly_t52 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t52 = String{}; String_init3((*scaly_t52)); scaly_t52; }));
+    this_->gpu_pending = (*({ Emitter_GpuOffer* scaly_t53 = (Emitter_GpuOffer*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Emitter_GpuOffer), alignof(Emitter_GpuOffer)); *scaly_t53 = Emitter_GpuOffer{}; Emitter_GpuOffer_init((*scaly_t53)); scaly_t53; }));
     this_->zero_main = (LLVMOpaqueValue*)(nullptr);
-    this_->current_receiver_concept = (*({ String* scaly_t51 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t51 = String{}; String_init3((*scaly_t51)); scaly_t51; }));
+    this_->current_receiver_concept = (*({ String* scaly_t54 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t54 = String{}; String_init3((*scaly_t54)); scaly_t54; }));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
@@ -181609,6 +182091,7 @@ __attribute__((weak)) void Options_init(Options& scaly_self)
     this_->opt_level = 0LL;
     this_->portable_simd = false;
     this_->gpu = false;
+    this_->cluster = false;
     this_->emit_cpp = false;
     this_->library = false;
     this_->tool_build = false;
@@ -181915,33 +182398,39 @@ __attribute__((weak)) Options cli_parse_args(scaly_frame* scaly_rp, int64_t argc
                                                                                                                                                                     }
                                                                                                                                                                     else
                                                                                                                                                                     {
-                                                                                                                                                                        if (String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\006-mcpu="})))
+                                                                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\011--cluster"})))
                                                                                                                                                                         {
-                                                                                                                                                                            String cpu = String_substring(scaly_rp, (*arg), 6ULL, (String_get_length((*arg)) - 6ULL));
-                                                                                                                                                                            if ((String_get_length(cpu) == 0ULL))
-                                                                                                                                                                            {
-                                                                                                                                                                                ((*opts)).error_message = String{(uint8_t*)"\045-mcpu= requires a CPU name, or native"};
-                                                                                                                                                                            }
-                                                                                                                                                                            else
-                                                                                                                                                                            {
-                                                                                                                                                                                ((*opts)).target_cpu = cpu;
-                                                                                                                                                                            }
+                                                                                                                                                                            ((*opts)).cluster = true;
                                                                                                                                                                         }
                                                                                                                                                                         else
                                                                                                                                                                         {
-                                                                                                                                                                            if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-L"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                            if (String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\006-mcpu="})))
                                                                                                                                                                             {
-                                                                                                                                                                                Array_add<String>(((*opts)).library_paths, scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init4((*scaly_t7), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t7; }))));
-                                                                                                                                                                            }
-                                                                                                                                                                            else
-                                                                                                                                                                            {
-                                                                                                                                                                                if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-l"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                                String cpu = String_substring(scaly_rp, (*arg), 6ULL, (String_get_length((*arg)) - 6ULL));
+                                                                                                                                                                                if ((String_get_length(cpu) == 0ULL))
                                                                                                                                                                                 {
-                                                                                                                                                                                    Array_add<String>(((*opts)).libraries, scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init4((*scaly_t8), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t8; }))));
+                                                                                                                                                                                    ((*opts)).error_message = String{(uint8_t*)"\045-mcpu= requires a CPU name, or native"};
                                                                                                                                                                                 }
                                                                                                                                                                                 else
                                                                                                                                                                                 {
-                                                                                                                                                                                    ((*opts)).error_message = ({
+                                                                                                                                                                                    ((*opts)).target_cpu = cpu;
+                                                                                                                                                                                }
+                                                                                                                                                                            }
+                                                                                                                                                                            else
+                                                                                                                                                                            {
+                                                                                                                                                                                if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-L"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                                {
+                                                                                                                                                                                    Array_add<String>(((*opts)).library_paths, scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init4((*scaly_t7), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t7; }))));
+                                                                                                                                                                                }
+                                                                                                                                                                                else
+                                                                                                                                                                                {
+                                                                                                                                                                                    if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-l"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                                    {
+                                                                                                                                                                                        Array_add<String>(((*opts)).libraries, scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init4((*scaly_t8), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t8; }))));
+                                                                                                                                                                                    }
+                                                                                                                                                                                    else
+                                                                                                                                                                                    {
+                                                                                                                                                                                        ((*opts)).error_message = ({
         String scaly_t9{};
         {
             StringBuilder* isb$ = ({ StringBuilder* scaly_t10 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t10 = StringBuilder{}; StringBuilder_init((*scaly_t10)); scaly_t10; });
@@ -181951,6 +182440,7 @@ __attribute__((weak)) Options cli_parse_args(scaly_frame* scaly_rp, int64_t argc
         }
         scaly_t9;
     });
+                                                                                                                                                                                    }
                                                                                                                                                                                 }
                                                                                                                                                                             }
                                                                                                                                                                         }
@@ -182082,6 +182572,7 @@ __attribute__((weak)) void cli_print_usage()
     Console_println(((const char*)"  --target <t>   Cross-emit object for triple <t> (use with -c)"));
     Console_println(((const char*)"  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"));
     Console_println(((const char*)"  --portable-simd  SIMD operations in their target-neutral form (the seed)"));
+    Console_println(((const char*)"  --cluster      Let the program hand the rounds of a parallel for loop to helpers of its own build (the same program started with --scaly-helper; SCALY_CLUSTER=on sends them; not with --jit or --run)"));
     Console_println(((const char*)"  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)"));
 }
 
@@ -183267,6 +183758,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     (config).opt_level = (opts).opt_level;
     (config).portable_simd = (opts).portable_simd;
     (config).gpu = ((((opts).gpu ? (((opts).run_mode) == (false)) : false) ? (((opts).jit_program) == (false)) : false) ? (((opts).test_mode) == (false)) : false);
+    (config).cluster = ((((opts).cluster ? (((opts).run_mode) == (false)) : false) ? (((opts).jit_program) == (false)) : false) ? (((opts).test_mode) == (false)) : false);
     (config).page_size = Planner_page_size_constant((*planner));
     (config).library_linkage = (opts).library;
     (config).code_parts = (opts).code_parts;
