@@ -3580,10 +3580,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorIcEC1E6OptionIR6VectorIcEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -3870,11 +3872,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIcEC1E5SliceIcE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIcE, ptr %1, align 8
   store %_Z5SliceIcE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -5310,11 +5314,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI2u8EC1E5SliceI2u8E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI2u8E, ptr %1, align 8
   store %_Z5SliceI2u8E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -5463,10 +5469,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6StringEC1E6OptionIR6VectorI6StringEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -5754,11 +5762,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6StringEC1E5SliceI6StringE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6StringE, ptr %1, align 8
   store %_Z5SliceI6StringE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6StringE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -6816,10 +6826,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI6StringEEC1E6OptionIR6VectorI6VectorI6StringEEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -7107,11 +7119,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI6StringEEC1E5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6VectorI6StringEE, ptr %1, align 8
   store %_Z5SliceI6VectorI6StringEE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI6StringEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -8244,10 +8258,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4ListI4SlotI6StringEEEC1E6OptionIR6VectorI4ListI4SlotI6StringEEEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -8671,11 +8687,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4ListI4SlotI6StringEEEC1E5SliceI4ListI4SlotI6StringEEE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4ListI4SlotI6StringEEE, ptr %1, align 8
   store %_Z5SliceI4ListI4SlotI6StringEEE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -9855,9 +9873,13 @@ entry:
   store i64 0, ptr %length, align 8
   %slots = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
   store ptr null, ptr %slots, align 8
+  %length1 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length1, align 8
+  %slots2 = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %slots2, align 8
   %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
-  %length1 = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %gt = icmp ugt i64 %length1, 0
+  %length3 = extractvalue %_Z6VectorI6StringE %load.struct, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9872,13 +9894,13 @@ if.end:                                           ; preds = %while.exit, %entry
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
-  %vector_iterator2 = load ptr, ptr %vector_iterator, align 8
-  %call = call ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %vector_iterator2)
+  %vector_iterator4 = load ptr, ptr %vector_iterator, align 8
+  %call = call ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %vector_iterator4)
   %while.tobool = icmp ne ptr %call, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call3 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %call)
+  %call5 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %call)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
@@ -9888,7 +9910,7 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr void @_ZN7HashSetI6StringEC1E14HashSetBuilderI6StringE(ptr %0, ptr %1) {
 entry:
   %deref.tmp = alloca %_Z5ArrayI6StringE, align 8
-  %wrapped_frame40 = alloca { ptr, ptr }, align 8
+  %wrapped_frame41 = alloca { ptr, ptr }, align 8
   %list_iterator = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
   %tuple = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
   %array = alloca ptr, align 8
@@ -9897,16 +9919,18 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %i = alloca i64, align 8
-  %length10 = alloca i64, align 8
+  %length11 = alloca i64, align 8
   %wrapped_frame = alloca { ptr, ptr }, align 8
+  %slots = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %slots, align 8
   %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
   %length = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %slots = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
-  store ptr null, ptr %slots, align 8
+  %slots1 = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %slots1, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -9924,112 +9948,112 @@ frame.force:                                      ; preds = %if.end
   br label %frame.forced
 
 frame.forced:                                     ; preds = %frame.force, %if.end
-  %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
-  %load.struct2 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
-  %slots3 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct2, 1
-  %deref = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %slots3, align 8
-  %length4 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %deref, 0
-  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region, i64 %length4)
-  %slots5 = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
-  store ptr %struct.region, ptr %slots5, align 8
-  %load.struct6 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
-  %slots7 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct6, 1
-  %deref8 = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %slots7, align 8
-  %length9 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %deref8, 0
-  store i64 %length9, ptr %length10, align 1
+  %forced_page2 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct3 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
+  %slots4 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct3, 1
+  %deref = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %slots4, align 8
+  %length5 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %deref, 0
+  call void @_ZN6VectorI6VectorI6StringEEC1Em(ptr %struct.region, i64 %length5)
+  %slots6 = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  store ptr %struct.region, ptr %slots6, align 8
+  %load.struct7 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
+  %slots8 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct7, 1
+  %deref9 = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %slots8, align 8
+  %length10 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %deref9, 0
+  store i64 %length10, ptr %length11, align 1
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end35, %frame.forced
-  %i11 = load i64, ptr %i, align 8
-  %length12 = load i64, ptr %length10, align 8
-  %lt = icmp ult i64 %i11, %length12
+while.cond:                                       ; preds = %if.end36, %frame.forced
+  %i12 = load i64, ptr %i, align 8
+  %length13 = load i64, ptr %length11, align 8
+  %lt = icmp ult i64 %i12, %length13
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %field.inplace = getelementptr inbounds nuw %_Z14HashSetBuilderI6StringE, ptr %1, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %i13 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI4ListI4SlotI6StringEEE2atEm(ptr %deref.recv, i64 %i13)
-  %frame.page14 = load ptr, ptr %frame, align 8
-  %frame.has_page15 = icmp ne ptr %frame.page14, null
-  br i1 %frame.has_page15, label %frame.forced17, label %frame.force16
+  %i14 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI4ListI4SlotI6StringEEE2atEm(ptr %deref.recv, i64 %i14)
+  %frame.page15 = load ptr, ptr %frame, align 8
+  %frame.has_page16 = icmp ne ptr %frame.page15, null
+  br i1 %frame.has_page16, label %frame.forced18, label %frame.force17
 
 while.exit:                                       ; preds = %while.cond
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-frame.force16:                                    ; preds = %while.body
-  %forced_page18 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced17
+frame.force17:                                    ; preds = %while.body
+  %forced_page19 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced18
 
-frame.forced17:                                   ; preds = %frame.force16, %while.body
-  %forced_page19 = phi ptr [ %frame.page14, %while.body ], [ %forced_page18, %frame.force16 ]
-  %struct.region20 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page19, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region20, i32 0, i32 0
+frame.forced18:                                   ; preds = %frame.force17, %while.body
+  %forced_page20 = phi ptr [ %frame.page15, %while.body ], [ %forced_page19, %frame.force17 ]
+  %struct.region21 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page20, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region21, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 8
-  %tuple.field21 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region20, i32 0, i32 1
-  store i64 0, ptr %tuple.field21, align 8
-  %tuple.field22 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region20, i32 0, i32 2
-  store ptr null, ptr %tuple.field22, align 8
-  store ptr %struct.region20, ptr %array, align 1
-  %load.struct23 = load %_Z4ListI4SlotI6StringEE, ptr %call, align 8
-  %head = extractvalue %_Z4ListI4SlotI6StringEE %load.struct23, 0
-  %tuple.field24 = getelementptr inbounds nuw %_Z12ListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
-  store ptr %head, ptr %tuple.field24, align 1
+  %tuple.field22 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region21, i32 0, i32 1
+  store i64 0, ptr %tuple.field22, align 8
+  %tuple.field23 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region21, i32 0, i32 2
+  store ptr null, ptr %tuple.field23, align 8
+  store ptr %struct.region21, ptr %array, align 1
+  %load.struct24 = load %_Z4ListI4SlotI6StringEE, ptr %call, align 8
+  %head = extractvalue %_Z4ListI4SlotI6StringEE %load.struct24, 0
+  %tuple.field25 = getelementptr inbounds nuw %_Z12ListIteratorI4SlotI6StringEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field25, align 1
   %tuple.val = load %_Z12ListIteratorI4SlotI6StringEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %list_iterator, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI4SlotI6StringEE, ptr null, i32 1) to i64), i1 false)
-  br label %while.cond25
+  br label %while.cond26
 
-while.cond25:                                     ; preds = %while.body26, %frame.forced17
-  %call28 = call ptr @_ZN12ListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator)
-  %while.tobool = icmp ne ptr %call28, null
-  br i1 %while.tobool, label %while.body26, label %while.exit27
+while.cond26:                                     ; preds = %while.body27, %frame.forced18
+  %call29 = call ptr @_ZN12ListIteratorI4SlotI6StringEE4nextEv(ptr %list_iterator)
+  %while.tobool = icmp ne ptr %call29, null
+  br i1 %while.tobool, label %while.body27, label %while.exit28
 
-while.body26:                                     ; preds = %while.cond25
-  %array29 = load ptr, ptr %array, align 8
-  %field.inplace30 = getelementptr inbounds nuw %_Z4SlotI6StringE, ptr %call28, i32 0, i32 0
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %array29, ptr %field.inplace30)
-  br label %while.cond25
+while.body27:                                     ; preds = %while.cond26
+  %array30 = load ptr, ptr %array, align 8
+  %field.inplace31 = getelementptr inbounds nuw %_Z4SlotI6StringE, ptr %call29, i32 0, i32 0
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %array30, ptr %field.inplace31)
+  br label %while.cond26
 
-while.exit27:                                     ; preds = %while.cond25
-  %array31 = load ptr, ptr %array, align 8
-  %load.struct32 = load %_Z5ArrayI6StringE, ptr %array31, align 8
-  %length33 = extractvalue %_Z5ArrayI6StringE %load.struct32, 0
-  %gt = icmp ugt i64 %length33, 0
-  br i1 %gt, label %if.then34, label %if.end35
+while.exit28:                                     ; preds = %while.cond26
+  %array32 = load ptr, ptr %array, align 8
+  %load.struct33 = load %_Z5ArrayI6StringE, ptr %array32, align 8
+  %length34 = extractvalue %_Z5ArrayI6StringE %load.struct33, 0
+  %gt = icmp ugt i64 %length34, 0
+  br i1 %gt, label %if.then35, label %if.end36
 
-if.then34:                                        ; preds = %while.exit27
-  %field.inplace36 = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
-  %deref.recv37 = load ptr, ptr %field.inplace36, align 8
-  %i38 = load i64, ptr %i, align 8
-  %own_page39 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page39, ptr %wrapped_frame40, align 8
-  %wrapped.parent41 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame40, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent41, align 8
-  %frame.page42 = load ptr, ptr %wrapped_frame40, align 8
-  %frame.has_page43 = icmp ne ptr %frame.page42, null
-  br i1 %frame.has_page43, label %frame.forced45, label %frame.force44
+if.then35:                                        ; preds = %while.exit28
+  %field.inplace37 = getelementptr inbounds nuw %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
+  %deref.recv38 = load ptr, ptr %field.inplace37, align 8
+  %i39 = load i64, ptr %i, align 8
+  %own_page40 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page40, ptr %wrapped_frame41, align 8
+  %wrapped.parent42 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame41, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent42, align 8
+  %frame.page43 = load ptr, ptr %wrapped_frame41, align 8
+  %frame.has_page44 = icmp ne ptr %frame.page43, null
+  br i1 %frame.has_page44, label %frame.forced46, label %frame.force45
 
-if.end35:                                         ; preds = %frame.forced45, %while.exit27
-  %i50 = load i64, ptr %i, align 8
-  %add = add i64 %i50, 1
+if.end36:                                         ; preds = %frame.forced46, %while.exit28
+  %i51 = load i64, ptr %i, align 8
+  %add = add i64 %i51, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-frame.force44:                                    ; preds = %if.then34
-  %forced_page46 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame40)
-  br label %frame.forced45
+frame.force45:                                    ; preds = %if.then35
+  %forced_page47 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame41)
+  br label %frame.forced46
 
-frame.forced45:                                   ; preds = %frame.force44, %if.then34
-  %forced_page47 = phi ptr [ %frame.page42, %if.then34 ], [ %forced_page46, %frame.force44 ]
-  %struct.region48 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page47, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %array49 = load ptr, ptr %array, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array49, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI6StringEC1E5ArrayI6StringE(ptr %struct.region48, ptr %deref.tmp)
-  call void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %deref.recv37, i64 %i38, ptr %struct.region48)
-  br label %if.end35
+frame.forced46:                                   ; preds = %frame.force45, %if.then35
+  %forced_page48 = phi ptr [ %frame.page43, %if.then35 ], [ %forced_page47, %frame.force45 ]
+  %struct.region49 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page48, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %array50 = load ptr, ptr %array, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array50, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI6StringEC1E5ArrayI6StringE(ptr %struct.region49, ptr %deref.tmp)
+  call void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %deref.recv38, i64 %i39, ptr %struct.region49)
+  br label %if.end36
 }
 
 define linkonce_odr ptr @_ZN5SliceImE3getEm(ptr %0, i64 %1) {
@@ -10306,11 +10330,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorImEC1E5SliceImE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceImE, ptr %1, align 8
   store %_Z5SliceImE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -10448,10 +10474,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15ExtensionSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI15ExtensionSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -10739,11 +10767,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15ExtensionSyntaxB6scalycB4v0_2EC1E5SliceI15ExtensionSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15ExtensionSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15ExtensionSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -11799,10 +11829,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI18MemberAccessSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI18MemberAccessSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -12090,11 +12122,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI18MemberAccessSyntaxB6scalycB4v0_2EC1E5SliceI18MemberAccessSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -13150,10 +13184,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13ElementSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI13ElementSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -13441,11 +13477,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13ElementSyntaxB6scalycB4v0_2EC1E5SliceI13ElementSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13ElementSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13ElementSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -14501,10 +14539,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15AttributeSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI15AttributeSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -14792,11 +14832,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15AttributeSyntaxB6scalycB4v0_2EC1E5SliceI15AttributeSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15AttributeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -15852,10 +15894,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15ComponentSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI15ComponentSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -16143,11 +16187,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15ComponentSyntaxB6scalycB4v0_2EC1E5SliceI15ComponentSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15ComponentSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15ComponentSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -17203,10 +17249,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI9UseSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI9UseSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -17494,11 +17542,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9UseSyntaxB6scalycB4v0_2EC1E5SliceI9UseSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9UseSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9UseSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9UseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -18554,10 +18604,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10CaseSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI10CaseSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -18845,11 +18897,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10CaseSyntaxB6scalycB4v0_2EC1E5SliceI10CaseSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10CaseSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10CaseSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -19905,10 +19959,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12BranchSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI12BranchSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -20196,11 +20252,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12BranchSyntaxB6scalycB4v0_2EC1E5SliceI12BranchSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12BranchSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI12BranchSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12BranchSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -21256,10 +21314,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI20DecomposedNameSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI20DecomposedNameSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -21547,11 +21607,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI20DecomposedNameSyntaxB6scalycB4v0_2EC1E5SliceI20DecomposedNameSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI20DecomposedNameSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI20DecomposedNameSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -22607,10 +22669,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10WhenSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -22898,11 +22962,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10WhenSyntaxB6scalycB4v0_2EC1E5SliceI10WhenSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10WhenSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10WhenSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -23958,10 +24024,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15InnerTypeSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI15InnerTypeSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -24249,11 +24317,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15InnerTypeSyntaxB6scalycB4v0_2EC1E5SliceI15InnerTypeSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15InnerTypeSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15InnerTypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -25309,10 +25379,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI24TupleTypeComponentSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -25600,11 +25672,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2EC1E5SliceI24TupleTypeComponentSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI24TupleTypeComponentSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI24TupleTypeComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -26660,10 +26734,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13OperandSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -26951,11 +27027,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13OperandSyntaxB6scalycB4v0_2EC1E5SliceI13OperandSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13OperandSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13OperandSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13OperandSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -28011,10 +28089,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15StatementSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI15StatementSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -28302,11 +28382,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15StatementSyntaxB6scalycB4v0_2EC1E5SliceI15StatementSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15StatementSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15StatementSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -29362,10 +29444,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13LibrarySyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI13LibrarySyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -29653,11 +29737,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13LibrarySyntaxB6scalycB4v0_2EC1E5SliceI13LibrarySyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13LibrarySyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -30713,10 +30799,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10PartSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI10PartSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -31004,11 +31092,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10PartSyntaxB6scalycB4v0_2EC1E5SliceI10PartSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10PartSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10PartSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -32064,10 +32154,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13VariantSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI13VariantSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -32355,11 +32447,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13VariantSyntaxB6scalycB4v0_2EC1E5SliceI13VariantSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13VariantSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13VariantSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -33415,10 +33509,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI17DeclarationSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI17DeclarationSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -33706,11 +33802,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI17DeclarationSyntaxB6scalycB4v0_2EC1E5SliceI17DeclarationSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -35507,10 +35605,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI3UseB6scalycB4v0_2EC1E6OptionIR6VectorI3UseB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -35798,11 +35898,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI3UseB6scalycB4v0_2EC1E5SliceI3UseB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI3UseB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI3UseB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -36858,10 +36960,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4TypeB6scalycB4v0_2EC1E6OptionIR6VectorI4TypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -37149,11 +37253,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4TypeB6scalycB4v0_2EC1E5SliceI4TypeB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4TypeB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI4TypeB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4TypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -38209,10 +38315,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI7OperandB6scalycB4v0_2EEC1E6OptionIR6VectorI6VectorI7OperandB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -38500,11 +38608,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI7OperandB6scalycB4v0_2EEC1E5SliceI6VectorI7OperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6VectorI7OperandB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI6VectorI7OperandB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -39560,10 +39670,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI9StatementB6scalycB4v0_2EC1E6OptionIR6VectorI9StatementB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -39851,11 +39963,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9StatementB6scalycB4v0_2EC1E5SliceI9StatementB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9StatementB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9StatementB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9StatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -40911,10 +41025,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4CaseB6scalycB4v0_2EC1E6OptionIR6VectorI4CaseB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -41202,11 +41318,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4CaseB6scalycB4v0_2EC1E5SliceI4CaseB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4CaseB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI4CaseB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -42262,10 +42380,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6BranchB6scalycB4v0_2EC1E6OptionIR6VectorI6BranchB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -42553,11 +42673,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6BranchB6scalycB4v0_2EC1E5SliceI6BranchB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6BranchB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI6BranchB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6BranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -43613,10 +43735,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4WhenB6scalycB4v0_2EC1E6OptionIR6VectorI4WhenB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -43904,11 +44028,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4WhenB6scalycB4v0_2EC1E5SliceI4WhenB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4WhenB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI4WhenB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -44964,10 +45090,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4ItemB6scalycB4v0_2EC1E6OptionIR6VectorI4ItemB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -45255,11 +45383,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4ItemB6scalycB4v0_2EC1E5SliceI4ItemB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4ItemB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI4ItemB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4ItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -46315,10 +46445,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI7OperandB6scalycB4v0_2EC1E6OptionIR6VectorI7OperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -46606,11 +46738,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7OperandB6scalycB4v0_2EC1E5SliceI7OperandB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7OperandB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7OperandB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -47666,10 +47800,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI9ComponentB6scalycB4v0_2EC1E6OptionIR6VectorI9ComponentB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -47957,11 +48093,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9ComponentB6scalycB4v0_2EC1E5SliceI9ComponentB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9ComponentB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9ComponentB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9ComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -49017,10 +49155,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI9AttributeB6scalycB4v0_2EC1E6OptionIR6VectorI9AttributeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -49308,11 +49448,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9AttributeB6scalycB4v0_2EC1E5SliceI9AttributeB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9AttributeB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9AttributeB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -50368,10 +50510,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI16GenericParameterB6scalycB4v0_2EC1E6OptionIR6VectorI16GenericParameterB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -50659,11 +50803,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI16GenericParameterB6scalycB4v0_2EC1E5SliceI16GenericParameterB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI16GenericParameterB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI16GenericParameterB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI16GenericParameterB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -51719,10 +51865,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI8FunctionB6scalycB4v0_2EC1E6OptionIR6VectorI8FunctionB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -52010,11 +52158,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI8FunctionB6scalycB4v0_2EC1E5SliceI8FunctionB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI8FunctionB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI8FunctionB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -54010,10 +54160,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -54301,11 +54453,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEEC1E5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %1, align 8
   store %_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -55361,10 +55515,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -55652,11 +55808,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -56722,10 +56880,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI8PropertyB6scalycB4v0_2EC1E6OptionIR6VectorI8PropertyB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -57013,11 +57173,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI8PropertyB6scalycB4v0_2EC1E5SliceI8PropertyB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI8PropertyB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI8PropertyB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -58073,10 +58235,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI11InitializerB6scalycB4v0_2EC1E6OptionIR6VectorI11InitializerB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -58364,11 +58528,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI11InitializerB6scalycB4v0_2EC1E5SliceI11InitializerB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI11InitializerB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI11InitializerB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI11InitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -59424,10 +59590,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -59715,11 +59883,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -60775,10 +60945,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -61066,11 +61238,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEC1E5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %1, align 8
   store %_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -62365,10 +62539,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEEC1E6OptionIR6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -62656,11 +62832,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEEC1E5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %1, align 8
   store %_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -63904,9 +64082,13 @@ entry:
   store i64 0, ptr %length, align 8
   %slots = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store ptr null, ptr %slots, align 8
+  %length1 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length1, align 8
+  %slots2 = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %slots2, align 8
   %load.struct = load %_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %1, align 8
-  %length1 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE %load.struct, 0
-  %gt = icmp ugt i64 %length1, 0
+  %length3 = extractvalue %_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE %load.struct, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -63921,15 +64103,15 @@ if.end:                                           ; preds = %while.exit, %entry
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
-  %vector_iterator2 = load ptr, ptr %vector_iterator, align 8
-  %call = call ptr @_ZN14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE4nextEv(ptr %vector_iterator2)
+  %vector_iterator4 = load ptr, ptr %vector_iterator, align 8
+  %call = call ptr @_ZN14VectorIteratorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE4nextEv(ptr %vector_iterator4)
   %while.tobool = icmp ne ptr %call, null
   br i1 %while.tobool, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace3 = getelementptr inbounds nuw %_Z12KeyValuePairI6String8NameableB6scalycB4v0_2E, ptr %call, i32 0, i32 0
-  %field.inplace4 = getelementptr inbounds nuw %_Z12KeyValuePairI6String8NameableB6scalycB4v0_2E, ptr %call, i32 0, i32 1
-  %call5 = call i1 @_ZN14HashMapBuilderI6String8NameableB6scalycB4v0_2E12add_internalE6String8NameableB6scalycB4v0_2(ptr %0, ptr %field.inplace3, ptr %field.inplace4)
+  %field.inplace5 = getelementptr inbounds nuw %_Z12KeyValuePairI6String8NameableB6scalycB4v0_2E, ptr %call, i32 0, i32 0
+  %field.inplace6 = getelementptr inbounds nuw %_Z12KeyValuePairI6String8NameableB6scalycB4v0_2E, ptr %call, i32 0, i32 1
+  %call7 = call i1 @_ZN14HashMapBuilderI6String8NameableB6scalycB4v0_2E12add_internalE6String8NameableB6scalycB4v0_2(ptr %0, ptr %field.inplace5, ptr %field.inplace6)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
@@ -63939,7 +64121,7 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr void @_ZN7HashMapI6String8NameableB6scalycB4v0_2EC1E14HashMapBuilderI6String8NameableB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
   %deref.tmp = alloca %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, align 8
-  %wrapped_frame38 = alloca { ptr, ptr }, align 8
+  %wrapped_frame39 = alloca { ptr, ptr }, align 8
   %list_iterator = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, align 8
   %tuple = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, align 8
   %array = alloca ptr, align 8
@@ -63949,14 +64131,16 @@ entry:
   store ptr null, ptr %frame.parent, align 8
   %i = alloca i64, align 8
   %wrapped_frame = alloca { ptr, ptr }, align 8
+  %slots = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr null, ptr %slots, align 8
   %load.struct = load %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, align 8
   %length = extractvalue %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E %load.struct, 0
   %eq = icmp eq i64 %length, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %slots = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr null, ptr %slots, align 8
+  %slots1 = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr null, ptr %slots1, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -63974,110 +64158,110 @@ frame.force:                                      ; preds = %if.end
   br label %frame.forced
 
 frame.forced:                                     ; preds = %frame.force, %if.end
-  %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE }, ptr null, i64 0, i32 1) to i64))
-  %load.struct2 = load %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, align 8
-  %slots3 = extractvalue %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E %load.struct2, 1
-  %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %slots3, align 8
-  %length4 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE %deref, 0
-  call void @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEC1Em(ptr %struct.region, i64 %length4)
-  %slots5 = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %struct.region, ptr %slots5, align 8
-  %load.struct6 = load %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, align 8
-  %slots7 = extractvalue %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E %load.struct6, 1
-  %deref8 = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %slots7, align 8
-  %length9 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE %deref8, 0
+  %forced_page2 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE }, ptr null, i64 0, i32 1) to i64))
+  %load.struct3 = load %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, align 8
+  %slots4 = extractvalue %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E %load.struct3, 1
+  %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %slots4, align 8
+  %length5 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE %deref, 0
+  call void @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEC1Em(ptr %struct.region, i64 %length5)
+  %slots6 = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %struct.region, ptr %slots6, align 8
+  %load.struct7 = load %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, align 8
+  %slots8 = extractvalue %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E %load.struct7, 1
+  %deref9 = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %slots8, align 8
+  %length10 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE %deref9, 0
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end33, %frame.forced
-  %i10 = load i64, ptr %i, align 8
-  %lt = icmp ult i64 %i10, %length9
+while.cond:                                       ; preds = %if.end34, %frame.forced
+  %i11 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i11, %length10
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6String8NameableB6scalycB4v0_2E, ptr %1, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %i11 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE2atEm(ptr %deref.recv, i64 %i11)
-  %frame.page12 = load ptr, ptr %frame, align 8
-  %frame.has_page13 = icmp ne ptr %frame.page12, null
-  br i1 %frame.has_page13, label %frame.forced15, label %frame.force14
+  %i12 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE2atEm(ptr %deref.recv, i64 %i12)
+  %frame.page13 = load ptr, ptr %frame, align 8
+  %frame.has_page14 = icmp ne ptr %frame.page13, null
+  br i1 %frame.has_page14, label %frame.forced16, label %frame.force15
 
 while.exit:                                       ; preds = %while.cond
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-frame.force14:                                    ; preds = %while.body
-  %forced_page16 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced15
+frame.force15:                                    ; preds = %while.body
+  %forced_page17 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced16
 
-frame.forced15:                                   ; preds = %frame.force14, %while.body
-  %forced_page17 = phi ptr [ %frame.page12, %while.body ], [ %forced_page16, %frame.force14 ]
-  %struct.region18 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page17, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region18, i32 0, i32 0
+frame.forced16:                                   ; preds = %frame.force15, %while.body
+  %forced_page18 = phi ptr [ %frame.page13, %while.body ], [ %forced_page17, %frame.force15 ]
+  %struct.region19 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page18, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region19, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 8
-  %tuple.field19 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region18, i32 0, i32 1
-  store i64 0, ptr %tuple.field19, align 8
-  %tuple.field20 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region18, i32 0, i32 2
-  store ptr null, ptr %tuple.field20, align 8
-  store ptr %struct.region18, ptr %array, align 1
-  %load.struct21 = load %_Z4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %call, align 8
-  %head = extractvalue %_Z4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE %load.struct21, 0
-  %tuple.field22 = getelementptr inbounds nuw %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %tuple, i32 0, i32 0
-  store ptr %head, ptr %tuple.field22, align 1
+  %tuple.field20 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region19, i32 0, i32 1
+  store i64 0, ptr %tuple.field20, align 8
+  %tuple.field21 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %struct.region19, i32 0, i32 2
+  store ptr null, ptr %tuple.field21, align 8
+  store ptr %struct.region19, ptr %array, align 1
+  %load.struct22 = load %_Z4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %call, align 8
+  %head = extractvalue %_Z4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE %load.struct22, 0
+  %tuple.field23 = getelementptr inbounds nuw %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field23, align 1
   %tuple.val = load %_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %list_iterator, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr null, i32 1) to i64), i1 false)
-  br label %while.cond23
+  br label %while.cond24
 
-while.cond23:                                     ; preds = %while.body24, %frame.forced15
-  %call26 = call ptr @_ZN12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE4nextEv(ptr %list_iterator)
-  %while.tobool = icmp ne ptr %call26, null
-  br i1 %while.tobool, label %while.body24, label %while.exit25
+while.cond24:                                     ; preds = %while.body25, %frame.forced16
+  %call27 = call ptr @_ZN12ListIteratorI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE4nextEv(ptr %list_iterator)
+  %while.tobool = icmp ne ptr %call27, null
+  br i1 %while.tobool, label %while.body25, label %while.exit26
 
-while.body24:                                     ; preds = %while.cond23
-  %array27 = load ptr, ptr %array, align 8
-  %field.inplace28 = getelementptr inbounds nuw %_Z4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %call26, i32 0, i32 0
-  call void @_ZN5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE3addE12KeyValuePairI6String8NameableB6scalycB4v0_2E(ptr %array27, ptr %field.inplace28)
-  br label %while.cond23
+while.body25:                                     ; preds = %while.cond24
+  %array28 = load ptr, ptr %array, align 8
+  %field.inplace29 = getelementptr inbounds nuw %_Z4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %call27, i32 0, i32 0
+  call void @_ZN5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE3addE12KeyValuePairI6String8NameableB6scalycB4v0_2E(ptr %array28, ptr %field.inplace29)
+  br label %while.cond24
 
-while.exit25:                                     ; preds = %while.cond23
-  %array29 = load ptr, ptr %array, align 8
-  %load.struct30 = load %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %array29, align 8
-  %length31 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE %load.struct30, 0
-  %gt = icmp ugt i64 %length31, 0
-  br i1 %gt, label %if.then32, label %if.end33
+while.exit26:                                     ; preds = %while.cond24
+  %array30 = load ptr, ptr %array, align 8
+  %load.struct31 = load %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %array30, align 8
+  %length32 = extractvalue %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE %load.struct31, 0
+  %gt = icmp ugt i64 %length32, 0
+  br i1 %gt, label %if.then33, label %if.end34
 
-if.then32:                                        ; preds = %while.exit25
-  %field.inplace34 = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  %deref.recv35 = load ptr, ptr %field.inplace34, align 8
-  %i36 = load i64, ptr %i, align 8
-  %own_page37 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page37, ptr %wrapped_frame38, align 8
-  %wrapped.parent39 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame38, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent39, align 8
-  %frame.page40 = load ptr, ptr %wrapped_frame38, align 8
-  %frame.has_page41 = icmp ne ptr %frame.page40, null
-  br i1 %frame.has_page41, label %frame.forced43, label %frame.force42
+if.then33:                                        ; preds = %while.exit26
+  %field.inplace35 = getelementptr inbounds nuw %_Z7HashMapI6String8NameableB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  %deref.recv36 = load ptr, ptr %field.inplace35, align 8
+  %i37 = load i64, ptr %i, align 8
+  %own_page38 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page38, ptr %wrapped_frame39, align 8
+  %wrapped.parent40 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame39, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent40, align 8
+  %frame.page41 = load ptr, ptr %wrapped_frame39, align 8
+  %frame.has_page42 = icmp ne ptr %frame.page41, null
+  br i1 %frame.has_page42, label %frame.forced44, label %frame.force43
 
-if.end33:                                         ; preds = %frame.forced43, %while.exit25
-  %i48 = load i64, ptr %i, align 8
-  %add = add i64 %i48, 1
+if.end34:                                         ; preds = %frame.forced44, %while.exit26
+  %i49 = load i64, ptr %i, align 8
+  %add = add i64 %i49, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-frame.force42:                                    ; preds = %if.then32
-  %forced_page44 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame38)
-  br label %frame.forced43
+frame.force43:                                    ; preds = %if.then33
+  %forced_page45 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame39)
+  br label %frame.forced44
 
-frame.forced43:                                   ; preds = %frame.force42, %if.then32
-  %forced_page45 = phi ptr [ %frame.page40, %if.then32 ], [ %forced_page44, %frame.force42 ]
-  %struct.region46 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page45, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE }, ptr null, i64 0, i32 1) to i64))
-  %array47 = load ptr, ptr %array, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array47, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEC1E5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %struct.region46, ptr %deref.tmp)
-  call void @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE3putEm6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %deref.recv35, i64 %i36, ptr %struct.region46)
-  br label %if.end33
+frame.forced44:                                   ; preds = %frame.force43, %if.then33
+  %forced_page46 = phi ptr [ %frame.page41, %if.then33 ], [ %forced_page45, %frame.force43 ]
+  %struct.region47 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page46, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE }, ptr null, i64 0, i32 1) to i64))
+  %array48 = load ptr, ptr %array, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array48, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEC1E5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %struct.region47, ptr %deref.tmp)
+  call void @_ZN6VectorI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE3putEm6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %deref.recv36, i64 %i37, ptr %struct.region47)
+  br label %if.end34
 }
 
 define linkonce_odr ptr @_ZN6VectorI7VariantB6scalycB4v0_2E3getEm(ptr noalias %0, i64 %1) {
@@ -64196,10 +64380,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI7VariantB6scalycB4v0_2EC1E6OptionIR6VectorI7VariantB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -64487,11 +64673,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7VariantB6scalycB4v0_2EC1E5SliceI7VariantB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7VariantB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7VariantB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -65547,10 +65735,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6MemberB6scalycB4v0_2EC1E6OptionIR6VectorI6MemberB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -65838,11 +66028,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6MemberB6scalycB4v0_2EC1E5SliceI6MemberB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6MemberB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI6MemberB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6MemberB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -66898,10 +67090,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6ModuleB6scalycB4v0_2EC1E6OptionIR6VectorI6ModuleB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -67189,11 +67383,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6ModuleB6scalycB4v0_2EC1E5SliceI6ModuleB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6ModuleB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI6ModuleB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -68251,10 +68447,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI11PlannedTypeB6scalycB4v0_2EC1E6OptionIR6VectorI11PlannedTypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -68542,11 +68740,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI11PlannedTypeB6scalycB4v0_2EC1E5SliceI11PlannedTypeB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI11PlannedTypeB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI11PlannedTypeB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedTypeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -69786,10 +69986,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -70077,11 +70279,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -71135,10 +71339,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorImEC1E6OptionIR6VectorImEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -72180,10 +72386,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -72471,11 +72679,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -73531,10 +73741,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14TypeConstraintB6scalycB4v0_2EC1E6OptionIR6VectorI14TypeConstraintB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -73822,11 +74034,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14TypeConstraintB6scalycB4v0_2EC1E5SliceI14TypeConstraintB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14TypeConstraintB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI14TypeConstraintB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14TypeConstraintB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -74882,10 +75096,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -75173,11 +75389,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1E5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -76233,10 +76451,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -76524,11 +76744,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -77400,10 +77622,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI19PlannedMemberAccessB6scalycB4v0_2EC1E6OptionIR6VectorI19PlannedMemberAccessB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -77691,11 +77915,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI19PlannedMemberAccessB6scalycB4v0_2EC1E5SliceI19PlannedMemberAccessB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI19PlannedMemberAccessB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -78751,10 +78977,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI16PlannedAttributeB6scalycB4v0_2EC1E6OptionIR6VectorI16PlannedAttributeB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -79042,11 +79270,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI16PlannedAttributeB6scalycB4v0_2EC1E5SliceI16PlannedAttributeB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI16PlannedAttributeB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI16PlannedAttributeB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -80102,10 +80332,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI16PlannedComponentB6scalycB4v0_2EC1E6OptionIR6VectorI16PlannedComponentB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -80393,11 +80625,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI16PlannedComponentB6scalycB4v0_2EC1E5SliceI16PlannedComponentB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI16PlannedComponentB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI16PlannedComponentB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedComponentB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -81453,10 +81687,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EEC1E6OptionIR6VectorI6VectorI14PlannedOperandB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -81744,11 +81980,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EEC1E5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -82804,10 +83042,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI16PlannedStatementB6scalycB4v0_2EC1E6OptionIR6VectorI16PlannedStatementB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -83095,11 +83335,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI16PlannedStatementB6scalycB4v0_2EC1E5SliceI16PlannedStatementB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI16PlannedStatementB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI16PlannedStatementB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStatementB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -84155,10 +84397,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI11PlannedCaseB6scalycB4v0_2EC1E6OptionIR6VectorI11PlannedCaseB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -84446,11 +84690,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI11PlannedCaseB6scalycB4v0_2EC1E5SliceI11PlannedCaseB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI11PlannedCaseB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI11PlannedCaseB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -85506,10 +85752,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13PlannedBranchB6scalycB4v0_2EC1E6OptionIR6VectorI13PlannedBranchB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -85797,11 +86045,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13PlannedBranchB6scalycB4v0_2EC1E5SliceI13PlannedBranchB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13PlannedBranchB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13PlannedBranchB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedBranchB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -86857,10 +87107,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI11PlannedWhenB6scalycB4v0_2EC1E6OptionIR6VectorI11PlannedWhenB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -87148,11 +87400,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI11PlannedWhenB6scalycB4v0_2EC1E5SliceI11PlannedWhenB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI11PlannedWhenB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI11PlannedWhenB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -88208,10 +88462,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI11PlannedItemB6scalycB4v0_2EC1E6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -88499,11 +88755,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI11PlannedItemB6scalycB4v0_2EC1E5SliceI11PlannedItemB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI11PlannedItemB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI11PlannedItemB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI11PlannedItemB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -89559,10 +89817,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14PlannedOperandB6scalycB4v0_2EC1E6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -89850,11 +90110,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14PlannedOperandB6scalycB4v0_2EC1E5SliceI14PlannedOperandB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14PlannedOperandB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI14PlannedOperandB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -90910,10 +91172,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15PlannedPropertyB6scalycB4v0_2EC1E6OptionIR6VectorI15PlannedPropertyB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -91201,11 +91465,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15PlannedPropertyB6scalycB4v0_2EC1E5SliceI15PlannedPropertyB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15PlannedPropertyB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15PlannedPropertyB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedPropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -92261,10 +92527,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI18PlannedInitializerB6scalycB4v0_2EC1E6OptionIR6VectorI18PlannedInitializerB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -92552,11 +92820,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI18PlannedInitializerB6scalycB4v0_2EC1E5SliceI18PlannedInitializerB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI18PlannedInitializerB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI18PlannedInitializerB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -93612,10 +93882,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15PlannedFunctionB6scalycB4v0_2EC1E6OptionIR6VectorI15PlannedFunctionB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -93903,11 +94175,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15PlannedFunctionB6scalycB4v0_2EC1E5SliceI15PlannedFunctionB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15PlannedFunctionB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15PlannedFunctionB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -94963,10 +95237,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI15PlannedOperatorB6scalycB4v0_2EC1E6OptionIR6VectorI15PlannedOperatorB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -95254,11 +95530,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI15PlannedOperatorB6scalycB4v0_2EC1E5SliceI15PlannedOperatorB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI15PlannedOperatorB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI15PlannedOperatorB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI15PlannedOperatorB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -96498,10 +96776,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI16PlannedStructureB6scalycB4v0_2EC1E6OptionIR6VectorI16PlannedStructureB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -96789,11 +97069,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI16PlannedStructureB6scalycB4v0_2EC1E5SliceI16PlannedStructureB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI16PlannedStructureB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI16PlannedStructureB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -97665,10 +97947,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14PlannedVariantB6scalycB4v0_2EC1E6OptionIR6VectorI14PlannedVariantB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -97956,11 +98240,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14PlannedVariantB6scalycB4v0_2EC1E5SliceI14PlannedVariantB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14PlannedVariantB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI14PlannedVariantB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedVariantB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -99200,10 +99486,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12PlannedUnionB6scalycB4v0_2EC1E6OptionIR6VectorI12PlannedUnionB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -99491,11 +99779,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12PlannedUnionB6scalycB4v0_2EC1E5SliceI12PlannedUnionB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12PlannedUnionB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI12PlannedUnionB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -100551,10 +100841,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI6LambdaB6scalycB4v0_2EC1E6OptionIR6VectorI6LambdaB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -100842,11 +101134,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI6LambdaB6scalycB4v0_2EC1E5SliceI6LambdaB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI6LambdaB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI6LambdaB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI6LambdaB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -101902,10 +102196,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorIN7Planner10BareMethodB6scalycB4v0_2EEC1E6OptionIR6VectorIN7Planner10BareMethodB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -102193,11 +102489,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIN7Planner10BareMethodB6scalycB4v0_2EEC1E5SliceIN7Planner10BareMethodB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceIN7Planner10BareMethodB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner10BareMethodB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -103253,10 +103551,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorIN7Planner7LazyArgB6scalycB4v0_2EEC1E6OptionIR6VectorIN7Planner7LazyArgB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -103544,11 +103844,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIN7Planner7LazyArgB6scalycB4v0_2EEC1E5SliceIN7Planner7LazyArgB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceIN7Planner7LazyArgB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIN7Planner7LazyArgB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -104604,10 +104906,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13PlannedGlobalB6scalycB4v0_2EC1E6OptionIR6VectorI13PlannedGlobalB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -104895,11 +105199,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13PlannedGlobalB6scalycB4v0_2EC1E5SliceI13PlannedGlobalB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13PlannedGlobalB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13PlannedGlobalB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -105955,10 +106261,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -106246,11 +106554,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -107306,10 +107616,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -107597,11 +107909,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -108657,10 +108971,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -108948,11 +109264,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -110008,10 +110326,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -110299,11 +110619,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EEC1E5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %1, align 8
   store %_Z5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -111359,10 +111681,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI17PlannerDiagnosticB6scalycB4v0_2EC1E6OptionIR6VectorI17PlannerDiagnosticB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -111650,11 +111974,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI17PlannerDiagnosticB6scalycB4v0_2EC1E5SliceI17PlannerDiagnosticB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI17PlannerDiagnosticB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -112710,10 +113036,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI7ProgramB6scalycB4v0_2EC1E6OptionIR6VectorI7ProgramB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -113001,11 +113329,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7ProgramB6scalycB4v0_2EC1E5SliceI7ProgramB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7ProgramB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7ProgramB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -114061,10 +114391,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12EscapeRecordB6scalycB4v0_2EC1E6OptionIR6VectorI12EscapeRecordB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -114352,11 +114684,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12EscapeRecordB6scalycB4v0_2EC1E5SliceI12EscapeRecordB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12EscapeRecordB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI12EscapeRecordB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -115410,10 +115744,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorIiEC1E6OptionIR6VectorIiEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIiE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorIiE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIiE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorIiE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -115700,11 +116036,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIiEC1E5SliceIiE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIiE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIiE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIiE, ptr %1, align 8
   store %_Z5SliceIiE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIiE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIiE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -116753,10 +117091,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI3u64EC1E6OptionIR6VectorI3u64EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI3u64E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI3u64E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI3u64E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI3u64E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -117043,11 +117383,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI3u64EC1E5SliceI3u64E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI3u64E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI3u64E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI3u64E, ptr %1, align 8
   store %_Z5SliceI3u64E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI3u64E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI3u64E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -118096,10 +118438,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorIbEC1E6OptionIR6VectorIbEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIbE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorIbE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorIbE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorIbE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -118386,11 +118730,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIbEC1E5SliceIbE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIbE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIbE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIbE, ptr %1, align 8
   store %_Z5SliceIbE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIbE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIbE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -121400,11 +121746,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7IdxSlotB7scalylsB4v0_2EC1E5SliceI7IdxSlotB7scalylsB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7IdxSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7IdxSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7IdxSlotB7scalylsB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7IdxSlotB7scalylsB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7IdxSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7IdxSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -121714,11 +122062,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7DirSlotB7scalylsB4v0_2EC1E5SliceI7DirSlotB7scalylsB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7DirSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7DirSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7DirSlotB7scalylsB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7DirSlotB7scalylsB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7DirSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7DirSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -124997,10 +125347,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI12MemberSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI12MemberSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -125288,11 +125640,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI12MemberSyntaxB6scalycB4v0_2EC1E5SliceI12MemberSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI12MemberSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI12MemberSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI12MemberSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -134647,11 +135001,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9JsonValueB4jsonB4v0_2EC1E5SliceI9JsonValueB4jsonB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9JsonValueB4jsonB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -134948,11 +135304,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10JsonMemberB4jsonB4v0_2EC1E5SliceI10JsonMemberB4jsonB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10JsonMemberB4jsonB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -135164,10 +135522,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10ItemSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI10ItemSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -135455,11 +135815,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10ItemSyntaxB6scalycB4v0_2EC1E5SliceI10ItemSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10ItemSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10ItemSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -138901,10 +139263,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10TypeSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI10TypeSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -139192,11 +139556,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10TypeSyntaxB6scalycB4v0_2EC1E5SliceI10TypeSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10TypeSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10TypeSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10TypeSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -149746,10 +150112,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI21GenericArgumentSyntaxB6scalycB4v0_2EC1E6OptionIR6VectorI21GenericArgumentSyntaxB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -150037,11 +150405,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI21GenericArgumentSyntaxB6scalycB4v0_2EC1E5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -156892,10 +157262,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14DirectoryEntryEC1E6OptionIR6VectorI14DirectoryEntryEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -157183,11 +157555,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14DirectoryEntryEC1E5SliceI14DirectoryEntryE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14DirectoryEntryE, ptr %1, align 8
   store %_Z5SliceI14DirectoryEntryE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14DirectoryEntryE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -179335,10 +179709,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI13PlannedModuleB6scalycB4v0_2EC1E6OptionIR6VectorI13PlannedModuleB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -179626,11 +180002,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI13PlannedModuleB6scalycB4v0_2EC1E5SliceI13PlannedModuleB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI13PlannedModuleB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI13PlannedModuleB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -180686,10 +181064,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14PlannedConceptB6scalycB4v0_2EC1E6OptionIR6VectorI14PlannedConceptB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -180977,11 +181357,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14PlannedConceptB6scalycB4v0_2EC1E5SliceI14PlannedConceptB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14PlannedConceptB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI14PlannedConceptB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14PlannedConceptB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -184404,10 +184786,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10PlannedForB6scalycB4v0_2EC1E6OptionIR6VectorI10PlannedForB6scalycB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -184695,11 +185079,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10PlannedForB6scalycB4v0_2EC1E5SliceI10PlannedForB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10PlannedForB6scalycB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10PlannedForB6scalycB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10PlannedForB6scalycB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -194813,11 +195199,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI7DocSlotB7scalylsB4v0_2EC1E5SliceI7DocSlotB7scalylsB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7DocSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI7DocSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI7DocSlotB7scalylsB4v0_2E, ptr %1, align 8
   store %_Z5SliceI7DocSlotB7scalylsB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI7DocSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI7DocSlotB7scalylsB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 

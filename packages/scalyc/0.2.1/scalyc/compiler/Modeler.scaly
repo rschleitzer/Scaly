@@ -2677,6 +2677,13 @@ define Modeler
                 ; the ctor path (2026-08-02).
                 initializers.length := init_idx
                 members.length := member_idx
+                ; every init sets the fields' defaults before its body
+                var ii: size_t 0
+                while ii < initializers.length
+                {
+                    initializers.put(ii, Modeler.with_field_defaults(initializers[ii], properties))
+                    ii := ii + 1
+                }
             }
         }
 
@@ -2692,6 +2699,73 @@ define Modeler
             members,
             symbols
         )
+    }
+
+    ; An init whose body is preceded by `this.f := <default>` for every field
+    ; of its record that declares a default -- the body may write it again.
+    ; Before 2026-11-13 only a positional construction filled a default
+    ; (Planner.fill_default_components#), and a record built by its init
+    ; held whatever the memory held in a field the init left alone (`b: int
+    ; (7)` read 8435961120 off the stack). It is written into the MODEL, so
+    ; every reading of an init's body -- the page rules, the residency of
+    ; the record, the write census -- sees the assignments the code runs. A
+    ; default is written as its value (`(String("d"))` is the construction:
+    ; a grouping around one would be given the init's own frame page).
+    function with_field_defaults(ini: Initializer, properties: Vector[Property]) returns Initializer
+    {
+        var stmts Array[Statement]()
+        var span Span(0, 0)
+        for prop in properties
+        {
+            if prop.initializer <> null
+            {
+                if stmts.length = 0
+                    span := prop.span
+                var this_path Vector[String](2)
+                this_path.put(0, "this")
+                this_path.put(1, String(prop.name))
+                var target Vector[Operand](1)
+                target.put(0, Operand(prop.span, Expression.Type(Type(prop.span, this_path, null, Lifetime.Unspecified(Unspecified()))), null))
+                stmts.add(Statement.Action(Action(Modeler.default_value((*prop.initializer)), target)))
+            }
+        }
+        if stmts.length = 0
+            return ini
+        choose ini.implementation
+            when body: Action
+            {
+                stmts.add(Statement.Action(body))
+                var all Vector[Statement](stmts)
+                var block_ops Vector[Operand](1)
+                block_ops.put(0, Operand(span, Expression.Block(Block(span, all, false)), null))
+                return Initializer(ini.span, ini.private_, ini.page_parameter, ini.input, Implementation.Action(Action(block_ops, Vector[Operand](0))))
+            }
+            else
+                0
+        ini
+    }
+
+    ; A default as the value it names: one grouping around it taken off.
+    function default_value(ops: Vector[Operand]) returns Vector[Operand]
+    {
+        if ops.length <> 1
+            return ops
+        let op ops[0]
+        if op.member_access <> null and op.member_access.length > 0
+            return ops
+        choose op.expression
+            when tp: Tuple
+            {
+                if tp.components.length = 1
+                {
+                    let c tp.components[0]
+                    if c.name = null and c.value.length > 0
+                        return c.value
+                }
+            }
+            else
+                0
+        ops
     }
 
     procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member mutable modeler_error_count

@@ -5270,8 +5270,11 @@ template <class T> static T* VectorIterator_next(VectorIterator<T>& scaly_self)
 template <class T> static void VectorIterator_init(VectorIterator<T>& scaly_self, Vector<T>* v)
 {
     VectorIterator<T>* this_ = &scaly_self;
-    this_->vector = v;
     this_->position = 0ULL;
+    {
+        this_->vector = v;
+        this_->position = 0ULL;
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
@@ -5417,8 +5420,11 @@ template <class T> static T* SliceIterator_next(SliceIterator<T>& scaly_self)
 template <class T> static void SliceIterator_init(SliceIterator<T>& scaly_self, Slice<T>& s)
 {
     SliceIterator<T>* this_ = &scaly_self;
-    this_->slice = s;
     this_->position = 0ULL;
+    {
+        this_->slice = s;
+        this_->position = 0ULL;
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/Slice.scaly
@@ -6065,13 +6071,17 @@ __attribute__((weak)) void HashSetBuilder_init2(HashSetBuilder<String>& scaly_se
     HashSetBuilder<String>* this_ = &scaly_self;
     this_->length = 0ULL;
     this_->slots = (Vector<List<Slot<String>>>*)(nullptr);
-    if (((vec).length > 0ULL))
     {
-        HashSetBuilder_reallocate2(*(this_), (vec).length);
-        VectorIterator<String> vector_iterator = ({ VectorIterator<String> scaly_t1{}; VectorIterator_init<String>(scaly_t1, (&(vec))); scaly_t1; });
-        while (String* element = VectorIterator_next<String>(vector_iterator))
+        this_->length = 0ULL;
+        this_->slots = (Vector<List<Slot<String>>>*)(nullptr);
+        if (((vec).length > 0ULL))
         {
-            HashSetBuilder_add_internal2(*(this_), scaly_lvalue((*(element))));
+            HashSetBuilder_reallocate2(*(this_), (vec).length);
+            VectorIterator<String> vector_iterator = ({ VectorIterator<String> scaly_t1{}; VectorIterator_init<String>(scaly_t1, (&(vec))); scaly_t1; });
+            while (String* element = VectorIterator_next<String>(vector_iterator))
+            {
+                HashSetBuilder_add_internal2(*(this_), scaly_lvalue((*(element))));
+            }
         }
     }
 }
@@ -6116,28 +6126,31 @@ __attribute__((weak)) void HashSet_init2(HashSet<String>& scaly_self, HashSetBui
 {
     HashSet<String>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (((hash_set_builder).length == 0ULL))
+    this_->slots = (Vector<Vector<String>>*)(nullptr);
     {
-        this_->slots = (Vector<Vector<String>>*)(nullptr);
-        return;
-    }
-    this_->slots = (Vector<Vector<String>>*)&((*({ Vector<Vector<String>>* scaly_t1 = (Vector<Vector<String>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<String>>), alignof(Vector<Vector<String>>)); *scaly_t1 = Vector<Vector<String>>{}; Vector_init3<Vector<String>>((*scaly_t1), (hash_set_builder).slots->length); scaly_t1; })));
-    uint64_t length = (hash_set_builder).slots->length;
-    uint64_t i = 0ULL;
-    while ((i < length))
-    {
-        List<Slot<String>>* slot_list = Vector_at<List<Slot<String>>>(*((hash_set_builder).slots), i);
-        Array<String>* array = ({ Array<String>* scaly_t2 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t2 = Array<String>{}; (void)0; scaly_t2; });
-        ListIterator<Slot<String>> list_iterator = ListIterator<Slot<String>>{slot_list->head};
-        while (Slot<String>* item = ListIterator_next<Slot<String>>(list_iterator))
+        if (((hash_set_builder).length == 0ULL))
         {
-            Array_add7<String>((*array), item->value);
+            this_->slots = (Vector<Vector<String>>*)(nullptr);
+            return;
         }
-        if ((((*array)).length > 0ULL))
+        this_->slots = (Vector<Vector<String>>*)&((*({ Vector<Vector<String>>* scaly_t1 = (Vector<Vector<String>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<String>>), alignof(Vector<Vector<String>>)); *scaly_t1 = Vector<Vector<String>>{}; Vector_init3<Vector<String>>((*scaly_t1), (hash_set_builder).slots->length); scaly_t1; })));
+        uint64_t length = (hash_set_builder).slots->length;
+        uint64_t i = 0ULL;
+        while ((i < length))
         {
-            Vector_put3<Vector<String>>(*(this_->slots), i, scaly_lvalue((*({ Vector<String>* scaly_t3 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t3 = Vector<String>{}; Vector_init7<String>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            List<Slot<String>>* slot_list = Vector_at<List<Slot<String>>>(*((hash_set_builder).slots), i);
+            Array<String>* array = ({ Array<String>* scaly_t2 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t2 = Array<String>{}; (void)0; scaly_t2; });
+            ListIterator<Slot<String>> list_iterator = ListIterator<Slot<String>>{slot_list->head};
+            while (Slot<String>* item = ListIterator_next<Slot<String>>(list_iterator))
+            {
+                Array_add7<String>((*array), item->value);
+            }
+            if ((((*array)).length > 0ULL))
+            {
+                Vector_put3<Vector<String>>(*(this_->slots), i, scaly_lvalue((*({ Vector<String>* scaly_t3 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t3 = Vector<String>{}; Vector_init7<String>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            }
+            i = (i + 1ULL);
         }
-        i = (i + 1ULL);
     }
 }
 
@@ -6253,13 +6266,17 @@ template <class K, class V> static void HashMapBuilder_init(HashMapBuilder<K, V>
     HashMapBuilder<K, V>* this_ = &scaly_self;
     this_->length = 0ULL;
     this_->slots = (Vector<List<Slot<KeyValuePair<K, V>>>>*)(nullptr);
-    if (((vec).length > 0ULL))
     {
-        HashMapBuilder_reallocate<K, V>(*(this_), (vec).length);
-        VectorIterator<KeyValuePair<K, V>> vector_iterator = ({ VectorIterator<KeyValuePair<K, V>> scaly_t1{}; VectorIterator_init<KeyValuePair<K, V>>(scaly_t1, (&(vec))); scaly_t1; });
-        while (KeyValuePair<K, V>* element = VectorIterator_next<KeyValuePair<K, V>>(vector_iterator))
+        this_->length = 0ULL;
+        this_->slots = (Vector<List<Slot<KeyValuePair<K, V>>>>*)(nullptr);
+        if (((vec).length > 0ULL))
         {
-            HashMapBuilder_add_internal<K, V>(*(this_), element->key, element->value);
+            HashMapBuilder_reallocate<K, V>(*(this_), (vec).length);
+            VectorIterator<KeyValuePair<K, V>> vector_iterator = ({ VectorIterator<KeyValuePair<K, V>> scaly_t1{}; VectorIterator_init<KeyValuePair<K, V>>(scaly_t1, (&(vec))); scaly_t1; });
+            while (KeyValuePair<K, V>* element = VectorIterator_next<KeyValuePair<K, V>>(vector_iterator))
+            {
+                HashMapBuilder_add_internal<K, V>(*(this_), element->key, element->value);
+            }
         }
     }
 }
@@ -6340,28 +6357,31 @@ __attribute__((weak)) void HashMap_init2(HashMap<String, int64_t>& scaly_self, H
 {
     HashMap<String, int64_t>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (((hash_map_builder).length == 0ULL))
+    this_->slots = (Vector<Vector<KeyValuePair<String, int64_t>>>*)(nullptr);
     {
-        this_->slots = (Vector<Vector<KeyValuePair<String, int64_t>>>*)(nullptr);
-        return;
-    }
-    this_->slots = (Vector<Vector<KeyValuePair<String, int64_t>>>*)&((*({ Vector<Vector<KeyValuePair<String, int64_t>>>* scaly_t1 = (Vector<Vector<KeyValuePair<String, int64_t>>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<KeyValuePair<String, int64_t>>>), alignof(Vector<Vector<KeyValuePair<String, int64_t>>>)); *scaly_t1 = Vector<Vector<KeyValuePair<String, int64_t>>>{}; Vector_init3<Vector<KeyValuePair<String, int64_t>>>((*scaly_t1), (hash_map_builder).slots->length); scaly_t1; })));
-    uint64_t length = (hash_map_builder).slots->length;
-    uint64_t i = 0ULL;
-    while ((i < length))
-    {
-        List<Slot<KeyValuePair<String, int64_t>>>* slot_list = Vector_at<List<Slot<KeyValuePair<String, int64_t>>>>(*((hash_map_builder).slots), i);
-        Array<KeyValuePair<String, int64_t>>* array = ({ Array<KeyValuePair<String, int64_t>>* scaly_t2 = (Array<KeyValuePair<String, int64_t>>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<KeyValuePair<String, int64_t>>), alignof(Array<KeyValuePair<String, int64_t>>)); *scaly_t2 = Array<KeyValuePair<String, int64_t>>{}; (void)0; scaly_t2; });
-        ListIterator<Slot<KeyValuePair<String, int64_t>>> list_iterator = ListIterator<Slot<KeyValuePair<String, int64_t>>>{slot_list->head};
-        while (Slot<KeyValuePair<String, int64_t>>* item = ListIterator_next<Slot<KeyValuePair<String, int64_t>>>(list_iterator))
+        if (((hash_map_builder).length == 0ULL))
         {
-            Array_add7<KeyValuePair<String, int64_t>>((*array), item->value);
+            this_->slots = (Vector<Vector<KeyValuePair<String, int64_t>>>*)(nullptr);
+            return;
         }
-        if ((((*array)).length > 0ULL))
+        this_->slots = (Vector<Vector<KeyValuePair<String, int64_t>>>*)&((*({ Vector<Vector<KeyValuePair<String, int64_t>>>* scaly_t1 = (Vector<Vector<KeyValuePair<String, int64_t>>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<KeyValuePair<String, int64_t>>>), alignof(Vector<Vector<KeyValuePair<String, int64_t>>>)); *scaly_t1 = Vector<Vector<KeyValuePair<String, int64_t>>>{}; Vector_init3<Vector<KeyValuePair<String, int64_t>>>((*scaly_t1), (hash_map_builder).slots->length); scaly_t1; })));
+        uint64_t length = (hash_map_builder).slots->length;
+        uint64_t i = 0ULL;
+        while ((i < length))
         {
-            Vector_put3<Vector<KeyValuePair<String, int64_t>>>(*(this_->slots), i, scaly_lvalue((*({ Vector<KeyValuePair<String, int64_t>>* scaly_t3 = (Vector<KeyValuePair<String, int64_t>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<KeyValuePair<String, int64_t>>), alignof(Vector<KeyValuePair<String, int64_t>>)); *scaly_t3 = Vector<KeyValuePair<String, int64_t>>{}; Vector_init7<KeyValuePair<String, int64_t>>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            List<Slot<KeyValuePair<String, int64_t>>>* slot_list = Vector_at<List<Slot<KeyValuePair<String, int64_t>>>>(*((hash_map_builder).slots), i);
+            Array<KeyValuePair<String, int64_t>>* array = ({ Array<KeyValuePair<String, int64_t>>* scaly_t2 = (Array<KeyValuePair<String, int64_t>>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<KeyValuePair<String, int64_t>>), alignof(Array<KeyValuePair<String, int64_t>>)); *scaly_t2 = Array<KeyValuePair<String, int64_t>>{}; (void)0; scaly_t2; });
+            ListIterator<Slot<KeyValuePair<String, int64_t>>> list_iterator = ListIterator<Slot<KeyValuePair<String, int64_t>>>{slot_list->head};
+            while (Slot<KeyValuePair<String, int64_t>>* item = ListIterator_next<Slot<KeyValuePair<String, int64_t>>>(list_iterator))
+            {
+                Array_add7<KeyValuePair<String, int64_t>>((*array), item->value);
+            }
+            if ((((*array)).length > 0ULL))
+            {
+                Vector_put3<Vector<KeyValuePair<String, int64_t>>>(*(this_->slots), i, scaly_lvalue((*({ Vector<KeyValuePair<String, int64_t>>* scaly_t3 = (Vector<KeyValuePair<String, int64_t>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<KeyValuePair<String, int64_t>>), alignof(Vector<KeyValuePair<String, int64_t>>)); *scaly_t3 = Vector<KeyValuePair<String, int64_t>>{}; Vector_init7<KeyValuePair<String, int64_t>>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            }
+            i = (i + 1ULL);
         }
-        i = (i + 1ULL);
     }
 }
 
@@ -7772,204 +7792,228 @@ __attribute__((weak)) void String_init(String& scaly_self)
 {
     String* this_ = &scaly_self;
     this_->data = (uint8_t*)(nullptr);
+    {
+        this_->data = (uint8_t*)(nullptr);
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init2(String& scaly_self, uint64_t length)
 {
     String* this_ = &scaly_self;
-    uint64_t rest = length;
-    uint64_t counter = 0ULL;
-    while ((rest >= 128ULL))
+    this_->data = (uint8_t*)(nullptr);
     {
-        rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
-        counter = (counter + 1ULL);
+        uint64_t rest = length;
+        uint64_t counter = 0ULL;
+        while ((rest >= 128ULL))
+        {
+            rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
+            counter = (counter + 1ULL);
+        }
+        uint64_t overall_length = ((counter + 1ULL) + length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
+        uint64_t wrest = length;
+        uint64_t wi = 0ULL;
+        while ((wrest >= 128ULL))
+        {
+            (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
+            wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
+            wi = (wi + 1ULL);
+        }
+        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    uint64_t overall_length = ((counter + 1ULL) + length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
-    uint64_t wrest = length;
-    uint64_t wi = 0ULL;
-    while ((wrest >= 128ULL))
-    {
-        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
-        wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
-        wi = (wi + 1ULL);
-    }
-    (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init3(String& scaly_self, const char* other, uint64_t length)
 {
     String* this_ = &scaly_self;
-    if ((length == 0ULL))
+    this_->data = (uint8_t*)(nullptr);
     {
-        this_->data = (uint8_t*)(nullptr);
-        return;
+        if ((length == 0ULL))
+        {
+            this_->data = (uint8_t*)(nullptr);
+            return;
+        }
+        uint64_t rest = length;
+        uint64_t counter = 0ULL;
+        while ((rest >= 128ULL))
+        {
+            rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
+            counter = (counter + 1ULL);
+        }
+        uint64_t overall_length = ((counter + 1ULL) + length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
+        uint64_t wrest = length;
+        uint64_t wi = 0ULL;
+        while ((wrest >= 128ULL))
+        {
+            (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
+            wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
+            wi = (wi + 1ULL);
+        }
+        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
+        memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)(other), ((size_t)(length)));
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    uint64_t rest = length;
-    uint64_t counter = 0ULL;
-    while ((rest >= 128ULL))
-    {
-        rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
-        counter = (counter + 1ULL);
-    }
-    uint64_t overall_length = ((counter + 1ULL) + length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
-    uint64_t wrest = length;
-    uint64_t wi = 0ULL;
-    while ((wrest >= 128ULL))
-    {
-        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
-        wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
-        wi = (wi + 1ULL);
-    }
-    (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
-    memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)(other), ((size_t)(length)));
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init4(String& scaly_self, Slice<uint8_t>& bytes)
 {
     String* this_ = &scaly_self;
-    if (((bytes).length == 0ULL))
+    this_->data = (uint8_t*)(nullptr);
     {
-        this_->data = (uint8_t*)(nullptr);
-        return;
+        if (((bytes).length == 0ULL))
+        {
+            this_->data = (uint8_t*)(nullptr);
+            return;
+        }
+        uint64_t rest = (bytes).length;
+        uint64_t counter = 0ULL;
+        while ((rest >= 128ULL))
+        {
+            rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
+            counter = (counter + 1ULL);
+        }
+        uint64_t overall_length = ((counter + 1ULL) + (bytes).length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
+        uint64_t wrest = (bytes).length;
+        uint64_t wi = 0ULL;
+        while ((wrest >= 128ULL))
+        {
+            (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
+            wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
+            wi = (wi + 1ULL);
+        }
+        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
+        memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), ((void*)((bytes).data)), ((size_t)((bytes).length)));
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    uint64_t rest = (bytes).length;
-    uint64_t counter = 0ULL;
-    while ((rest >= 128ULL))
-    {
-        rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
-        counter = (counter + 1ULL);
-    }
-    uint64_t overall_length = ((counter + 1ULL) + (bytes).length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
-    uint64_t wrest = (bytes).length;
-    uint64_t wi = 0ULL;
-    while ((wrest >= 128ULL))
-    {
-        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
-        wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
-        wi = (wi + 1ULL);
-    }
-    (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
-    memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), ((void*)((bytes).data)), ((size_t)((bytes).length)));
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init5(String& scaly_self, Vector<uint8_t>& other)
 {
     String* this_ = &scaly_self;
-    uint64_t rest = (other).length;
-    uint64_t counter = 0ULL;
-    while ((rest >= 128ULL))
+    this_->data = (uint8_t*)(nullptr);
     {
-        rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
-        counter = (counter + 1ULL);
+        uint64_t rest = (other).length;
+        uint64_t counter = 0ULL;
+        while ((rest >= 128ULL))
+        {
+            rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
+            counter = (counter + 1ULL);
+        }
+        uint64_t overall_length = ((counter + 1ULL) + (other).length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
+        uint64_t wrest = (other).length;
+        uint64_t wi = 0ULL;
+        while ((wrest >= 128ULL))
+        {
+            (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
+            wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
+            wi = (wi + 1ULL);
+        }
+        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
+        if (((other).length > 0ULL))
+        {
+            memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)((other).data), ((size_t)((other).length)));
+        }
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    uint64_t overall_length = ((counter + 1ULL) + (other).length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
-    uint64_t wrest = (other).length;
-    uint64_t wi = 0ULL;
-    while ((wrest >= 128ULL))
-    {
-        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
-        wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
-        wi = (wi + 1ULL);
-    }
-    (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
-    if (((other).length > 0ULL))
-    {
-        memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)((other).data), ((size_t)((other).length)));
-    }
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init6(String& scaly_self, const char* c_string)
 {
     String* this_ = &scaly_self;
-    uint64_t length = ((uint64_t)(strlen(c_string)));
-    if ((length == 0ULL))
+    this_->data = (uint8_t*)(nullptr);
     {
-        this_->data = (uint8_t*)(nullptr);
-        return;
+        uint64_t length = ((uint64_t)(strlen(c_string)));
+        if ((length == 0ULL))
+        {
+            this_->data = (uint8_t*)(nullptr);
+            return;
+        }
+        uint64_t rest = length;
+        uint64_t counter = 0ULL;
+        while ((rest >= 128ULL))
+        {
+            rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
+            counter = (counter + 1ULL);
+        }
+        uint64_t overall_length = ((counter + 1ULL) + length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
+        uint64_t wrest = length;
+        uint64_t wi = 0ULL;
+        while ((wrest >= 128ULL))
+        {
+            (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
+            wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
+            wi = (wi + 1ULL);
+        }
+        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
+        memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)(c_string), ((size_t)(length)));
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    uint64_t rest = length;
-    uint64_t counter = 0ULL;
-    while ((rest >= 128ULL))
-    {
-        rest = ((uint64_t)((uint64_t)(rest) >> (uint64_t)(7LL)));
-        counter = (counter + 1ULL);
-    }
-    uint64_t overall_length = ((counter + 1ULL) + length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1ULL), 1ULL)));
-    uint64_t wrest = length;
-    uint64_t wi = 0ULL;
-    while ((wrest >= 128ULL))
-    {
-        (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)((((uint8_t)(wrest))) | (uint8_t)128ULL));
-        wrest = ((uint64_t)((uint64_t)(wrest) >> (uint64_t)(7LL)));
-        wi = (wi + 1ULL);
-    }
-    (*(((this_->data) + (int64_t)(wi)))) = ((uint8_t)(wrest));
-    memcpy(((void*)((((((this_->data) + (int64_t)(counter))) + (int64_t)(1LL))))), (void*)(c_string), ((size_t)(length)));
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init7(String& scaly_self, String& other)
 {
     String* this_ = &scaly_self;
-    if ((((other).data) == (nullptr)))
+    this_->data = (uint8_t*)(nullptr);
     {
-        this_->data = (uint8_t*)(nullptr);
-        return;
-    }
-    uint64_t length = 0ULL;
-    uint64_t bit_count = 0ULL;
-    int64_t index = 0LL;
-    while (true)
-    {
-        if ((bit_count == (((uint64_t)(((9LL * 7LL)))))))
+        if ((((other).data) == (nullptr)))
         {
-            scaly_panic_string(((const char*)"String.init"), ((uint64_t)((other).data)));
+            this_->data = (uint8_t*)(nullptr);
+            return;
         }
-        uint8_t byte = (*((((other).data) + (int64_t)(index))));
-        length = (length | ((uint64_t)((uint64_t)((((uint64_t)((((uint8_t)(byte & (uint8_t)127ULL))))))) << (uint64_t)(bit_count))));
-        if (((((uint8_t)(byte & (uint8_t)128ULL))) == (uint8_t)0ULL))
+        uint64_t length = 0ULL;
+        uint64_t bit_count = 0ULL;
+        int64_t index = 0LL;
+        while (true)
         {
-            break;
+            if ((bit_count == (((uint64_t)(((9LL * 7LL)))))))
+            {
+                scaly_panic_string(((const char*)"String.init"), ((uint64_t)((other).data)));
+            }
+            uint8_t byte = (*((((other).data) + (int64_t)(index))));
+            length = (length | ((uint64_t)((uint64_t)((((uint64_t)((((uint8_t)(byte & (uint8_t)127ULL))))))) << (uint64_t)(bit_count))));
+            if (((((uint8_t)(byte & (uint8_t)128ULL))) == (uint8_t)0ULL))
+            {
+                break;
+            }
+            bit_count = (bit_count + 7ULL);
+            index = (index + 1LL);
         }
-        bit_count = (bit_count + 7ULL);
-        index = (index + 1LL);
+        int64_t overall_length = ((index + 1LL) + (int64_t)length);
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1LL), 1ULL)));
+        memcpy((void*)(this_->data), (void*)((other).data), ((size_t)(overall_length)));
+        (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
     }
-    int64_t overall_length = ((index + 1LL) + (int64_t)length);
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), (overall_length + 1LL), 1ULL)));
-    memcpy((void*)(this_->data), (void*)((other).data), ((size_t)(overall_length)));
-    (*(((this_->data) + (int64_t)(overall_length)))) = (uint8_t)0ULL;
 }
 
 // packages/scaly/0.2.1/scaly/containers/String.scaly
 __attribute__((weak)) void String_init8(String& scaly_self, uint8_t character)
 {
     String* this_ = &scaly_self;
-    Page* own_page = Page_get((void*)(this_));
-    this_->data = ((uint8_t*)(Page_allocate(*(own_page), 3ULL, 1ULL)));
-    (*(this_->data)) = (uint8_t)1ULL;
-    (*(((this_->data) + (int64_t)(1LL)))) = character;
-    (*(((this_->data) + (int64_t)(2LL)))) = (uint8_t)0ULL;
+    this_->data = (uint8_t*)(nullptr);
+    {
+        Page* own_page = Page_get((void*)(this_));
+        this_->data = ((uint8_t*)(Page_allocate(*(own_page), 3ULL, 1ULL)));
+        (*(this_->data)) = (uint8_t)1ULL;
+        (*(((this_->data) + (int64_t)(1LL)))) = character;
+        (*(((this_->data) + (int64_t)(2LL)))) = (uint8_t)0ULL;
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/StringIterator.scaly

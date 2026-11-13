@@ -1,0 +1,41 @@
+; A record built by its init has its fields' defaults: the init's body runs
+; after them and may write them again. Before, only a positional
+; construction filled a default, and a field the init left alone held
+; whatever the memory held (`b: int (7)` read 8435961120 off the stack).
+
+define R
+(
+    a: int
+    b: int (7)
+    var c: i32 (3)
+    d: String (String("d"))
+)
+{
+    init(x: int)
+    {
+        a := x
+        c := c + 1
+    }
+}
+
+procedure dirty() returns int
+{
+    var v Vector[int](64)
+    var i: size_t 0
+    while i < 64
+    {
+        v.put(i, 1234567)
+        i := i + 1
+    }
+    v[3]
+}
+
+let spoiled dirty()
+let r R(1)
+let p R(4, 9, 2, String("e"))
+var ok r.a = 1 and r.b = 7 and r.c = 4 and r.d.equals("d")
+ok := ok and p.a = 4 and p.b = 9 and p.c = 2 and p.d.equals("e") and spoiled = 1234567
+if ok
+    print "PASS"
+else
+    print "FAIL"

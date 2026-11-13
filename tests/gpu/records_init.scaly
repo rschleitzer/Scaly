@@ -1,7 +1,8 @@
 ; Records in a kernel built by their init, and fields written: through a
 ; `var`, through a `let` holding a record with `var` fields, a field of a
-; record inside a record, and an init that builds a record by its own init.
-; Whole numbers only, so a card under WebGPU runs it too.
+; record inside a record, an init that builds a record by its own init, and
+; fields with defaults the init leaves alone or writes again. Whole numbers
+; only, so a card under WebGPU runs it too.
 ; cards: 1
 
 define Span
@@ -30,6 +31,21 @@ define Window
     }
 }
 
+; defaults: `step` is never written by the init, `limit` is written again
+define Walk
+(
+    var at: i32
+    step: i32 (3)
+    limit: i32 (100)
+)
+{
+    init(start: i32)
+    {
+        at := start
+        limit := start + 50
+    }
+}
+
 function wide(s: Span) returns i32
     s.high - s.low
 
@@ -44,8 +60,11 @@ for i in n
     w.hits := w.hits + wide(w.span)
     let s Span(k * 2, 1)
     s.low := s.low - 1
-    lows.put(i, w.span.low + s.low)
-    sums.put(i, w.hits * 1000 + s.high - s.low)
+    var walk Walk(k)
+    while walk.at < walk.limit
+        walk.at := walk.at + walk.step
+    lows.put(i, w.span.low + s.low + walk.at)
+    sums.put(i, w.hits * 1000 + s.high - s.low + walk.step)
 }
 var j: size_t 0
 var total 0

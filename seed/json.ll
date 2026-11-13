@@ -479,11 +479,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI2u8EC1E5SliceI2u8E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI2u8E, ptr %1, align 8
   store %_Z5SliceI2u8E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI2u8E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -2607,11 +2609,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorIcEC1E5SliceIcE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceIcE, ptr %1, align 8
   store %_Z5SliceIcE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -4408,11 +4412,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI10JsonMemberB4jsonB4v0_2EC1E5SliceI10JsonMemberB4jsonB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
   store %_Z5SliceI10JsonMemberB4jsonB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -4709,11 +4715,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI9JsonValueB4jsonB4v0_2EC1E5SliceI9JsonValueB4jsonB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
   store %_Z5SliceI9JsonValueB4jsonB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -5620,10 +5628,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI2u8EC1E6OptionIR6VectorI2u8EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI2u8E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI2u8E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI2u8E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI2u8E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -7122,10 +7132,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI10JsonMemberB4jsonB4v0_2EC1E6OptionIR6VectorI10JsonMemberB4jsonB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -8634,10 +8646,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_2EC1E6OptionIR6VectorI9JsonValueB4jsonB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -9682,10 +9696,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorImEC1E6OptionIR6VectorImEE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -9972,11 +9988,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorImEC1E5SliceImE(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceImE, ptr %1, align 8
   store %_Z5SliceImE %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorImE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -12565,10 +12583,12 @@ if.end6:                                          ; preds = %if.end
 
 define linkonce_odr void @_ZN14VectorIteratorI14JsonWriteFrameB4jsonB4v0_2EC1E6OptionIR6VectorI14JsonWriteFrameB4jsonB4v0_2EE(ptr %0, ptr %1) {
 entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
   %position = getelementptr inbounds nuw %_Z14VectorIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
   store i64 0, ptr %position, align 8
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position1 = getelementptr inbounds nuw %_Z14VectorIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 
@@ -12856,11 +12876,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN13SliceIteratorI14JsonWriteFrameB4jsonB4v0_2EC1E5SliceI14JsonWriteFrameB4jsonB4v0_2E(ptr %0, ptr %1) {
 entry:
+  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
   %slice = getelementptr inbounds nuw %_Z13SliceIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 0
   %field.load = load %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, ptr %1, align 8
   store %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E %field.load, ptr %slice, align 8
-  %position = getelementptr inbounds nuw %_Z13SliceIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
+  %position1 = getelementptr inbounds nuw %_Z13SliceIteratorI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position1, align 8
   ret void
 }
 

@@ -15763,7 +15763,9 @@ Function Modeler_build_function(scaly_frame*, uint64_t, uint64_t, TargetSyntax&,
 Operator Modeler_handle_operator(scaly_frame*, OperatorSyntax&, bool) asm("_ZN7ModelerB6scalycB4v0_215handle_operatorEPN4scaly6memory4PageE14OperatorSyntaxB6scalycB4v0_2b");
 Initializer Modeler_handle_initializer(scaly_frame*, InitSyntax&, bool) asm("_ZN7ModelerB6scalycB4v0_218handle_initializerEPN4scaly6memory4PageE10InitSyntaxB6scalycB4v0_2b");
 Variant Modeler_handle_variant(scaly_frame*, VariantSyntax&) asm("_ZN7ModelerB6scalycB4v0_214handle_variantEPN4scaly6memory4PageE13VariantSyntaxB6scalycB4v0_2");
+Initializer Modeler_with_field_defaults(scaly_frame*, Initializer&, Vector<Property>&) asm("_ZN7ModelerB6scalycB4v0_219with_field_defaultsEPN4scaly6memory4PageE11InitializerB6scalycB4v0_26VectorI8PropertyB6scalycB4v0_2E");
 Structure Modeler_handle_class(scaly_frame*, String&, String&, ClassSyntax&, bool) asm("_ZN7ModelerB6scalycB4v0_212handle_classEPN4scaly6memory4PageE6String6String11ClassSyntaxB6scalycB4v0_2b");
+Vector<Operand> Modeler_default_value(scaly_frame*, Vector<Operand>&) asm("_ZN7ModelerB6scalycB4v0_213default_valueEPN4scaly6memory4PageE6VectorI7OperandB6scalycB4v0_2E");
 Member Modeler_handle_constituent(scaly_frame*, String&, MemberSyntax&, HashMapBuilder<String, Nameable>*) asm("_ZN7ModelerB6scalycB4v0_218handle_constituentEPN4scaly6memory4PageE6String12MemberSyntaxB6scalycB4v0_2R14HashMapBuilderI6String8NameableB6scalycB4v0_2E");
 String Path_get_file_name(scaly_frame*, String&) asm("_ZN4Path13get_file_nameEPN4scaly6memory4PageE6String");
 String Path_join(scaly_frame*, String&, String&) asm("_ZN4Path4joinEPN4scaly6memory4PageE6String6String");
@@ -19183,14 +19185,14 @@ void Array_grow_to92(Array<bool>&, uint64_t) asm("_ZN5ArrayIbE7grow_toEm");
 void Array_reallocate92(Array<bool>&) asm("_ZN5ArrayIbE10reallocateEv");
 void Array_append92(Array<bool>&, Slice<bool>&) asm("_ZN5ArrayIbE6appendE5SliceIbE");
 void Array_init184(Array<bool>&, uint64_t) asm("_ZN5ArrayIbEC1Em");
-template <class T1> static T1 Vector8(Vector<T1>&, uint64_t);
+template <class T1> static T1 Vector11(Vector<T1>&, uint64_t);
 template <class T1> static T1 Array6(Array<T1>&, uint64_t);
 int64_t Array19(Array<int64_t>&, uint64_t) asm("_ZN5ArrayIiEixEm");
 PlannedAction Array21(Array<PlannedAction>&, uint64_t) asm("_ZN5ArrayI13PlannedActionB6scalycB4v0_2EixEm");
 template <class T1> static T1 Array22(Array<T1>&, uint64_t);
-template <class T1> static T1 Vector25(Vector<T1>&, uint64_t);
+template <class T1> static T1 Vector26(Vector<T1>&, uint64_t);
 PlannedType Array26(Array<PlannedType>&, uint64_t) asm("_ZN5ArrayI11PlannedTypeB6scalycB4v0_2EixEm");
-template <class T> static T Vector29(Vector<T>&, uint64_t);
+template <class T> static T Vector30(Vector<T>&, uint64_t);
 
 // routines of other files the plan names only at their calls
 void scaly_panic_oob(const char*, uint64_t, uint64_t) asm("_Z15scaly_panic_oobP10const_charmm");
@@ -19293,8 +19295,11 @@ template <class T> static T* VectorIterator_next(VectorIterator<T>& scaly_self)
 template <class T> static void VectorIterator_init(VectorIterator<T>& scaly_self, Vector<T>* v)
 {
     VectorIterator<T>* this_ = &scaly_self;
-    this_->vector = v;
     this_->position = 0ULL;
+    {
+        this_->vector = v;
+        this_->position = 0ULL;
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
@@ -19440,8 +19445,11 @@ template <class T> static T* SliceIterator_next(SliceIterator<T>& scaly_self)
 template <class T> static void SliceIterator_init(SliceIterator<T>& scaly_self, Slice<T>& s)
 {
     SliceIterator<T>* this_ = &scaly_self;
-    this_->slice = s;
     this_->position = 0ULL;
+    {
+        this_->slice = s;
+        this_->position = 0ULL;
+    }
 }
 
 // packages/scaly/0.2.1/scaly/containers/Slice.scaly
@@ -20845,13 +20853,17 @@ __attribute__((weak)) void HashSetBuilder_init2(HashSetBuilder<String>& scaly_se
     HashSetBuilder<String>* this_ = &scaly_self;
     this_->length = 0ULL;
     this_->slots = (Vector<List<Slot<String>>>*)(nullptr);
-    if (((vec).length > 0ULL))
     {
-        HashSetBuilder_reallocate2(*(this_), (vec).length);
-        VectorIterator<String> vector_iterator = ({ VectorIterator<String> scaly_t1{}; VectorIterator_init<String>(scaly_t1, (&(vec))); scaly_t1; });
-        while (String* element = VectorIterator_next<String>(vector_iterator))
+        this_->length = 0ULL;
+        this_->slots = (Vector<List<Slot<String>>>*)(nullptr);
+        if (((vec).length > 0ULL))
         {
-            HashSetBuilder_add_internal2(*(this_), scaly_lvalue((*(element))));
+            HashSetBuilder_reallocate2(*(this_), (vec).length);
+            VectorIterator<String> vector_iterator = ({ VectorIterator<String> scaly_t1{}; VectorIterator_init<String>(scaly_t1, (&(vec))); scaly_t1; });
+            while (String* element = VectorIterator_next<String>(vector_iterator))
+            {
+                HashSetBuilder_add_internal2(*(this_), scaly_lvalue((*(element))));
+            }
         }
     }
 }
@@ -20861,28 +20873,31 @@ __attribute__((weak)) void HashSet_init2(HashSet<String>& scaly_self, HashSetBui
 {
     HashSet<String>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (((hash_set_builder).length == 0ULL))
+    this_->slots = (Vector<Vector<String>>*)(nullptr);
     {
-        this_->slots = (Vector<Vector<String>>*)(nullptr);
-        return;
-    }
-    this_->slots = (Vector<Vector<String>>*)&((*({ Vector<Vector<String>>* scaly_t1 = (Vector<Vector<String>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<String>>), alignof(Vector<Vector<String>>)); *scaly_t1 = Vector<Vector<String>>{}; Vector_init3<Vector<String>>((*scaly_t1), (hash_set_builder).slots->length); scaly_t1; })));
-    uint64_t length = (hash_set_builder).slots->length;
-    uint64_t i = 0ULL;
-    while ((i < length))
-    {
-        List<Slot<String>>* slot_list = Vector_at<List<Slot<String>>>(*((hash_set_builder).slots), i);
-        Array<String>* array = ({ Array<String>* scaly_t2 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t2 = Array<String>{}; (void)0; scaly_t2; });
-        ListIterator<Slot<String>> list_iterator = ListIterator<Slot<String>>{slot_list->head};
-        while (Slot<String>* item = ListIterator_next<Slot<String>>(list_iterator))
+        if (((hash_set_builder).length == 0ULL))
         {
-            Array_add<String>((*array), item->value);
+            this_->slots = (Vector<Vector<String>>*)(nullptr);
+            return;
         }
-        if ((((*array)).length > 0ULL))
+        this_->slots = (Vector<Vector<String>>*)&((*({ Vector<Vector<String>>* scaly_t1 = (Vector<Vector<String>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<String>>), alignof(Vector<Vector<String>>)); *scaly_t1 = Vector<Vector<String>>{}; Vector_init3<Vector<String>>((*scaly_t1), (hash_set_builder).slots->length); scaly_t1; })));
+        uint64_t length = (hash_set_builder).slots->length;
+        uint64_t i = 0ULL;
+        while ((i < length))
         {
-            Vector_put<Vector<String>>(*(this_->slots), i, scaly_lvalue((*({ Vector<String>* scaly_t3 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t3 = Vector<String>{}; Vector_init7<String>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            List<Slot<String>>* slot_list = Vector_at<List<Slot<String>>>(*((hash_set_builder).slots), i);
+            Array<String>* array = ({ Array<String>* scaly_t2 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t2 = Array<String>{}; (void)0; scaly_t2; });
+            ListIterator<Slot<String>> list_iterator = ListIterator<Slot<String>>{slot_list->head};
+            while (Slot<String>* item = ListIterator_next<Slot<String>>(list_iterator))
+            {
+                Array_add<String>((*array), item->value);
+            }
+            if ((((*array)).length > 0ULL))
+            {
+                Vector_put<Vector<String>>(*(this_->slots), i, scaly_lvalue((*({ Vector<String>* scaly_t3 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t3 = Vector<String>{}; Vector_init7<String>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            }
+            i = (i + 1ULL);
         }
-        i = (i + 1ULL);
     }
 }
 
@@ -31046,13 +31061,17 @@ __attribute__((weak)) void HashMapBuilder_init2(HashMapBuilder<String, Nameable>
     HashMapBuilder<String, Nameable>* this_ = &scaly_self;
     this_->length = 0ULL;
     this_->slots = (Vector<List<Slot<KeyValuePair<String, Nameable>>>>*)(nullptr);
-    if (((vec).length > 0ULL))
     {
-        HashMapBuilder_reallocate2(*(this_), (vec).length);
-        VectorIterator<KeyValuePair<String, Nameable>> vector_iterator = ({ VectorIterator<KeyValuePair<String, Nameable>> scaly_t1{}; VectorIterator_init<KeyValuePair<String, Nameable>>(scaly_t1, (&(vec))); scaly_t1; });
-        while (KeyValuePair<String, Nameable>* element = VectorIterator_next<KeyValuePair<String, Nameable>>(vector_iterator))
+        this_->length = 0ULL;
+        this_->slots = (Vector<List<Slot<KeyValuePair<String, Nameable>>>>*)(nullptr);
+        if (((vec).length > 0ULL))
         {
-            HashMapBuilder_add_internal2(*(this_), element->key, element->value);
+            HashMapBuilder_reallocate2(*(this_), (vec).length);
+            VectorIterator<KeyValuePair<String, Nameable>> vector_iterator = ({ VectorIterator<KeyValuePair<String, Nameable>> scaly_t1{}; VectorIterator_init<KeyValuePair<String, Nameable>>(scaly_t1, (&(vec))); scaly_t1; });
+            while (KeyValuePair<String, Nameable>* element = VectorIterator_next<KeyValuePair<String, Nameable>>(vector_iterator))
+            {
+                HashMapBuilder_add_internal2(*(this_), element->key, element->value);
+            }
         }
     }
 }
@@ -31062,28 +31081,31 @@ __attribute__((weak)) void HashMap_init2(HashMap<String, Nameable>& scaly_self, 
 {
     HashMap<String, Nameable>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (((hash_map_builder).length == 0ULL))
+    this_->slots = (Vector<Vector<KeyValuePair<String, Nameable>>>*)(nullptr);
     {
-        this_->slots = (Vector<Vector<KeyValuePair<String, Nameable>>>*)(nullptr);
-        return;
-    }
-    this_->slots = (Vector<Vector<KeyValuePair<String, Nameable>>>*)&((*({ Vector<Vector<KeyValuePair<String, Nameable>>>* scaly_t1 = (Vector<Vector<KeyValuePair<String, Nameable>>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<KeyValuePair<String, Nameable>>>), alignof(Vector<Vector<KeyValuePair<String, Nameable>>>)); *scaly_t1 = Vector<Vector<KeyValuePair<String, Nameable>>>{}; Vector_init3<Vector<KeyValuePair<String, Nameable>>>((*scaly_t1), (hash_map_builder).slots->length); scaly_t1; })));
-    uint64_t length = (hash_map_builder).slots->length;
-    uint64_t i = 0ULL;
-    while ((i < length))
-    {
-        List<Slot<KeyValuePair<String, Nameable>>>* slot_list = Vector_at<List<Slot<KeyValuePair<String, Nameable>>>>(*((hash_map_builder).slots), i);
-        Array<KeyValuePair<String, Nameable>>* array = ({ Array<KeyValuePair<String, Nameable>>* scaly_t2 = (Array<KeyValuePair<String, Nameable>>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<KeyValuePair<String, Nameable>>), alignof(Array<KeyValuePair<String, Nameable>>)); *scaly_t2 = Array<KeyValuePair<String, Nameable>>{}; (void)0; scaly_t2; });
-        ListIterator<Slot<KeyValuePair<String, Nameable>>> list_iterator = ListIterator<Slot<KeyValuePair<String, Nameable>>>{slot_list->head};
-        while (Slot<KeyValuePair<String, Nameable>>* item = ListIterator_next<Slot<KeyValuePair<String, Nameable>>>(list_iterator))
+        if (((hash_map_builder).length == 0ULL))
         {
-            Array_add<KeyValuePair<String, Nameable>>((*array), item->value);
+            this_->slots = (Vector<Vector<KeyValuePair<String, Nameable>>>*)(nullptr);
+            return;
         }
-        if ((((*array)).length > 0ULL))
+        this_->slots = (Vector<Vector<KeyValuePair<String, Nameable>>>*)&((*({ Vector<Vector<KeyValuePair<String, Nameable>>>* scaly_t1 = (Vector<Vector<KeyValuePair<String, Nameable>>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Vector<KeyValuePair<String, Nameable>>>), alignof(Vector<Vector<KeyValuePair<String, Nameable>>>)); *scaly_t1 = Vector<Vector<KeyValuePair<String, Nameable>>>{}; Vector_init3<Vector<KeyValuePair<String, Nameable>>>((*scaly_t1), (hash_map_builder).slots->length); scaly_t1; })));
+        uint64_t length = (hash_map_builder).slots->length;
+        uint64_t i = 0ULL;
+        while ((i < length))
         {
-            Vector_put<Vector<KeyValuePair<String, Nameable>>>(*(this_->slots), i, scaly_lvalue((*({ Vector<KeyValuePair<String, Nameable>>* scaly_t3 = (Vector<KeyValuePair<String, Nameable>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<KeyValuePair<String, Nameable>>), alignof(Vector<KeyValuePair<String, Nameable>>)); *scaly_t3 = Vector<KeyValuePair<String, Nameable>>{}; Vector_init7<KeyValuePair<String, Nameable>>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            List<Slot<KeyValuePair<String, Nameable>>>* slot_list = Vector_at<List<Slot<KeyValuePair<String, Nameable>>>>(*((hash_map_builder).slots), i);
+            Array<KeyValuePair<String, Nameable>>* array = ({ Array<KeyValuePair<String, Nameable>>* scaly_t2 = (Array<KeyValuePair<String, Nameable>>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<KeyValuePair<String, Nameable>>), alignof(Array<KeyValuePair<String, Nameable>>)); *scaly_t2 = Array<KeyValuePair<String, Nameable>>{}; (void)0; scaly_t2; });
+            ListIterator<Slot<KeyValuePair<String, Nameable>>> list_iterator = ListIterator<Slot<KeyValuePair<String, Nameable>>>{slot_list->head};
+            while (Slot<KeyValuePair<String, Nameable>>* item = ListIterator_next<Slot<KeyValuePair<String, Nameable>>>(list_iterator))
+            {
+                Array_add<KeyValuePair<String, Nameable>>((*array), item->value);
+            }
+            if ((((*array)).length > 0ULL))
+            {
+                Vector_put<Vector<KeyValuePair<String, Nameable>>>(*(this_->slots), i, scaly_lvalue((*({ Vector<KeyValuePair<String, Nameable>>* scaly_t3 = (Vector<KeyValuePair<String, Nameable>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<KeyValuePair<String, Nameable>>), alignof(Vector<KeyValuePair<String, Nameable>>)); *scaly_t3 = Vector<KeyValuePair<String, Nameable>>{}; Vector_init7<KeyValuePair<String, Nameable>>((*scaly_t3), scaly_lvalue((*array))); scaly_t3; }))));
+            }
+            i = (i + 1ULL);
         }
-        i = (i + 1ULL);
     }
 }
 
@@ -33808,10 +33830,99 @@ __attribute__((weak)) Structure Modeler_handle_class(scaly_frame* scaly_rp, Stri
             }
             ((*initializers)).length = init_idx;
             ((*members)).length = member_idx;
+            uint64_t ii = 0ULL;
+            while ((ii < ((*initializers)).length))
+            {
+                Vector_put<Initializer>((*initializers), ii, scaly_lvalue(Modeler_with_field_defaults(scaly_rp, scaly_lvalue(Vector4<Initializer>((*initializers), ii)), (*properties))));
+                ii = (ii + 1ULL);
+            }
         }
     }
     HashMap<String, Nameable>* symbols = ({ HashMap<String, Nameable>* scaly_t18 = (HashMap<String, Nameable>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(HashMap<String, Nameable>), alignof(HashMap<String, Nameable>)); *scaly_t18 = HashMap<String, Nameable>{}; HashMap_init2((*scaly_t18), (*symbols_builder)); scaly_t18; });
     return Structure{(*({ Span* scaly_t20 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t20 = Span{(syntax).start, (syntax).end}; scaly_t20; })), is_private, (*properties), (*modules), (*uses), (*initializers), (*members), (*symbols)};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Modeler.scaly
+__attribute__((weak)) Initializer Modeler_with_field_defaults(scaly_frame* scaly_rp, Initializer& ini, Vector<Property>& properties)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    Array<Statement>* stmts = ({ Array<Statement>* scaly_t1 = (Array<Statement>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<Statement>), alignof(Array<Statement>)); *scaly_t1 = Array<Statement>{}; (void)0; scaly_t1; });
+    Span* span = ({ Span* scaly_t2 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t2 = Span{0ULL, 0ULL}; scaly_t2; });
+    for (auto scaly_t3 = Vector_get_iterator<Property>(scaly_rp, properties);;)
+    {
+        Property* scaly_t3_at = (Property*)VectorIterator_next<Property>(scaly_t3);
+        if (scaly_t3_at == nullptr)
+            break;
+        Property* prop = scaly_t3_at;
+        if (((prop->initializer) != (nullptr)))
+        {
+            if ((((*stmts)).length == 0ULL))
+            {
+                (*span) = prop->span;
+            }
+            Vector<String>* this_path = ({ Vector<String>* scaly_t4 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t4 = Vector<String>{}; Vector_init3<String>((*scaly_t4), 2ULL); scaly_t4; });
+            Vector_put<String>((*this_path), 0ULL, scaly_lvalue(String{(uint8_t*)"\004this"}));
+            Vector_put<String>((*this_path), 1ULL, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), prop->name); scaly_t5; }))));
+            Vector<Operand>* target = ({ Vector<Operand>* scaly_t6 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t6 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t6), 1ULL); scaly_t6; });
+            Vector_put<Operand>((*target), 0ULL, scaly_lvalue((*({ Operand* scaly_t7 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t7 = Operand{prop->span, scaly_variant<Expression>(1, Type{prop->span, (*this_path), (Vector<Type>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{})}), (Vector<String>*)(nullptr)}; scaly_t7; }))));
+            Array_add<Statement>((*stmts), scaly_lvalue(scaly_variant<Statement>(0, Action{Modeler_default_value(&scaly_local.f, scaly_lvalue(((*(prop->initializer))))), (*target)})));
+        }
+    }
+    if ((((*stmts)).length == 0ULL))
+    {
+        return ini;
+    }
+    {
+        auto&& scaly_t8 = (ini).implementation;
+        if (scaly_t8.tag == 0)
+        {
+            Action body = scaly_payload<Action>(scaly_t8);
+            Array_add<Statement>((*stmts), scaly_lvalue(scaly_variant<Statement>(0, body)));
+            Vector<Statement>* all = ({ Vector<Statement>* scaly_t9 = (Vector<Statement>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Statement>), alignof(Vector<Statement>)); *scaly_t9 = Vector<Statement>{}; Vector_init7<Statement>((*scaly_t9), (*stmts)); scaly_t9; });
+            Vector<Operand>* block_ops = ({ Vector<Operand>* scaly_t10 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t10 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t10), 1ULL); scaly_t10; });
+            Vector_put<Operand>((*block_ops), 0ULL, scaly_lvalue((*({ Operand* scaly_t11 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t11 = Operand{(*span), scaly_variant<Expression>(4, Block{(*span), (*all), false}), (Vector<String>*)(nullptr)}; scaly_t11; }))));
+            return Initializer{(ini).span, (ini).private_, (ini).page_parameter, (ini).input, scaly_variant<Implementation>(0, Action{(*block_ops), (*({ Vector<Operand>* scaly_t12 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t12 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t12), 0ULL); scaly_t12; }))})};
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return ini;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Modeler.scaly
+__attribute__((weak)) Vector<Operand> Modeler_default_value(scaly_frame* scaly_rp, Vector<Operand>& ops)
+{
+    if (((ops).length != 1ULL))
+    {
+        return ops;
+    }
+    Operand op = Vector4<Operand>(ops, 0LL);
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return ops;
+    }
+    {
+        auto&& scaly_t1 = (op).expression;
+        if (scaly_t1.tag == 2)
+        {
+            Tuple tp = scaly_payload<Tuple>(scaly_t1);
+            if ((((tp).components).length == 1ULL))
+            {
+                Component c = Vector4<Component>((tp).components, 0LL);
+                if (((((c).name) == (nullptr)) ? (((c).value).length > 0ULL) : false))
+                {
+                    return (c).value;
+                }
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return ops;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Modeler.scaly
@@ -39866,7 +39977,7 @@ __attribute__((weak)) void Planner_read_declared(Planner& scaly_self, Program& p
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
-template <class T1> static T1 Vector8(Vector<T1>& scaly_self, uint64_t i)
+template <class T1> static T1 Vector11(Vector<T1>& scaly_self, uint64_t i)
 {
     Vector<T1>* this_ = &scaly_self;
     if ((i >= this_->length))
@@ -39894,10 +40005,10 @@ __attribute__((weak)) Vector<Function> Planner_functions_in_reach(scaly_frame* s
     uint64_t i = 0ULL;
     while ((i < (found).length))
     {
-        String pkg = Planner_function_package(&scaly_local.f, *(this_), scaly_lvalue(Vector8<Function>(found, i)));
+        String pkg = Planner_function_package(&scaly_local.f, *(this_), scaly_lvalue(Vector11<Function>(found, i)));
         if ((((String_get_length(pkg) == 0ULL) ? true : String_equals(pkg, writer)) ? true : Planner_declares(*(this_), writer, pkg)))
         {
-            Array_add<Function>((*reach), scaly_lvalue(Vector8<Function>(found, i)));
+            Array_add<Function>((*reach), scaly_lvalue(Vector11<Function>(found, i)));
         }
         i = (i + 1ULL);
     }
@@ -39947,7 +40058,7 @@ __attribute__((weak)) String Planner_pointee_name(scaly_frame* scaly_rp, Planned
         Vector<PlannedType> gens = ((*((t).generics)));
         if (((gens).length == 1ULL))
         {
-            return Planner_pointee_name(scaly_rp, scaly_lvalue(Vector8<PlannedType>(gens, 0LL)));
+            return Planner_pointee_name(scaly_rp, scaly_lvalue(Vector11<PlannedType>(gens, 0LL)));
         }
     }
     return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), (t).name); scaly_t2; }));
@@ -39962,7 +40073,7 @@ __attribute__((weak)) String Planner_package_of_type(scaly_frame* scaly_rp, Plan
         Vector<PlannedType> gens = ((*((t).generics)));
         if (((gens).length == 1ULL))
         {
-            return Planner_package_of_type(scaly_rp, scaly_lvalue(Vector8<PlannedType>(gens, 0LL)));
+            return Planner_package_of_type(scaly_rp, scaly_lvalue(Vector11<PlannedType>(gens, 0LL)));
         }
     }
     String tag = Planner_package_tag_in(&scaly_local.f, (t).mangled_name, (t).name);
@@ -40591,7 +40702,7 @@ __attribute__((weak)) String Planner_other_package_hint(scaly_frame* scaly_rp, P
     uint64_t c = 0ULL;
     while ((c < (candidates).length))
     {
-        Function f = Vector8<Function>(candidates, c);
+        Function f = Vector11<Function>(candidates, c);
         c = (c + 1ULL);
         if ((((f).input).length != (arg_types).length))
         {
@@ -40605,11 +40716,11 @@ __attribute__((weak)) String Planner_other_package_hint(scaly_frame* scaly_rp, P
         uint64_t j = 0ULL;
         while (((j < (arg_types).length) ? (String_get_length(hint) == 0ULL) : false))
         {
-            Item item = Vector8<Item>((f).input, j);
+            Item item = Vector11<Item>((f).input, j);
             if ((((item).type) != (nullptr)))
             {
                 PlannedType wanted = Planner_plan_type(&scaly_local.f, *(this_), scaly_lvalue(((*((item).type)))));
-                PlannedType given = Vector8<PlannedType>(arg_types, j);
+                PlannedType given = Vector11<PlannedType>(arg_types, j);
                 String wanted_name = Planner_pointee_name(&scaly_local.f, wanted);
                 String wanted_package = Planner_package_of_type(&scaly_local.f, wanted);
                 String given_package = Planner_package_of_type(&scaly_local.f, given);
@@ -40678,7 +40789,7 @@ __attribute__((weak)) String Planner_call_not_found_head(scaly_frame* scaly_rp, 
     uint64_t c = 0ULL;
     while ((c < ((*candidates)).length))
     {
-        Function f = Vector8<Function>((*candidates), c);
+        Function f = Vector11<Function>((*candidates), c);
         String text = Planner_signature_text(&scaly_local.f, f);
         bool seen = false;
         uint64_t s = 0ULL;
@@ -40694,13 +40805,13 @@ __attribute__((weak)) String Planner_call_not_found_head(scaly_frame* scaly_rp, 
         {
             Array_add<String>((*signatures), text);
         }
-        if (((((f).input).length != 1ULL) ? true : (((Vector8<Item>((f).input, 0LL)).type) == (nullptr))))
+        if (((((f).input).length != 1ULL) ? true : (((Vector11<Item>((f).input, 0LL)).type) == (nullptr))))
         {
             takes_text = false;
         }
         else
         {
-            if (((Planner_model_type_is_text(scaly_lvalue(((*((Vector8<Item>((f).input, 0LL)).type)))))) == (false)))
+            if (((Planner_model_type_is_text(scaly_lvalue(((*((Vector11<Item>((f).input, 0LL)).type)))))) == (false)))
             {
                 takes_text = false;
             }
@@ -40737,7 +40848,7 @@ __attribute__((weak)) String Planner_call_not_found_head(scaly_frame* scaly_rp, 
         scaly_t7;
     })));
     }
-    if (((takes_text ? ((arg_types).length == 1ULL) : false) ? ((Planner_planned_type_is_text(scaly_lvalue(Vector8<PlannedType>(arg_types, 0LL)))) == (false)) : false))
+    if (((takes_text ? ((arg_types).length == 1ULL) : false) ? ((Planner_planned_type_is_text(scaly_lvalue(Vector11<PlannedType>(arg_types, 0LL)))) == (false)) : false))
     {
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\063 - a value becomes text in an interpolated string: "}));
         StringBuilder_append2((*sb), name);
@@ -40795,7 +40906,7 @@ __attribute__((weak)) String Planner_argument_list_text(scaly_frame* scaly_rp, V
         {
             StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
         }
-        StringBuilder_append2((*sb), scaly_lvalue(Planner_get_readable_name(&scaly_local.f, scaly_lvalue(Vector8<PlannedType>(arg_types, i)))));
+        StringBuilder_append2((*sb), scaly_lvalue(Planner_get_readable_name(&scaly_local.f, scaly_lvalue(Vector11<PlannedType>(arg_types, i)))));
         i = (i + 1ULL);
     }
     StringBuilder_append((*sb), ((uint8_t)')'));
@@ -40816,7 +40927,7 @@ __attribute__((weak)) String Planner_signature_text(scaly_frame* scaly_rp, Funct
         {
             StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
         }
-        Item item = Vector8<Item>((f).input, i);
+        Item item = Vector11<Item>((f).input, i);
         if ((((item).name) != (nullptr)))
         {
             StringBuilder_append2((*sb), scaly_lvalue(((*((item).name)))));
@@ -40842,7 +40953,7 @@ __attribute__((weak)) String Planner_model_type_text(scaly_frame* scaly_rp, Type
     StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
     if (((((((t).name).length == 1ULL) ? String_equals(scaly_lvalue(Vector3((t).name, 0LL)), scaly_lvalue(String{(uint8_t*)"\006Option"})) : false) ? (((t).generics) != (nullptr)) : false) ? ((t).generics->length == 1ULL) : false))
     {
-        StringBuilder_append2((*sb), scaly_lvalue(Planner_model_type_text(&scaly_local.f, scaly_lvalue(Vector8<Type>(*((t).generics), 0LL)))));
+        StringBuilder_append2((*sb), scaly_lvalue(Planner_model_type_text(&scaly_local.f, scaly_lvalue(Vector11<Type>(*((t).generics), 0LL)))));
         StringBuilder_append((*sb), ((uint8_t)'\077'));
         return StringBuilder_to_string(scaly_rp, (*sb));
     }
@@ -40866,7 +40977,7 @@ __attribute__((weak)) String Planner_model_type_text(scaly_frame* scaly_rp, Type
             {
                 StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
             }
-            StringBuilder_append2((*sb), scaly_lvalue(Planner_model_type_text(&scaly_local.f, scaly_lvalue(Vector8<Type>(*((t).generics), g)))));
+            StringBuilder_append2((*sb), scaly_lvalue(Planner_model_type_text(&scaly_local.f, scaly_lvalue(Vector11<Type>(*((t).generics), g)))));
             g = (g + 1ULL);
         }
         StringBuilder_append((*sb), ((uint8_t)']'));
@@ -42973,7 +43084,7 @@ __attribute__((weak)) bool Planner_is_written_float_literal(Planner& scaly_self,
             PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
             if (Planner_is_negated_float_constant(*(this_), call))
             {
-                return Planner_is_written_float_literal(*(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)));
+                return Planner_is_written_float_literal(*(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)));
             }
         }
         else
@@ -42996,7 +43107,7 @@ __attribute__((weak)) PlannedOperand Planner_retype_float_operand(scaly_frame* s
             if (Planner_is_negated_float_constant(*(this_), call))
             {
                 Array<PlannedOperand>* arg_arr = ({ Array<PlannedOperand>* scaly_t2 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t2 = Array<PlannedOperand>{}; (void)0; scaly_t2; });
-                Array_add<PlannedOperand>((*arg_arr), scaly_lvalue(Planner_retype_float_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), float_type)));
+                Array_add<PlannedOperand>((*arg_arr), scaly_lvalue(Planner_retype_float_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), float_type)));
                 Vector<PlannedOperand>* arg_vec = ({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t3), (*arg_arr)); scaly_t3; });
                 PlannedCall* negated = ({ PlannedCall* scaly_t4 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t4 = PlannedCall{(call).loc, (call).name, (call).mangled_name, (call).is_intrinsic, (call).is_operator, (call).can_throw, (call).requires_page_param, (&((*arg_vec))), float_type, (call).life, (call).throws_type, (call).is_indirect}; scaly_t4; });
                 return PlannedOperand{(op).loc, scaly_variant<PlannedExpression>(4, (*negated)), (Vector<PlannedMemberAccess>*)(nullptr), float_type};
@@ -43379,16 +43490,16 @@ __attribute__((weak)) bool Planner_constant_integer(Planner& scaly_self, Planned
                 return false;
             }
             Vector<PlannedComponent> comps = ((*((tp).components)));
-            if (((((comps).length != 1ULL) ? true : (((Vector8<PlannedComponent>(comps, 0LL)).name) != (nullptr))) ? true : (((Vector8<PlannedComponent>(comps, 0LL)).value) == (nullptr))))
+            if (((((comps).length != 1ULL) ? true : (((Vector11<PlannedComponent>(comps, 0LL)).name) != (nullptr))) ? true : (((Vector11<PlannedComponent>(comps, 0LL)).value) == (nullptr))))
             {
                 return false;
             }
-            Vector<PlannedOperand> inner = ((*((Vector8<PlannedComponent>(comps, 0LL)).value)));
+            Vector<PlannedOperand> inner = ((*((Vector11<PlannedComponent>(comps, 0LL)).value)));
             if (((inner).length != 1ULL))
             {
                 return false;
             }
-            return Planner_constant_integer(*(this_), scaly_lvalue(Vector8<PlannedOperand>(inner, 0LL)), bits, defines, negative, magnitude);
+            return Planner_constant_integer(*(this_), scaly_lvalue(Vector11<PlannedOperand>(inner, 0LL)), bits, defines, negative, magnitude);
         }
         else if (scaly_t1.tag == 4)
         {
@@ -43406,7 +43517,7 @@ __attribute__((weak)) bool Planner_constant_integer(Planner& scaly_self, Planned
                 {
                     return false;
                 }
-                if (((Planner_constant_integer(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), bits, defines, (&(an)), (&(am)))) == (false)))
+                if (((Planner_constant_integer(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), bits, defines, (&(an)), (&(am)))) == (false)))
                 {
                     return false;
                 }
@@ -43439,7 +43550,7 @@ __attribute__((weak)) bool Planner_constant_integer(Planner& scaly_self, Planned
             }
             bool bn = false;
             uint64_t bm = 0ULL;
-            if ((((Planner_constant_integer(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), bits, defines, (&(an)), (&(am)))) == (false)) ? true : ((Planner_constant_integer(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 1LL)), bits, defines, (&(bn)), (&(bm)))) == (false))))
+            if ((((Planner_constant_integer(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), bits, defines, (&(an)), (&(am)))) == (false)) ? true : ((Planner_constant_integer(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 1LL)), bits, defines, (&(bn)), (&(bm)))) == (false))))
             {
                 return false;
             }
@@ -43501,16 +43612,16 @@ __attribute__((weak)) bool Planner_constant_shape_of(Planner& scaly_self, Planne
                 return false;
             }
             Vector<PlannedComponent> comps = ((*((tp).components)));
-            if (((((comps).length != 1ULL) ? true : (((Vector8<PlannedComponent>(comps, 0LL)).name) != (nullptr))) ? true : (((Vector8<PlannedComponent>(comps, 0LL)).value) == (nullptr))))
+            if (((((comps).length != 1ULL) ? true : (((Vector11<PlannedComponent>(comps, 0LL)).name) != (nullptr))) ? true : (((Vector11<PlannedComponent>(comps, 0LL)).value) == (nullptr))))
             {
                 return false;
             }
-            Vector<PlannedOperand> inner = ((*((Vector8<PlannedComponent>(comps, 0LL)).value)));
+            Vector<PlannedOperand> inner = ((*((Vector11<PlannedComponent>(comps, 0LL)).value)));
             if (((inner).length != 1ULL))
             {
                 return false;
             }
-            return Planner_constant_shape_of(*(this_), scaly_lvalue(Vector8<PlannedOperand>(inner, 0LL)), defines);
+            return Planner_constant_shape_of(*(this_), scaly_lvalue(Vector11<PlannedOperand>(inner, 0LL)), defines);
         }
         else if (scaly_t1.tag == 4)
         {
@@ -43522,7 +43633,7 @@ __attribute__((weak)) bool Planner_constant_shape_of(Planner& scaly_self, Planne
             Vector<PlannedOperand> args = ((*((call).args)));
             if (((args).length == 1ULL))
             {
-                return (((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001-"})) ? true : String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001~"})))) ? Planner_constant_shape_of(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), defines) : false);
+                return (((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001-"})) ? true : String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001~"})))) ? Planner_constant_shape_of(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), defines) : false);
             }
             if (((args).length != 2ULL))
             {
@@ -43533,7 +43644,7 @@ __attribute__((weak)) bool Planner_constant_shape_of(Planner& scaly_self, Planne
                 auto&& scaly_t3 = true;
                 if (scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001+"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001-"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001*"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001/"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001%"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\003div"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\003mod"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\002<<"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\002>>"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001&"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\001|"})) || scaly_t3 == String_equals(oname, scaly_lvalue(String{(uint8_t*)"\003xor"})))
                 {
-                    return (Planner_constant_shape_of(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), defines) ? Planner_constant_shape_of(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 1LL)), defines) : false);
+                    return (Planner_constant_shape_of(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), defines) ? Planner_constant_shape_of(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 1LL)), defines) : false);
                 }
             }
             return false;
@@ -43559,7 +43670,7 @@ __attribute__((weak)) uint64_t Planner_fold_initializer(scaly_frame* scaly_rp, P
     uint64_t k = 0ULL;
     while ((k < (ops).length))
     {
-        Vector_put<PlannedOperand>((*run), k, scaly_lvalue(Vector8<PlannedOperand>(ops, k)));
+        Vector_put<PlannedOperand>((*run), k, scaly_lvalue(Vector11<PlannedOperand>(ops, k)));
         k = (k + 1ULL);
     }
     PlannedOperand one = Planner_collapse_operand_sequence(scaly_rp, *(this_), (*run));
@@ -43613,7 +43724,7 @@ __attribute__((weak)) void Planner_prefold_array_rows(scaly_frame* scaly_rp, Pla
         return;
     }
     {
-        auto&& scaly_t1 = (Vector8<PlannedOperand>(value, 0LL)).expr;
+        auto&& scaly_t1 = (Vector11<PlannedOperand>(value, 0LL)).expr;
         if (scaly_t1.tag == 6)
         {
             PlannedMatrix mx = scaly_payload<PlannedMatrix>(scaly_t1);
@@ -43629,13 +43740,13 @@ __attribute__((weak)) void Planner_prefold_array_rows(scaly_frame* scaly_rp, Pla
             uint64_t ri = 0ULL;
             while ((ri < (rows).length))
             {
-                Vector<PlannedOperand> row = Vector8<Vector<PlannedOperand>>(rows, ri);
+                Vector<PlannedOperand> row = Vector11<Vector<PlannedOperand>>(rows, ri);
                 if (((row).length > 1ULL))
                 {
                     uint64_t folded = 0ULL;
                     if ((Planner_fold_initializer(scaly_rp, *(this_), row, elem, (&(folded))) == 1ULL))
                     {
-                        Span at = (Vector8<PlannedOperand>(row, 0LL)).loc;
+                        Span at = (Vector11<PlannedOperand>(row, 0LL)).loc;
                         Constant fc = scaly_variant<Constant>(1, IntegerConstant{at, folded});
                         Vector_put<PlannedOperand>(row, 0ULL, scaly_lvalue((*({ PlannedOperand* scaly_t2 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t2 = PlannedOperand{at, scaly_variant<PlannedExpression>(0, PlannedConstant{fc}), (Vector<PlannedMemberAccess>*)(nullptr), elem}; scaly_t2; }))));
                         Vector_put<Vector<PlannedOperand>>(rows, ri, scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{1ULL, (row).data}; scaly_t3; }))));
@@ -49382,7 +49493,7 @@ __attribute__((weak)) void Planner_report_static_arg_types(Planner& scaly_self, 
         return;
     }
     Function f = (*(chosen));
-    Planner_report_arg_types_from(*(this_), f, (c).name, fn_name, arg_types, arg_ops, scaly_lvalue((Vector8<PlannedOperand>(arg_ops, 0LL)).loc), 0ULL);
+    Planner_report_arg_types_from(*(this_), f, (c).name, fn_name, arg_types, arg_ops, scaly_lvalue((Vector11<PlannedOperand>(arg_ops, 0LL)).loc), 0ULL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -51159,7 +51270,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_indirect_call(scaly_frame*
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -51256,7 +51367,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_lambda_calls(scaly_frame* 
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -51395,7 +51506,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_delegate_calls(scaly_frame
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -51701,7 +51812,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_generics(scaly_frame* scal
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -51910,7 +52021,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_sigils(scaly_frame* scaly_
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -52216,7 +52327,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_subscripts(scaly_frame* sc
         }
     }
     (*(fell)) = true;
-    return Vector8<PlannedOperand>(ops, 0LL);
+    return Vector11<PlannedOperand>(ops, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -54996,7 +55107,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_operators(scaly_frame* sca
     {
         return result;
     }
-    PlannedOperand op = Vector8<PlannedOperand>(ops, 1LL);
+    PlannedOperand op = Vector11<PlannedOperand>(ops, 1LL);
     bool postfixed = false;
     PlannedOperand after = Planner_operation_postfix(scaly_rp, *(this_), result, op, (&(postfixed)));
     if (postfixed)
@@ -55016,7 +55127,7 @@ __attribute__((weak)) PlannedOperand Planner_collapse_operators(scaly_frame* sca
         Planner_add_diagnostic(*(this_), (op).loc, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\205\001this sequence is not one an operation reads: a prefix, a postfix or a sigil stands where no value is expected, or an operator ends it"})); scaly_t1; }))));
         return result;
     }
-    return Planner_raw_operation(scaly_rp, *(this_), result, op, scaly_lvalue(Vector8<PlannedOperand>(ops, 2LL)));
+    return Planner_raw_operation(scaly_rp, *(this_), result, op, scaly_lvalue(Vector11<PlannedOperand>(ops, 2LL)));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -56673,7 +56784,7 @@ __attribute__((weak)) String Planner_pointee_mangled(scaly_frame* scaly_rp, Plan
         Vector<PlannedType> gens = ((*((t).generics)));
         if (((gens).length == 1ULL))
         {
-            return Planner_pointee_mangled(scaly_rp, scaly_lvalue(Vector8<PlannedType>(gens, 0LL)));
+            return Planner_pointee_mangled(scaly_rp, scaly_lvalue(Vector11<PlannedType>(gens, 0LL)));
         }
     }
     return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), (t).mangled_name); scaly_t2; }));
@@ -57622,7 +57733,7 @@ __attribute__((weak)) PlannedOperand Planner_fused_chain_onto(scaly_frame* scaly
     uint64_t k = 0ULL;
     while ((k < ((*hops)).length))
     {
-        Vector_put<PlannedMemberAccess>((*copy), k, scaly_lvalue(Vector8<PlannedMemberAccess>((*hops), k)));
+        Vector_put<PlannedMemberAccess>((*copy), k, scaly_lvalue(Vector11<PlannedMemberAccess>((*hops), k)));
         k = (k + 1ULL);
     }
     return Planner_rebind_trailing_chain(scaly_rp, *(this_), scaly_lvalue((*({ PlannedOperand* scaly_t4 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t4 = PlannedOperand{(fused_op).loc, (fused_op).expr, (&((*copy))), (fused_op).result_type}; scaly_t4; }))));
@@ -58177,7 +58288,7 @@ __attribute__((weak)) PlannedOperand Planner_simd_operand(scaly_frame* scaly_rp,
     uint64_t i = 0ULL;
     while ((i < (args).length))
     {
-        Vector_put<PlannedOperand>((*call_args), i, scaly_lvalue(Vector8<PlannedOperand>(args, i)));
+        Vector_put<PlannedOperand>((*call_args), i, scaly_lvalue(Vector11<PlannedOperand>(args, i)));
         i = (i + 1ULL);
     }
     PlannedCall* call = ({ PlannedCall* scaly_t2 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t2 = PlannedCall{loc, (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), name); scaly_t3; })), (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{nullptr})); scaly_t4; })), true, false, false, false, (&((*call_args))), rt, scaly_variant<Lifetime>(0, Unspecified{}), (PlannedType*)(nullptr), false}; scaly_t2; });
@@ -58194,7 +58305,7 @@ __attribute__((weak)) int64_t Planner_simd_call_kind(Planner& scaly_self, Planne
         Vector<PlannedMemberAccess> ma = ((*((result).member_access)));
         if (((ma).length > 0ULL))
         {
-            PlannedMemberAccess lh = Vector8<PlannedMemberAccess>(ma, ((ma).length - 1ULL));
+            PlannedMemberAccess lh = Vector11<PlannedMemberAccess>(ma, ((ma).length - 1ULL));
             if (Planner_is_simd_type_name(((lh).parent_type).name))
             {
                 return 1LL;
@@ -58223,7 +58334,7 @@ __attribute__((weak)) int64_t Planner_simd_call_kind(Planner& scaly_self, Planne
     }
     if ((String_equals(fn_name, scaly_lvalue(String{(uint8_t*)"\006select"})) ? ((arg_ops).length == 3ULL) : false))
     {
-        PlannedOperand a0 = Vector8<PlannedOperand>(arg_ops, 0LL);
+        PlannedOperand a0 = Vector11<PlannedOperand>(arg_ops, 0LL);
         if (Planner_is_simd_mask_name(((a0).result_type).name))
         {
             return 5LL;
@@ -58240,7 +58351,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_call(scaly_frame* scaly_r
     if ((kind == 1LL))
     {
         Vector<PlannedMemberAccess> ma = ((*((result).member_access)));
-        PlannedMemberAccess last = Vector8<PlannedMemberAccess>(ma, ((ma).length - 1ULL));
+        PlannedMemberAccess last = Vector11<PlannedMemberAccess>(ma, ((ma).length - 1ULL));
         Vector<PlannedMemberAccess>* chain = (Vector<PlannedMemberAccess>*)(nullptr);
         if (((ma).length > 1ULL))
         {
@@ -58248,7 +58359,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_call(scaly_frame* scaly_r
             uint64_t k = 0ULL;
             while (((k + 1ULL) < (ma).length))
             {
-                Vector_put<PlannedMemberAccess>((*hops), k, scaly_lvalue(Vector8<PlannedMemberAccess>(ma, k)));
+                Vector_put<PlannedMemberAccess>((*hops), k, scaly_lvalue(Vector11<PlannedMemberAccess>(ma, k)));
                 k = (k + 1ULL);
             }
             chain = (&((*hops)));
@@ -58292,9 +58403,9 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_call(scaly_frame* scaly_r
         return Planner_simd_operand(scaly_rp, *(this_), (second).loc, scaly_lvalue(String{(uint8_t*)"\011simd.make"}), arg_ops, scaly_lvalue(Planner_simd_type(scaly_rp, fn_name)), (second).member_access);
     }
     Vector<PlannedOperand>* rest = ({ Vector<PlannedOperand>* scaly_t9 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t9 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t9), 2ULL); scaly_t9; });
-    Vector_put<PlannedOperand>((*rest), 0ULL, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 1LL)));
-    Vector_put<PlannedOperand>((*rest), 1ULL, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 2LL)));
-    return Planner_plan_simd_method(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 0LL)), scaly_lvalue((*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init2((*scaly_t11), scaly_lvalue(String{(uint8_t*)"\006select"})); scaly_t11; }))), (*rest), second);
+    Vector_put<PlannedOperand>((*rest), 0ULL, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 1LL)));
+    Vector_put<PlannedOperand>((*rest), 1ULL, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 2LL)));
+    return Planner_plan_simd_method(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 0LL)), scaly_lvalue((*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init2((*scaly_t11), scaly_lvalue(String{(uint8_t*)"\006select"})); scaly_t11; }))), (*rest), second);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -58359,7 +58470,7 @@ __attribute__((weak)) void Planner_check_simd_same_type(Planner& scaly_self, Str
     uint64_t i = 0ULL;
     while ((i < (args).length))
     {
-        PlannedOperand a = Vector8<PlannedOperand>(args, i);
+        PlannedOperand a = Vector11<PlannedOperand>(args, i);
         if ((Planner_is_simd_type_name(((a).result_type).name) ? (!(String_equals(((a).result_type).name, t))) : false))
         {
             Planner_add_diagnostic(*(this_), loc, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(({
@@ -58449,13 +58560,13 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_static(scaly_frame* scaly
         {
             if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\004load"})))
             {
-                Planner_check_simd_memory(*(this_), t, m, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 0LL)), (second).loc);
+                Planner_check_simd_memory(*(this_), t, m, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 0LL)), (second).loc);
             }
             else
             {
                 if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\010load_ptr"})))
                 {
-                    Planner_check_simd_pointer(*(this_), t, m, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 0LL)), (second).loc);
+                    Planner_check_simd_pointer(*(this_), t, m, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 0LL)), (second).loc);
                 }
                 else
                 {
@@ -58464,7 +58575,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_static(scaly_frame* scaly
                         uint64_t i = 0ULL;
                         while ((i < (arg_ops).length))
                         {
-                            if ((!(String_equals(scaly_lvalue(((Vector8<PlannedOperand>(arg_ops, i)).result_type).name), t))))
+                            if ((!(String_equals(scaly_lvalue(((Vector11<PlannedOperand>(arg_ops, i)).result_type).name), t))))
                             {
                                 Planner_add_diagnostic(*(this_), (second).loc, scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(({
         String scaly_t9{};
@@ -58489,7 +58600,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_static(scaly_frame* scaly
                     {
                         if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\006lookup"})))
                         {
-                            if (((!(String_equals(scaly_lvalue(((Vector8<PlannedOperand>(arg_ops, 0LL)).result_type).name), scaly_lvalue(String{(uint8_t*)"\005u8x16"})))) ? true : (!(String_equals(scaly_lvalue(((Vector8<PlannedOperand>(arg_ops, 1LL)).result_type).name), t)))))
+                            if (((!(String_equals(scaly_lvalue(((Vector11<PlannedOperand>(arg_ops, 0LL)).result_type).name), scaly_lvalue(String{(uint8_t*)"\005u8x16"})))) ? true : (!(String_equals(scaly_lvalue(((Vector11<PlannedOperand>(arg_ops, 1LL)).result_type).name), t)))))
                             {
                                 Planner_add_diagnostic(*(this_), (second).loc, scaly_lvalue((*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init2((*scaly_t11), scaly_lvalue(({
         String scaly_t12{};
@@ -58607,11 +58718,11 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_method(scaly_frame* scaly
             auto&& scaly_t8 = true;
             if (scaly_t8 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\005store"})))
             {
-                Planner_check_simd_memory(*(this_), t, m, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 0LL)), (second).loc);
+                Planner_check_simd_memory(*(this_), t, m, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 0LL)), (second).loc);
             }
             else if (scaly_t8 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\011store_ptr"})))
             {
-                Planner_check_simd_pointer(*(this_), t, m, scaly_lvalue(Vector8<PlannedOperand>(arg_ops, 0LL)), (second).loc);
+                Planner_check_simd_pointer(*(this_), t, m, scaly_lvalue(Vector11<PlannedOperand>(arg_ops, 0LL)), (second).loc);
             }
             else if (scaly_t8 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\003min"})) || scaly_t8 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\003max"})) || scaly_t8 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\003fma"})))
             {
@@ -58621,8 +58732,8 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_method(scaly_frame* scaly
     }
     if ((String_equals(m, scaly_lvalue(String{(uint8_t*)"\006select"})) ? ((arg_ops).length == 2ULL) : false))
     {
-        PlannedOperand a0 = Vector8<PlannedOperand>(arg_ops, 0LL);
-        PlannedOperand a1 = Vector8<PlannedOperand>(arg_ops, 1LL);
+        PlannedOperand a0 = Vector11<PlannedOperand>(arg_ops, 0LL);
+        PlannedOperand a1 = Vector11<PlannedOperand>(arg_ops, 1LL);
         rt = (a0).result_type;
         if (((!(String_equals(((a0).result_type).name, ((a1).result_type).name))) ? true : (Planner_simd_lanes(((a0).result_type).name) != Planner_simd_lanes(t))))
         {
@@ -58644,7 +58755,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_simd_method(scaly_frame* scaly
     uint64_t i = 0ULL;
     while ((i < (arg_ops).length))
     {
-        Vector_put<PlannedOperand>((*all), (i + 1ULL), scaly_lvalue(Vector8<PlannedOperand>(arg_ops, i)));
+        Vector_put<PlannedOperand>((*all), (i + 1ULL), scaly_lvalue(Vector11<PlannedOperand>(arg_ops, i)));
         i = (i + 1ULL);
     }
     return Planner_simd_operand(scaly_rp, *(this_), (second).loc, scaly_lvalue(({
@@ -59820,7 +59931,7 @@ __attribute__((weak)) Vector<PlannedType>* Planner_named_arguments(scaly_frame* 
     uint64_t ui = 0ULL;
     while ((ui < ((*have)).length))
     {
-        if (Planner_pointee_unnamed(scaly_lvalue(Vector8<PlannedType>((*have), ui))))
+        if (Planner_pointee_unnamed(scaly_lvalue(Vector11<PlannedType>((*have), ui))))
         {
             any_unnamed = true;
         }
@@ -59834,13 +59945,13 @@ __attribute__((weak)) Vector<PlannedType>* Planner_named_arguments(scaly_frame* 
     ui = 0ULL;
     while ((ui < ((*have)).length))
     {
-        if (Planner_pointee_unnamed(scaly_lvalue(Vector8<PlannedType>((*have), ui))))
+        if (Planner_pointee_unnamed(scaly_lvalue(Vector11<PlannedType>((*have), ui))))
         {
-            Vector_put<PlannedType>((*named), ui, scaly_lvalue(Planner_plan_type(scaly_rp, *(this_), scaly_lvalue(Vector8<Type>(written, ui)))));
+            Vector_put<PlannedType>((*named), ui, scaly_lvalue(Planner_plan_type(scaly_rp, *(this_), scaly_lvalue(Vector11<Type>(written, ui)))));
         }
         else
         {
-            Vector_put<PlannedType>((*named), ui, scaly_lvalue(Vector8<PlannedType>((*have), ui)));
+            Vector_put<PlannedType>((*named), ui, scaly_lvalue(Vector11<PlannedType>((*have), ui)));
         }
         ui = (ui + 1ULL);
     }
@@ -61106,7 +61217,7 @@ __attribute__((weak)) PlannedIf Planner_plan_if(scaly_frame* scaly_rp, Planner& 
     Vector<PlannedOperand> planned_cond_flat = Planner_plan_operands(scaly_rp, *(this_), (f).condition);
     if (((planned_cond_flat).length == 1ULL))
     {
-        Planner_lazy_facts(*(this_), scaly_lvalue(Vector8<PlannedOperand>(planned_cond_flat, 0LL)), true, (&((*and_facts))));
+        Planner_lazy_facts(*(this_), scaly_lvalue(Vector11<PlannedOperand>(planned_cond_flat, 0LL)), true, (&((*and_facts))));
     }
     PlannedOperand planned_cond_collapsed = Planner_collapse_operand_sequence(scaly_rp, *(this_), planned_cond_flat);
     PlannedType bool_ty = Planner_make_bool_type(scaly_rp);
@@ -64375,7 +64486,7 @@ __attribute__((weak)) PlannedOperand Planner_spread_lone_tuple(scaly_frame* scal
                 uint64_t j = k;
                 if (((order).length == count))
                 {
-                    j = Vector8<uint64_t>(order, k);
+                    j = Vector11<uint64_t>(order, k);
                 }
                 PlannedType component_type = Planner_tuple_component_type(scaly_rp, tt, j);
                 Array<PlannedMemberAccess>* hops_arr = ({ Array<PlannedMemberAccess>* scaly_t6 = (Array<PlannedMemberAccess>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedMemberAccess>), alignof(Array<PlannedMemberAccess>)); *scaly_t6 = Array<PlannedMemberAccess>{}; (void)0; scaly_t6; });
@@ -64909,7 +65020,7 @@ __attribute__((weak)) PlannedOperand* Planner_generic_unit_variant_hops(scaly_fr
     {
         return (PlannedOperand*)(nullptr);
     }
-    PlannedMemberAccess first = Vector8<PlannedMemberAccess>(chain, 0LL);
+    PlannedMemberAccess first = Vector11<PlannedMemberAccess>(chain, 0LL);
     if ((((first).is_union_value) == (false)))
     {
         return (PlannedOperand*)(nullptr);
@@ -64989,7 +65100,7 @@ __attribute__((weak)) void Planner_report_absorbed_after_control(Planner& scaly_
 __attribute__((weak)) bool Planner_operation_census_on(Planner& scaly_self)
 {
     Planner* this_ = &scaly_self;
-    if ((Vector8<uint64_t>(this_->operation_counts, 0LL) == 0ULL))
+    if ((Vector11<uint64_t>(this_->operation_counts, 0LL) == 0ULL))
     {
         Vector_put30<uint64_t>(this_->operation_counts, 0ULL, 1ULL);
         if (((getenv(((const char*)"SCALYC_OPERATION_CENSUS"))) != (nullptr)))
@@ -64997,7 +65108,7 @@ __attribute__((weak)) bool Planner_operation_census_on(Planner& scaly_self)
             Vector_put30<uint64_t>(this_->operation_counts, 0ULL, 2ULL);
         }
     }
-    return (Vector8<uint64_t>(this_->operation_counts, 0LL) == 2ULL);
+    return (Vector11<uint64_t>(this_->operation_counts, 0LL) == 2ULL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -65094,7 +65205,7 @@ __attribute__((weak)) int64_t Planner_operation_kind(Planner& scaly_self, Operan
 __attribute__((weak)) void Planner_operation_count(Planner& scaly_self, uint64_t slot)
 {
     Planner* this_ = &scaly_self;
-    Vector_put30<uint64_t>(this_->operation_counts, slot, (Vector8<uint64_t>(this_->operation_counts, slot) + 1ULL));
+    Vector_put30<uint64_t>(this_->operation_counts, slot, (Vector11<uint64_t>(this_->operation_counts, slot) + 1ULL));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -65130,29 +65241,29 @@ __attribute__((weak)) void Planner_operation_census(Planner& scaly_self, Vector<
     uint64_t i = 0ULL;
     while ((i < (ops).length))
     {
-        int64_t kind = Planner_operation_kind(*(this_), scaly_lvalue(Vector8<Operand>(ops, i)));
+        int64_t kind = Planner_operation_kind(*(this_), scaly_lvalue(Vector4<Operand>(ops, i)));
         int64_t next = 0LL;
         if (((i + 1ULL) < (ops).length))
         {
-            next = Planner_operation_kind(*(this_), scaly_lvalue(Vector8<Operand>(ops, (i + 1ULL))));
+            next = Planner_operation_kind(*(this_), scaly_lvalue(Vector4<Operand>(ops, (i + 1ULL))));
         }
         if ((kind == 1LL))
         {
             if ((i == 0ULL))
             {
-                Planner_operation_site(*(this_), 10ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 10ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             else
             {
                 if ((prev == 1LL))
                 {
-                    Planner_operation_site(*(this_), 11ULL, ((Vector8<Operand>(ops, i)).span).start);
+                    Planner_operation_site(*(this_), 11ULL, ((Vector4<Operand>(ops, i)).span).start);
                 }
                 else
                 {
                     if ((prev == 2LL))
                     {
-                        Planner_operation_site(*(this_), 12ULL, ((Vector8<Operand>(ops, i)).span).start);
+                        Planner_operation_site(*(this_), 12ULL, ((Vector4<Operand>(ops, i)).span).start);
                     }
                     else
                     {
@@ -65165,64 +65276,64 @@ __attribute__((weak)) void Planner_operation_census(Planner& scaly_self, Vector<
         {
             if (((prev == 2LL) ? (((kind == 5LL) ? true : (kind == 6LL))) : false))
             {
-                Planner_operation_site(*(this_), 5ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 5ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if ((((((prev == 2LL) ? (kind != 5LL) : false) ? (kind != 6LL) : false) ? (kind != 1LL) : false) ? (kind != 7LL) : false))
             {
-                Planner_operation_site(*(this_), 6ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 6ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((prev == 3LL) ? (((kind == 5LL) ? true : (kind == 6LL))) : false))
             {
-                Planner_operation_site(*(this_), 7ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 7ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((prev == 3LL) ? (kind == 7LL) : false))
             {
-                Planner_operation_site(*(this_), 8ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 8ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((((kind == 7LL) ? (prev != 3LL) : false) ? (prev != 1LL) : false) ? (prev != 2LL) : false))
             {
-                Planner_operation_site(*(this_), 9ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 9ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((prev == 2LL) ? (kind == 7LL) : false))
             {
-                Planner_operation_site(*(this_), 18ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 18ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((prev == 11LL) ? (((kind == 5LL) ? true : (kind == 6LL))) : false))
             {
-                Planner_operation_site(*(this_), 14ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 14ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
             if (((prev == 4LL) ? (((kind == 5LL) ? true : (kind == 6LL))) : false))
             {
-                Planner_operation_site(*(this_), 15ULL, ((Vector8<Operand>(ops, i)).span).start);
+                Planner_operation_site(*(this_), 15ULL, ((Vector4<Operand>(ops, i)).span).start);
             }
         }
         if ((i < (planned).length))
         {
-            PlannedOperand p = Vector8<PlannedOperand>(planned, i);
+            PlannedOperand p = Vector11<PlannedOperand>(planned, i);
             if ((((p).member_access) != (nullptr)))
             {
                 Vector<PlannedMemberAccess> hops = ((*((p).member_access)));
-                if ((((hops).length > 0ULL) ? (Vector8<PlannedMemberAccess>(hops, ((hops).length - 1ULL))).is_method : false))
+                if ((((hops).length > 0ULL) ? (Vector11<PlannedMemberAccess>(hops, ((hops).length - 1ULL))).is_method : false))
                 {
                     if ((next == 5LL))
                     {
-                        Planner_operation_site(*(this_), 16ULL, ((Vector8<Operand>(ops, i)).span).start);
+                        Planner_operation_site(*(this_), 16ULL, ((Vector4<Operand>(ops, i)).span).start);
                     }
                     else
                     {
                         if ((next == 6LL))
                         {
-                            Planner_operation_site(*(this_), 17ULL, ((Vector8<Operand>(ops, i)).span).start);
+                            Planner_operation_site(*(this_), 17ULL, ((Vector4<Operand>(ops, i)).span).start);
                         }
                         else
                         {
                             if ((((i + 1ULL) < (ops).length) ? (next != 1LL) : false))
                             {
-                                Planner_operation_site(*(this_), 19ULL, ((Vector8<Operand>(ops, i)).span).start);
+                                Planner_operation_site(*(this_), 19ULL, ((Vector4<Operand>(ops, i)).span).start);
                             }
                             else
                             {
-                                Planner_operation_site(*(this_), 13ULL, ((Vector8<Operand>(ops, i)).span).start);
+                                Planner_operation_site(*(this_), 13ULL, ((Vector4<Operand>(ops, i)).span).start);
                             }
                         }
                     }
@@ -65252,7 +65363,7 @@ __attribute__((weak)) void Planner_operation_census_line(Planner& scaly_self, co
     scaly_eputs(((const char*)"operation-census "));
     scaly_eputs(name);
     scaly_eputs(((const char*)" "));
-    scaly_eputi(((int64_t)(Vector8<uint64_t>(this_->operation_counts, slot))));
+    scaly_eputi(((int64_t)(Vector11<uint64_t>(this_->operation_counts, slot))));
     scaly_eputs(((const char*)"\012"));
 }
 
@@ -65423,7 +65534,7 @@ __attribute__((weak)) uint64_t Planner_operation_name(Planner& scaly_self, Plann
         Vector<PlannedMemberAccess> ma = ((*((op).member_access)));
         if (((ma).length > 0ULL))
         {
-            if ((Vector8<PlannedMemberAccess>(ma, ((ma).length - 1ULL))).is_method)
+            if ((Vector11<PlannedMemberAccess>(ma, ((ma).length - 1ULL))).is_method)
             {
                 return 1ULL;
             }
@@ -65493,7 +65604,7 @@ __attribute__((weak)) uint64_t Planner_operation_sibling(Planner& scaly_self, St
             Vector<PlannedType> gens = ((*((this_ty).generics)));
             if (((gens).length > 0ULL))
             {
-                Concept* owner = Planner_lookup_concept_any(*(this_), scaly_lvalue((Vector8<PlannedType>(gens, 0LL)).name));
+                Concept* owner = Planner_lookup_concept_any(*(this_), scaly_lvalue((Vector11<PlannedType>(gens, 0LL)).name));
                 if ((((owner) != (nullptr)) ? Planner_concept_has_member(*(this_), scaly_lvalue(((*(owner)))), name) : false))
                 {
                     return 7ULL;
@@ -65617,10 +65728,10 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        int64_t kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)));
+        int64_t kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)));
         if ((kind == 1LL))
         {
-            if (((Planner_operand_is_symbol_operator(scaly_lvalue(Vector8<PlannedOperand>(ops, i)))) == (false)))
+            if (((Planner_operand_is_symbol_operator(scaly_lvalue(Vector11<PlannedOperand>(ops, i)))) == (false)))
             {
                 return 30ULL;
             }
@@ -65629,10 +65740,10 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
             {
                 return 33ULL;
             }
-            kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)));
+            kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)));
             while ((kind == 1LL))
             {
-                if (((Planner_operand_is_symbol_operator(scaly_lvalue(Vector8<PlannedOperand>(ops, i)))) == (false)))
+                if (((Planner_operand_is_symbol_operator(scaly_lvalue(Vector11<PlannedOperand>(ops, i)))) == (false)))
                 {
                     return 30ULL;
                 }
@@ -65641,7 +65752,7 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
                 {
                     return 33ULL;
                 }
-                kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)));
+                kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)));
             }
             if ((kind == 3LL))
             {
@@ -65650,7 +65761,7 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
                 {
                     return 29ULL;
                 }
-                kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)));
+                kind = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)));
                 if (((kind == 1LL) ? true : (kind == 3LL)))
                 {
                     return 29ULL;
@@ -65670,7 +65781,7 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
         bool more = true;
         while ((more ? (i < n) : false))
         {
-            int64_t next = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)));
+            int64_t next = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)));
             if (((next == 1LL) ? true : (next == 6LL)))
             {
                 more = false;
@@ -65689,14 +65800,14 @@ __attribute__((weak)) uint64_t Planner_operation_read(Planner& scaly_self, Vecto
                 i = (i + 1ULL);
             }
         }
-        while (((i < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i))) == 6LL) : false))
+        while (((i < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i))) == 6LL) : false))
         {
             postfixes = (postfixes + 1ULL);
             i = (i + 1ULL);
         }
         if ((i < n))
         {
-            if ((Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i))) != 1LL))
+            if ((Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i))) != 1LL))
             {
                 return 30ULL;
             }
@@ -65718,7 +65829,7 @@ __attribute__((weak)) void Planner_report_unread_operation(Planner& scaly_self, 
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (((reason == 33ULL) ? ((ops).length > 0ULL) : false))
     {
-        PlannedOperand last = Vector8<PlannedOperand>(ops, ((ops).length - 1ULL));
+        PlannedOperand last = Vector11<PlannedOperand>(ops, ((ops).length - 1ULL));
         StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\035an operand is missing after \047"}));
         StringBuilder_append2((*sb), scaly_lvalue(Planner_operand_type_name(&scaly_local.f, last)));
@@ -65737,9 +65848,9 @@ __attribute__((weak)) void Planner_report_unread_operation(Planner& scaly_self, 
         uint64_t k = 0ULL;
         while ((k < (ops).length))
         {
-            if ((((Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) == 3LL) ? Planner_lifetime_is_thrown(scaly_lvalue(Planner_operand_life_marker(&scaly_local.f, scaly_lvalue(Vector8<PlannedOperand>(ops, k))))) : false) ? (((k == 0ULL) ? true : (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, (k - 1ULL)))) == 1LL))) : false))
+            if ((((Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) == 3LL) ? Planner_lifetime_is_thrown(scaly_lvalue(Planner_operand_life_marker(&scaly_local.f, scaly_lvalue(Vector11<PlannedOperand>(ops, k))))) : false) ? (((k == 0ULL) ? true : (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, (k - 1ULL)))) == 1LL))) : false))
             {
-                Planner_add_diagnostic(*(this_), scaly_lvalue((Vector8<PlannedOperand>(ops, k)).loc), scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\130\047!\047 is the thrown-lifetime sigil, not negation - it applies to nothing here; write \047not\047"})); scaly_t3; }))));
+                Planner_add_diagnostic(*(this_), scaly_lvalue((Vector11<PlannedOperand>(ops, k)).loc), scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\130\047!\047 is the thrown-lifetime sigil, not negation - it applies to nothing here; write \047not\047"})); scaly_t3; }))));
                 return;
             }
             k = (k + 1ULL);
@@ -65773,14 +65884,14 @@ __attribute__((weak)) void Planner_report_parenless_more(Planner& scaly_self, Sp
     uint64_t t = 1ULL;
     while ((t < (ops).length))
     {
-        int64_t k = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, t)));
-        int64_t before = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, (t - 1ULL))));
+        int64_t k = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, t)));
+        int64_t before = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, (t - 1ULL))));
         if ((((((k == 2LL) ? true : (k == 7LL))) ? (before != 1LL) : false) ? (before != 6LL) : false))
         {
-            PlannedOperand head = Vector8<PlannedOperand>(ops, (t - 1ULL));
+            PlannedOperand head = Vector11<PlannedOperand>(ops, (t - 1ULL));
             if (Planner_value_joins_nothing(*(this_), head))
             {
-                Planner_add_diagnostic(*(this_), scaly_lvalue((Vector8<PlannedOperand>(ops, t)).loc), scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\127unexpected operand - missing operator, or a \047:\047/newline separator before this statement"})); scaly_t1; }))));
+                Planner_add_diagnostic(*(this_), scaly_lvalue((Vector11<PlannedOperand>(ops, t)).loc), scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\127unexpected operand - missing operator, or a \047:\047/newline separator before this statement"})); scaly_t1; }))));
                 return;
             }
             break;
@@ -65834,7 +65945,7 @@ __attribute__((weak)) bool Planner_operation_call_is_plain(Planner& scaly_self, 
             if ((String_equals(((v).variable_type).name, scaly_lvalue(String{(uint8_t*)"\007pointer"})) ? ((((v).variable_type).generics) != (nullptr)) : false))
             {
                 Vector<PlannedType> gens = ((*(((v).variable_type).generics)));
-                if ((((gens).length == 1ULL) ? Planner_is_unit_type(scaly_lvalue(Vector8<PlannedType>(gens, 0LL))) : false))
+                if ((((gens).length == 1ULL) ? Planner_is_unit_type(scaly_lvalue(Vector11<PlannedType>(gens, 0LL))) : false))
                 {
                     return false;
                 }
@@ -66007,7 +66118,7 @@ __attribute__((weak)) bool Planner_tuple_is_grouping(PlannedOperand& op)
             {
                 return false;
             }
-            PlannedComponent cp = Vector8<PlannedComponent>(comps, 0LL);
+            PlannedComponent cp = Vector11<PlannedComponent>(comps, 0LL);
             if (((((cp).name) != (nullptr)) ? true : (((cp).value) == (nullptr))))
             {
                 return false;
@@ -66017,7 +66128,7 @@ __attribute__((weak)) bool Planner_tuple_is_grouping(PlannedOperand& op)
             {
                 return false;
             }
-            return Planner_types_equal(scaly_lvalue((Vector8<PlannedOperand>(vops, 0LL)).result_type), (tup).tuple_type);
+            return Planner_types_equal(scaly_lvalue((Vector11<PlannedOperand>(vops, 0LL)).result_type), (tup).tuple_type);
         }
         else
         {
@@ -66063,7 +66174,7 @@ __attribute__((weak)) bool Planner_thing_carries_hop(PlannedOperand& op)
 __attribute__((weak)) PlannedOperand Planner_operation_term(scaly_frame* scaly_rp, Planner& scaly_self, Vector<PlannedOperand>& ops, uint64_t first, uint64_t limit)
 {
     Planner* this_ = &scaly_self;
-    PlannedOperand cur = Vector8<PlannedOperand>(ops, first);
+    PlannedOperand cur = Vector11<PlannedOperand>(ops, first);
     if ((Planner_thing_carries_hop(cur) ? Planner_tuple_is_grouping(cur) : false))
     {
         cur = Planner_collapse_grouping_target(scaly_rp, *(this_), cur);
@@ -66071,7 +66182,7 @@ __attribute__((weak)) PlannedOperand Planner_operation_term(scaly_frame* scaly_r
     uint64_t k = (first + 1ULL);
     while ((k < limit))
     {
-        PlannedOperand next = Vector8<PlannedOperand>(ops, k);
+        PlannedOperand next = Vector11<PlannedOperand>(ops, k);
         int64_t kind = Planner_operation_thing(*(this_), next);
         if (Planner_thing_carries_hop(next))
         {
@@ -66080,13 +66191,13 @@ __attribute__((weak)) PlannedOperand Planner_operation_term(scaly_frame* scaly_r
             Array_add<PlannedOperand>((*arr), next);
             bool tuples = ((kind == 4LL) ? Planner_operation_call_is_plain(*(this_), cur) : false);
             k = (k + 1ULL);
-            while (((((k < limit) ? Planner_thing_carries_hop(scaly_lvalue(Vector8<PlannedOperand>(ops, (k - 1ULL)))) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) >= 4LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) <= 5LL) : false))
+            while (((((k < limit) ? Planner_thing_carries_hop(scaly_lvalue(Vector11<PlannedOperand>(ops, (k - 1ULL)))) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) >= 4LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) <= 5LL) : false))
             {
-                if ((Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) == 5LL))
+                if ((Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) == 5LL))
                 {
                     tuples = false;
                 }
-                Array_add<PlannedOperand>((*arr), scaly_lvalue(Vector8<PlannedOperand>(ops, k)));
+                Array_add<PlannedOperand>((*arr), scaly_lvalue(Vector11<PlannedOperand>(ops, k)));
                 k = (k + 1ULL);
             }
             Vector<PlannedOperand>* vec = ({ Vector<PlannedOperand>* scaly_t2 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t2 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t2), (*arr)); scaly_t2; });
@@ -66108,12 +66219,12 @@ __attribute__((weak)) PlannedOperand Planner_operation_term(scaly_frame* scaly_r
         }
         else
         {
-            if (((((kind == 3LL) ? (Planner_operation_thing(*(this_), cur) != 2LL) : false) ? ((k + 1ULL) < limit) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, (k + 1ULL)))) == 4LL) : false))
+            if (((((kind == 3LL) ? (Planner_operation_thing(*(this_), cur) != 2LL) : false) ? ((k + 1ULL) < limit) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, (k + 1ULL)))) == 4LL) : false))
             {
                 Array<PlannedOperand>* call = ({ Array<PlannedOperand>* scaly_t3 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t3 = Array<PlannedOperand>{}; (void)0; scaly_t3; });
                 Array_add<PlannedOperand>((*call), cur);
                 Array_add<PlannedOperand>((*call), next);
-                Array_add<PlannedOperand>((*call), scaly_lvalue(Vector8<PlannedOperand>(ops, (k + 1ULL))));
+                Array_add<PlannedOperand>((*call), scaly_lvalue(Vector11<PlannedOperand>(ops, (k + 1ULL))));
                 Vector<PlannedOperand>* call_vec = ({ Vector<PlannedOperand>* scaly_t4 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t4 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t4), (*call)); scaly_t4; });
                 cur = Planner_operation_merge(scaly_rp, *(this_), (*call_vec), cur, 36ULL);
                 k = (k + 2ULL);
@@ -66241,10 +66352,10 @@ __attribute__((weak)) void Planner_report_undeclared_operator(Planner& scaly_sel
             {
                 return;
             }
-            Planner_report_undeclared_operator(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)));
-            Planner_report_undeclared_operator(*(this_), scaly_lvalue(Vector8<PlannedOperand>(args, 1LL)));
-            PlannedType left = (Vector8<PlannedOperand>(args, 0LL)).result_type;
-            PlannedType right = (Vector8<PlannedOperand>(args, 1LL)).result_type;
+            Planner_report_undeclared_operator(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)));
+            Planner_report_undeclared_operator(*(this_), scaly_lvalue(Vector11<PlannedOperand>(args, 1LL)));
+            PlannedType left = (Vector11<PlannedOperand>(args, 0LL)).result_type;
+            PlannedType right = (Vector11<PlannedOperand>(args, 1LL)).result_type;
             if ((((String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\001="})) ? true : String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\002<>"})))) ? ((Planner_type_is_reference_shaped(left) ? true : Planner_type_is_reference_shaped(right))) : false))
             {
                 return;
@@ -66316,7 +66427,7 @@ __attribute__((weak)) void Planner_operation_postfix_site(Planner& scaly_self, P
 __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Planner& scaly_self, Vector<PlannedOperand>& ops)
 {
     Planner* this_ = &scaly_self;
-    PlannedOperand cur = Vector8<PlannedOperand>(ops, 0LL);
+    PlannedOperand cur = Vector11<PlannedOperand>(ops, 0LL);
     Planner_operation_count(*(this_), 25ULL);
     uint64_t reason = Planner_operation_read(*(this_), ops);
     if ((reason != 0ULL))
@@ -66335,7 +66446,7 @@ __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Pl
             uint64_t t = 0ULL;
             while ((t < (ops).length))
             {
-                scaly_eputi(((int64_t)(Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, t))))));
+                scaly_eputi(((int64_t)(Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, t))))));
                 t = (t + 1ULL);
             }
             scaly_eputs(((const char*)"\012"));
@@ -66351,13 +66462,13 @@ __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Pl
     {
         bool prefixed = false;
         uint64_t first_prefix = i;
-        while (((i < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i))) == 1LL) : false))
+        while (((i < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i))) == 1LL) : false))
         {
             prefixed = true;
             i = (i + 1ULL);
         }
         uint64_t j = (i + 1ULL);
-        while ((((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, j))) != 1LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, j))) != 6LL) : false))
+        while ((((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, j))) != 1LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, j))) != 6LL) : false))
         {
             j = (j + 1ULL);
         }
@@ -66367,20 +66478,20 @@ __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Pl
         }
         else
         {
-            if (((((j == (i + 1ULL)) ? ((j + 1ULL) < n) : false) ? Planner_operand_is_symbol_operator(scaly_lvalue(Vector8<PlannedOperand>(ops, j))) : false) ? (Planner_operation_name(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i))) == 3ULL) : false))
+            if (((((j == (i + 1ULL)) ? ((j + 1ULL) < n) : false) ? Planner_operand_is_symbol_operator(scaly_lvalue(Vector11<PlannedOperand>(ops, j))) : false) ? (Planner_operation_name(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i))) == 3ULL) : false))
             {
                 uint64_t t = (j + 1ULL);
-                while (((t < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, t))) == 1LL) : false))
+                while (((t < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, t))) == 1LL) : false))
                 {
                     t = (t + 1ULL);
                 }
                 uint64_t k = (t + 1ULL);
-                while ((((k < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) != 1LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, k))) != 6LL) : false))
+                while ((((k < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) != 1LL) : false) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, k))) != 6LL) : false))
                 {
                     k = (k + 1ULL);
                 }
                 PlannedOperand arg = Planner_operation_prefixes(scaly_rp, *(this_), ops, j, t, k);
-                PlannedOperand head = Vector8<PlannedOperand>(ops, i);
+                PlannedOperand head = Vector11<PlannedOperand>(ops, i);
                 cur = Planner_operation_parenless(scaly_rp, *(this_), head, arg);
                 j = k;
             }
@@ -66390,20 +66501,20 @@ __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Pl
             }
         }
         Array_add<PlannedOperand>((*out), cur);
-        if (((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, j))) == 6LL) : false))
+        if (((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, j))) == 6LL) : false))
         {
             if ((operators > 0ULL))
             {
-                if ((((prefixed) == (false)) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, (j - 1ULL)))) != 4LL) : false))
+                if ((((prefixed) == (false)) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, (j - 1ULL)))) != 4LL) : false))
                 {
-                    Planner_operation_postfix_site(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, i)), scaly_lvalue(Vector8<PlannedOperand>(ops, j)));
+                    Planner_operation_postfix_site(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, i)), scaly_lvalue(Vector11<PlannedOperand>(ops, j)));
                 }
                 cur = Planner_operation_table(scaly_rp, *(this_), (*out), base);
                 operators = 0ULL;
             }
-            while (((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, j))) == 6LL) : false))
+            while (((j < n) ? (Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, j))) == 6LL) : false))
             {
-                cur = Planner_operation_call(scaly_rp, *(this_), cur, scaly_lvalue(Vector8<PlannedOperand>(ops, j)), 42ULL);
+                cur = Planner_operation_call(scaly_rp, *(this_), cur, scaly_lvalue(Vector11<PlannedOperand>(ops, j)), 42ULL);
                 j = (j + 1ULL);
             }
             base = ((*out)).length;
@@ -66411,7 +66522,7 @@ __attribute__((weak)) PlannedOperand Planner_operation(scaly_frame* scaly_rp, Pl
         }
         if ((j < n))
         {
-            Array_add<PlannedOperand>((*out), scaly_lvalue(Vector8<PlannedOperand>(ops, j)));
+            Array_add<PlannedOperand>((*out), scaly_lvalue(Vector11<PlannedOperand>(ops, j)));
             operators = (operators + 1ULL);
             j = (j + 1ULL);
         }
@@ -66435,10 +66546,10 @@ __attribute__((weak)) PlannedOperand Planner_operation_prefixes(scaly_frame* sca
     {
         p = (p - 1ULL);
         Array<PlannedOperand>* pair = ({ Array<PlannedOperand>* scaly_t1 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t1 = Array<PlannedOperand>{}; (void)0; scaly_t1; });
-        Array_add<PlannedOperand>((*pair), scaly_lvalue(Vector8<PlannedOperand>(ops, p)));
+        Array_add<PlannedOperand>((*pair), scaly_lvalue(Vector11<PlannedOperand>(ops, p)));
         Array_add<PlannedOperand>((*pair), cur);
         Vector<PlannedOperand>* pair_vec = ({ Vector<PlannedOperand>* scaly_t2 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t2 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t2), (*pair)); scaly_t2; });
-        PlannedOperand sign = Vector8<PlannedOperand>(ops, p);
+        PlannedOperand sign = Vector11<PlannedOperand>(ops, p);
         cur = Planner_operation_prefix(scaly_rp, *(this_), (*pair_vec), sign);
     }
     return cur;
@@ -66452,7 +66563,7 @@ __attribute__((weak)) PlannedOperand Planner_operation_prefix_term(scaly_frame* 
     uint64_t r = (first - 1ULL);
     while ((r < limit))
     {
-        Array_add<PlannedOperand>((*run), scaly_lvalue(Vector8<PlannedOperand>(ops, r)));
+        Array_add<PlannedOperand>((*run), scaly_lvalue(Vector11<PlannedOperand>(ops, r)));
         r = (r + 1ULL);
     }
     Vector<PlannedOperand>* run_vec = ({ Vector<PlannedOperand>* scaly_t2 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t2 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t2), (*run)); scaly_t2; });
@@ -66460,20 +66571,20 @@ __attribute__((weak)) PlannedOperand Planner_operation_prefix_term(scaly_frame* 
     r = first;
     while ((r < limit))
     {
-        int64_t rk = Planner_operation_thing(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, r)));
+        int64_t rk = Planner_operation_thing(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, r)));
         if (((rk == 3LL) ? true : (rk == 5LL)))
         {
             direct = false;
         }
         r = (r + 1ULL);
     }
-    if (((limit > (first + 1ULL)) ? ((Planner_operation_call_is_plain(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops, first)))) == (false)) : false))
+    if (((limit > (first + 1ULL)) ? ((Planner_operation_call_is_plain(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops, first)))) == (false)) : false))
     {
         direct = false;
     }
     if (direct)
     {
-        PlannedOperand sign = Vector8<PlannedOperand>(ops, (first - 1ULL));
+        PlannedOperand sign = Vector11<PlannedOperand>(ops, (first - 1ULL));
         return Planner_operation_prefix(scaly_rp, *(this_), (*run_vec), sign);
     }
     return Planner_operation_step(scaly_rp, *(this_), (*run_vec), 39ULL);
@@ -66595,17 +66706,17 @@ __attribute__((weak)) void Planner_read_lazy_operator(Planner& scaly_self, Opera
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     {
-        if ((((((o).input).length != 2ULL) ? true : ((Planner_attributes_have(scaly_lvalue((Vector8<Item>((o).input, 1LL)).attributes), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")}))) == (false))) ? true : Planner_attributes_have(scaly_lvalue((Vector8<Item>((o).input, 0LL)).attributes), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")}))))
+        if ((((((o).input).length != 2ULL) ? true : ((Planner_attributes_have(scaly_lvalue((Vector11<Item>((o).input, 1LL)).attributes), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")}))) == (false))) ? true : Planner_attributes_have(scaly_lvalue((Vector11<Item>((o).input, 0LL)).attributes), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")}))))
         {
             return;
         }
-        if ((((((Vector8<Item>((o).input, 0LL)).name) == (nullptr)) ? true : (((Vector8<Item>((o).input, 1LL)).name) == (nullptr))) ? true : (((Vector8<Item>((o).input, 0LL)).type) == (nullptr))))
+        if ((((((Vector11<Item>((o).input, 0LL)).name) == (nullptr)) ? true : (((Vector11<Item>((o).input, 1LL)).name) == (nullptr))) ? true : (((Vector11<Item>((o).input, 0LL)).type) == (nullptr))))
         {
             return;
         }
-        String eager_name = ((*((Vector8<Item>((o).input, 0LL)).name)));
-        String lazy_name = ((*((Vector8<Item>((o).input, 1LL)).name)));
-        Type left_type = ((*((Vector8<Item>((o).input, 0LL)).type)));
+        String eager_name = ((*((Vector11<Item>((o).input, 0LL)).name)));
+        String lazy_name = ((*((Vector11<Item>((o).input, 1LL)).name)));
+        Type left_type = ((*((Vector11<Item>((o).input, 0LL)).type)));
         if ((((left_type).name).length != 1ULL))
         {
             return;
@@ -66618,7 +66729,7 @@ __attribute__((weak)) void Planner_read_lazy_operator(Planner& scaly_self, Opera
                 if ((((a).source).length == 1ULL))
                 {
                     {
-                        auto&& scaly_t2 = (Vector8<Operand>((a).source, 0LL)).expression;
+                        auto&& scaly_t2 = (Vector4<Operand>((a).source, 0LL)).expression;
                         if (scaly_t2.tag == 5)
                         {
                             If f = scaly_payload<If>(scaly_t2);
@@ -66679,7 +66790,7 @@ __attribute__((weak)) Vector<Operand> Planner_operands_here(scaly_frame* scaly_r
     uint64_t i = 0ULL;
     while ((i < (ops).length))
     {
-        Vector_put<Operand>((*copy), i, scaly_lvalue(Vector8<Operand>(ops, i)));
+        Vector_put<Operand>((*copy), i, scaly_lvalue(Vector4<Operand>(ops, i)));
         i = (i + 1ULL);
     }
     return (*copy);
@@ -66693,7 +66804,7 @@ __attribute__((weak)) bool Planner_operand_word_is(Vector<Operand>& ops, String&
     {
         return false;
     }
-    return String_equals(scaly_lvalue(Planner_operand_word(&scaly_local.f, scaly_lvalue(Vector8<Operand>(ops, 0LL)))), name);
+    return String_equals(scaly_lvalue(Planner_operand_word(&scaly_local.f, scaly_lvalue(Vector4<Operand>(ops, 0LL)))), name);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -66782,7 +66893,7 @@ __attribute__((weak)) uint64_t Planner_proto_field(Planner& scaly_self, Planner_
             uint64_t pi = 0ULL;
             while ((pi < ((st).properties).length))
             {
-                if (String_equals(scaly_lvalue((Vector8<Property>((st).properties, pi)).name), name))
+                if (String_equals(scaly_lvalue((Vector11<Property>((st).properties, pi)).name), name))
                 {
                     {
                         auto&& scaly_t2 = pi;
@@ -66894,7 +67005,7 @@ __attribute__((weak)) uint64_t Planner_proto_call(Planner& scaly_self, Planner_P
     uint64_t arg = 4611686018427387904ULL;
     if ((((tp).components).length > 0ULL))
     {
-        arg = Planner_proto_eval(*(this_), run, scaly_lvalue((Vector8<Component>((tp).components, 0LL)).value), self, pname, pnode, cur_name, cur_pos);
+        arg = Planner_proto_eval(*(this_), run, scaly_lvalue((Vector4<Component>((tp).components, 0LL)).value), self, pname, pnode, cur_name, cur_pos);
     }
     if ((run->failed ? true : (recv >= (run->kind).length)))
     {
@@ -66936,14 +67047,14 @@ __attribute__((weak)) uint64_t Planner_proto_construct(Planner& scaly_self, Plan
     uint64_t ci = 0ULL;
     while (((ci < ((tp).components).length) ? (ci < 3ULL) : false))
     {
-        Vector_put30<uint64_t>((*fields), ci, Planner_proto_eval(*(this_), run, scaly_lvalue((Vector8<Component>((tp).components, ci)).value), self, pname, pnode, cur_name, cur_pos));
+        Vector_put30<uint64_t>((*fields), ci, Planner_proto_eval(*(this_), run, scaly_lvalue((Vector4<Component>((tp).components, ci)).value), self, pname, pnode, cur_name, cur_pos));
         ci = (ci + 1ULL);
     }
     if ((((tp).components).length > 3ULL))
     {
         run->failed = true;
     }
-    return Planner_proto_node(run, 0ULL, name, opos, Vector8<uint64_t>((*fields), 0LL), Vector8<uint64_t>((*fields), 1LL), Vector8<uint64_t>((*fields), 2LL));
+    return Planner_proto_node(run, 0ULL, name, opos, Vector11<uint64_t>((*fields), 0LL), Vector11<uint64_t>((*fields), 1LL), Vector11<uint64_t>((*fields), 2LL));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -66957,7 +67068,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
     }
     uint64_t cur = 4611686018427387904ULL;
     uint64_t i = 1ULL;
-    Operand head = Vector8<Operand>(seq, 0LL);
+    Operand head = Vector4<Operand>(seq, 0LL);
     Vector<String>* hop = (Vector<String>*)(nullptr);
     {
         auto&& scaly_t1 = (head).expression;
@@ -66968,7 +67079,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
             if (((seq).length > 1ULL))
             {
                 {
-                    auto&& scaly_t2 = (Vector8<Operand>(seq, 1LL)).expression;
+                    auto&& scaly_t2 = (Vector4<Operand>(seq, 1LL)).expression;
                     if (scaly_t2.tag == 2)
                     {
                         Tuple tp = scaly_payload<Tuple>(scaly_t2);
@@ -66989,7 +67100,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
                 if (((((t).name).length == 1ULL) ? tuple_next : false))
                 {
                     {
-                        auto&& scaly_t3 = (Vector8<Operand>(seq, 1LL)).expression;
+                        auto&& scaly_t3 = (Vector4<Operand>(seq, 1LL)).expression;
                         if (scaly_t3.tag == 2)
                         {
                             Tuple tp = scaly_payload<Tuple>(scaly_t3);
@@ -67000,7 +67111,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
                             0LL;
                         }
                     }
-                    hop = (Vector8<Operand>(seq, 1LL)).member_access;
+                    hop = (Vector4<Operand>(seq, 1LL)).member_access;
                     i = 2ULL;
                 }
                 else
@@ -67015,7 +67126,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
                         {
                             uint64_t recv = Planner_proto_name(*(this_), run, scaly_lvalue(Vector3((t).name, 0LL)), self, pname, pnode);
                             {
-                                auto&& scaly_t4 = (Vector8<Operand>(seq, 1LL)).expression;
+                                auto&& scaly_t4 = (Vector4<Operand>(seq, 1LL)).expression;
                                 if (scaly_t4.tag == 2)
                                 {
                                     Tuple tp = scaly_payload<Tuple>(scaly_t4);
@@ -67026,7 +67137,7 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
                                     0LL;
                                 }
                             }
-                            hop = (Vector8<Operand>(seq, 1LL)).member_access;
+                            hop = (Vector4<Operand>(seq, 1LL)).member_access;
                             i = 2ULL;
                         }
                         else
@@ -67052,12 +67163,12 @@ __attribute__((weak)) uint64_t Planner_proto_eval(Planner& scaly_self, Planner_P
         }
         Vector<String>* next_hop = (Vector<String>*)(nullptr);
         {
-            auto&& scaly_t5 = (Vector8<Operand>(seq, i)).expression;
+            auto&& scaly_t5 = (Vector4<Operand>(seq, i)).expression;
             if (scaly_t5.tag == 2)
             {
                 Tuple tp = scaly_payload<Tuple>(scaly_t5);
                 cur = Planner_proto_call(*(this_), run, cur, scaly_lvalue(Vector3(hops, 0LL)), tp, self, pname, pnode, cur_name, cur_pos);
-                next_hop = (Vector8<Operand>(seq, i)).member_access;
+                next_hop = (Vector4<Operand>(seq, i)).member_access;
             }
             else
             {
@@ -67105,7 +67216,7 @@ __attribute__((weak)) Array<uint64_t> Planner_protocol_order(scaly_frame* scaly_
     sp = 1ULL;
     while ((sp > 0ULL))
     {
-        uint64_t node = Vector8<uint64_t>((*stack), (sp - 1ULL));
+        uint64_t node = Vector11<uint64_t>((*stack), (sp - 1ULL));
         if ((Array3(((*run)).kind, node) == 1ULL))
         {
             Array_add88<uint64_t>((*order), (2ULL * Array3(((*run)).f0, node)));
@@ -67113,7 +67224,7 @@ __attribute__((weak)) Array<uint64_t> Planner_protocol_order(scaly_frame* scaly_
         }
         else
         {
-            if (Vector8<bool>((*visited), (sp - 1ULL)))
+            if (Vector11<bool>((*visited), (sp - 1ULL)))
             {
                 Array_add88<uint64_t>((*order), ((2ULL * Array3(((*run)).opos, node)) + 1ULL));
                 sp = (sp - 1ULL);
@@ -67197,7 +67308,7 @@ __attribute__((weak)) bool Planner_holds_lazy_operator(Planner& scaly_self, Vect
     uint64_t i = 1ULL;
     while (((i + 1ULL) < (ops).length))
     {
-        if ((ConceptIndex_lookup(this_->protocol->lazy_names->table, scaly_lvalue(Planner_operand_word(&scaly_local.f, scaly_lvalue(Vector8<Operand>(ops, i))))) >= 0LL))
+        if ((ConceptIndex_lookup(this_->protocol->lazy_names->table, scaly_lvalue(Planner_operand_word(&scaly_local.f, scaly_lvalue(Vector4<Operand>(ops, i))))) >= 0LL))
         {
             return true;
         }
@@ -67218,16 +67329,16 @@ __attribute__((weak)) PlannedOperand Planner_lazy_operation(scaly_frame* scaly_r
     while ((i < n))
     {
         {
-            auto&& scaly_t10 = (Vector8<Operand>(ops, i)).expression;
+            auto&& scaly_t10 = (Vector4<Operand>(ops, i)).expression;
             if (scaly_t10.tag == 14)
             {
                 As a = scaly_payload<As>(scaly_t10);
-                return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+                return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
             }
             else if (scaly_t10.tag == 13)
             {
                 Is t = scaly_payload<Is>(scaly_t10);
-                return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+                return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
             }
             else
             {
@@ -67240,16 +67351,16 @@ __attribute__((weak)) PlannedOperand Planner_lazy_operation(scaly_frame* scaly_r
     while ((i < n))
     {
         uint64_t start = i;
-        while (((i < n) ? (String_get_length(scaly_lvalue(Planner_model_operator_word(&scaly_local.f, *(this_), scaly_lvalue(Vector8<Operand>(ops, i))))) > 0ULL) : false))
+        while (((i < n) ? (String_get_length(scaly_lvalue(Planner_model_operator_word(&scaly_local.f, *(this_), scaly_lvalue(Vector4<Operand>(ops, i))))) > 0ULL) : false))
         {
             i = (i + 1ULL);
         }
         if ((i >= n))
         {
-            return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+            return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
         }
         i = (i + 1ULL);
-        while (((i < n) ? (String_get_length(scaly_lvalue(Planner_model_operator_word(&scaly_local.f, *(this_), scaly_lvalue(Vector8<Operand>(ops, i))))) == 0ULL) : false))
+        while (((i < n) ? (String_get_length(scaly_lvalue(Planner_model_operator_word(&scaly_local.f, *(this_), scaly_lvalue(Vector4<Operand>(ops, i))))) == 0ULL) : false))
         {
             i = (i + 1ULL);
         }
@@ -67257,24 +67368,24 @@ __attribute__((weak)) PlannedOperand Planner_lazy_operation(scaly_frame* scaly_r
         Array_add88<uint64_t>(((*lo)).term_end, i);
         if ((i < n))
         {
-            Array_add<String>(((*lo)).names, scaly_lvalue(Planner_model_operator_word(scaly_rp, *(this_), scaly_lvalue(Vector8<Operand>(ops, i)))));
+            Array_add<String>(((*lo)).names, scaly_lvalue(Planner_model_operator_word(scaly_rp, *(this_), scaly_lvalue(Vector4<Operand>(ops, i)))));
             Array_add88<uint64_t>(((*lo)).op_at, i);
             i = (i + 1ULL);
             if ((i >= n))
             {
-                return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+                return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
             }
         }
     }
     if (((((*lo)).names).length == 0ULL))
     {
-        return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+        return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
     }
     uint64_t start = 0ULL;
     uint64_t length = Planner_protocol_order_cached(*(this_), ((*lo)).names, (&(start)));
     if ((length == 0ULL))
     {
-        return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+        return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
     }
     Vector<uint64_t>* stack = ({ Vector<uint64_t>* scaly_t11 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t11 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t11), (length + 1ULL)); scaly_t11; });
     uint64_t sp = 0ULL;
@@ -67294,11 +67405,11 @@ __attribute__((weak)) PlannedOperand Planner_lazy_operation(scaly_frame* scaly_r
         {
             if ((sp < 2ULL))
             {
-                return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+                return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
             }
             Array_add88<uint64_t>(((*lo)).n_kind, 2ULL);
-            Array_add88<uint64_t>(((*lo)).n_left, Vector8<uint64_t>((*stack), (sp - 2ULL)));
-            Array_add88<uint64_t>(((*lo)).n_right, Vector8<uint64_t>((*stack), (sp - 1ULL)));
+            Array_add88<uint64_t>(((*lo)).n_left, Vector11<uint64_t>((*stack), (sp - 2ULL)));
+            Array_add88<uint64_t>(((*lo)).n_right, Vector11<uint64_t>((*stack), (sp - 1ULL)));
             sp = (sp - 2ULL);
         }
         Vector_put30<uint64_t>((*stack), sp, ((((*lo)).n_kind).length - 1ULL));
@@ -67306,10 +67417,10 @@ __attribute__((weak)) PlannedOperand Planner_lazy_operation(scaly_frame* scaly_r
     }
     if ((sp != 1ULL))
     {
-        return PlannedOperand{(Vector8<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
+        return PlannedOperand{(Vector4<Operand>(ops, 0LL)).span, scaly_variant<PlannedExpression>(1, Planner_make_void_type(scaly_rp)), (Vector<PlannedMemberAccess>*)(nullptr), Planner_make_void_type(scaly_rp)};
     }
     (*(ok)) = true;
-    return Planner_lazy_fold(scaly_rp, *(this_), (&((*lo))), ops, Vector8<uint64_t>((*stack), 0LL));
+    return Planner_lazy_fold(scaly_rp, *(this_), (&((*lo))), ops, Vector11<uint64_t>((*stack), 0LL));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -67326,14 +67437,14 @@ __attribute__((weak)) PlannedOperand Planner_lazy_fold(scaly_frame* scaly_rp, Pl
         uint64_t ti = from;
         while ((ti < to))
         {
-            Vector_put<Operand>((*term), (ti - from), scaly_lvalue(Vector8<Operand>(ops, ti)));
+            Vector_put<Operand>((*term), (ti - from), scaly_lvalue(Vector4<Operand>(ops, ti)));
             ti = (ti + 1ULL);
         }
         return Planner_collapse_operand_sequence(scaly_rp, *(this_), scaly_lvalue(Planner_plan_operands(scaly_rp, *(this_), (*term))));
     }
     PlannedOperand left = Planner_lazy_fold(scaly_rp, *(this_), lo, ops, Array3(lo->n_left, node));
     String name = Array5(lo->names, index);
-    Operand op_model = Vector8<Operand>(ops, Array3(lo->op_at, index));
+    Operand op_model = Vector4<Operand>(ops, Array3(lo->op_at, index));
     int64_t entry = ConceptIndex_lookup(this_->protocol->lazy_names->table, name);
     if (((entry >= 0LL) ? String_equals(((left).result_type).name, scaly_lvalue(Array5(this_->protocol->lazy_left, ((uint64_t)(entry))))) : false))
     {
@@ -67391,7 +67502,7 @@ __attribute__((weak)) PlannedOperand Planner_lazy_fold(scaly_frame* scaly_rp, Pl
     Vector<PlannedOperand> planned_op = Planner_plan_operands(scaly_rp, *(this_), (*op_vec));
     Vector<PlannedOperand>* raw = ({ Vector<PlannedOperand>* scaly_t10 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t10 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t10), 3ULL); scaly_t10; });
     Vector_put<PlannedOperand>((*raw), 0ULL, left);
-    Vector_put<PlannedOperand>((*raw), 1ULL, scaly_lvalue(Vector8<PlannedOperand>(planned_op, 0LL)));
+    Vector_put<PlannedOperand>((*raw), 1ULL, scaly_lvalue(Vector11<PlannedOperand>(planned_op, 0LL)));
     Vector_put<PlannedOperand>((*raw), 2ULL, right);
     return Planner_operation_apply(scaly_rp, *(this_), (*raw), left, 43ULL);
 }
@@ -67431,15 +67542,15 @@ __attribute__((weak)) void Planner_lazy_facts(Planner& scaly_self, PlannedOperan
             {
                 return;
             }
-            if ((want_true ? Planner_planned_is_bool(scaly_lvalue(Vector8<PlannedOperand>(else_value, 0LL)), false) : false))
+            if ((want_true ? Planner_planned_is_bool(scaly_lvalue(Vector11<PlannedOperand>(else_value, 0LL)), false) : false))
             {
-                Planner_lazy_facts(*(this_), scaly_lvalue(Vector8<PlannedOperand>(cond, 0LL)), true, facts);
-                Planner_lazy_facts(*(this_), scaly_lvalue(Vector8<PlannedOperand>(then_value, 0LL)), true, facts);
+                Planner_lazy_facts(*(this_), scaly_lvalue(Vector11<PlannedOperand>(cond, 0LL)), true, facts);
+                Planner_lazy_facts(*(this_), scaly_lvalue(Vector11<PlannedOperand>(then_value, 0LL)), true, facts);
             }
-            if ((((want_true) == (false)) ? Planner_planned_is_bool(scaly_lvalue(Vector8<PlannedOperand>(then_value, 0LL)), true) : false))
+            if ((((want_true) == (false)) ? Planner_planned_is_bool(scaly_lvalue(Vector11<PlannedOperand>(then_value, 0LL)), true) : false))
             {
-                Planner_lazy_facts(*(this_), scaly_lvalue(Vector8<PlannedOperand>(cond, 0LL)), false, facts);
-                Planner_lazy_facts(*(this_), scaly_lvalue(Vector8<PlannedOperand>(else_value, 0LL)), false, facts);
+                Planner_lazy_facts(*(this_), scaly_lvalue(Vector11<PlannedOperand>(cond, 0LL)), false, facts);
+                Planner_lazy_facts(*(this_), scaly_lvalue(Vector11<PlannedOperand>(else_value, 0LL)), false, facts);
             }
         }
         else
@@ -67487,8 +67598,8 @@ __attribute__((weak)) PlannedOperand Planner_operation_by_protocol(scaly_frame* 
             {
                 return first;
             }
-            PlannedOperand left = Vector8<PlannedOperand>((*stack), (sp - 2ULL));
-            PlannedOperand right = Vector8<PlannedOperand>((*stack), (sp - 1ULL));
+            PlannedOperand left = Vector11<PlannedOperand>((*stack), (sp - 2ULL));
+            PlannedOperand right = Vector11<PlannedOperand>((*stack), (sp - 1ULL));
             if (((Planner_operation_thing(*(this_), left) == 5LL) ? true : (Planner_operation_thing(*(this_), right) == 5LL)))
             {
                 Vector<PlannedOperand>* raw = ({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t3), 3ULL); scaly_t3; });
@@ -67510,7 +67621,7 @@ __attribute__((weak)) PlannedOperand Planner_operation_by_protocol(scaly_frame* 
         return first;
     }
     (*(answered)) = true;
-    return Vector8<PlannedOperand>((*stack), 0LL);
+    return Vector11<PlannedOperand>((*stack), 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -67547,7 +67658,7 @@ __attribute__((weak)) Vector<Operand> Planner_protocol_member_body(scaly_frame* 
             uint64_t mi = 0ULL;
             while ((mi < ((st).members).length))
             {
-                Member mem = Vector8<Member>((st).members, mi);
+                Member mem = Vector11<Member>((st).members, mi);
                 mi = (mi + 1ULL);
                 {
                     auto&& scaly_t2 = mem;
@@ -67578,7 +67689,7 @@ __attribute__((weak)) Vector<Operand> Planner_protocol_member_body(scaly_frame* 
                             uint64_t pi = 0ULL;
                             while ((pi < ((f).input).length))
                             {
-                                Item it = Vector8<Item>((f).input, pi);
+                                Item it = Vector11<Item>((f).input, pi);
                                 pi = (pi + 1ULL);
                                 if (((((it).name) != (nullptr)) ? (!(String_equals(scaly_lvalue(((*((it).name)))), scaly_lvalue(String{(uint8_t*)"\004this"})))) : false))
                                 {
@@ -67619,13 +67730,13 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_plan_operands(scaly_frame* 
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    if ((((ops).length > 1ULL) ? Planner_operand_is_leading_equals(scaly_lvalue(Vector8<Operand>(ops, 0LL))) : false))
+    if ((((ops).length > 1ULL) ? Planner_operand_is_leading_equals(scaly_lvalue(Vector4<Operand>(ops, 0LL))) : false))
     {
         Vector<Operand>* rest = ({ Vector<Operand>* scaly_t1 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t1 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t1), ((ops).length - 1ULL)); scaly_t1; });
         uint64_t ri = 1ULL;
         while ((ri < (ops).length))
         {
-            Vector_put<Operand>((*rest), (ri - 1ULL), scaly_lvalue(Vector8<Operand>(ops, ri)));
+            Vector_put<Operand>((*rest), (ri - 1ULL), scaly_lvalue(Vector4<Operand>(ops, ri)));
             ri = (ri + 1ULL);
         }
         return Planner_plan_operands(scaly_rp, *(this_), (*rest));
@@ -67687,7 +67798,7 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_plan_operands(scaly_frame* 
             {
                 bool lfollowed = false;
                 {
-                    auto&& scaly_t6 = (Vector8<Operand>(ops, (i + 1ULL))).expression;
+                    auto&& scaly_t6 = (Vector4<Operand>(ops, (i + 1ULL))).expression;
                     if (scaly_t6.tag == 2)
                     {
                         Tuple lft = scaly_payload<Tuple>(scaly_t6);
@@ -67709,7 +67820,7 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_plan_operands(scaly_frame* 
                     if (((String_get_length(lcallee) > 0ULL) ? true : (((*lmethod)).length > 0ULL)))
                     {
                         {
-                            auto&& scaly_t8 = (Vector8<Operand>(ops, (i + 1ULL))).expression;
+                            auto&& scaly_t8 = (Vector4<Operand>(ops, (i + 1ULL))).expression;
                             if (scaly_t8.tag == 2)
                             {
                                 Tuple ltp = scaly_payload<Tuple>(scaly_t8);
@@ -67813,7 +67924,7 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_plan_operands(scaly_frame* 
             }
             else
             {
-                Vector_put<PlannedOperand>((*compact), ci, scaly_lvalue(Vector8<PlannedOperand>((*result), ri)));
+                Vector_put<PlannedOperand>((*compact), ci, scaly_lvalue(Vector11<PlannedOperand>((*result), ri)));
                 ci = (ci + 1ULL);
             }
             ri = (ri + 1ULL);
@@ -67877,7 +67988,7 @@ __attribute__((weak)) void Planner_note_lazy_methods(Planner& scaly_self, Vector
     while ((i < (members).length))
     {
         {
-            auto&& scaly_t1 = Vector8<Member>(members, i);
+            auto&& scaly_t1 = Vector11<Member>(members, i);
             if (scaly_t1.tag == 3)
             {
                 Function f = scaly_payload<Function>(scaly_t1);
@@ -67969,14 +68080,14 @@ __attribute__((weak)) uint64_t Planner_lazy_computed_receiver_end(Planner& scaly
 {
     Planner* this_ = &scaly_self;
     uint64_t none = (ops).length;
-    if (((start > 0ULL) ? ((Planner_model_operand_is_operator(*(this_), scaly_lvalue(Vector8<Operand>(ops, (start - 1ULL))))) == (false)) : false))
+    if (((start > 0ULL) ? ((Planner_model_operand_is_operator(*(this_), scaly_lvalue(Vector4<Operand>(ops, (start - 1ULL))))) == (false)) : false))
     {
         return none;
     }
     uint64_t k = start;
     while (((k + 1ULL) < (ops).length))
     {
-        Operand op = Vector8<Operand>(ops, k);
+        Operand op = Vector4<Operand>(ops, k);
         if (Planner_model_operand_is_operator(*(this_), op))
         {
             return none;
@@ -68000,7 +68111,7 @@ __attribute__((weak)) uint64_t Planner_lazy_computed_receiver_end(Planner& scaly
             if (((((hops).length > 0ULL) ? computed : false) ? Planner_is_lazy_method_name(*(this_), scaly_lvalue(Vector3(hops, ((hops).length - 1ULL)))) : false))
             {
                 {
-                    auto&& scaly_t2 = (Vector8<Operand>(ops, (k + 1ULL))).expression;
+                    auto&& scaly_t2 = (Vector4<Operand>(ops, (k + 1ULL))).expression;
                     if (scaly_t2.tag == 2)
                     {
                         Tuple next = scaly_payload<Tuple>(scaly_t2);
@@ -68023,15 +68134,15 @@ __attribute__((weak)) PlannedOperand Planner_plan_lazy_computed_receiver(scaly_f
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    Operand at = Vector8<Operand>(ops, rend);
-    Span* span = ({ Span* scaly_t1 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t1 = Span{((Vector8<Operand>(ops, start)).span).start, ((Vector8<Operand>(ops, (rend + 1ULL))).span).end}; scaly_t1; });
+    Operand at = Vector4<Operand>(ops, rend);
+    Span* span = ({ Span* scaly_t1 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t1 = Span{((Vector4<Operand>(ops, start)).span).start, ((Vector4<Operand>(ops, (rend + 1ULL))).span).end}; scaly_t1; });
     Vector<String> hops = ((*((at).member_access)));
     String method = Vector3(hops, ((hops).length - 1ULL));
     Vector<Operand>* recv = ({ Vector<Operand>* scaly_t2 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t2 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t2), ((rend - start) + 1ULL)); scaly_t2; });
     uint64_t k = start;
     while ((k < rend))
     {
-        Vector_put<Operand>((*recv), (k - start), scaly_lvalue(Vector8<Operand>(ops, k)));
+        Vector_put<Operand>((*recv), (k - start), scaly_lvalue(Vector4<Operand>(ops, k)));
         k = (k + 1ULL);
     }
     Vector<String>* rest_hops = (Vector<String>*)(nullptr);
@@ -68062,7 +68173,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_lazy_computed_receiver(scaly_f
     Vector_put<String>((*path), 1ULL, scaly_lvalue((*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), method); scaly_t9; }))));
     Vector<Operand>* call = ({ Vector<Operand>* scaly_t10 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t10 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t10), 2ULL); scaly_t10; });
     Vector_put<Operand>((*call), 0ULL, scaly_lvalue((*({ Operand* scaly_t11 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t11 = Operand{(at).span, scaly_variant<Expression>(1, Type{(at).span, (*path), (Vector<Type>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{})}), (Vector<String>*)(nullptr)}; scaly_t11; }))));
-    Vector_put<Operand>((*call), 1ULL, scaly_lvalue(Vector8<Operand>(ops, (rend + 1ULL))));
+    Vector_put<Operand>((*call), 1ULL, scaly_lvalue(Vector4<Operand>(ops, (rend + 1ULL))));
     Vector<String>* name_h = ({ Vector<String>* scaly_t12 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t12 = Vector<String>{}; Vector_init3<String>((*scaly_t12), 1ULL); scaly_t12; });
     Vector_put<String>((*name_h), 0ULL, (*hidden));
     Vector<Statement>* stmts = ({ Vector<Statement>* scaly_t13 = (Vector<Statement>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Statement>), alignof(Vector<Statement>)); *scaly_t13 = Vector<Statement>{}; Vector_init3<Statement>((*scaly_t13), 2ULL); scaly_t13; });
@@ -68111,7 +68222,7 @@ __attribute__((weak)) Vector<String> Planner_lazy_method_call(scaly_frame* scaly
                 {
                     return (*none);
                 }
-                PlannedType inner = Vector8<PlannedType>(scaly_lvalue((*({ Vector<PlannedType>* scaly_t3 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t3 = ((*((this_ty).generics))); scaly_t3; }))), 0LL);
+                PlannedType inner = Vector11<PlannedType>(scaly_lvalue((*({ Vector<PlannedType>* scaly_t3 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t3 = ((*((this_ty).generics))); scaly_t3; }))), 0LL);
                 if (((Planner_lazy_method_candidates(&scaly_local.f, *(this_), (inner).name, method)).length == 0ULL))
                 {
                     return (*none);
@@ -68129,7 +68240,7 @@ __attribute__((weak)) Vector<String> Planner_lazy_method_call(scaly_frame* scaly
                 return (*none);
             }
             Vector<PlannedMemberAccess> hops = ((*((probe).member_access)));
-            PlannedMemberAccess last = Vector8<PlannedMemberAccess>(hops, ((hops).length - 1ULL));
+            PlannedMemberAccess last = Vector11<PlannedMemberAccess>(hops, ((hops).length - 1ULL));
             if ((((last).is_method) == (false)))
             {
                 return (*none);
@@ -68166,9 +68277,9 @@ __attribute__((weak)) Vector<Function> Planner_lazy_method_candidates(scaly_fram
     uint64_t i = 0ULL;
     while ((i < (all).length))
     {
-        if (Planner_items_have_attribute(scaly_lvalue((Vector8<Function>(all, i)).input), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")})))
+        if (Planner_items_have_attribute(scaly_lvalue((Vector11<Function>(all, i)).input), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")})))
         {
-            Array_add<Function>((*found), scaly_lvalue(Vector8<Function>(all, i)));
+            Array_add<Function>((*found), scaly_lvalue(Vector11<Function>(all, i)));
         }
         i = (i + 1ULL);
     }
@@ -68185,9 +68296,9 @@ __attribute__((weak)) Vector<Function> Planner_lazy_candidates(scaly_frame* scal
     uint64_t i = 0ULL;
     while ((i < (all).length))
     {
-        if (Planner_items_have_attribute(scaly_lvalue((Vector8<Function>(all, i)).input), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")})))
+        if (Planner_items_have_attribute(scaly_lvalue((Vector11<Function>(all, i)).input), scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")})))
         {
-            Array_add<Function>((*found), scaly_lvalue(Vector8<Function>(all, i)));
+            Array_add<Function>((*found), scaly_lvalue(Vector11<Function>(all, i)));
         }
         i = (i + 1ULL);
     }
@@ -68202,11 +68313,11 @@ __attribute__((weak)) void Planner_report_remote_message_name(Planner& scaly_sel
     {
         return;
     }
-    Vector<Operand> ops = (Vector8<Component>((args).components, 0LL)).value;
+    Vector<Operand> ops = (Vector4<Component>((args).components, 0LL)).value;
     bool built = false;
     if (((ops).length > 0ULL))
     {
-        Operand last = Vector8<Operand>(ops, ((ops).length - 1ULL));
+        Operand last = Vector4<Operand>(ops, ((ops).length - 1ULL));
         if ((((last).member_access) == (nullptr)))
         {
             {
@@ -68258,7 +68369,7 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
     }))); scaly_t2; }))));
         return (*none);
     }
-    Function f = Vector8<Function>(cands, 0LL);
+    Function f = Vector11<Function>(cands, 0LL);
     if ((((f).parameters).length > 0ULL))
     {
         Planner_add_diagnostic(*(this_), span, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(({
@@ -68303,7 +68414,7 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
         return (*none);
     }
     uint64_t first = 0ULL;
-    if ((((is_method ? (((f).input).length > 0ULL) : false) ? (((Vector8<Item>((f).input, 0LL)).name) != (nullptr)) : false) ? String_equals(scaly_lvalue((*((Vector8<Item>((f).input, 0LL)).name))), scaly_lvalue(String{(uint8_t*)"\004this"})) : false))
+    if ((((is_method ? (((f).input).length > 0ULL) : false) ? (((Vector11<Item>((f).input, 0LL)).name) != (nullptr)) : false) ? String_equals(scaly_lvalue((*((Vector11<Item>((f).input, 0LL)).name))), scaly_lvalue(String{(uint8_t*)"\004this"})) : false))
     {
         first = 1ULL;
     }
@@ -68353,10 +68464,10 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
     uint64_t k = first;
     while ((k < ((f).input).length))
     {
-        Item it = Vector8<Item>((f).input, k);
+        Item it = Vector11<Item>((f).input, k);
         if (((Planner_attributes_have((it).attributes, scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")}))) == (false)))
         {
-            PlannedOperand arg = Planner_collapse_operand_sequence(scaly_rp, *(this_), scaly_lvalue(Planner_plan_operands(scaly_rp, *(this_), scaly_lvalue((Vector8<Component>((args).components, (k - first))).value))));
+            PlannedOperand arg = Planner_collapse_operand_sequence(scaly_rp, *(this_), scaly_lvalue(Planner_plan_operands(scaly_rp, *(this_), scaly_lvalue((Vector4<Component>((args).components, (k - first))).value))));
             if ((((it).type) != (nullptr)))
             {
                 PlannedType dt = Planner_plan_type(scaly_rp, *(this_), scaly_lvalue((*({ Type* scaly_t22 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t22 = ((*((it).type))); scaly_t22; }))));
@@ -68439,13 +68550,13 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
     k = first;
     while ((k < ((f).input).length))
     {
-        Item it = Vector8<Item>((f).input, k);
+        Item it = Vector11<Item>((f).input, k);
         if ((((it).name) != (nullptr)))
         {
             String* pname = ({ String* scaly_t35 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t35 = String{}; String_init2((*scaly_t35), scaly_lvalue((*({ String* scaly_t36 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t36 = ((*((it).name))); scaly_t36; })))); scaly_t35; });
             if (Planner_attributes_have((it).attributes, scaly_lvalue(Slice<uint8_t>{4ULL, ((uint8_t*)"lazy")})))
             {
-                Array_add<Planner_LazyArg>(this_->lazy_args, scaly_lvalue((*({ Planner_LazyArg* scaly_t37 = (Planner_LazyArg*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Planner_LazyArg), alignof(Planner_LazyArg)); *scaly_t37 = Planner_LazyArg{(*pname), Planner_operands_here(scaly_rp, *(this_), scaly_lvalue((Vector8<Component>((args).components, (k - first))).value)), caller_len, caller_bnd, caller_iso, caller_frame, this_->lazy_frame, caller_ret}; scaly_t37; }))));
+                Array_add<Planner_LazyArg>(this_->lazy_args, scaly_lvalue((*({ Planner_LazyArg* scaly_t37 = (Planner_LazyArg*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Planner_LazyArg), alignof(Planner_LazyArg)); *scaly_t37 = Planner_LazyArg{(*pname), Planner_operands_here(scaly_rp, *(this_), scaly_lvalue((Vector4<Component>((args).components, (k - first))).value)), caller_len, caller_bnd, caller_iso, caller_frame, this_->lazy_frame, caller_ret}; scaly_t37; }))));
             }
             else
             {
@@ -72397,7 +72508,7 @@ __attribute__((weak)) bool Planner_template_dependent_call(Planner& scaly_self, 
     uint64_t i = 0ULL;
     while ((i < (arg_types).length))
     {
-        PlannedType t = Vector8<PlannedType>(arg_types, i);
+        PlannedType t = Vector11<PlannedType>(arg_types, i);
         if ((Planner_is_unit_type(t) ? true : ((Planner_free_type_vars_with_dups(&scaly_local.f, t)).length > 0ULL)))
         {
             return true;
@@ -92102,7 +92213,7 @@ __attribute__((weak)) void Planner_report_effect_free_statement(Planner& scaly_s
                 Vector<PlannedOperand> src = ((*((a).source)));
                 if (((src).length > 0ULL))
                 {
-                    PlannedOperand s0 = Vector8<PlannedOperand>(src, 0LL);
+                    PlannedOperand s0 = Vector11<PlannedOperand>(src, 0LL);
                     if (((src).length == 1ULL))
                     {
                         Planner_report_value_statement(*(this_), s0);
@@ -94442,7 +94553,7 @@ __attribute__((weak)) void Planner_scan_addr_taken_action(Planner& scaly_self, A
     Planner_scan_addr_taken_ops(*(this_), (a).target);
     if ((((a).target).length == 1ULL))
     {
-        Operand top = Vector8<Operand>((a).target, 0LL);
+        Operand top = Vector4<Operand>((a).target, 0LL);
         {
             auto&& scaly_t1 = (top).expression;
             if (scaly_t1.tag == 1)
@@ -97657,13 +97768,13 @@ __attribute__((weak)) Concept Planner_with_outer_parameters(scaly_frame* scaly_r
     uint64_t i = 0ULL;
     while ((i < ((outer).parameters).length))
     {
-        Array_add<GenericParameter>((*params), scaly_lvalue(Vector8<GenericParameter>((outer).parameters, i)));
+        Array_add<GenericParameter>((*params), scaly_lvalue(Vector11<GenericParameter>((outer).parameters, i)));
         i = (i + 1ULL);
     }
     i = 0ULL;
     while ((i < ((inner).parameters).length))
     {
-        Array_add<GenericParameter>((*params), scaly_lvalue(Vector8<GenericParameter>((inner).parameters, i)));
+        Array_add<GenericParameter>((*params), scaly_lvalue(Vector11<GenericParameter>((inner).parameters, i)));
         i = (i + 1ULL);
     }
     this_->outer_generics_any = true;
@@ -97757,7 +97868,7 @@ __attribute__((weak)) Type* Planner_outer_arguments(scaly_frame* scaly_rp, Plann
             scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
         scaly_t1;
-    })))) == (false)) : false) ? ((Planner_lookup_type_substitution(*(this_), scaly_lvalue((Vector8<GenericParameter>((c).parameters, 0LL)).name))) == (nullptr)) : false))
+    })))) == (false)) : false) ? ((Planner_lookup_type_substitution(*(this_), scaly_lvalue((Vector11<GenericParameter>((c).parameters, 0LL)).name))) == (nullptr)) : false))
     {
         return (Type*)(nullptr);
     }
@@ -97775,7 +97886,7 @@ __attribute__((weak)) Type* Planner_outer_arguments(scaly_frame* scaly_rp, Plann
     while ((i < n_outer))
     {
         Vector<String>* pname = ({ Vector<String>* scaly_t4 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t4 = Vector<String>{}; Vector_init3<String>((*scaly_t4), 1ULL); scaly_t4; });
-        Vector_put<String>((*pname), 0ULL, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue((Vector8<GenericParameter>((c).parameters, i)).name)); scaly_t5; }))));
+        Vector_put<String>((*pname), 0ULL, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue((Vector11<GenericParameter>((c).parameters, i)).name)); scaly_t5; }))));
         Array_add<Type>((*args), scaly_lvalue((*({ Type* scaly_t6 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t6 = Type{(t).span, (*pname), (Vector<Type>*)(nullptr), (t).lifetime}; scaly_t6; }))));
         i = (i + 1ULL);
     }
@@ -97785,7 +97896,7 @@ __attribute__((weak)) Type* Planner_outer_arguments(scaly_frame* scaly_rp, Plann
         i = 0ULL;
         while ((i < (own).length))
         {
-            Array_add<Type>((*args), scaly_lvalue(Vector8<Type>(own, i)));
+            Array_add<Type>((*args), scaly_lvalue(Vector11<Type>(own, i)));
             i = (i + 1ULL);
         }
     }
@@ -97847,8 +97958,8 @@ __attribute__((weak)) Vector<Operand> Planner_outer_instance_at(scaly_frame* sca
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     Vector<Operand>* none = ({ Vector<Operand>* scaly_t1 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t1 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t1), 0ULL); scaly_t1; });
-    Operand head = Vector8<Operand>(ops, i);
-    Operand next = Vector8<Operand>(ops, (i + 1ULL));
+    Operand head = Vector4<Operand>(ops, i);
+    Operand next = Vector4<Operand>(ops, (i + 1ULL));
     if (((((head).member_access) != (nullptr)) ? true : (((next).member_access) == (nullptr))))
     {
         return (*none);
@@ -97951,7 +98062,7 @@ __attribute__((weak)) Vector<Operand> Planner_outer_instance_at(scaly_frame* sca
     if ((((((inner_c).parameters).length > ((*rows)).length) ? (k == (hops).length) : false) ? ((i + 2ULL) < (ops).length) : false))
     {
         {
-            auto&& scaly_t10 = (Vector8<Operand>(ops, (i + 2ULL))).expression;
+            auto&& scaly_t10 = (Vector4<Operand>(ops, (i + 2ULL))).expression;
             if (scaly_t10.tag == 3)
             {
                 Matrix own = scaly_payload<Matrix>(scaly_t10);
@@ -97968,19 +98079,19 @@ __attribute__((weak)) Vector<Operand> Planner_outer_instance_at(scaly_frame* sca
     uint64_t r = 0ULL;
     while ((r < ((*rows)).length))
     {
-        Vector_put<Vector<Operand>>((*all_rows), r, scaly_lvalue(Vector8<Vector<Operand>>((*rows), r)));
+        Vector_put<Vector<Operand>>((*all_rows), r, scaly_lvalue(Vector11<Vector<Operand>>((*rows), r)));
         r = (r + 1ULL);
     }
     r = 0ULL;
     while ((r < ((*own_rows)).length))
     {
-        Vector_put<Vector<Operand>>((*all_rows), (((*rows)).length + r), scaly_lvalue(Vector8<Vector<Operand>>((*own_rows), r)));
+        Vector_put<Vector<Operand>>((*all_rows), (((*rows)).length + r), scaly_lvalue(Vector11<Vector<Operand>>((*own_rows), r)));
         r = (r + 1ULL);
     }
     Vector<String>* access = (Vector<String>*)(nullptr);
     if (consumed)
     {
-        access = (Vector8<Operand>(ops, (i + 2ULL))).member_access;
+        access = (Vector4<Operand>(ops, (i + 2ULL))).member_access;
     }
     if ((((consumed) == (false)) ? (k < (hops).length) : false))
     {
@@ -98015,7 +98126,7 @@ __attribute__((weak)) Vector<Operand> Planner_outer_instance_at(scaly_frame* sca
     uint64_t j = 0ULL;
     while ((j < i))
     {
-        Vector_put<Operand>((*out), j, scaly_lvalue(Vector8<Operand>(ops, j)));
+        Vector_put<Operand>((*out), j, scaly_lvalue(Vector4<Operand>(ops, j)));
         j = (j + 1ULL);
     }
     Vector_put<Operand>((*out), i, scaly_lvalue((*({ Operand* scaly_t17 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t17 = Operand{(head).span, scaly_variant<Expression>(1, Type{(head).span, (*new_name), (Vector<Type>*)(nullptr), tlife}), (Vector<String>*)(nullptr)}; scaly_t17; }))));
@@ -98023,7 +98134,7 @@ __attribute__((weak)) Vector<Operand> Planner_outer_instance_at(scaly_frame* sca
     j = ((i + 2ULL) + skip);
     while ((j < (ops).length))
     {
-        Vector_put<Operand>((*out), (j - skip), scaly_lvalue(Vector8<Operand>(ops, j)));
+        Vector_put<Operand>((*out), (j - skip), scaly_lvalue(Vector4<Operand>(ops, j)));
         j = (j + 1ULL);
     }
     return (*out);
@@ -102277,7 +102388,7 @@ __attribute__((weak)) String Planner_get_debug_name(scaly_frame* scaly_rp, Plann
                 {
                     StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
                 }
-                StringBuilder_append2((*sb), scaly_lvalue(Planner_get_debug_name(&scaly_local.f, scaly_lvalue(Vector8<PlannedType>(gens, i)))));
+                StringBuilder_append2((*sb), scaly_lvalue(Planner_get_debug_name(&scaly_local.f, scaly_lvalue(Vector11<PlannedType>(gens, i)))));
                 i = (i + 1ULL);
             }
             StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\001]"}));
@@ -103360,7 +103471,7 @@ __attribute__((weak)) String Planner_simd_container_element(scaly_frame* scaly_r
         {
             return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init3((*scaly_t2)); scaly_t2; }));
         }
-        cur = Vector8<PlannedType>(*(gs), 0LL);
+        cur = Vector11<PlannedType>(*(gs), 0LL);
     }
     String cn = (cur).name;
     {
@@ -103376,7 +103487,7 @@ __attribute__((weak)) String Planner_simd_container_element(scaly_frame* scaly_r
             {
                 return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init3((*scaly_t5)); scaly_t5; }));
             }
-            PlannedType g = Vector8<PlannedType>(*(es), 0LL);
+            PlannedType g = Vector11<PlannedType>(*(es), 0LL);
             return (g).name;
         }
     }
@@ -103400,7 +103511,7 @@ __attribute__((weak)) String Planner_simd_pointee_name(scaly_frame* scaly_rp, Pl
         auto&& scaly_t3 = true;
         if (scaly_t3 == String_equals(tn, scaly_lvalue(String{(uint8_t*)"\007pointer"})) || scaly_t3 == String_equals(tn, scaly_lvalue(String{(uint8_t*)"\003ref"})))
         {
-            PlannedType g = Vector8<PlannedType>(*(gs), 0LL);
+            PlannedType g = Vector11<PlannedType>(*(gs), 0LL);
             return (g).name;
         }
     }
@@ -103865,7 +103976,7 @@ __attribute__((weak)) bool Planner_pointee_unnamed(PlannedType& t)
         Vector<PlannedType> gens = ((*((t).generics)));
         if (((gens).length == 1ULL))
         {
-            return Planner_pointee_unnamed(scaly_lvalue(Vector8<PlannedType>(gens, 0LL)));
+            return Planner_pointee_unnamed(scaly_lvalue(Vector11<PlannedType>(gens, 0LL)));
         }
     }
     return (String_get_length((t).mangled_name) == 0ULL);
@@ -103881,7 +103992,7 @@ __attribute__((weak)) String Planner_mangled_over(scaly_frame* scaly_rp, Planned
         {
             return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), (t).mangled_name); scaly_t1; }));
         }
-        PlannedType inner = Vector8<PlannedType>(*(gens), 0LL);
+        PlannedType inner = Vector11<PlannedType>(*(gens), 0LL);
         if (String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\007pointer"})))
         {
             return ({
@@ -104847,7 +104958,7 @@ __attribute__((weak)) Type* Planner_tuple_row_to_type(scaly_frame* scaly_rp, Spa
     uint64_t i = 0ULL;
     while ((i < (comps).length))
     {
-        if ((((Vector8<PlannedComponent>(comps, i)).name) != (nullptr)))
+        if ((((Vector11<PlannedComponent>(comps, i)).name) != (nullptr)))
         {
             labelled = true;
         }
@@ -104857,7 +104968,7 @@ __attribute__((weak)) Type* Planner_tuple_row_to_type(scaly_frame* scaly_rp, Spa
     i = 0ULL;
     while ((i < (comps).length))
     {
-        Vector<PlannedOperand>* value = (Vector8<PlannedComponent>(comps, i)).value;
+        Vector<PlannedOperand>* value = (Vector11<PlannedComponent>(comps, i)).value;
         if (((value) == (nullptr)))
         {
             return (Type*)(nullptr);
@@ -104888,7 +104999,7 @@ __attribute__((weak)) Type* Planner_tuple_row_to_type(scaly_frame* scaly_rp, Spa
         i = 0ULL;
         while ((i < (comps).length))
         {
-            String* named = (Vector8<PlannedComponent>(comps, i)).name;
+            String* named = (Vector11<PlannedComponent>(comps, i)).name;
             if (((named) != (nullptr)))
             {
                 Vector_put<String>((*path), (i + 1ULL), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = ((*(named))); scaly_t7; })))); scaly_t6; }))));
@@ -118618,18 +118729,6 @@ __attribute__((weak)) void GpuKernel_k_init(GpuKernel& scaly_self, PlannedCall& 
     }
     Vector<PlannedStructure>* ss = this_->plan_structures;
     PlannedStructure* s_ptr = Vector_get<PlannedStructure>(*(ss), ((uint64_t)((place)._0)));
-    Vector<PlannedProperty>* props = s_ptr->properties;
-    uint64_t pi = 0ULL;
-    while ((pi < props->length))
-    {
-        PlannedProperty* p_ptr = Vector_get<PlannedProperty>(*(props), pi);
-        if ((((p_ptr) != (nullptr)) ? ((p_ptr->initializer) != (nullptr)) : false))
-        {
-            GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\061constructs a record with a default for its field "}), p_ptr->name);
-            return;
-        }
-        pi = (pi + 1ULL);
-    }
     PlannedInitializer* ini_ptr = Vector_get<PlannedInitializer>(*(s_ptr->initializers), ((uint64_t)((place)._1)));
     PlannedInitializer* ini = ((PlannedInitializer*)(ini_ptr));
     bool has_body = false;
@@ -120820,7 +120919,7 @@ __attribute__((weak)) String GpuMsl_kernel_source_wgsl(scaly_frame* scaly_rp, Gp
         GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\051a count of rounds that is no single value"}));
         return String{nullptr};
     }
-    int64_t ck = GpuMsl_planned_kind(gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)));
+    int64_t ck = GpuMsl_planned_kind(gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)));
     if (((GpuKernel_kind_is_integer(ck)) == (false)))
     {
         GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\044a count of rounds that is no integer"}));
@@ -121270,7 +121369,7 @@ __attribute__((weak)) String GpuMsl_kernel_source(scaly_frame* scaly_rp, GpuMsl&
         GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\051a count of rounds that is no single value"}));
         return String{nullptr};
     }
-    int64_t ck = GpuMsl_planned_kind(gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)));
+    int64_t ck = GpuMsl_planned_kind(gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)));
     if (((GpuKernel_kind_is_integer(ck)) == (false)))
     {
         GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\044a count of rounds that is no integer"}));
@@ -122328,7 +122427,7 @@ __attribute__((weak)) String GpuMsl_construction(scaly_frame* scaly_rp, GpuMsl& 
             return String{nullptr};
         }
         PlannedComponent* c = ((PlannedComponent*)(c_ptr));
-        String v = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), depth);
+        String v = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), depth);
         if (this_->m_refused)
         {
             return String{nullptr};
@@ -122442,7 +122541,7 @@ __attribute__((weak)) bool GpuMsl_is_plain_count(PlannedOperand& op)
                 return false;
             }
             PlannedComponent* comp = ((PlannedComponent*)(c_ptr));
-            return GpuMsl_is_plain_count(scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(comp->value)))), 0LL)));
+            return GpuMsl_is_plain_count(scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(comp->value)))), 0LL)));
         }
         else if (scaly_t1.tag == 4)
         {
@@ -123361,7 +123460,7 @@ __attribute__((weak)) String GpuMsl_init_call(scaly_frame* scaly_rp, GpuMsl& sca
     uint64_t ai = 0ULL;
     while ((ai < n_args))
     {
-        String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), ai)), depth);
+        String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), ai)), depth);
         if (this_->m_refused)
         {
             return String{nullptr};
@@ -123545,7 +123644,7 @@ __attribute__((weak)) void GpuMsl_action(GpuMsl& scaly_self, StringBuilder* out,
         GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\040an operation of several operands"}));
         return;
     }
-    PlannedOperand op = Vector8<PlannedOperand>(scaly_lvalue(((*((act).source)))), 0LL);
+    PlannedOperand op = Vector11<PlannedOperand>(scaly_lvalue(((*((act).source)))), 0LL);
     if (has_target)
     {
         if (((act).target->length != 1ULL))
@@ -123553,7 +123652,7 @@ __attribute__((weak)) void GpuMsl_action(GpuMsl& scaly_self, StringBuilder* out,
             GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\034a compound assignment target"}));
             return;
         }
-        GpuMsl_assignment(*(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((act).target)))), 0LL)), op, depth);
+        GpuMsl_assignment(*(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((act).target)))), 0LL)), op, depth);
         return;
     }
     if (((GpuKernel_has_members(op)) == (false)))
@@ -123808,7 +123907,7 @@ __attribute__((weak)) void GpuMsl_binding(GpuMsl& scaly_self, StringBuilder* out
         return;
     }
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
-    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)), depth);
+    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return;
@@ -123871,7 +123970,7 @@ __attribute__((weak)) void GpuMsl_return_statement(GpuMsl& scaly_self, StringBui
         return;
     }
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
-    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((ret).result)))), 0LL)), depth);
+    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((ret).result)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return;
@@ -123908,7 +124007,7 @@ __attribute__((weak)) void GpuMsl_if_statement(GpuMsl& scaly_self, StringBuilder
         return;
     }
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
-    String c = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((iff).condition)))), 0LL)), depth);
+    String c = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((iff).condition)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return;
@@ -124017,7 +124116,7 @@ __attribute__((weak)) void GpuMsl_while_statement(GpuMsl& scaly_self, StringBuil
         scaly_t1;
     })));
     uint64_t mark = (this_->m_names).length;
-    String c = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(((wh).cond).operation)))), 0LL)), (depth + 1ULL));
+    String c = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(((wh).cond).operation)))), 0LL)), (depth + 1ULL));
     if (this_->m_refused)
     {
         return;
@@ -124126,7 +124225,7 @@ __attribute__((weak)) void GpuMsl_for_statement(GpuMsl& scaly_self, StringBuilde
         return;
     }
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
-    String limit = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)), depth);
+    String limit = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((fr).expr)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return;
@@ -124311,7 +124410,7 @@ __attribute__((weak)) void GpuMsl_put_statement(GpuMsl& scaly_self, StringBuilde
     }
     int64_t ek = GpuMsl_int_at((&(gk->k_output_kinds)), k);
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
-    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 2LL)), depth);
+    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 2LL)), depth);
     if (this_->m_refused)
     {
         return;
@@ -124421,7 +124520,7 @@ __attribute__((weak)) String GpuMsl_expression(scaly_frame* scaly_rp, GpuMsl& sc
                 return String{nullptr};
             }
             PlannedComponent* comp = ((PlannedComponent*)(c_ptr));
-            return GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(comp->value)))), 0LL)), depth);
+            return GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(comp->value)))), 0LL)), depth);
         }
         else if (scaly_t2.tag == 7)
         {
@@ -124629,7 +124728,7 @@ __attribute__((weak)) String GpuMsl_kernel_constant(scaly_frame* scaly_rp, GpuMs
         GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\043a constant without a single value: "}), (gl).name);
         return String{nullptr};
     }
-    PlannedOperand vop = Vector8<PlannedOperand>(scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t1 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t1 = ((*((gl).value))); scaly_t1; }))), 0LL);
+    PlannedOperand vop = Vector11<PlannedOperand>(scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t1 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t1 = ((*((gl).value))); scaly_t1; }))), 0LL);
     if (GpuKernel_has_members(vop))
     {
         GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\036a constant read off a member: "}), (gl).name);
@@ -125338,7 +125437,7 @@ __attribute__((weak)) String GpuMsl_subscript(scaly_frame* scaly_rp, GpuMsl& sca
         return String{nullptr};
     }
     int64_t ek = GpuMsl_int_at((&(gk->k_buffer_kinds)), k);
-    String idx = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 1LL)), depth);
+    String idx = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 1LL)), depth);
     if (this_->m_refused)
     {
         return String{nullptr};
@@ -125523,7 +125622,7 @@ __attribute__((weak)) String GpuMsl_function_call(scaly_frame* scaly_rp, GpuMsl&
     uint64_t ai = 0ULL;
     while ((ai < n_args))
     {
-        String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), ai)), depth);
+        String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), ai)), depth);
         if (this_->m_refused)
         {
             return String{nullptr};
@@ -125581,7 +125680,7 @@ __attribute__((weak)) String GpuMsl_builtin_call(scaly_frame* scaly_rp, GpuMsl& 
 {
     GpuMsl* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
+    String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return String{nullptr};
@@ -125634,7 +125733,7 @@ __attribute__((weak)) String GpuMsl_unary(scaly_frame* scaly_rp, GpuMsl& scaly_s
 {
     GpuMsl* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
+    String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return String{nullptr};
@@ -125953,13 +126052,13 @@ __attribute__((weak)) String GpuMsl_binary(scaly_frame* scaly_rp, GpuMsl& scaly_
 {
     GpuMsl* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    String l = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
+    String l = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), depth);
     if (this_->m_refused)
     {
         return String{nullptr};
     }
     int64_t lk = this_->m_atom_kind;
-    String r = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 1LL)), depth);
+    String r = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((call).args)))), 1LL)), depth);
     if (this_->m_refused)
     {
         return String{nullptr};
@@ -136684,7 +136783,7 @@ __attribute__((weak)) uint64_t WriteCensus_summary_index(WriteCensus& scaly_self
     uint64_t probes = 0ULL;
     while ((probes < mask))
     {
-        uint64_t slot = Vector8<uint64_t>(this_->sum_slots, h);
+        uint64_t slot = Vector11<uint64_t>(this_->sum_slots, h);
         if ((slot == 0ULL))
         {
             return 0ULL;
@@ -136717,7 +136816,7 @@ __attribute__((weak)) void WriteCensus_add_summary(WriteCensus& scaly_self, Stri
     Array_add<String>(this_->sum_globals, globals);
     uint64_t mask = ((((uint64_t)(262144LL))) - 1ULL);
     uint64_t h = (String_hash(mangled) & mask);
-    while ((Vector8<uint64_t>(this_->sum_slots, h) != 0ULL))
+    while ((Vector11<uint64_t>(this_->sum_slots, h) != 0ULL))
     {
         h = (((h + 1ULL)) & mask);
     }
@@ -140945,7 +141044,7 @@ __attribute__((weak)) LLVMOpaqueType* Emitter_frame_struct_type(Emitter& scaly_s
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
-template <class T1> static T1 Vector25(Vector<T1>& scaly_self, uint64_t i)
+template <class T1> static T1 Vector26(Vector<T1>& scaly_self, uint64_t i)
 {
     Vector<T1>* this_ = &scaly_self;
     if ((i >= this_->length))
@@ -140976,7 +141075,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_force_frame(Emitter& scaly_self, 
         return LLVMBuildCall2(this_->builder, fty, fn, ((*args)).data, (uint32_t)1ULL, ((const char*)"forced_page"));
     }
     LLVMOpaqueBasicBlock* here = LLVMGetInsertBlock(this_->builder);
-    LLVMOpaqueValue* fv = Vector25<LLVMOpaqueValue*>((*args), 0LL);
+    LLVMOpaqueValue* fv = Vector26<LLVMOpaqueValue*>((*args), 0LL);
     LLVMOpaqueValue* known = LLVMBuildLoad2(this_->builder, ptr_ty, fv, ((const char*)"frame.page"));
     LLVMOpaqueValue* has = LLVMBuildICmp(this_->builder, LLVMIntPredicate_NE(), known, LLVMConstNull(ptr_ty), ((const char*)"frame.has_page"));
     LLVMOpaqueBasicBlock* slow_bb = LLVMAppendBasicBlockInContext(this_->context, this_->current_function, ((const char*)"frame.force"));
@@ -143022,7 +143121,7 @@ __attribute__((weak)) void Emitter_mark_noalias_params(Emitter& scaly_self, Plan
         if ((((idx < n) ? ((item_ptr) != (nullptr)) : false) ? (((((*(item_ptr)))).item_type) != (nullptr)) : false))
         {
             PlannedType it = (*(((PlannedType*)(((*(item_ptr))).item_type))));
-            if ((((int64_t)LLVMGetTypeKind(Vector25<LLVMOpaqueType*>((*ptys), idx)) == LLVMTypeKind_Pointer()) ? StoreEffects_param_noalias(this_->store_effects, (func).mangled_name, it) : false))
+            if ((((int64_t)LLVMGetTypeKind(Vector26<LLVMOpaqueType*>((*ptys), idx)) == LLVMTypeKind_Pointer()) ? StoreEffects_param_noalias(this_->store_effects, (func).mangled_name, it) : false))
             {
                 LLVMAddAttributeAtIndex(llvm_func, ((uint32_t)(((idx + 1ULL)))), LLVMCreateEnumAttribute(this_->context, Emitter_noalias_kind_id(*(this_)), 0ULL));
             }
@@ -145531,7 +145630,7 @@ __attribute__((weak)) bool Emitter_fork_join_eligible(Emitter& scaly_self, Plann
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        int32_t k = LLVMGetTypeKind(Vector25<LLVMOpaqueType*>((*ptys), i));
+        int32_t k = LLVMGetTypeKind(Vector26<LLVMOpaqueType*>((*ptys), i));
         if ((((((int64_t)k != LLVMTypeKind_Integer()) ? ((int64_t)k != LLVMTypeKind_Float()) : false) ? ((int64_t)k != LLVMTypeKind_Double()) : false) ? ((int64_t)k != LLVMTypeKind_Pointer()) : false))
         {
             return false;
@@ -145641,7 +145740,7 @@ __attribute__((weak)) Vector<LLVMOpaqueValue*> Emitter_fj_args(scaly_frame* scal
             if (((ap) != (nullptr)))
             {
                 LLVMOpaqueValue* v = Emitter_emit_operand(*(this_), scaly_lvalue((*(ap))));
-                LLVMOpaqueType* want = Vector25<LLVMOpaqueType*>((*ptys), i);
+                LLVMOpaqueType* want = Vector26<LLVMOpaqueType*>((*ptys), i);
                 if ((((int64_t)LLVMGetTypeKind(want) == LLVMTypeKind_Integer()) ? ((int64_t)LLVMGetTypeKind(LLVMTypeOf(v)) == LLVMTypeKind_Integer()) : false))
                 {
                     if ((LLVMGetIntTypeWidth(want) != LLVMGetIntTypeWidth(LLVMTypeOf(v))))
@@ -145746,7 +145845,7 @@ __attribute__((weak)) void Emitter_emit_fj_let_pair(Emitter& scaly_self, Planned
                 if (scaly_t2.tag == 1)
                 {
                     PlannedBinding b2 = scaly_payload<PlannedBinding>(scaly_t2);
-                    PlannedOperand op1 = Vector8<PlannedOperand>(scaly_lvalue(((*((b1).operation)))), 0LL);
+                    PlannedOperand op1 = Vector11<PlannedOperand>(scaly_lvalue(((*((b1).operation)))), 0LL);
                     LLVMOpaqueValue* right = (LLVMOpaqueValue*)(nullptr);
                     PlannedBinding second = b2;
                     LLVMOpaqueValue* left = Emitter_emit_fj_fork(*(this_), op1, (PlannedOperand*)(nullptr), (&(second)), (&(right)));
@@ -145854,7 +145953,7 @@ __attribute__((weak)) bool Emitter_fj_let_pair(Emitter& scaly_self, PlannedState
                 return false;
             }
             Vector<PlannedOperand> ops1 = ((*((b1).operation)));
-            if ((((ops1).length != 1ULL) ? true : ((Emitter_fj_self_call(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops1, 0LL)))) == (false))))
+            if ((((ops1).length != 1ULL) ? true : ((Emitter_fj_self_call(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops1, 0LL)))) == (false))))
             {
                 return false;
             }
@@ -145869,11 +145968,11 @@ __attribute__((weak)) bool Emitter_fj_let_pair(Emitter& scaly_self, PlannedState
                         return false;
                     }
                     Vector<PlannedOperand> ops2 = ((*((b2).operation)));
-                    if ((((ops2).length != 1ULL) ? true : ((Emitter_fj_self_call(*(this_), scaly_lvalue(Vector8<PlannedOperand>(ops2, 0LL)))) == (false))))
+                    if ((((ops2).length != 1ULL) ? true : ((Emitter_fj_self_call(*(this_), scaly_lvalue(Vector11<PlannedOperand>(ops2, 0LL)))) == (false))))
                     {
                         return false;
                     }
-                    return ((Emitter_fj_mentions(scaly_lvalue(Vector8<PlannedOperand>(ops2, 0LL)), name)) == (false));
+                    return ((Emitter_fj_mentions(scaly_lvalue(Vector11<PlannedOperand>(ops2, 0LL)), name)) == (false));
                 }
                 else
                 {
@@ -145965,7 +146064,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_fj_fork(Emitter& scaly_self,
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        LLVMBuildStore(this_->builder, Vector25<LLVMOpaqueValue*>(args, i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")));
+        LLVMBuildStore(this_->builder, Vector26<LLVMOpaqueValue*>(args, i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")));
         i = (i + 1ULL);
     }
     LLVMOpaqueType* ptr_ty = Emitter_fj_ptr(*(this_));
@@ -146148,7 +146247,7 @@ __attribute__((weak)) void Emitter_emit_fj_task(Emitter& scaly_self, LLVMOpaqueT
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        Vector_put62<LLVMOpaqueValue*>((*args), i, LLVMBuildLoad2(this_->builder, Vector25<LLVMOpaqueType*>((*ptys), i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")), ((const char*)"fj.arg")));
+        Vector_put62<LLVMOpaqueValue*>((*args), i, LLVMBuildLoad2(this_->builder, Vector26<LLVMOpaqueType*>((*ptys), i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")), ((const char*)"fj.arg")));
         i = (i + 1ULL);
     }
     Vector_put62<LLVMOpaqueValue*>((*args), n, depth);
@@ -147160,7 +147259,7 @@ __attribute__((weak)) void Emitter_name_wasm_entry(Emitter& scaly_self)
     while (((k < n) ? (k < (uint32_t)2ULL) : false))
     {
         LLVMOpaqueValue* a = LLVMGetParam(entry, k);
-        LLVMOpaqueType* want = Vector25<LLVMOpaqueType*>((*main_ptys), ((uint64_t)(k)));
+        LLVMOpaqueType* want = Vector26<LLVMOpaqueType*>((*main_ptys), ((uint64_t)(k)));
         if ((((k == (uint32_t)0ULL) ? ((int64_t)LLVMGetTypeKind(want) == LLVMTypeKind_Integer()) : false) ? (LLVMGetIntTypeWidth(want) > (uint32_t)32ULL) : false))
         {
             a = LLVMBuildSExt(this_->builder, a, want, ((const char*)"argc"));
@@ -148879,7 +148978,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_expression(Emitter& scaly_se
             int64_t kind = Emitter_if_logical_kind(i);
             if ((kind >= 3LL))
             {
-                return Emitter_emit_logical_value(*(this_), (kind == 4LL), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((i).condition)))), 0LL)), scaly_lvalue(Emitter_if_logical_right(&scaly_local.f, i, kind)));
+                return Emitter_emit_logical_value(*(this_), (kind == 4LL), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((i).condition)))), 0LL)), scaly_lvalue(Emitter_if_logical_right(&scaly_local.f, i, kind)));
             }
             return Emitter_emit_if(*(this_), i);
         }
@@ -153358,8 +153457,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_simd_join(Emitter& scaly_self, Ar
         Vector_put62<LLVMOpaqueType*>((*ps), 0ULL, v16);
         Vector_put62<LLVMOpaqueType*>((*ps), 1ULL, v16);
         LLVMOpaqueValue* f = Emitter_simd_intrinsic_n(*(this_), scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\034llvm.aarch64.neon.addp.v16i8"})); scaly_t5; }))), v16, (*ps));
-        LLVMOpaqueValue* p01 = Emitter_simd_call2(*(this_), f, Vector25<LLVMOpaqueValue*>((*w), 0LL), Vector25<LLVMOpaqueValue*>((*w), 1LL));
-        LLVMOpaqueValue* p23 = Emitter_simd_call2(*(this_), f, Vector25<LLVMOpaqueValue*>((*w), 2LL), Vector25<LLVMOpaqueValue*>((*w), 3LL));
+        LLVMOpaqueValue* p01 = Emitter_simd_call2(*(this_), f, Vector26<LLVMOpaqueValue*>((*w), 0LL), Vector26<LLVMOpaqueValue*>((*w), 1LL));
+        LLVMOpaqueValue* p23 = Emitter_simd_call2(*(this_), f, Vector26<LLVMOpaqueValue*>((*w), 2LL), Vector26<LLVMOpaqueValue*>((*w), 3LL));
         LLVMOpaqueValue* p = Emitter_simd_call2(*(this_), f, p01, p23);
         LLVMOpaqueValue* q = Emitter_simd_call2(*(this_), f, p, p);
         LLVMOpaqueValue* as64 = LLVMBuildBitCast(this_->builder, q, LLVMVectorType(i64_ty, (uint32_t)2ULL), ((const char*)"simd.join.words"));
@@ -153488,7 +153587,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_simd_call(Emitter& scaly_self, St
     uint64_t i = 0ULL;
     while ((i < (args).length))
     {
-        Vector_put62<LLVMOpaqueType*>((*ps), i, LLVMTypeOf(Vector25<LLVMOpaqueValue*>(args, i)));
+        Vector_put62<LLVMOpaqueType*>((*ps), i, LLVMTypeOf(Vector26<LLVMOpaqueValue*>(args, i)));
         i = (i + 1ULL);
     }
     LLVMOpaqueValue* f = Emitter_simd_intrinsic_n(*(this_), fname, ret, (*ps));
@@ -153521,7 +153620,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_simd_container_field(Emitter& sca
         {
             break;
         }
-        cur = Vector8<PlannedType>(*(gs), 0LL);
+        cur = Vector11<PlannedType>(*(gs), 0LL);
     }
     LLVMOpaqueType* st = Emitter_map_type(*(this_), cur);
     uint32_t idx = (uint32_t)0ULL;
@@ -155007,20 +155106,20 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_block_statements(Emitter& sc
         uint64_t si = 0ULL;
         while ((si < (stmts).length))
         {
-            PlannedStatement stmt = Vector25<PlannedStatement>(stmts, si);
+            PlannedStatement stmt = Vector26<PlannedStatement>(stmts, si);
             si = (si + 1ULL);
             if (((String_get_length(this_->fj_self) > 0ULL) ? (si < (stmts).length) : false))
             {
-                if (Emitter_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector25<PlannedStatement>(stmts, si))))
+                if (Emitter_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector26<PlannedStatement>(stmts, si))))
                 {
                     if ((this_->fj_mode == 0LL))
                     {
                         this_->fj_seen = true;
-                        Emitter_note_fork_lets(*(this_), stmt, scaly_lvalue(Vector25<PlannedStatement>(stmts, si)));
+                        Emitter_note_fork_lets(*(this_), stmt, scaly_lvalue(Vector26<PlannedStatement>(stmts, si)));
                     }
                     if ((this_->fj_mode == 2LL))
                     {
-                        Emitter_emit_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector25<PlannedStatement>(stmts, si)));
+                        Emitter_emit_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector26<PlannedStatement>(stmts, si)));
                         si = (si + 1ULL);
                         continue;
                     }
@@ -155150,11 +155249,11 @@ __attribute__((weak)) int64_t Emitter_if_logical_kind(PlannedIf& pif)
     {
         return 0LL;
     }
-    if (Planner_planned_is_bool(scaly_lvalue(Vector8<PlannedOperand>(else_value, 0LL)), false))
+    if (Planner_planned_is_bool(scaly_lvalue(Vector11<PlannedOperand>(else_value, 0LL)), false))
     {
         return 3LL;
     }
-    if (Planner_planned_is_bool(scaly_lvalue(Vector8<PlannedOperand>(then_value, 0LL)), true))
+    if (Planner_planned_is_bool(scaly_lvalue(Vector11<PlannedOperand>(then_value, 0LL)), true))
     {
         return 4LL;
     }
@@ -155166,9 +155265,9 @@ __attribute__((weak)) PlannedOperand Emitter_if_logical_right(scaly_frame* scaly
 {
     if ((kind == 3LL))
     {
-        return Vector8<PlannedOperand>(scaly_lvalue(Planner_statement_value(scaly_rp, scaly_lvalue(((*((pif).consequent)))))), 0LL);
+        return Vector11<PlannedOperand>(scaly_lvalue(Planner_statement_value(scaly_rp, scaly_lvalue(((*((pif).consequent)))))), 0LL);
     }
-    return Vector8<PlannedOperand>(scaly_lvalue(Planner_statement_value(scaly_rp, scaly_lvalue((*({ PlannedStatement* scaly_t2 = (PlannedStatement*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedStatement), alignof(PlannedStatement)); *scaly_t2 = ((*((pif).alternative))); scaly_t2; }))))), 0LL);
+    return Vector11<PlannedOperand>(scaly_lvalue(Planner_statement_value(scaly_rp, scaly_lvalue((*({ PlannedStatement* scaly_t2 = (PlannedStatement*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedStatement), alignof(PlannedStatement)); *scaly_t2 = ((*((pif).alternative))); scaly_t2; }))))), 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -155179,12 +155278,12 @@ __attribute__((weak)) PlannedOperand Emitter_logical_left(scaly_frame* scaly_rp,
         if (scaly_t1.tag == 4)
         {
             PlannedCall c = scaly_payload<PlannedCall>(scaly_t1);
-            return Vector8<PlannedOperand>(scaly_lvalue(((*((c).args)))), 0LL);
+            return Vector11<PlannedOperand>(scaly_lvalue(((*((c).args)))), 0LL);
         }
         else if (scaly_t1.tag == 8)
         {
             PlannedIf pif = scaly_payload<PlannedIf>(scaly_t1);
-            return Vector8<PlannedOperand>(scaly_lvalue(((*((pif).condition)))), 0LL);
+            return Vector11<PlannedOperand>(scaly_lvalue(((*((pif).condition)))), 0LL);
         }
         else
         {
@@ -155203,7 +155302,7 @@ __attribute__((weak)) PlannedOperand Emitter_logical_right(scaly_frame* scaly_rp
         if (scaly_t1.tag == 4)
         {
             PlannedCall c = scaly_payload<PlannedCall>(scaly_t1);
-            return Vector8<PlannedOperand>(scaly_lvalue(((*((c).args)))), 1LL);
+            return Vector11<PlannedOperand>(scaly_lvalue(((*((c).args)))), 1LL);
         }
         else if (scaly_t1.tag == 8)
         {
@@ -156584,7 +156683,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter& scaly_self,
     {
         return Emitter_emit_parallel_for(*(this_), for_expr);
     }
-    if (((GpuMsl_is_plain_count(scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((for_expr).expr)))), 0LL)))) == (false)))
+    if (((GpuMsl_is_plain_count(scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((for_expr).expr)))), 0LL)))) == (false)))
     {
         return Emitter_emit_parallel_for(*(this_), for_expr);
     }
@@ -162184,7 +162283,7 @@ __attribute__((weak)) void Emitter_note_record_aliases(Emitter& scaly_self, Vect
     uint64_t i = 0ULL;
     while ((i < ops->length))
     {
-        PlannedOperand op = Vector8<PlannedOperand>(*(ops), i);
+        PlannedOperand op = Vector11<PlannedOperand>(*(ops), i);
         {
             auto&& scaly_t1 = (op).expr;
             if (scaly_t1.tag == 2)
@@ -162201,7 +162300,7 @@ __attribute__((weak)) void Emitter_note_record_aliases(Emitter& scaly_self, Vect
                     uint64_t k = 0ULL;
                     while ((k < args->length))
                     {
-                        PlannedOperand a = Vector8<PlannedOperand>(*(args), k);
+                        PlannedOperand a = Vector11<PlannedOperand>(*(args), k);
                         {
                             auto&& scaly_t2 = (a).expr;
                             if (scaly_t2.tag == 2)
@@ -162256,7 +162355,7 @@ __attribute__((weak)) bool Emitter_emit_binding(Emitter& scaly_self, PlannedBind
         if (((init_ops->length > 0ULL) ? ((((binding).binding_item).name) != (nullptr)) : false))
         {
             {
-                auto&& scaly_t1 = (Vector8<PlannedOperand>(*(init_ops), 0LL)).expr;
+                auto&& scaly_t1 = (Vector11<PlannedOperand>(*(init_ops), 0LL)).expr;
                 if (scaly_t1.tag == 2)
                 {
                     PlannedVariable first_var = scaly_payload<PlannedVariable>(scaly_t1);
@@ -162479,7 +162578,7 @@ __attribute__((weak)) bool Emitter_emit_binding(Emitter& scaly_self, PlannedBind
                     LLVMOpaqueValue* slot_val = value;
                     if (((((int64_t)LLVMGetTypeKind(ty) == LLVMTypeKind_Pointer()) ? (((binding).operation) != (nullptr)) : false) ? ((binding).operation->length == 1ULL) : false))
                     {
-                        PlannedOperand slot_op0 = Vector8<PlannedOperand>(scaly_lvalue(((*((binding).operation)))), 0LL);
+                        PlannedOperand slot_op0 = Vector11<PlannedOperand>(scaly_lvalue(((*((binding).operation)))), 0LL);
                         {
                             auto&& scaly_t7 = (slot_op0).expr;
                             if (scaly_t7.tag == 2)
@@ -165032,7 +165131,7 @@ __attribute__((weak)) PlannedType CppEmitter_first_generic(scaly_frame* scaly_rp
     {
         return t;
     }
-    return Vector8<PlannedType>(gs, 0LL);
+    return Vector11<PlannedType>(gs, 0LL);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
@@ -165696,7 +165795,7 @@ __attribute__((weak)) void CppEmitter_forward_declaration(scaly_frame* scaly_rp,
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
-template <class T> static T Vector29(Vector<T>& scaly_self, uint64_t i)
+template <class T> static T Vector30(Vector<T>& scaly_self, uint64_t i)
 {
     Vector<T>* this_ = &scaly_self;
     if ((i >= this_->length))
@@ -165720,7 +165819,7 @@ __attribute__((weak)) void CppEmitter_register_instances(scaly_frame* scaly_rp, 
     uint64_t i = 0ULL;
     while ((i < (fs).length))
     {
-        PlannedFunction f = Vector29<PlannedFunction>(fs, i);
+        PlannedFunction f = Vector30<PlannedFunction>(fs, i);
         if (((((CppEmitter_wanted(*(this_), f) ? CppEmitter_has_body(f) : false) ? ((CppEmitter_is_entry(f)) == (false)) : false) ? ((CppEmitter_contains((&((*seen))), (f).mangled_name)) == (false)) : false) ? (CppEmitter_symbol_at(*(this_), (f).mangled_name) == (this_->fn_mangled).length) : false))
         {
             String args = CppEmitter_instance_part(scaly_rp, (f).mangled_name, false);
@@ -165803,7 +165902,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
         uint64_t k = 0ULL;
         while ((k < (this_->c_at).length))
         {
-            String m = (Vector29<PlannedFunction>(fs, Array3(this_->c_at, k))).mangled_name;
+            String m = (Vector30<PlannedFunction>(fs, Array3(this_->c_at, k))).mangled_name;
             if (Array6<bool>(this_->c_folded, k))
             {
                 String comma = String{(uint8_t*)"\002, "};
@@ -165832,7 +165931,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
         k = 0ULL;
         while ((k < (this_->c_at).length))
         {
-            PlannedFunction f = Vector29<PlannedFunction>(fs, Array3(this_->c_at, k));
+            PlannedFunction f = Vector30<PlannedFunction>(fs, Array3(this_->c_at, k));
             uint64_t family = Array3(this_->c_family, k);
             String text = CppEmitter_instance_text(scaly_rp, *(this_), f, scaly_lvalue(Array5(this_->f_name, family)));
             Array_add<String>((*c_text), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), text); scaly_t6; }))));
@@ -165923,7 +166022,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
     uint64_t k = 0ULL;
     while ((k < (this_->c_at).length))
     {
-        PlannedFunction f = Vector29<PlannedFunction>(fs, Array3(this_->c_at, k));
+        PlannedFunction f = Vector30<PlannedFunction>(fs, Array3(this_->c_at, k));
         uint64_t family = Array3(this_->c_family, k);
         if (Array6<bool>(this_->c_folded, k))
         {
@@ -166990,7 +167089,7 @@ __attribute__((weak)) String CppEmitter_array_elements(scaly_frame* scaly_rp, Cp
     }
     PlannedType et = CppEmitter_first_generic(&scaly_local.f, (g).global_type);
     {
-        auto&& scaly_t2 = (Vector8<PlannedOperand>(scaly_lvalue(((*((g).value)))), 0LL)).expr;
+        auto&& scaly_t2 = (Vector11<PlannedOperand>(scaly_lvalue(((*((g).value)))), 0LL)).expr;
         if (scaly_t2.tag == 6)
         {
             PlannedMatrix mx = scaly_payload<PlannedMatrix>(scaly_t2);
@@ -167412,7 +167511,7 @@ __attribute__((weak)) String CppEmitter_parameter_ctype(scaly_frame* scaly_rp, P
         return String{(uint8_t*)"\005void*"};
     }
     Vector<PlannedItem> items = ((*((f).input)));
-    PlannedItem item = Vector29<PlannedItem>(items, k);
+    PlannedItem item = Vector30<PlannedItem>(items, k);
     if ((((item).item_type) == (nullptr)))
     {
         return String{(uint8_t*)"\005void*"};
@@ -167442,7 +167541,7 @@ __attribute__((weak)) void CppEmitter_action(scaly_frame* scaly_rp, CppEmitter& 
     String ind = CppEmitter_indent_of(&scaly_local.f, depth);
     if (((((a).target) != (nullptr)) ? ((a).target->length > 0ULL) : false))
     {
-        PlannedOperand target = Vector8<PlannedOperand>(scaly_lvalue(((*((a).target)))), 0LL);
+        PlannedOperand target = Vector11<PlannedOperand>(scaly_lvalue(((*((a).target)))), 0LL);
         if ((((((a).source) != (nullptr)) ? ((a).source->length > 0ULL) : false) ? (((target).member_access) == (nullptr)) : false))
         {
             {
@@ -167452,7 +167551,7 @@ __attribute__((weak)) void CppEmitter_action(scaly_frame* scaly_rp, CppEmitter& 
                     PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
                     if (CppEmitter_contains((&(this_->held)), (v).name))
                     {
-                        String at = CppEmitter_storage(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL)));
+                        String at = CppEmitter_storage(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL)));
                         if ((String_get_length(at) > 0ULL))
                         {
                             StringBuilder_append2(*(out), scaly_lvalue(({
@@ -167498,7 +167597,7 @@ __attribute__((weak)) void CppEmitter_action(scaly_frame* scaly_rp, CppEmitter& 
     {
         return;
     }
-    PlannedOperand op = Vector8<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL);
+    PlannedOperand op = Vector11<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL);
     {
         auto&& scaly_t6 = (op).expr;
         if (scaly_t6.tag == 7)
@@ -167653,7 +167752,7 @@ __attribute__((weak)) void CppEmitter_body(scaly_frame* scaly_rp, CppEmitter& sc
     CppEmitter* this_ = &scaly_self;
     if ((((((a).target) == (nullptr)) ? (((a).source) != (nullptr)) : false) ? ((a).source->length == 1ULL) : false))
     {
-        PlannedOperand op = Vector8<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL);
+        PlannedOperand op = Vector11<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL);
         if ((((op).member_access) == (nullptr)))
         {
             {
@@ -168309,7 +168408,7 @@ __attribute__((weak)) void CppEmitter_binding(scaly_frame* scaly_rp, CppEmitter&
     }
     if (((((known) == (false)) ? (((b).operation) != (nullptr)) : false) ? ((b).operation->length > 0ULL) : false))
     {
-        t = (Vector8<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)).result_type;
+        t = (Vector11<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)).result_type;
         known = true;
     }
     if (((((b).operation) == (nullptr)) ? true : ((b).operation->length == 0ULL)))
@@ -168357,7 +168456,7 @@ __attribute__((weak)) void CppEmitter_binding(scaly_frame* scaly_rp, CppEmitter&
     }
     if ((CppEmitter_is_record(t) ? (!(String_equals((b).binding_type, scaly_lvalue(String{(uint8_t*)"\004copy"})))) : false))
     {
-        String at = CppEmitter_storage(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)));
+        String at = CppEmitter_storage(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*((b).operation)))), 0LL)));
         if ((String_get_length(at) > 0ULL))
         {
             String hname = CppEmitter_declare(scaly_rp, *(this_), (*raw), scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(String{(uint8_t*)"\001P"})); scaly_t8; }))));
@@ -168486,7 +168585,7 @@ __attribute__((weak)) void CppEmitter_while_statement(scaly_frame* scaly_rp, Cpp
     if ((((((((w).cond).binding_item).name) != (nullptr)) ? ((((w).cond).operation) != (nullptr)) : false) ? (((w).cond).operation->length > 0ULL) : false))
     {
         String* wn = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue((*((((w).cond).binding_item).name)))); scaly_t1; });
-        PlannedType wt = (Vector8<PlannedOperand>(scaly_lvalue(((*(((w).cond).operation)))), 0LL)).result_type;
+        PlannedType wt = (Vector11<PlannedOperand>(scaly_lvalue(((*(((w).cond).operation)))), 0LL)).result_type;
         String wvalue = CppEmitter_operands(scaly_rp, *(this_), ((w).cond).operation);
         String wcname = CppEmitter_declare(scaly_rp, *(this_), (*wn), scaly_lvalue(CppEmitter_kind_of(&scaly_local.f, wt)));
         StringBuilder_append2(*(out), scaly_lvalue(({
@@ -168590,7 +168689,7 @@ __attribute__((weak)) void CppEmitter_for_statement(scaly_frame* scaly_rp, CppEm
     {
         return;
     }
-    PlannedOperand end = Vector8<PlannedOperand>(scaly_lvalue(((*((f).expr)))), 0LL);
+    PlannedOperand end = Vector11<PlannedOperand>(scaly_lvalue(((*((f).expr)))), 0LL);
     String t = CppEmitter_ctype(&scaly_local.f, (end).result_type);
     uint64_t w = CppEmitter_int_width(((end).result_type).name);
     String s = CppEmitter_int_type(&scaly_local.f, w, true);
@@ -168675,7 +168774,7 @@ __attribute__((weak)) void CppEmitter_iterator_loop(scaly_frame* scaly_rp, CppEm
     {
         return;
     }
-    PlannedOperand coll = Vector8<PlannedOperand>(scaly_lvalue(((*((f).expr)))), 0LL);
+    PlannedOperand coll = Vector11<PlannedOperand>(scaly_lvalue(((*((f).expr)))), 0LL);
     String get_iter = CppEmitter_declared_name(&scaly_local.f, *(this_), (f).get_iterator_method);
     String next = CppEmitter_declared_name(&scaly_local.f, *(this_), (f).next_method);
     if (((String_get_length(get_iter) == 0ULL) ? true : (String_get_length(next) == 0ULL)))
@@ -168883,7 +168982,7 @@ __attribute__((weak)) String CppEmitter_operands(scaly_frame* scaly_rp, CppEmitt
     {
         return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; }));
     }
-    return CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(ops)))), 0LL)));
+    return CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(ops)))), 0LL)));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
@@ -168893,7 +168992,7 @@ __attribute__((weak)) String CppEmitter_returned(scaly_frame* scaly_rp, CppEmitt
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     if ((((((ops) != (nullptr)) ? (ops->length > 0ULL) : false) ? this_->has_page : false) ? CppEmitter_is_pointer_type(this_->ret_type) : false))
     {
-        PlannedOperand op = Vector8<PlannedOperand>(scaly_lvalue(((*(ops)))), 0LL);
+        PlannedOperand op = Vector11<PlannedOperand>(scaly_lvalue(((*(ops)))), 0LL);
         PlannedType ct = CppEmitter_cpp_type(&scaly_local.f, *(this_), op);
         if ((CppEmitter_is_record(ct) ? (String_get_length(scaly_lvalue(CppEmitter_storage(scaly_rp, *(this_), op))) == 0ULL) : false))
         {
@@ -168940,7 +169039,7 @@ __attribute__((weak)) String CppEmitter_converted(scaly_frame* scaly_rp, CppEmit
     {
         return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; }));
     }
-    PlannedOperand op = Vector8<PlannedOperand>(scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t2 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t2 = ((*(ops))); scaly_t2; }))), 0LL);
+    PlannedOperand op = Vector11<PlannedOperand>(scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t2 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t2 = ((*(ops))); scaly_t2; }))), 0LL);
     String text = CppEmitter_operand(scaly_rp, *(this_), op);
     PlannedType ct = CppEmitter_cpp_type(&scaly_local.f, *(this_), op);
     String have = CppEmitter_ctype(&scaly_local.f, ct);
@@ -169954,7 +170053,7 @@ __attribute__((weak)) String CppEmitter_tuple_value_as(scaly_frame* scaly_rp, Cp
         {
             StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
             StringBuilder_append((*isb$), ((uint8_t)'('));
-            StringBuilder_append2((*isb$), scaly_lvalue((CppEmitter_operands(scaly_rp, *(this_), (Vector8<PlannedComponent>(scaly_lvalue(((*((t).components)))), 0LL)).value))));
+            StringBuilder_append2((*isb$), scaly_lvalue((CppEmitter_operands(scaly_rp, *(this_), (Vector11<PlannedComponent>(scaly_lvalue(((*((t).components)))), 0LL)).value))));
             StringBuilder_append((*isb$), ((uint8_t)')'));
             scaly_t2 = StringBuilder_to_string(scaly_rp, (*isb$));
         }
@@ -169963,10 +170062,10 @@ __attribute__((weak)) String CppEmitter_tuple_value_as(scaly_frame* scaly_rp, Cp
     }
     if ((count == 1ULL))
     {
-        PlannedComponent only = Vector8<PlannedComponent>(scaly_lvalue(((*((t).components)))), 0LL);
+        PlannedComponent only = Vector11<PlannedComponent>(scaly_lvalue(((*((t).components)))), 0LL);
         if (((((only).value) != (nullptr)) ? ((only).value->length > 0ULL) : false))
         {
-            PlannedOperand v = Vector8<PlannedOperand>(scaly_lvalue(((*((only).value)))), 0LL);
+            PlannedOperand v = Vector11<PlannedOperand>(scaly_lvalue(((*((only).value)))), 0LL);
             if (String_equals(scaly_lvalue(CppEmitter_ctype(&scaly_local.f, (v).result_type)), scaly_lvalue(CppEmitter_ctype(&scaly_local.f, (t).tuple_type))))
             {
                 return ({
@@ -170010,7 +170109,7 @@ __attribute__((weak)) String CppEmitter_tuple_value_as(scaly_frame* scaly_rp, Cp
             String inner = String{nullptr};
             if ((((String_get_length(field) > 1ULL) ? ((c->value) != (nullptr)) : false) ? (c->value->length == 1ULL) : false))
             {
-                inner = CppEmitter_untyped_tuple(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), scaly_lvalue(String_substring(&scaly_local.f, field, 1ULL, (String_get_length(field) - 1ULL))));
+                inner = CppEmitter_untyped_tuple(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), scaly_lvalue(String_substring(&scaly_local.f, field, 1ULL, (String_get_length(field) - 1ULL))));
             }
             if ((String_get_length(inner) > 0ULL))
             {
@@ -170020,7 +170119,7 @@ __attribute__((weak)) String CppEmitter_tuple_value_as(scaly_frame* scaly_rp, Cp
             {
                 if ((((String_get_length(field) > 1ULL) ? ((c->value) != (nullptr)) : false) ? (c->value->length > 0ULL) : false))
                 {
-                    StringBuilder_append2((*sb), scaly_lvalue(CppEmitter_as_kind(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), scaly_lvalue(String_substring(&scaly_local.f, field, 0ULL, 1ULL)), scaly_lvalue(String_substring(&scaly_local.f, field, 1ULL, (String_get_length(field) - 1ULL))))));
+                    StringBuilder_append2((*sb), scaly_lvalue(CppEmitter_as_kind(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(scaly_lvalue(((*(c->value)))), 0LL)), scaly_lvalue(String_substring(&scaly_local.f, field, 0ULL, 1ULL)), scaly_lvalue(String_substring(&scaly_local.f, field, 1ULL, (String_get_length(field) - 1ULL))))));
                 }
                 else
                 {
@@ -170204,7 +170303,7 @@ __attribute__((weak)) bool CppEmitter_is_plain_arm(PlannedStatement* s)
                 return false;
             }
             {
-                auto&& scaly_t2 = (Vector8<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL)).expr;
+                auto&& scaly_t2 = (Vector11<PlannedOperand>(scaly_lvalue(((*((a).source)))), 0LL)).expr;
                 if (scaly_t2.tag == 7)
                 {
                     PlannedBlock b = scaly_payload<PlannedBlock>(scaly_t2);
@@ -170346,7 +170445,7 @@ __attribute__((weak)) void CppEmitter_choose_statement(scaly_frame* scaly_rp, Cp
     {
         return;
     }
-    PlannedOperand subject = Vector8<PlannedOperand>(scaly_lvalue(((*((c).condition)))), 0LL);
+    PlannedOperand subject = Vector11<PlannedOperand>(scaly_lvalue(((*((c).condition)))), 0LL);
     PlannedType st = (subject).result_type;
     String v = CppEmitter_temp(&scaly_local.f, *(this_));
     bool throwing = false;
@@ -170797,7 +170896,7 @@ __attribute__((weak)) void CppEmitter_match_statement(scaly_frame* scaly_rp, Cpp
     {
         return;
     }
-    PlannedOperand subject = Vector8<PlannedOperand>(scaly_lvalue(((*((m).condition)))), 0LL);
+    PlannedOperand subject = Vector11<PlannedOperand>(scaly_lvalue(((*((m).condition)))), 0LL);
     String v = CppEmitter_temp(&scaly_local.f, *(this_));
     StringBuilder_append2(*(out), scaly_lvalue(({
         String scaly_t1{};
@@ -171442,13 +171541,13 @@ __attribute__((weak)) String CppEmitter_indirect_call(scaly_frame* scaly_rp, Cpp
         return CppEmitter_untranslated(scaly_rp, *(this_), scaly_lvalue(String{(uint8_t*)"\036indirect call without a callee"}));
     }
     Vector<PlannedOperand> all = ((*((c).args)));
-    String callee = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, 0LL)));
+    String callee = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 0LL)));
     StringBuilder* types = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
     StringBuilder* values = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
     uint64_t k = 1ULL;
     while ((k < (all).length))
     {
-        PlannedOperand a = Vector8<PlannedOperand>(all, k);
+        PlannedOperand a = Vector11<PlannedOperand>(all, k);
         if ((k > 1ULL))
         {
             StringBuilder_append2((*types), scaly_lvalue(String{(uint8_t*)"\002, "}));
@@ -171481,7 +171580,7 @@ __attribute__((weak)) String CppEmitter_indirect_call(scaly_frame* scaly_rp, Cpp
     uint64_t j = 1ULL;
     while ((j < (all).length))
     {
-        PlannedType pt = CppEmitter_cpp_type(&scaly_local.f, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, j)));
+        PlannedType pt = CppEmitter_cpp_type(&scaly_local.f, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, j)));
         StringBuilder_append2((*ptypes), scaly_lvalue(({
         String scaly_t6{};
         {
@@ -171545,16 +171644,16 @@ __attribute__((weak)) String CppEmitter_lowered_call(scaly_frame* scaly_rp, CppE
         return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init3((*scaly_t2)); scaly_t2; }));
     }
     Vector<PlannedOperand> all = ((*((c).args)));
-    String a0 = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, 0LL)));
+    String a0 = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 0LL)));
     String* a1 = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init3((*scaly_t3)); scaly_t3; });
     if (((all).length > 1ULL))
     {
-        (*a1) = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, 1LL)));
+        (*a1) = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 1LL)));
     }
     String* a2 = ({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init3((*scaly_t4)); scaly_t4; });
     if (((all).length > 2ULL))
     {
-        (*a2) = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, 2LL)));
+        (*a2) = CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 2LL)));
     }
     String rt = CppEmitter_ctype(&scaly_local.f, (c).result_type);
     {
@@ -171776,7 +171875,7 @@ __attribute__((weak)) String CppEmitter_intrinsic_function(scaly_frame* scaly_rp
     Vector<PlannedOperand> all = ((*((c).args)));
     if ((String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\006unwrap"})) ? ((all).length == 1ULL) : false))
     {
-        PlannedOperand o = Vector8<PlannedOperand>(all, 0LL);
+        PlannedOperand o = Vector11<PlannedOperand>(all, 0LL);
         PlannedType ot = CppEmitter_cpp_type(&scaly_local.f, *(this_), o);
         String text = CppEmitter_operand(scaly_rp, *(this_), o);
         if ((CppEmitter_is_pointer_type(ot) ? CppEmitter_is_pointer_type((c).result_type) : false))
@@ -171827,7 +171926,7 @@ __attribute__((weak)) String CppEmitter_intrinsic_function(scaly_frame* scaly_rp
     }
     if ((String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\011unwrap_or"})) ? ((all).length == 2ULL) : false))
     {
-        return CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(all, 1LL)));
+        return CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 1LL)));
     }
     return CppEmitter_untranslated(scaly_rp, *(this_), scaly_lvalue(({
         String scaly_t11{};
@@ -172190,11 +172289,11 @@ __attribute__((weak)) String CppEmitter_operator_call(scaly_frame* scaly_rp, Cpp
     Vector<PlannedOperand> args = ((*((c).args)));
     if (((args).length == 1ULL))
     {
-        return CppEmitter_prefix_operation(scaly_rp, *(this_), (c).name, scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), (c).result_type);
+        return CppEmitter_prefix_operation(scaly_rp, *(this_), (c).name, scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), (c).result_type);
     }
     if (((args).length == 2ULL))
     {
-        return CppEmitter_binary_operation(scaly_rp, *(this_), (c).name, scaly_lvalue(Vector8<PlannedOperand>(args, 0LL)), scaly_lvalue(Vector8<PlannedOperand>(args, 1LL)), (c).result_type);
+        return CppEmitter_binary_operation(scaly_rp, *(this_), (c).name, scaly_lvalue(Vector11<PlannedOperand>(args, 0LL)), scaly_lvalue(Vector11<PlannedOperand>(args, 1LL)), (c).result_type);
     }
     this_->errors = (this_->errors + 1ULL);
     {

@@ -897,8 +897,9 @@ define GpuKernel
         ; A record built by its init: the init is a function of the kernel
         ; (listed among k_functions by its symbol, callees first) that
         ; starts from the record with every field 0 and answers it when its
-        ; body is through; in the body `this` is that record. A field with a
-        ; default of its own is not given one there: such a record is refused.
+        ; body is through; in the body `this` is that record. A field's
+        ; default is set by the body itself: the planner puts its assignment
+        ; first (Planner.with_field_defaults#).
         procedure k_init(mutable this: GpuKernel, call: PlannedCall)
         {
             if call.args <> null
@@ -932,18 +933,6 @@ define GpuKernel
             }
             let ss: ref[Vector[PlannedStructure]]? plan_structures
             let s_ptr ss.get(place.record as size_t)
-            let props s_ptr.properties
-            var pi: size_t 0
-            while pi < props.length
-            {
-                let p_ptr props.get pi
-                if p_ptr <> null and p_ptr.initializer <> null
-                {
-                    this.block_named("constructs a record with a default for its field ", p_ptr.name)
-                    return
-                }
-                pi := pi + 1
-            }
             let ini_ptr s_ptr.initializers.get(place.at as size_t)
             let ini ini_ptr.unwrap()
             var has_body false
