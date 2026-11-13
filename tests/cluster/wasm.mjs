@@ -171,7 +171,7 @@ const scenarios = {
   // of them is killed, where one falls silent and where all are killed
   // halfway (the coordinator renders the rest), its job handed on each time
   async render(net) {
-    const size = { RENDER_WIDTH: '96', RENDER_HEIGHT: '72', RENDER_TILE: '16', RENDER_PASSES: '12', RENDER_SAMPLES: '2' };
+    const size = { RENDER_WIDTH: '96', RENDER_HEIGHT: '72', RENDER_TILE: '16', RENDER_PASSES: '5', RENDER_SAMPLES: '2' };
     const image = s => (s.match(/^C: image (\d+)$/m) || [])[1];
     const solo = await node(net, 1, 'render.wasm', { ...size, RENDER_ROLE: 's' });
     await solo.ended;

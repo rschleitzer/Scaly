@@ -6,7 +6,9 @@
 ; the noise of each settles into the picture.
 ;
 ; The picture is cut into tiles and the work into JOBS: one pass over one
-; tile, a pass being SAMPLES rays per point. The coordinator hands a job to
+; tile. The first pass sends SAMPLES rays through each point, and each pass
+; after it as many as all before it together -- the picture is there at
+; once, its noise halved with each pass. The coordinator hands a job to
 ; each node, and a node that sends back what it rendered gets the next one --
 ; so a fast node renders more than a slow one. A node that is gone -- its
 ; connection closed, or silent past the cluster's heartbeat -- has its job
@@ -25,7 +27,8 @@
 ;   RENDER_NODES how many nodes render (the coordinator waits for them)
 ;   RENDER_PORT  where the coordinator listens (default 47740)
 ;   RENDER_WIDTH, RENDER_HEIGHT, RENDER_TILE, RENDER_PASSES, RENDER_SAMPLES
-;                the picture: 256 x 192 in tiles of 32 x 32, 16 passes of 4
+;                the picture: 256 x 192 in tiles of 32 x 32, 8 passes, the
+;                first of 4 rays a point: 1020 rays in all
 ;
 ; What the coordinator says, a line each:
 ;
@@ -94,7 +97,7 @@ function chance(s: u64) returns f64
 ; pass -- the same wherever it is rendered.
 function seed(point: int, pass: int, ray: int) returns u64
 {
-    var z (point as u64) * 0x9E3779B97F4A7C15 + ((pass * 64 + ray) as u64) * 0xD1B54A32D192ED03 + 0x632BE59BD9B4E019
+    var z (point as u64) * 0x9E3779B97F4A7C15 + ((pass * 1048576 + ray) as u64) * 0xD1B54A32D192ED03 + 0x632BE59BD9B4E019
     z := (z xor (z >> 30)) * 0xBF58476D1CE4E5B9
     z := (z xor (z >> 27)) * 0x94D049BB133111EB
     z xor (z >> 31)
@@ -448,8 +451,8 @@ define TileMsg
     sums: Vector[i64]
 )
 
-; The picture: its size, its tiles and how many rays a pass sends through
-; a point.
+; The picture: its size, its tiles and how many rays the first pass sends
+; through a point.
 define Farm
 (
     w: int
@@ -476,7 +479,7 @@ procedure render(f: Farm, pass: int, tile: int, mutable out: Vector[i64])
         let y ty + i / f.tile
         if x < f.w and y < f.h
         {
-            let c point(x, y, f.w, f.h, pass, f.rays)
+            let c point(x, y, f.w, f.h, pass, f.rays << pass)
             rs.put(i as size_t, c.r as i64)
             gs.put(i as size_t, c.g as i64)
             bs.put(i as size_t, c.b as i64)
@@ -508,13 +511,13 @@ function shade(sum: i64, rays: int) returns int
 }
 
 ; Add a tile's sums into the picture -- every point's sums, and how many
-; passes each tile has -- and say the tile as it stands now.
+; rays each tile has had -- and say the tile as it stands now.
 procedure take(f: Farm, mutable sums: Vector[i64], mutable counts: Vector[int], pass: int, tile: int, rank: int, ms: i64, got: Vector[i64])
 {
     let tx (tile % f.across) * f.tile
     let ty (tile / f.across) * f.tile
-    counts.put(tile as size_t, counts[tile as size_t] + 1)
-    let rays counts[tile as size_t] * f.rays
+    counts.put(tile as size_t, counts[tile as size_t] + (f.rays << pass))
+    let rays counts[tile as size_t]
     var line StringBuilder()
     line.append "P `pass` `tile` `rank` `ms` "
     var i 0
@@ -569,7 +572,7 @@ procedure alone(f: Farm, mutable sums: Vector[i64], mutable counts: Vector[int],
 let W env_int("RENDER_WIDTH", 256)
 let H env_int("RENDER_HEIGHT", 192)
 let TILE env_int("RENDER_TILE", 32)
-let PASSES env_int("RENDER_PASSES", 16)
+let PASSES env_int("RENDER_PASSES", 8)
 let NODES env_int("RENDER_NODES", 3)
 let RANK env_int("RENDER_RANK", 0)
 let PORT env_int("RENDER_PORT", 47740) as i32
