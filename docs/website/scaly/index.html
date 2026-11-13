@@ -179,6 +179,10 @@
             <span class="way-name">Fractals<span class="arrow">→</span></span>
             <p>Sixteen fractals, in the plane and in space, from one loop, run on one core, on all of them and on the graphics card — side by side, and you can edit it.</p>
         </a>
+        <a class="way" href="../play/cluster/">
+            <span class="way-name">A render farm<span class="arrow">→</span></span>
+            <p>One program as a cluster: nodes path-trace a room tile by tile. Kill one, and the others take over its work — the picture comes out the same, bit for bit.</p>
+        </a>
         <a class="way" href="../play/">
             <span class="way-name">The REPL<span class="arrow">→</span></span>
             <p>Type a line, see its value; definitions stay for the next one.</p>
@@ -277,6 +281,7 @@ serve(app, 8080)</pre>
     <table class="facts">
         <tr><td><a href="../play/playground.html">The playground</a></td><td>The language in programs you run in the browser: the tour, then drawing and many cores. In English and German.</td></tr>
         <tr><td><a href="../play/fractals/">Fractals</a></td><td>Sixteen fractals, in the plane and in space, from one loop, on one core, on every core and on the graphics card, timed side by side.</td></tr>
+        <tr><td><a href="../play/cluster/">A render farm</a></td><td>The cluster runtime in the browser: nodes render a room, and the work of a node that is killed or falls silent goes on to the others.</td></tr>
         <tr><td><a href="../lang/tutorial.htm">The tutorial</a></td><td>From a first program to packages and production builds.</td></tr>
         <tr><td><a href="../lang/">The specification</a></td><td>The language end to end; its examples are executed by the test suite. As <a href="../lang/scaly-spec.pdf">PDF</a>.</td></tr>
         <tr><td><a href="../downloads/scaly-vscode.vsix">VS Code</a></td><td>An extension on the language server: diagnostics as you type, hover, go to definition, references, rename, completion. Source-level debugging through DWARF with lldb.</td></tr>
@@ -305,6 +310,7 @@ tools/install.sh                <span class="comment"># put it on your PATH</spa
         <a href="../">scaly.io</a>
         <a href="../play/playground.html">Playground</a>
         <a href="../play/fractals/">Fractals</a>
+        <a href="../play/cluster/">Render farm</a>
         <a href="../play/">REPL</a>
         <a href="../download/">Install</a>
         <a href="../lang/">Language reference</a>
