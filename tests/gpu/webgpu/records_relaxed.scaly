@@ -26,6 +26,19 @@ define Box
     h: i32
 )
 
+; a record holding a record: handed to the card whole, from the environment
+define Scene
+(
+    box: Box
+    scale: f32
+)
+
+function limit(b: Box) returns i32
+    b.h / 8
+
+function shift(s: Scene) returns f32
+    (s.box.w as f32) * s.scale
+
 function plus(a: V3, b: V3) returns V3
     V3(a.x + b.x, a.y + b.y, a.z + b.z)
 
@@ -48,23 +61,24 @@ function parts(v: V3) returns (whole: i32, rest: f32)
     (whole: w, rest: s - (w as f32))
 }
 
-function traced(i: size_t, box: Box) returns (x: f32, w: i32)
+function traced(i: size_t, box: Box, scene: Scene) returns (x: f32, w: i32)
 {
     var r Ray(V3((i as f32) * 0.01, 0.0, 1.0), unit(V3(1.0, (i as f32) * 0.001, 0.5)), 0)
-    while r.bounces < box.h / 8
+    while r.bounces < limit(box)
         r := step(r)
-    let pick if r.o.x > (box.w as f32): r.o else r.d
+    let pick if r.o.x > shift(scene): r.o else r.d
     let p parts(pick)
     (x: p.rest + pick.y, w: p.whole + r.bounces)
 }
 
 let box Box(64, 40)
+let scene Scene(box, 0.25)
 let n: size_t 2048
 var xs Vector[f32](n)
 var ws Vector[i32](n)
 for i in n
 {
-    let t traced(i, box)
+    let t traced(i, box, scene)
     xs.put(i, t.x)
     ws.put(i, t.w)
 }
@@ -73,9 +87,9 @@ var lw Vector[i32](n)
 relaxed for i in n
 {
     var r Ray(V3((i as f32) * 0.01, 0.0, 1.0), unit(V3(1.0, (i as f32) * 0.001, 0.5)), 0)
-    while r.bounces < box.h / 8
+    while r.bounces < limit(box)
         r := step(r)
-    let pick if r.o.x > (box.w as f32): r.o else r.d
+    let pick if r.o.x > shift(scene): r.o else r.d
     let p parts(pick)
     lx.put(i, p.rest + pick.y)
     lw.put(i, p.whole + r.bounces)

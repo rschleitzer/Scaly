@@ -1252,8 +1252,7 @@ define GpuKernel
             let kind GpuKernel.scalar_kind(t)
             if kind = 0
             {
-                let msg "uses `name`, a `GpuKernel.type_text(t)`, as a whole"
-                this.block(msg)
+                this.k_uniform_record(name, t, op)
                 return
             }
             if kind = 7
@@ -1302,8 +1301,7 @@ define GpuKernel
             let kind GpuKernel.scalar_kind(lt)
             if kind = 0
             {
-                let msg "uses `full`, a `GpuKernel.type_text(lt)`, as a whole"
-                this.block(msg)
+                this.k_uniform_record(full, lt, op)
                 return
             }
             if kind = 7
@@ -1319,6 +1317,29 @@ define GpuKernel
             {
                 k_uniform_ops.add op
                 k_uniform_kinds.add kind
+            }
+        }
+
+        ; A record or a tuple of the environment used as a whole (handed to
+        ; a function, bound to a name): a uniform of its record's kind. Its
+        ; numbers go to the card as words, field by field in the order of
+        ; the fields (the emitter's gpu_store_aggregate#), and the kernel
+        ; builds the record again from them (GpuMsl.record_text#).
+        procedure k_uniform_record(mutable this: GpuKernel, name: String, t: PlannedType, op: PlannedOperand)
+        {
+            if this.record_misfit(t, name, 0).get_length() > 0
+            {
+                let msg "uses `name`, a `GpuKernel.type_text(t)`, as a whole"
+                this.block(msg)
+                return
+            }
+            let rk this.take_record(t, name)
+            if rk < 100
+                return
+            if this.note_name(&k_uniforms, &k_uniform_types, name, t)
+            {
+                k_uniform_ops.add op
+                k_uniform_kinds.add rk
             }
         }
 

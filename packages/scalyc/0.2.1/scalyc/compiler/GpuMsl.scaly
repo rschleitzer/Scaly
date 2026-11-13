@@ -301,10 +301,7 @@ define GpuMsl
             while ui < gk.k_uniforms.length
             {
                 let kind GpuMsl.int_at(&gk.k_uniform_kinds, ui as int)
-                if kind = 5 or kind = 6
-                    words := words + 2
-                else
-                    words := words + 1
+                words := words + GpuMsl.words_of(gk, kind)
                 ui := ui + 1
             }
             m_uniform_words := words
@@ -329,15 +326,19 @@ define GpuMsl
                     out.append "    let u`ui`: f32 = bitcast<f32>(U[`word`]);\n"
                 else if kind = 5 or kind = 6
                     out.append "    let u`ui`: u32 = U[`word`];\n    let u`ui`_h: u32 = U[`after`];\n"
+                else if kind >= 100
+                {
+                    let built this.record_text(gk, kind, word)
+                    if m_refused
+                        return ""
+                    out.append "    let u`ui`: `this.ty(kind)` = `built`;\n"
+                }
                 else
                 {
                     this.refuse("a scalar of no kind a card has")
                     return ""
                 }
-                if kind = 5 or kind = 6
-                    word := word + 2
-                else
-                    word := word + 1
+                word := word + GpuMsl.words_of(gk, kind)
                 ui := ui + 1
             }
 
@@ -553,15 +554,19 @@ define GpuMsl
                     out.append "    const long u`ui` = (long)((ulong)U[`word`] | ((ulong)U[`after`] << 32));\n"
                 else if kind = 6
                     out.append "    const ulong u`ui` = (ulong)U[`word`] | ((ulong)U[`after`] << 32);\n"
+                else if kind >= 100
+                {
+                    let built this.record_text(gk, kind, word)
+                    if m_refused
+                        return ""
+                    out.append "    const `GpuMsl.type_name(kind)` u`ui` = `built`;\n"
+                }
                 else
                 {
                     this.refuse("a scalar of no kind a card has")
                     return ""
                 }
-                if kind = 5 or kind = 6
-                    word := word + 2
-                else
-                    word := word + 1
+                word := word + GpuMsl.words_of(gk, kind)
                 ui := ui + 1
             }
             m_uniform_words := word
@@ -945,6 +950,77 @@ define GpuMsl
                 i := i + 1
             }
             at
+        }
+
+        ; The words a uniform of that kind takes: two for a 64-bit integer, a
+        ; record's fields' together, one for any other.
+        function words_of(gk: ref[GpuKernel.GpuKernel], kind: int) returns size_t
+        {
+            if kind = 5 or kind = 6
+                return 2
+            if kind < 100
+                return 1
+            let ri (kind - 100) as size_t
+            let from gk.k_record_from[ri]
+            var all: size_t 0
+            var j: size_t 0
+            while j < gk.k_record_count[ri]
+            {
+                all := all + GpuMsl.words_of(gk, gk.k_field_kinds[from + j])
+                j := j + 1
+            }
+            all
+        }
+
+        ; A record of the environment, built from its words from `at` on:
+        ; its fields in order, a record's from its own words (the emitter's
+        ; gpu_store_aggregate# wrote them so).
+        procedure record_text(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], kind: int, at: size_t) returns String
+        {
+            let ri (kind - 100) as size_t
+            let from gk.k_record_from[ri]
+            var parts StringBuilder()
+            var w at
+            var j: size_t 0
+            while j < gk.k_record_count[ri]
+            {
+                let fk gk.k_field_kinds[from + j]
+                if j > 0
+                    parts.append ", "
+                let after w + 1
+                if fk >= 100
+                    parts.append(this.record_text(gk, fk, w))
+                else if fk = 1
+                    parts.append "U[`w`] != 0u"
+                else if fk = 3
+                    parts.append "U[`w`]"
+                else if m_wgsl
+                {
+                    if fk = 2
+                        parts.append "bitcast<i32>(U[`w`])"
+                    else if fk = 4
+                        parts.append "bitcast<f32>(U[`w`])"
+                    else
+                    {
+                        this.refuse("a 64-bit integer, which webgpu does not have: a field of a record of the environment")
+                        return ""
+                    }
+                }
+                else if fk = 2
+                    parts.append "as_type<int>(U[`w`])"
+                else if fk = 4
+                    parts.append "as_type<float>(U[`w`])"
+                else if fk = 5
+                    parts.append "(long)((ulong)U[`w`] | ((ulong)U[`after`] << 32))"
+                else
+                    parts.append "(ulong)U[`w`] | ((ulong)U[`after`] << 32)"
+                w := w + GpuMsl.words_of(gk, fk)
+                j := j + 1
+            }
+            let text parts.to_string()
+            if m_wgsl
+                return "s`kind - 100`(`text`)"
+            "s`kind - 100`{`text`}"
         }
 
         ; A record or a tuple built in the round, from its parts in the order

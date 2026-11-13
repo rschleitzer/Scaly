@@ -1,6 +1,7 @@
 ; Records and tuples of a card's numbers in a kernel: built, handed to a
 ; function and back, nested, read field by field, chosen by a value `if`,
-; and a field of a record of the environment; sqrtf on the card.
+; a field of a record of the environment, and such records handed on whole
+; (one of them holding another); sqrtf on the card.
 ; cards: 1
 
 function sqrtf(x: f32) returns f32 extern
@@ -24,6 +25,19 @@ define Box
     w: i32
     h: i32
 )
+
+; a record holding a record: handed to the card whole, from the environment
+define Scene
+(
+    box: Box
+    scale: f32
+)
+
+function limit(b: Box) returns i32
+    b.h / 8
+
+function shift(s: Scene) returns f32
+    (s.box.w as f32) * s.scale
 
 function plus(a: V3, b: V3) returns V3
     V3(a.x + b.x, a.y + b.y, a.z + b.z)
@@ -49,15 +63,16 @@ function parts(v: V3) returns (whole: i32, rest: f32)
 }
 
 let box Box(64, 40)
+let scene Scene(box, 0.25)
 let n: size_t 2048
 var xs Vector[f32](n)
 var ws Vector[i32](n)
 for i in n
 {
     var r Ray(V3((i as f32) * 0.01, 0.0, 1.0), unit(V3(1.0, (i as f32) * 0.001, 0.5)), 0)
-    while r.bounces < box.h / 8
+    while r.bounces < limit(box)
         r := step(r)
-    let pick if r.o.x > (box.w as f32): r.o else r.d
+    let pick if r.o.x > shift(scene): r.o else r.d
     let p parts(pick)
     xs.put(i, p.rest + pick.y)
     ws.put(i, p.whole + r.bounces)

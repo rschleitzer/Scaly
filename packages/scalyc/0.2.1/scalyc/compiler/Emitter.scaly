@@ -19013,12 +19013,24 @@ define Emitter
                 var uop offer.uniform_ops[ui]
                 let kind offer.uniform_kinds[ui]
                 let v emit_operand uop
-                if this.gpu_store_scalar(v, kind, words_ty, words, word) = false
-                    ok := false
-                if kind = 5 or kind = 6
-                    word := word + 2
+                if kind >= 100
+                {
+                    ; a record of the environment: its fields' words in order
+                    let wrote this.gpu_store_record(v, uop, words_ty, words, word)
+                    if wrote < 0
+                        ok := false
+                    else
+                        word := word + (wrote as size_t)
+                }
                 else
-                    word := word + 1
+                {
+                    if this.gpu_store_scalar(v, kind, words_ty, words, word) = false
+                        ok := false
+                    if kind = 5 or kind = 6
+                        word := word + 2
+                    else
+                        word := word + 1
+                }
                 ui := ui + 1
             }
 
@@ -19220,6 +19232,92 @@ define Emitter
         ; A scalar of the environment into its words, as GpuMsl reads it
         ; back: a bool as 0 or 1, 32 bits as they are, 64 as low then high.
         ; False where the value is not of the type its kind says.
+        ; A record of the environment for the card (GpuKernel.k_uniform_record#):
+        ; the value, loaded where the operand is its address, then its fields'
+        ; words. The words written, -1 where a value has a shape it does not know.
+        procedure gpu_store_record(mutable this, mutable v: LLVMValueRef, op: PlannedOperand, mutable words_ty: LLVMTypeRef, mutable words: LLVMValueRef, word: size_t) returns int
+        {
+            if v = null
+                return 0 - 1
+            var value v
+            if LLVMGetTypeKind(LLVMTypeOf(v)) = LLVMTypeKind.Pointer()
+            {
+                var t op.result_type
+                if op.member_access <> null and op.member_access.length > 0
+                {
+                    let last op.member_access.get(op.member_access.length - 1)
+                    if last = null
+                        return 0 - 1
+                    t := last.unwrap().result_type
+                }
+                let st map_type t
+                if st = null or LLVMGetTypeKind(st) <> LLVMTypeKind.Struct()
+                    return 0 - 1
+                value := LLVMBuildLoad2(builder, st, v, "gpu.record")
+            }
+            this.gpu_store_aggregate(value, words_ty, words, word)
+        }
+
+        ; The words of a record value: each field in order -- a bool, a 32-bit
+        ; number one word, a 64-bit integer two (low, high), a record its own.
+        ; GpuMsl.record_text# reads them back in that order.
+        procedure gpu_store_aggregate(mutable this, mutable v: LLVMValueRef, mutable words_ty: LLVMTypeRef, mutable words: LLVMValueRef, word: size_t) returns int
+        {
+            let ty LLVMTypeOf(v)
+            if LLVMGetTypeKind(ty) <> LLVMTypeKind.Struct()
+                return 0 - 1
+            let n LLVMCountStructElementTypes(ty)
+            var at word
+            var i: u32 0
+            while i < n
+            {
+                let f LLVMBuildExtractValue(builder, v, i, "gpu.field")
+                let ft LLVMTypeOf(f)
+                let fk LLVMGetTypeKind(ft)
+                if fk = LLVMTypeKind.Struct()
+                {
+                    let wrote this.gpu_store_aggregate(f, words_ty, words, at)
+                    if wrote < 0
+                        return 0 - 1
+                    at := at + (wrote as size_t)
+                }
+                else if fk = LLVMTypeKind.Float()
+                {
+                    if this.gpu_store_scalar(f, 4, words_ty, words, at) = false
+                        return 0 - 1
+                    at := at + 1
+                }
+                else if fk = LLVMTypeKind.Integer()
+                {
+                    let width LLVMGetIntTypeWidth(ft)
+                    if width <= 8
+                    {
+                        if this.gpu_store_scalar(f, 1, words_ty, words, at) = false
+                            return 0 - 1
+                        at := at + 1
+                    }
+                    else if width = 32
+                    {
+                        if this.gpu_store_scalar(f, 2, words_ty, words, at) = false
+                            return 0 - 1
+                        at := at + 1
+                    }
+                    else if width = 64
+                    {
+                        if this.gpu_store_scalar(f, 5, words_ty, words, at) = false
+                            return 0 - 1
+                        at := at + 2
+                    }
+                    else
+                        return 0 - 1
+                }
+                else
+                    return 0 - 1
+                i := i + 1
+            }
+            (at - word) as int
+        }
+
         procedure gpu_store_scalar(mutable this, mutable v: LLVMValueRef, kind: int, mutable words_ty: LLVMTypeRef, mutable words: LLVMValueRef, word: size_t) returns bool
         {
             if v = null
