@@ -147218,6 +147218,28 @@ __attribute__((weak)) void Emitter_hand_over_arguments(Emitter& scaly_self, LLVM
     Vector_put62<LLVMOpaqueValue*>((*args), 0ULL, argc);
     Vector_put62<LLVMOpaqueValue*>((*args), 1ULL, LLVMGetParam(main_fn, (uint32_t)1ULL));
     LLVMBuildCall2(this_->builder, fty, callee, ((*args)).data, (uint32_t)2ULL, ((const char*)""));
+    if (((this_->config).page_size > 0ULL))
+    {
+        LLVMOpaqueType* vty = LLVMVoidTypeInContext(this_->context);
+        Vector<LLVMOpaqueType*>* no_params = ({ Vector<LLVMOpaqueType*>* scaly_t3 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t3 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t3), 1ULL); scaly_t3; });
+        LLVMOpaqueType* helper_ty = LLVMFunctionType(vty, ((*no_params)).data, (uint32_t)0ULL, (int32_t)0ULL);
+        LLVMOpaqueValue* helper = LLVMGetNamedFunction(this_->llvm_module, ((const char*)"_Z17scaly_helper_mainv"));
+        if (((helper) == (nullptr)))
+        {
+            helper = LLVMAddFunction(this_->llvm_module, ((const char*)"_Z17scaly_helper_mainv"), helper_ty);
+        }
+        Vector<LLVMOpaqueType*>* gtys = ({ Vector<LLVMOpaqueType*>* scaly_t4 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t4 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t4), 1ULL); scaly_t4; });
+        Vector_put62<LLVMOpaqueType*>((*gtys), 0ULL, ptr_ty);
+        LLVMOpaqueType* gate_ty = LLVMFunctionType(vty, ((*gtys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+        LLVMOpaqueValue* gate = LLVMGetNamedFunction(this_->llvm_module, ((const char*)"scaly_helper_gate"));
+        if (((gate) == (nullptr)))
+        {
+            gate = LLVMAddFunction(this_->llvm_module, ((const char*)"scaly_helper_gate"), gate_ty);
+        }
+        Vector<LLVMOpaqueValue*>* gargs = ({ Vector<LLVMOpaqueValue*>* scaly_t5 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t5 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t5), 1ULL); scaly_t5; });
+        Vector_put62<LLVMOpaqueValue*>((*gargs), 0ULL, helper);
+        LLVMBuildCall2(this_->builder, gate_ty, gate, ((*gargs)).data, (uint32_t)1ULL, ((const char*)""));
+    }
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly

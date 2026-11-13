@@ -8818,6 +8818,33 @@ define Emitter
             args.put(0, argc)
             args.put(1, LLVMGetParam(main_fn, 1))
             LLVMBuildCall2(builder, fty, callee, args.data, 2, "" as pointer[const_char])
+            ; ... and then its helper through the gate: started with
+            ; --scaly-helper, the program serves the coordinators of its build
+            ; instead of running (ROADMAP-cluster.md, C1; eio.c,
+            ; scaly_helper_gate). Handed over from HERE so the reference stands
+            ; in the program's IR, where a whole-program opt keeps it. Only
+            ; with the standard library (page_size is its PAGE_SIZE): a program
+            ; without it has no helper. ★The symbol is cluster.scaly's
+            ; `scaly_helper_main()` as the planner mangles it: it takes no
+            ; parameter, and must not get one.
+            if config.page_size > 0
+            {
+                let vty LLVMVoidTypeInContext(context)
+                var no_params Vector[LLVMTypeRef](1)
+                let helper_ty LLVMFunctionType(vty, no_params.data, 0, 0)
+                var helper LLVMGetNamedFunction(llvm_module, "_Z17scaly_helper_mainv" as pointer[const_char])
+                if helper = null
+                    helper := LLVMAddFunction(llvm_module, "_Z17scaly_helper_mainv" as pointer[const_char], helper_ty)
+                var gtys Vector[LLVMTypeRef](1)
+                gtys.put(0, ptr_ty)
+                let gate_ty LLVMFunctionType(vty, gtys.data, 1, 0)
+                var gate LLVMGetNamedFunction(llvm_module, "scaly_helper_gate" as pointer[const_char])
+                if gate = null
+                    gate := LLVMAddFunction(llvm_module, "scaly_helper_gate" as pointer[const_char], gate_ty)
+                var gargs Vector[LLVMValueRef](1)
+                gargs.put(0, helper)
+                LLVMBuildCall2(builder, gate_ty, gate, gargs.data, 1, "" as pointer[const_char])
+            }
         }
 
         ; WASI's start code calls `__main_void`, which libc defines weakly to

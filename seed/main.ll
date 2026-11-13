@@ -27,13 +27,18 @@ declare i64 @_ZN3cliB6scalycB4v0_24mainEiPPc(i64, ptr)
 define i64 @main(i64 %0, ptr %1) {
 entry:
   call void @scaly_set_arguments(i64 %0, ptr %1)
+  call void @scaly_helper_gate(ptr @_Z17scaly_helper_mainv)
   %call = call i64 @_ZN3cliB6scalycB4v0_24mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
 }
 
 declare void @scaly_set_arguments(i64, ptr)
 
+declare void @_Z17scaly_helper_mainv()
+
+declare void @scaly_helper_gate(ptr)
+
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -2564003990828807071
+  ret i64 -2190634709285359848
 }

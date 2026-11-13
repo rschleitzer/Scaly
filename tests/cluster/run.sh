@@ -257,5 +257,47 @@ if [ -x "$OUT/cluster_train$SCALY_EXE" ]; then
   fi
 fi
 
+# ---- helpers (ROADMAP-cluster.md, C1): one program, started with
+# --scaly-helper or normally; a coordinator finds the helpers of its own
+# build in the group and connects. Without a key the group is the
+# loopback's; with one the helpers must hold it, and a helper of another
+# build is passed over. All on this machine, so on the loopback. ----
+t=helpers
+HB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$HB" "$OUT/cluster_${t}_other$SCALY_EXE"
+# another build of the same program: one statement more, another stamp
+{ cat tests/cluster/$t.scaly; echo 'print "another build"'; } > "$OUT/cluster_${t}_other.scaly"
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$HB" >/dev/null 2>&1 \
+   || ! "$SCALY" build "$OUT/cluster_${t}_other.scaly" -o "$OUT/cluster_${t}_other$SCALY_EXE" >/dev/null 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  # helpers <env of the helpers> <env of the coordinator> <expected line> <what>
+  helpers_case() {
+    local hpids=()
+    env $1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & hpids+=($!)
+    env $1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & hpids+=($!)
+    wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
+    local got
+    got=$(env $2 "$HB" 2>&1 | tail -1)
+    kill "${hpids[@]}" 2>/dev/null; wait "${hpids[@]}" 2>/dev/null
+    if [ "$got" = "$3" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("helpers, $4: '$got'"); fi
+  }
+  helpers_case "X=1" "X=1" "found 2, connected 2" "no key"
+  helpers_case "SCALY_CLUSTER_KEY=k1" "SCALY_CLUSTER_KEY=k1" "found 2, connected 2" "one key"
+  helpers_case "SCALY_CLUSTER_KEY=k1" "SCALY_CLUSTER_KEY=k2" "found 0, connected 0" "another key"
+  helpers_case "SCALY_CLUSTER_KEY=k1" "X=1" "found 0, connected 0" "a key on the helpers only"
+  # a helper of another build is passed over; one started after the
+  # coordinator began to look is found (it announces itself at once)
+  "$OUT/cluster_${t}_other$SCALY_EXE" --scaly-helper > "$OUT/cluster_${t}_o.log" 2>&1 & OPID=$!
+  wait_marker "$OUT/cluster_${t}_o.log" "^helper: ready"
+  "$HB" > "$OUT/cluster_${t}_c.log" 2>&1 & CPID=$!
+  sleep 0.3
+  "$HB" --scaly-helper > "$OUT/cluster_${t}_late.log" 2>&1 & LPID=$!
+  wait $CPID
+  got=$(tail -1 "$OUT/cluster_${t}_c.log")
+  kill $OPID $LPID 2>/dev/null; wait $OPID $LPID 2>/dev/null
+  if [ "$got" = "found 1, connected 1" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("helpers, another build and a late one: '$got'"); fi
+fi
+
 echo "cluster: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

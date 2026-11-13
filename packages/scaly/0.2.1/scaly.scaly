@@ -8,6 +8,7 @@ define scaly
     module fiber
     module os
     module draw
+    module crypto
     module cluster
     module tensor
     module operation

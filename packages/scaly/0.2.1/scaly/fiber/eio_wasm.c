@@ -193,6 +193,25 @@ int scaly_eio_sockname(int fd, void* addr, unsigned long long addrcap, unsigned 
 }
 /* (The threads profile has TCP through its host: the section `threads` at
  * the end.) */
+/* (both profiles) */
+/* a cluster's helpers: every peer of the page's network is on this
+ * machine; finding each other goes through the page (not yet: -1) */
+int scaly_eio_peer_is_local(int fd) { (void)fd; return 1; }
+int scaly_eio_random(void* buf, unsigned long long len)
+{
+    unsigned char* p = (unsigned char*)buf;
+    while (len > 0) {
+        size_t k = len < 256 ? (size_t)len : 256;
+        if (getentropy(p, k) != 0)
+            return -1;
+        p += k;
+        len -= k;
+    }
+    return 0;
+}
+int scaly_eio_mcast_listen(int port, int local_only) { (void)port; (void)local_only; return -1; }
+long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port, int local_only) { (void)buf; (void)len; (void)port; (void)local_only; return -1; }
+long long scaly_eio_mcast_recv(int fd, void* buf, unsigned long long cap, int ms, char* from, unsigned long long from_cap) { (void)fd; (void)buf; (void)cap; (void)ms; (void)from; (void)from_cap; return -1; }
 #ifndef __wasm_atomics__
 int scaly_eio_tcp_listen(int port) { (void)port; return -1; }
 int scaly_eio_tcp_listen_host(const char* host, int port) { (void)host; (void)port; return -1; }
@@ -446,6 +465,9 @@ int scaly_eio_self_path(char* buffer, unsigned long long capacity)
  * UTF-8, which passes them on here. */
 static int scaly_argc_;
 static char** scaly_argv_;
+
+/* the gate of a helper (eio.c): in a page there are no helpers yet */
+void scaly_helper_gate(void (*helper)(void)) { (void)helper; }
 
 void scaly_set_arguments(long long argc, char** argv)
 {

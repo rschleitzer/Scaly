@@ -414,6 +414,16 @@ procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) retur
 procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
 procedure scaly_eio_tcp_served(fd: i32) extern
+
+; A cluster's helpers (ROADMAP-cluster.md, C1): whether a peer is on this
+; machine, random bytes for a challenge, and the group helpers announce
+; themselves in (rule a: sockaddr layouts, the system's generator, the
+; multicast options).
+procedure scaly_eio_peer_is_local(fd: i32) returns i32 extern
+procedure scaly_eio_random(mutable buf: pointer[void], len: size_t) returns i32 extern
+procedure scaly_eio_mcast_listen(port: i32, local_only: i32) returns i32 extern
+procedure scaly_eio_mcast_send(buf: pointer[void], len: size_t, port: i32, local_only: i32) returns i64 extern
+procedure scaly_eio_mcast_recv(fd: i32, mutable buf: pointer[void], cap: size_t, ms: i32, mutable from: pointer[char], from_cap: size_t) returns i64 extern
 procedure scaly_eio_tcp_unserved(fd: i32) extern
 procedure scaly_eio_tcp_wake_served() returns i32 extern
 procedure scaly_eio_tcp_idle(fd: i32, seconds: i64) returns i32 extern

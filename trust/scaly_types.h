@@ -57,6 +57,8 @@ struct Drawing;
 struct Chart;
 struct Chart;
 struct NodeDown;
+struct HelperFound;
+struct HelperState;
 struct NodePeer;
 struct TapeNode;
 struct Tape;
@@ -1956,11 +1958,116 @@ struct Chart
 };
 #endif
 
+#ifndef SCALY_TYPE_VectorIterator_Luint32__t_R
+#define SCALY_TYPE_VectorIterator_Luint32__t_R
+template <> struct VectorIterator<uint32_t>
+{
+    Vector<uint32_t>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_Luint32__t_R
+#define SCALY_TYPE_Slice_Luint32__t_R
+template <> struct Slice<uint32_t>
+{
+    uint64_t length;
+    uint32_t* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_Luint32__t_R
+#define SCALY_TYPE_SliceIterator_Luint32__t_R
+template <> struct SliceIterator<uint32_t>
+{
+    Slice<uint32_t> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_Luint32__t_R
+#define SCALY_TYPE_ArrayIterator_Luint32__t_R
+template <> struct ArrayIterator<uint32_t>
+{
+    Array<uint32_t>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_Luint32__t_R
+#define SCALY_TYPE_Array_Luint32__t_R
+template <> struct Array<uint32_t>
+{
+    uint64_t length;
+    uint64_t capacity;
+    uint32_t* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_Luint32__t_R
+#define SCALY_TYPE_Node_Luint32__t_R
+template <> struct Node<uint32_t>
+{
+    uint32_t element;
+    Node<uint32_t>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_Luint32__t_R
+#define SCALY_TYPE_ListIterator_Luint32__t_R
+template <> struct ListIterator<uint32_t>
+{
+    Node<uint32_t>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_Luint32__t_R
+#define SCALY_TYPE_List_Luint32__t_R
+template <> struct List<uint32_t>
+{
+    Node<uint32_t>* head;
+    Node<uint32_t>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_Luint32__t_R
+#define SCALY_TYPE_Vector_Luint32__t_R
+template <> struct Vector<uint32_t>
+{
+    uint64_t length;
+    uint32_t* data;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z8NodeDown
 #define SCALY_TYPE__Z8NodeDown
 struct NodeDown
 {
     int64_t reason;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z11HelperFound
+#define SCALY_TYPE__Z11HelperFound
+struct HelperFound
+{
+    String host;
+    int32_t port;
+    int64_t cores;
+    uint64_t id;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z11HelperState
+#define SCALY_TYPE__Z11HelperState
+struct HelperState
+{
+    int32_t mfd;
+    uint64_t id;
+    int32_t port;
+    int64_t cores;
+    String key;
+    int32_t local_only;
 };
 #endif
 
@@ -1981,6 +2088,113 @@ struct NodePeer
     int64_t last_rx;
     uint64_t reader;
     int64_t down_reason;
+};
+#endif
+
+#ifndef SCALY_TYPE_VectorIterator_LHelperFound_R
+#define SCALY_TYPE_VectorIterator_LHelperFound_R
+template <> struct VectorIterator<HelperFound>
+{
+    Vector<HelperFound>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_LHelperFound_R
+#define SCALY_TYPE_Slice_LHelperFound_R
+template <> struct Slice<HelperFound>
+{
+    uint64_t length;
+    HelperFound* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_LHelperFound_R
+#define SCALY_TYPE_SliceIterator_LHelperFound_R
+template <> struct SliceIterator<HelperFound>
+{
+    Slice<HelperFound> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_LHelperFound_R
+#define SCALY_TYPE_ArrayIterator_LHelperFound_R
+template <> struct ArrayIterator<HelperFound>
+{
+    Array<HelperFound>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_LHelperFound_R
+#define SCALY_TYPE_Array_LHelperFound_R
+template <> struct Array<HelperFound>
+{
+    uint64_t length;
+    uint64_t capacity;
+    HelperFound* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_LHelperFound_R
+#define SCALY_TYPE_Node_LHelperFound_R
+template <> struct Node<HelperFound>
+{
+    HelperFound element;
+    Node<HelperFound>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_LHelperFound_R
+#define SCALY_TYPE_ListIterator_LHelperFound_R
+template <> struct ListIterator<HelperFound>
+{
+    Node<HelperFound>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_LHelperFound_R
+#define SCALY_TYPE_List_LHelperFound_R
+template <> struct List<HelperFound>
+{
+    Node<HelperFound>* head;
+    Node<HelperFound>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_LHelperFound_R
+#define SCALY_TYPE_Vector_LHelperFound_R
+template <> struct Vector<HelperFound>
+{
+    uint64_t length;
+    HelperFound* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_Luint64__t_R
+#define SCALY_TYPE_Node_Luint64__t_R
+template <> struct Node<uint64_t>
+{
+    uint64_t element;
+    Node<uint64_t>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_Luint64__t_R
+#define SCALY_TYPE_ListIterator_Luint64__t_R
+template <> struct ListIterator<uint64_t>
+{
+    Node<uint64_t>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_Luint64__t_R
+#define SCALY_TYPE_List_Luint64__t_R
+template <> struct List<uint64_t>
+{
+    Node<uint64_t>* head;
+    Node<uint64_t>* tail;
 };
 #endif
 

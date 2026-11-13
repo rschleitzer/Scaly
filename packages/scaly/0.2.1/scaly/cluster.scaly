@@ -26,9 +26,14 @@
 ; an error. Timeouts stay explicit (rule 6): Channel.receive_timeout;
 ; the heartbeat pair NODE_HEARTBEAT_MS/NODE_SUSPECT_MS is the one named
 ; hidden deadline. The trust boundary is the cluster edge (rule 8):
-; framing and page-table sanity are validated, object graphs are not —
-; authentication/encryption are out of scope for the demonstrator and
-; REQUIRED before anything else.
+; framing and page-table sanity are validated, object graphs are not --
+; so who may join is decided before the first frame: a cluster without a
+; key (SCALY_CLUSTER_KEY, ~/.scaly/cluster.key) stays on this machine
+; (a peer must be a loopback address, Cluster.listen binds 127.0.0.1), and
+; one with a key admits only a peer that proves it holds the same key
+; (Cluster.prove#: HMAC-SHA256 over a challenge each way). Integrity of
+; the frames after it, and their confidentiality, come with TLS (still
+; to be built): the key keeps strangers out, not eavesdroppers.
 ;
 ; The handshake preamble [magic, protocol version, build stamp] (all
 ; u64, 24 bytes, sent immediately in BOTH directions) is the one wire
@@ -56,6 +61,8 @@ use scaly.memory.Region
 use scaly.memory.Region.ReceivedRegion
 use scaly.fiber.Channel
 use scaly.fiber.Thread
+use scaly.crypto.Hmac
+use scaly.os.File
 use scaly.fiber.Io
 use scaly.fiber.Scheduler
 
@@ -65,7 +72,8 @@ function scaly_build_stamp() returns u64 extern
 
 ; "SCALYNOD", little-endian.
 define NODE_WIRE_MAGIC u64 0x444f4e594c414353
-define NODE_PROTO_VERSION u64 1
+; 2 (2026-11-13): after the preamble, the key's handshake (Cluster.prove#)
+define NODE_PROTO_VERSION u64 2
 
 define NODE_FRAME_DATA u64 1
 define NODE_FRAME_HEARTBEAT u64 2
@@ -97,6 +105,33 @@ define NodeDown
 ; lock guards the tables + alive/down_reason; wlock serializes frame
 ; writes (Cluster.send from app threads vs the reader's heartbeats);
 ; last_rx is written only by the reader.
+; the helpers (ROADMAP-cluster.md, C1; their code at the end of this file)
+define HELPER_GROUP_PORT i32 47790
+define HELPER_ANNOUNCE u64 0x4552504c45484c53
+define HELPER_ASK u64 0x4b5341594c414353
+define HELPER_DATAGRAM size_t 96
+define HELPER_CHANNEL u64 900
+
+; A helper a coordinator found: where it listens, how many cores it has.
+define HelperFound
+(
+    host: String
+    port: i32
+    cores: i64
+    id: u64
+)
+
+; What a helper's announcer thread knows.
+define HelperState
+(
+    mfd: i32
+    id: u64
+    port: i32
+    cores: i64
+    key: String
+    local_only: i32
+)
+
 define NodePeer
 (
     lock: u64
@@ -167,9 +202,36 @@ define Cluster
     ; --- connection surface ---
 
     ; Listen on ALL interfaces (a cluster node accepts real remote
-    ; peers). 0 asks for an ephemeral port; Cluster.local_port reads it.
+    ; peers) -- where the cluster has a key; without one on this machine
+    ; only (127.0.0.1): a cluster beyond it needs the key (Cluster.key#).
+    ; 0 asks for an ephemeral port; Cluster.local_port reads it.
     procedure listen(port: i32) returns i32
+    {
+        if Cluster.key().get_length() = 0
+            return Io.listen(port)
         Io.listen_any(port)
+    }
+
+    ; The cluster's key (ROADMAP-cluster.md): SCALY_CLUSTER_KEY, else the
+    ; file ~/.scaly/cluster.key, a line break at its end left out; "" where
+    ; there is none -- and then every peer must be on this machine.
+    procedure key() returns String
+    {
+        let v getenv("SCALY_CLUSTER_KEY")
+        if v <> null and strlen(v) > 0
+            return String(v)
+        let home getenv("HOME")
+        if home = null
+            return String()
+        let path "`String(home)`/.scaly/cluster.key"
+        if File.exists(path) = false
+            return String()
+        let text File.read_to_string(path)
+        var n text.get_length()
+        while n > 0 and (text.get(n - 1) = ("\n" as char) or text.get(n - 1) = ("\r" as char))
+            n := n - 1
+        text.substring(0, n)
+    }
 
     procedure local_port(fd: i32) returns i32
         Io.local_port(fd)
@@ -182,7 +244,7 @@ define Cluster
         let fd Io.accept(lfd)
         if fd < 0
             return null
-        Cluster.setup(fd)
+        Cluster.setup(fd, true)
     }
 
     ; Connect to host:port (getaddrinfo — real hosts), then the frozen-
@@ -193,7 +255,7 @@ define Cluster
         let fd Io.connect_host(host, port)
         if fd < 0
             return null
-        Cluster.setup(fd)
+        Cluster.setup(fd, false)
     }
 
     ; connect, trying again while the other node is not listening yet,
@@ -206,7 +268,7 @@ define Cluster
         {
             let fd Io.connect_host(host, port)
             if fd >= 0
-                return Cluster.setup(fd)
+                return Cluster.setup(fd, false)
             if scaly_eio_now_ns() >= deadline
                 return null
             poll(null as pointer[pollfd], 0, 20)
@@ -235,7 +297,7 @@ define Cluster
     ; Both directions run the same handshake: send our preamble
     ; immediately, read theirs, compare BEFORE any other byte is
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
-    procedure setup(fd: i32) returns ref[NodePeer]?
+    procedure setup(fd: i32, accepting: bool) returns ref[NodePeer]?
     {
         var pre u8[24]
         let pw pre as pointer[u64]
@@ -291,6 +353,11 @@ define Cluster
             close(fd)
             return null
         }
+        if Cluster.prove(fd, accepting, mine) = false
+        {
+            close(fd)
+            return null
+        }
 
         let p Page.allocate_page()
         let np &NodePeer^p(0, fd, true, theirs, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[u64], p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, 0, scaly_eio_now_ns(), 0, 0)
@@ -298,6 +365,187 @@ define Cluster
         let handle Thread.spawn(&node_reader_entry, np as pointer[void])
         np.reader := handle
         np
+    }
+
+    ; --- the key ---
+
+    ; After the preamble, on a blocking socket: each side says whether it
+    ; has a key. Without one on either side the peer must be on this
+    ; machine. With one on both, each proves it holds the same key: it
+    ; sends 32 random bytes, then HMAC-SHA256(key, role ++ the other's
+    ; bytes ++ its own ++ stamp) -- the role ("A" accepting, "C"
+    ; connecting) keeps a side from reflecting the other's proof back to
+    ; it, the bytes from replaying an old one. The proof is compared in
+    ; time that does not depend on where it differs. A mismatch is a loud
+    ; refusal, as a stamp's is.
+    procedure prove(fd: i32, accepting: bool, stamp: u64) returns bool
+    {
+        let key Cluster.key()
+        var mode u8[8]
+        let mw mode as pointer[u64]
+        mw[0] := if key.get_length() > 0: (1 as u64) else 0
+        if Io.tcp_write_all(fd, mode as pointer[void], 8) = false
+            return false
+        var theirs u8[8]
+        if Cluster.read_exactly(fd, theirs as pointer[void], 8) = false
+            return false
+        let tw theirs as pointer[u64]
+        if tw[0] <> mw[0]
+        {
+            scaly_eputs "node: connect refused - one node has a cluster key (SCALY_CLUSTER_KEY), the other has none"
+            scaly_eputnl()
+            return false
+        }
+        if mw[0] = 0
+        {
+            if scaly_eio_peer_is_local(fd) <> 1
+            {
+                scaly_eputs "node: connect refused - a cluster beyond this machine needs a key (SCALY_CLUSTER_KEY or ~/.scaly/cluster.key)"
+                scaly_eputnl()
+                return false
+            }
+            return true
+        }
+        var mine_nonce u8[32]
+        if scaly_eio_random(mine_nonce as pointer[void], 32) <> 0
+            return false
+        if Io.tcp_write_all(fd, mine_nonce as pointer[void], 32) = false
+            return false
+        var their_nonce u8[32]
+        if Cluster.read_exactly(fd, their_nonce as pointer[void], 32) = false
+            return false
+        let mine_view Slice[u8](32, mine_nonce as pointer[u8])
+        let their_view Slice[u8](32, their_nonce as pointer[u8])
+        if Hmac.same(mine_view, their_view)
+        {
+            scaly_eputs "node: connect refused - the peer answered our own challenge"
+            scaly_eputnl()
+            return false
+        }
+        let my_role if accepting: ("A" as char) else ("C" as char)
+        let their_role if accepting: ("C" as char) else ("A" as char)
+        var proof Vector[u8](32)
+        Cluster.proof(key, my_role, their_view, mine_view, stamp, proof.as_slice())
+        if Io.tcp_write_all(fd, proof.data as pointer[void], 32) = false
+            return false
+        var got u8[32]
+        if Cluster.read_exactly(fd, got as pointer[void], 32) = false
+            return false
+        var expected Vector[u8](32)
+        Cluster.proof(key, their_role, mine_view, their_view, stamp, expected.as_slice())
+        if Hmac.same(expected.as_slice(), Slice[u8](32, got as pointer[u8])) = false
+        {
+            scaly_eputs "node: connect refused - the peer does not hold this cluster's key"
+            scaly_eputnl()
+            return false
+        }
+        true
+    }
+
+    ; --- the helpers' datagrams ---
+
+    ; A helper's announcement of itself (its id, port and cores) to the group.
+    procedure announce(st: ref[HelperState])
+    {
+        var d Vector[u8](HELPER_DATAGRAM)
+        Cluster.fill_datagram(d.as_slice(), HELPER_ANNOUNCE, st.id, st.port, st.cores, st.key)
+        scaly_eio_mcast_send(d.data as pointer[void], HELPER_DATAGRAM, HELPER_GROUP_PORT, st.local_only)
+    }
+
+    ; A datagram: [kind, protocol, stamp, id, port, cores, 0, 0], then the
+    ; HMAC over those 64 bytes under the key (32 zeros without one).
+    procedure fill_datagram(mutable out: Slice[u8], kind: u64, id: u64, port: i32, cores: i64, key: String)
+    {
+        Cluster.put_word(out, 0, kind)
+        Cluster.put_word(out, 1, NODE_PROTO_VERSION)
+        Cluster.put_word(out, 2, scaly_build_stamp())
+        Cluster.put_word(out, 3, id)
+        Cluster.put_word(out, 4, port as u64)
+        Cluster.put_word(out, 5, cores as u64)
+        Cluster.put_word(out, 6, 0)
+        Cluster.put_word(out, 7, 0)
+        var mac Vector[u8](32)
+        if key.get_length() > 0
+            Hmac.sha256(key.as_slice(), Slice[u8](64, out.data), mac.as_slice())
+        var i: size_t 0
+        while i < 32
+        {
+            out.put(64 + i, mac[i])
+            i := i + 1
+        }
+    }
+
+    ; Is it a datagram of this kind, this protocol and this build, and does
+    ; its HMAC hold under the key?
+    procedure datagram_ok(d: Slice[u8], kind: u64, key: String) returns bool
+    {
+        if d.length <> HELPER_DATAGRAM
+            return false
+        if Cluster.word_at(d, 0) <> kind or Cluster.word_at(d, 1) <> NODE_PROTO_VERSION or Cluster.word_at(d, 2) <> scaly_build_stamp()
+            return false
+        var mac Vector[u8](32)
+        if key.get_length() > 0
+            Hmac.sha256(key.as_slice(), Slice[u8](64, d.data), mac.as_slice())
+        Hmac.same(mac.as_slice(), Slice[u8](32, ((d.data as size_t) + 64) as pointer[u8]))
+    }
+
+    ; Word k of a datagram, little-endian.
+    function word_at(d: Slice[u8], k: size_t) returns u64
+    {
+        var v: u64 0
+        var b: size_t 0
+        while b < 8
+        {
+            v := v | ((d[k * 8 + b] as u64) << (b * 8))
+            b := b + 1
+        }
+        v
+    }
+
+    procedure put_word(mutable d: Slice[u8], k: size_t, v: u64)
+    {
+        var b: size_t 0
+        while b < 8
+        {
+            d.put(k * 8 + b, ((v >> (b * 8)) & 0xff) as u8)
+            b := b + 1
+        }
+    }
+
+    ; HMAC-SHA256(key, role ++ challenge ++ answer ++ stamp) into out.
+    procedure proof(key: String, role: char, challenge: Slice[u8], answer: Slice[u8], stamp: u64, mutable out: Slice[u8])
+    {
+        var message Vector[u8](1 + 32 + 32 + 8)
+        message.put(0, role as u8)
+        var i: size_t 0
+        while i < 32
+        {
+            message.put(1 + i, challenge[i])
+            message.put(33 + i, answer[i])
+            i := i + 1
+        }
+        var b: size_t 0
+        while b < 8
+        {
+            message.put(65 + b, ((stamp >> (b * 8)) & 0xff) as u8)
+            b := b + 1
+        }
+        Hmac.sha256(key.as_slice(), message.as_slice(), out)
+    }
+
+    ; `count` bytes from a blocking socket into buf; false where it ends
+    ; before them.
+    procedure read_exactly(fd: i32, mutable buf: pointer[void], count: size_t) returns bool
+    {
+        var got: size_t 0
+        while got < count
+        {
+            let r Io.read(fd, ((buf as size_t) + got) as pointer[void], count - got)
+            if r <= 0
+                return false
+            got := got + (r as size_t)
+        }
+        true
     }
 
     ; --- channels & monitors ---
@@ -729,5 +977,145 @@ define Remote[T]
         hp.deallocate_extensions()
         Page.release_page(hp)
         root as ref[T]
+    }
+}
+
+; --- helpers (ROADMAP-cluster.md, stage C1) ---------------------------------
+;
+; A program started with `--scaly-helper` does not run its main: it is a
+; HELPER, which announces itself and serves the coordinators that connect
+; (scaly_set_arguments, eio.c, calls scaly_helper_main before anything
+; else). A coordinator finds the helpers of its own program with
+; Cluster.find_helpers: they answer in one multicast group, one datagram
+; each -- [kind, protocol, stamp, id, port, cores, 0, 0] as eight words and
+; an HMAC-SHA256 over them under the cluster's key (zeros without one).
+; Only a helper of the same build (stamp) and the same key is found; without
+; a key the group is the loopback's alone and every helper is on this
+; machine. What a helper is asked to do comes with stage C2; here it holds a
+; coordinator's connection until the coordinator lets it go.
+
+; The announcer of a helper (a thread of its own): itself every two seconds,
+; and at once where a coordinator of its program asks.
+procedure helper_announcer_entry(mutable arg: pointer[void]) returns pointer[void]
+{
+    let st arg as ref[HelperState]
+    var buf Vector[u8](128)
+    var from u8[64]
+    var last: i64 0
+    repeat
+    {
+        let now scaly_eio_now_ns()
+        if now - last > 2000000000
+        {
+            Cluster.announce(st)
+            last := now
+        }
+        let n scaly_eio_mcast_recv(st.mfd, buf.data as pointer[void], 128, 500, from as pointer[char], 64)
+        if n = (HELPER_DATAGRAM as i64)
+            if Cluster.datagram_ok(Slice[u8](HELPER_DATAGRAM, buf.data), HELPER_ASK, st.key)
+                Cluster.announce(st)
+    }
+    null
+}
+
+; A program started as a helper: it listens (on this machine only, where
+; there is no key), announces itself, and serves one coordinator after the
+; other until it is ended from outside.
+procedure scaly_helper_main()
+{
+    let page Page.allocate_page()
+    if current_scheduler = null
+        Scheduler.create(page)
+    let key Cluster.key()
+    let local_only: i32 if key.get_length() = 0: 1 else 0
+    let lfd Cluster.listen(0)
+    if lfd < (0 as i32)
+    {
+        scaly_eputs "helper: cannot listen"
+        scaly_eputnl()
+        exit(3)
+    }
+    let port Cluster.local_port(lfd)
+    let mfd scaly_eio_mcast_listen(HELPER_GROUP_PORT, local_only)
+    if mfd < (0 as i32)
+    {
+        scaly_eputs "helper: cannot join the helpers' group"
+        scaly_eputnl()
+        exit(3)
+    }
+    var idb u8[8]
+    scaly_eio_random(idb as pointer[void], 8)
+    let id Cluster.word_at(Slice[u8](8, idb as pointer[u8]), 0)
+    let sp Page.allocate_page()
+    let st &HelperState^sp(mfd, id, port, scaly_eio_ncpu() as i64, String^sp(key), local_only)
+    Thread.spawn(&helper_announcer_entry, st as pointer[void])
+    scaly_eputs "helper: ready, port "
+    scaly_eputi(port as i64)
+    scaly_eputnl()
+    repeat
+    {
+        let peer Cluster.accept(lfd)
+        if peer <> null
+        {
+            let ch Cluster.channel(peer, HELPER_CHANNEL)
+            repeat
+            {
+                let raw Channel.receive(ch)
+                if raw = null
+                    break
+                Cluster.dispose_message(raw as ref[ReceivedRegion])
+            }
+            Cluster.disconnect(peer)
+        }
+    }
+}
+
+define Helpers
+{
+    ; The helpers of this program that answer within `ms` milliseconds,
+    ; each once.
+    procedure find(ms: int) returns Vector[HelperFound]
+    {
+        let key Cluster.key()
+        let local_only: i32 if key.get_length() = 0: 1 else 0
+        let mfd scaly_eio_mcast_listen(HELPER_GROUP_PORT, local_only)
+        if mfd < (0 as i32)
+            return Vector[HelperFound](0)
+        var ask Vector[u8](HELPER_DATAGRAM)
+        Cluster.fill_datagram(ask.as_slice(), HELPER_ASK, 0, 0, 0, key)
+        scaly_eio_mcast_send(ask.data as pointer[void], HELPER_DATAGRAM, HELPER_GROUP_PORT, local_only)
+        var found List[HelperFound]()
+        var ids List[u64]()
+        var buf Vector[u8](128)
+        var from u8[64]
+        let deadline scaly_eio_now_ns() + ms * 1000000
+        repeat
+        {
+            let left (deadline - scaly_eio_now_ns()) / 1000000
+            if left <= 0
+                break
+            let n scaly_eio_mcast_recv(mfd, buf.data as pointer[void], 128, left as i32, from as pointer[char], 64)
+            if n < 0
+                break
+            if n = (HELPER_DATAGRAM as i64)
+            {
+                let d Slice[u8](HELPER_DATAGRAM, buf.data)
+                if Cluster.datagram_ok(d, HELPER_ANNOUNCE, key)
+                {
+                    let id Cluster.word_at(d, 3)
+                    var seen false
+                    for known in ids
+                        if known = id
+                            seen := true
+                    if seen = false
+                    {
+                        ids.add(id)
+                        found.add(HelperFound(String(from as pointer[const_char]), Cluster.word_at(d, 4) as i32, Cluster.word_at(d, 5) as i64, id))
+                    }
+                }
+            }
+        }
+        close(mfd)
+        Vector[HelperFound](found)
     }
 }

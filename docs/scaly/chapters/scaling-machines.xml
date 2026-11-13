@@ -123,7 +123,8 @@ $ ./primes
 216816 primes below 3000000</screen>
     <para>Here the four nodes are four processes on one machine; on four
       machines the workers name the coordinator's host instead of
-      <code>localhost</code>, and nothing else changes.
+      <code>localhost</code>, and every node is given the cluster's key
+      (below, <xref linkend="scaling-machines-failure"/>).
       <code>Cluster.connect</code> keeps trying for as long as its last
       argument says, in milliseconds, because a worker may start before
       the coordinator listens; <code>Cluster.accept</code> waits for the
@@ -200,10 +201,18 @@ counts.send(c)      ; error: send builds the message on a page of its own</progr
       one node summing them in a fixed order and sending the sum back.
       Its loss is the same to the last bit as on one node, and with one
       worker killed mid-run the others finish the training.</para>
-    <para>One limit is named: the nodes trust each other. A connection is
-      neither authenticated nor encrypted, and a node checks the framing
-      of what it receives, not the meaning — run a cluster only inside a
-      network you trust.</para>
+    <para>Who may join is decided before the first message. A cluster
+      without a key stays on one machine: a node listens on the loopback
+      only and refuses a peer from anywhere else. Across machines every
+      node holds the same key — in the environment as
+      <code>SCALY_CLUSTER_KEY</code>, or in the file
+      <code>~/.scaly/cluster.key</code> — and proves it when it connects,
+      by an HMAC over a challenge of the other side; a node with another
+      key, or none, is refused. One limit is named: the key keeps
+      strangers out, it does not hide what the nodes say to each other.
+      The messages are not encrypted, and a node checks the framing of
+      what it receives, not the meaning — run a cluster across machines
+      only inside a network you trust.</para>
   </section>
 
 </chapter>

@@ -55,6 +55,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1165,6 +1166,187 @@ int scaly_eio_tcp_listen_any(int port)
     return scaly_eio_tcp_listen_at(INADDR_ANY, port);
 }
 
+/* ---- a cluster's helpers: who is on this machine, random bytes, and
+ * finding each other (ROADMAP: a pure for across machines, stage C1) ---- */
+
+/* Is the peer of a connected socket on this machine -- 127.0.0.0/8, ::1, or
+ * an IPv4 loopback address mapped into IPv6? 1 yes, 0 no, -1 where the
+ * address cannot be read. A cluster without a key accepts only such peers.
+ * Rule (a): sockaddr layouts. */
+int scaly_eio_peer_is_local(int fd)
+{
+    struct sockaddr_storage addr;
+    socklen_t len = sizeof addr;
+    if (getpeername(fd, (struct sockaddr*)&addr, &len) < 0)
+        return -1;
+    if (addr.ss_family == AF_INET)
+    {
+        unsigned int ip = ntohl(((struct sockaddr_in*)&addr)->sin_addr.s_addr);
+        return (ip >> 24) == 127 ? 1 : 0;
+    }
+    if (addr.ss_family == AF_INET6)
+    {
+        const unsigned char* b = (const unsigned char*)&((struct sockaddr_in6*)&addr)->sin6_addr;
+        int i, zeros = 1;
+        for (i = 0; i < 15; i++)
+            if (b[i] != 0)
+                zeros = 0;
+        if (zeros && b[15] == 1)
+            return 1;
+        for (i = 0; i < 10; i++)
+            if (b[i] != 0)
+                return 0;
+        return (b[10] == 0xff && b[11] == 0xff && b[12] == 127) ? 1 : 0;
+    }
+    return 0;
+}
+
+/* `len` bytes the system's generator makes (a challenge of the handshake).
+ * 0 on success, -1 on failure. Rule (a): the call differs per system. */
+int scaly_eio_random(void* buf, unsigned long long len)
+{
+#ifdef __APPLE__
+    arc4random_buf(buf, (size_t)len);
+    return 0;
+#else
+    unsigned char* p = (unsigned char*)buf;
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0)
+        return -1;
+    while (len > 0)
+    {
+        ssize_t r = read(fd, p, (size_t)len);
+        if (r < 0 && errno == EINTR)
+            continue;
+        if (r <= 0)
+        {
+            close(fd);
+            return -1;
+        }
+        p += r;
+        len -= (unsigned long long)r;
+    }
+    close(fd);
+    return 0;
+#endif
+}
+
+/* The group a cluster's helpers announce themselves in: organization-local
+ * scope (RFC 2365), one datagram per announcement, at most one hop. */
+#define SCALY_MCAST_GROUP "239.255.83.67"
+
+/* A UDP socket in the group on `port`, nonblocking. `local_only`: joined on
+ * the loopback interface alone (no key: this machine only); else on the
+ * default interface AND the loopback, so a helper on this machine is found
+ * too. Rule (a): the multicast options. Returns the fd, -1 on failure. */
+int scaly_eio_mcast_listen(int port, int local_only)
+{
+    struct sockaddr_in a;
+    struct ip_mreq m;
+    int one = 1;
+    int joined = 0;
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0)
+        return -1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+#ifdef SO_REUSEPORT
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof one);
+#endif
+    memset(&a, 0, sizeof a);
+    a.sin_family = AF_INET;
+    a.sin_port = htons((unsigned short)port);
+    a.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(fd, (struct sockaddr*)&a, sizeof a) < 0)
+    {
+        close(fd);
+        return -1;
+    }
+    m.imr_multiaddr.s_addr = inet_addr(SCALY_MCAST_GROUP);
+    m.imr_interface.s_addr = htonl(INADDR_LOOPBACK);
+    if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m, sizeof m) == 0)
+        joined = 1;
+    if (!local_only)
+    {
+        m.imr_interface.s_addr = htonl(INADDR_ANY);
+        if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m, sizeof m) == 0)
+            joined = 1;
+    }
+    if (!joined || scaly_eio_set_nonblocking(fd) < 0)
+    {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+static long long scaly_eio_mcast_send_on(const void* buf, unsigned long long len, int port, unsigned int ifaddr)
+{
+    struct sockaddr_in g;
+    struct in_addr ifa;
+    unsigned char loop = 1, ttl = 1;
+    long long r;
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0)
+        return -1;
+    ifa.s_addr = ifaddr;
+    setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, &ifa, sizeof ifa);
+    setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof loop);
+    setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof ttl);
+    memset(&g, 0, sizeof g);
+    g.sin_family = AF_INET;
+    g.sin_port = htons((unsigned short)port);
+    g.sin_addr.s_addr = inet_addr(SCALY_MCAST_GROUP);
+    r = (long long)sendto(fd, buf, (size_t)len, 0, (struct sockaddr*)&g, sizeof g);
+    close(fd);
+    return r;
+}
+
+/* One datagram to the group: on the loopback, and where not `local_only`
+ * on the default interface too. The bytes sent on one of them, -1 where
+ * neither took it. */
+long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port, int local_only)
+{
+    long long r = scaly_eio_mcast_send_on(buf, len, port, htonl(INADDR_LOOPBACK));
+    if (!local_only)
+    {
+        long long r2 = scaly_eio_mcast_send_on(buf, len, port, htonl(INADDR_ANY));
+        if (r2 > r)
+            r = r2;
+    }
+    return r;
+}
+
+/* One datagram of the group, waiting at most `ms` milliseconds: its bytes
+ * (0 when none came), -1 on failure. The sender's address goes into `from`
+ * as text, NUL-terminated (at most `from_cap` bytes). */
+long long scaly_eio_mcast_recv(int fd, void* buf, unsigned long long cap, int ms, char* from, unsigned long long from_cap)
+{
+    struct pollfd p;
+    struct sockaddr_in f;
+    socklen_t fl = sizeof f;
+    ssize_t n;
+    int rc;
+    p.fd = fd;
+    p.events = POLLIN;
+    p.revents = 0;
+    do
+        rc = poll(&p, 1, ms);
+    while (rc < 0 && errno == EINTR);
+    if (rc < 0)
+        return -1;
+    if (rc == 0)
+        return 0;
+    n = recvfrom(fd, buf, (size_t)cap, 0, (struct sockaddr*)&f, &fl);
+    if (n < 0)
+        return (errno == EAGAIN || errno == EWOULDBLOCK) ? 0 : -1;
+    if (from && from_cap > 0)
+    {
+        if (!inet_ntop(AF_INET, &f.sin_addr, from, (socklen_t)from_cap))
+            from[0] = 0;
+    }
+    return (long long)n;
+}
+
 /* The local port a bound socket ended up on, -1 on failure; either family. */
 int scaly_eio_tcp_port(int fd)
 {
@@ -2265,6 +2447,33 @@ int scaly_eio_is_symlink(const char* path)
  * argc arrives as a C int in a 64-bit register, hence the cast. */
 static int scaly_argc_;
 static char** scaly_argv_;
+
+static int scaly_wants_helper(int argc, char** argv)
+{
+    int i;
+    for (i = 1; argv && i < argc; i++)
+        if (argv[i] && strcmp(argv[i], "--scaly-helper") == 0)
+            return 1;
+    return 0;
+}
+
+/* The gate a program's main passes its helper through: the compiler emits
+ * the call right after scaly_set_arguments (Emitter.hand_over_arguments#).
+ * A program started with --scaly-helper does not run its main but the
+ * helper (cluster.scaly, scaly_helper_main), and ends with it. The helper
+ * comes as an argument so that the reference stands in the program's own IR,
+ * where every optimisation sees it -- a reference from C alone was dropped
+ * by the whole-program `opt` of a tool built from its roots. Only the
+ * option, no environment variable: every Scaly program reads the
+ * environment, the compiler and the tool among them. */
+void scaly_helper_gate(void (*helper)(void))
+{
+    if (helper && scaly_wants_helper(scaly_argc_, scaly_argv_))
+    {
+        helper();
+        exit(0);
+    }
+}
 
 void scaly_set_arguments(long long argc, char** argv)
 {

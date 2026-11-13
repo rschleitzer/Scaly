@@ -59,6 +59,7 @@
  * the same define as posixcompat_windows.c and ctime.c, not the _s form, which would
  * make this target differ from the other three. Before any CRT header. */
 #define _CRT_SECURE_NO_WARNINGS 1
+#define _CRT_RAND_S     /* rand_s in stdlib.h: scaly_eio_random */
 #include <winsock2.h>   /* before windows.h — it owns the socket API */
 #include <ws2tcpip.h>
 #include <mswsock.h>    /* AcceptEx, SO_UPDATE_ACCEPT_CONTEXT */
@@ -895,6 +896,150 @@ int scaly_eio_tcp_listen_any(int port)
     if (fd >= 0)
         return fd;
     return sc_listen_at(INADDR_ANY, port);
+}
+
+/* ---- a cluster's helpers (eio.c's twins): who is on this machine, random
+ * bytes, finding each other ---- */
+
+int scaly_eio_peer_is_local(int fd)
+{
+    struct sockaddr_storage addr;
+    int len = sizeof addr;
+    if (getpeername((SOCKET)(intptr_t)fd, (struct sockaddr*)&addr, &len) == SOCKET_ERROR)
+        return -1;
+    if (addr.ss_family == AF_INET) {
+        unsigned int ip = ntohl(((struct sockaddr_in*)&addr)->sin_addr.s_addr);
+        return (ip >> 24) == 127 ? 1 : 0;
+    }
+    if (addr.ss_family == AF_INET6) {
+        const unsigned char* b = (const unsigned char*)&((struct sockaddr_in6*)&addr)->sin6_addr;
+        int i, zeros = 1;
+        for (i = 0; i < 15; i++)
+            if (b[i] != 0)
+                zeros = 0;
+        if (zeros && b[15] == 1)
+            return 1;
+        for (i = 0; i < 10; i++)
+            if (b[i] != 0)
+                return 0;
+        return (b[10] == 0xff && b[11] == 0xff && b[12] == 127) ? 1 : 0;
+    }
+    return 0;
+}
+
+/* rand_s: the CRT's interface to the system's generator, no library more. */
+int scaly_eio_random(void* buf, unsigned long long len)
+{
+    unsigned char* p = (unsigned char*)buf;
+    while (len > 0) {
+        unsigned int v;
+        unsigned long long k = len < 4 ? len : 4;
+        if (rand_s(&v) != 0)
+            return -1;
+        memcpy(p, &v, (size_t)k);
+        p += k;
+        len -= k;
+    }
+    return 0;
+}
+
+#define SC_MCAST_GROUP "239.255.83.67"
+
+int scaly_eio_mcast_listen(int port, int local_only)
+{
+    struct sockaddr_in a;
+    struct ip_mreq m;
+    BOOL yes = TRUE;
+    int joined = 0;
+    SOCKET s;
+    scaly_ws_start();
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (s == INVALID_SOCKET)
+        return -1;
+    /* SO_REUSEADDR here IS the point: every helper and coordinator on this
+     * machine binds the group's port */
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&yes, sizeof yes);
+    memset(&a, 0, sizeof a);
+    a.sin_family = AF_INET;
+    a.sin_port = htons((unsigned short)port);
+    a.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(s, (struct sockaddr*)&a, sizeof a) == SOCKET_ERROR) {
+        closesocket(s);
+        return -1;
+    }
+    inet_pton(AF_INET, SC_MCAST_GROUP, &m.imr_multiaddr);
+    m.imr_interface.s_addr = htonl(INADDR_LOOPBACK);
+    if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
+        joined = 1;
+    if (!local_only) {
+        m.imr_interface.s_addr = htonl(INADDR_ANY);
+        if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
+            joined = 1;
+    }
+    if (!joined || scaly_eio_set_nonblocking((int)(intptr_t)s) < 0) {
+        closesocket(s);
+        return -1;
+    }
+    return (int)(intptr_t)s;
+}
+
+static long long sc_mcast_send_on(const void* buf, unsigned long long len, int port, unsigned long ifaddr)
+{
+    struct sockaddr_in g;
+    struct in_addr ifa;
+    DWORD loop = 1, ttl = 1;
+    int r;
+    SOCKET s;
+    scaly_ws_start();
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (s == INVALID_SOCKET)
+        return -1;
+    ifa.s_addr = ifaddr;
+    setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char*)&ifa, sizeof ifa);
+    setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, (char*)&loop, sizeof loop);
+    setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof ttl);
+    memset(&g, 0, sizeof g);
+    g.sin_family = AF_INET;
+    g.sin_port = htons((unsigned short)port);
+    inet_pton(AF_INET, SC_MCAST_GROUP, &g.sin_addr);
+    r = sendto(s, (const char*)buf, (int)len, 0, (struct sockaddr*)&g, sizeof g);
+    closesocket(s);
+    return r == SOCKET_ERROR ? -1 : (long long)r;
+}
+
+long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port, int local_only)
+{
+    long long r = sc_mcast_send_on(buf, len, port, htonl(INADDR_LOOPBACK));
+    if (!local_only) {
+        long long r2 = sc_mcast_send_on(buf, len, port, htonl(INADDR_ANY));
+        if (r2 > r)
+            r = r2;
+    }
+    return r;
+}
+
+long long scaly_eio_mcast_recv(int fd, void* buf, unsigned long long cap, int ms, char* from, unsigned long long from_cap)
+{
+    WSAPOLLFD p;
+    struct sockaddr_in f;
+    int fl = sizeof f;
+    int n, rc;
+    p.fd = (SOCKET)(intptr_t)fd;
+    p.events = POLLRDNORM;
+    p.revents = 0;
+    rc = WSAPoll(&p, 1, ms);
+    if (rc == SOCKET_ERROR)
+        return -1;
+    if (rc == 0)
+        return 0;
+    n = recvfrom((SOCKET)(intptr_t)fd, (char*)buf, (int)cap, 0, (struct sockaddr*)&f, &fl);
+    if (n == SOCKET_ERROR)
+        return WSAGetLastError() == WSAEWOULDBLOCK ? 0 : -1;
+    if (from && from_cap > 0) {
+        if (!inet_ntop(AF_INET, &f.sin_addr, from, (size_t)from_cap))
+            from[0] = 0;
+    }
+    return (long long)n;
 }
 
 int scaly_eio_tcp_port(int fd)
@@ -2309,6 +2454,33 @@ static int scaly_split_command_line(const wchar_t* p, char** out, int max)
     }
     free(buf);
     return count;
+}
+
+static int scaly_wants_helper(int argc, char** argv)
+{
+    int i;
+    for (i = 1; argv && i < argc; i++)
+        if (argv[i] && strcmp(argv[i], "--scaly-helper") == 0)
+            return 1;
+    return 0;
+}
+
+/* The gate a program's main passes its helper through: the compiler emits
+ * the call right after scaly_set_arguments (Emitter.hand_over_arguments#).
+ * A program started with --scaly-helper does not run its main but the
+ * helper (cluster.scaly, scaly_helper_main), and ends with it. The helper
+ * comes as an argument so that the reference stands in the program's own IR,
+ * where every optimisation sees it -- a reference from C alone was dropped
+ * by the whole-program `opt` of a tool built from its roots. Only the
+ * option, no environment variable: every Scaly program reads the
+ * environment, the compiler and the tool among them. */
+void scaly_helper_gate(void (*helper)(void))
+{
+    if (helper && scaly_wants_helper(scaly_argc_, scaly_argv_))
+    {
+        helper();
+        exit(0);
+    }
 }
 
 void scaly_set_arguments(long long argc, char** argv)

@@ -1,0 +1,19 @@
+; Helpers (ROADMAP-cluster.md, stage C1): ONE program. Started with
+; --scaly-helper it is a helper -- its main below never runs, it announces
+; itself and serves coordinators. Started normally it is a coordinator: it
+; finds the helpers of its own build within a second and a half, connects to
+; each (the key's handshake, or, without a key, this machine only), and lets
+; them go. It prints how many it found and connected.
+
+let found Helpers.find(1500)
+var connected 0
+for h in found
+{
+    let peer Cluster.connect(h.host.to_c_string(), h.port)
+    if peer <> null
+    {
+        connected := connected + 1
+        Cluster.disconnect(peer)
+    }
+}
+print "found `found.length`, connected `connected`"

@@ -31,6 +31,7 @@ declare void @_ZN6serverB7scalylsB4v0_23runEv()
 define i64 @main(i64 %0, ptr %1) {
 entry:
   call void @scaly_set_arguments(i64 %0, ptr %1)
+  call void @scaly_helper_gate(ptr @_Z17scaly_helper_mainv)
   %call = call i1 @_ZN3cliB6scalycB4v0_210adopt_homeEv()
   %call1 = call i1 @_ZN6workerB7scalylsB4v0_213run_if_workerEiPPc(i64 %0, ptr %1)
   br i1 %call1, label %if.then, label %if.end
@@ -48,7 +49,11 @@ declare void @scaly_proc_stdio_binary(...)
 
 declare void @scaly_set_arguments(i64, ptr)
 
+declare void @_Z17scaly_helper_mainv()
+
+declare void @scaly_helper_gate(ptr)
+
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -1967856511084426353
+  ret i64 -6823559120487125598
 }
