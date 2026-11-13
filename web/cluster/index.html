@@ -105,8 +105,8 @@
 <main>
   <section class="picture">
     <div class="stage">
-      <canvas id="canvas" width="768" height="576" aria-label="The picture" data-t-label="picture"></canvas>
-      <canvas id="overlay" width="768" height="576" aria-hidden="true"></canvas>
+      <canvas id="canvas" width="1024" height="768" aria-label="The picture" data-t-label="picture"></canvas>
+      <canvas id="overlay" width="1024" height="768" aria-hidden="true"></canvas>
     </div>
     <div class="under">
       <span id="progress"></span>
@@ -121,11 +121,11 @@
         <option>2</option><option>3</option><option>4</option><option>6</option>
       </select></label>
       <label><span data-t="size">Size</span> <select id="size">
-        <option value="384x288">384 × 288</option><option value="512x384">512 × 384</option>
-        <option value="768x576" selected>768 × 576</option>
+        <option value="768x576">768 × 576</option><option value="1024x768" selected>1024 × 768</option>
+        <option value="1536x1152">1536 × 1152</option>
       </select></label>
       <label><span data-t="rays">Rays per point</span> <select id="passes">
-        <option value="6">252</option><option value="8" selected>1020</option><option value="10">4092</option>
+        <option value="6">252</option><option value="7" selected>508</option><option value="8">1020</option><option value="9">2044</option>
       </select></label>
     </div>
     <div class="actions">
@@ -138,9 +138,9 @@
     <div>
       <h2 data-t="nodesTitle">The nodes</h2>
       <table>
-        <thead><tr><th data-t="thNode">Node</th><th data-t="thState">State</th><th class="num" data-t="thTiles">Tiles</th>
+        <thead><tr><th data-t="thNode">Node</th><th data-t="thState">State</th><th class="num" data-t="thCores">Cores</th><th class="num" data-t="thTiles">Tiles</th>
           <th class="num" data-t="thTile">Per tile</th><th></th><th></th></tr></thead>
-        <tbody id="table"><tr><td colspan="6" class="note" data-t="none">None yet.</td></tr></tbody>
+        <tbody id="table"><tr><td colspan="7" class="note" data-t="none">None yet.</td></tr></tbody>
       </table>
       <p class="note" data-t="killNote">“Kill” ends a node and closes its connection, as when a machine dies; “Silence” ends it and leaves its connection open, as when a cable is pulled — only the heartbeat finds that.</p>
     </div>
@@ -188,7 +188,7 @@ const TEXT = {
     picture: 'The picture', tint: 'Colour each tile by the node that rendered it',
     nodesLabel: 'Nodes', size: 'Size', rays: 'Rays per point',
     render: 'Render', stop: 'Stop', check: 'Check: render it alone',
-    nodesTitle: 'The nodes', thNode: 'Node', thState: 'State', thTiles: 'Tiles', thTile: 'Per tile', none: 'None yet.',
+    nodesTitle: 'The nodes', thNode: 'Node', thState: 'State', thCores: 'Cores', thTiles: 'Tiles', thTile: 'Per tile', none: 'None yet.',
     killNote: '“Kill” ends a node and closes its connection, as when a machine dies; “Silence” ends it and leaves its connection open, as when a cable is pulled — only the heartbeat finds that.',
     logTitle: 'What happened', what: 'What runs here', program: 'The program',
     coordinator: 'Coordinator', node: r => `Node ${r}`, alone: 'Alone',
@@ -219,7 +219,7 @@ const TEXT = {
     about2: 'The program runs as a <em>cluster</em>: one node coordinates, the others render. The picture is cut into tiles, the work into jobs — one pass over one tile: the first pass sends four rays through each point, and each pass after it as many as all before it together, so that the noise halves with every pass. The coordinator hands each node a job, and a node that sends back what it rendered gets the next one: a fast node renders more than a slow one, without anyone deciding so. The frame around a tile has the colour of the node rendering it. Within a node the points of a tile go to its cores — a plain <code>for</code>, which the runtime spreads by itself.',
     about3: 'Kill a node, and its connection closes, as a machine’s does when it dies: the coordinator learns of it at once, and the tile in the node’s hands goes back to the queue — another node renders it. Let a node fall silent instead, and its connection stays open while nothing more comes through it, as when a cable is pulled: only the cluster’s heartbeat finds that — after 2.5 seconds without a word the node is suspected, and its job is handed on. Kill them all, and the coordinator renders the rest itself.',
     about4: 'Whatever happens on the way, the picture comes out the same, bit for bit: the colour of every ray is rounded to a whole number of 4096ths before it is added, so a sum does not depend on the order of its parts — nor on which node rendered which tile. “Check” renders the picture once more in a single program and compares.',
-    about5: 'What runs here is Scaly’s real cluster runtime — its handshake, its frames, its heartbeats, regions sent from one node’s memory into another’s —, the same code that runs between machines over TCP. Only TCP is not there: the nodes are workers of this page, each with a memory and threads of its own, and they talk through a network the page keeps in shared memory. So all nodes share the cores of this one machine, and four nodes are not faster than one program on all of them: what the page shows is how the work is spread and how it survives a failure, not a gain in speed.',
+    about5: 'What runs here is Scaly’s real cluster runtime — its handshake, its frames, its heartbeats, regions sent from one node’s memory into another’s —, the same code that runs between machines over TCP. Only TCP is not there: the nodes are workers of this page, each with a memory and threads of its own, and they talk through a network the page keeps in shared memory. So all nodes share the cores of this one machine: the page shares them out among the nodes, which together have as many as the program alone, and the cluster is not faster than the program alone — it pays for its messages. What the page shows is how the work is spread and how it survives a failure; a gain in speed takes machines of their own.',
     codeNote: 'One file, three roles — the coordinator, a node that renders, or the program alone —, chosen by its environment. The picture’s colours go to the page as text, one line a tile.',
   },
   de: {
@@ -227,7 +227,7 @@ const TEXT = {
     picture: 'Das Bild', tint: 'Jede Kachel in der Farbe des Knotens, der sie gerechnet hat',
     nodesLabel: 'Knoten', size: 'Größe', rays: 'Strahlen pro Punkt',
     render: 'Rendern', stop: 'Anhalten', check: 'Prüfen: allein rendern',
-    nodesTitle: 'Die Knoten', thNode: 'Knoten', thState: 'Zustand', thTiles: 'Kacheln', thTile: 'Pro Kachel', none: 'Noch keine.',
+    nodesTitle: 'Die Knoten', thNode: 'Knoten', thState: 'Zustand', thCores: 'Kerne', thTiles: 'Kacheln', thTile: 'Pro Kachel', none: 'Noch keine.',
     killNote: '„Abschießen“ beendet einen Knoten und schließt seine Verbindung, wie wenn eine Maschine stirbt; „Verstummen“ beendet ihn und lässt seine Verbindung offen, wie wenn ein Kabel gezogen wird — das findet nur der Heartbeat.',
     logTitle: 'Was geschah', what: 'Was hier läuft', program: 'Das Programm',
     coordinator: 'Koordinator', node: r => `Knoten ${r}`, alone: 'Allein',
@@ -258,7 +258,7 @@ const TEXT = {
     about2: 'Das Programm läuft als <em>Cluster</em>: Ein Knoten koordiniert, die anderen rendern. Das Bild ist in Kacheln geteilt, die Arbeit in Jobs — ein Durchgang über eine Kachel: Der erste Durchgang schickt vier Strahlen durch jeden Punkt, jeder weitere so viele wie alle vorigen zusammen, sodass sich das Rauschen mit jedem Durchgang halbiert. Der Koordinator gibt jedem Knoten einen Job, und ein Knoten, der zurückschickt, was er gerechnet hat, bekommt den nächsten: Ein schneller Knoten rendert mehr als ein langsamer, ohne dass das jemand entscheidet. Der Rahmen um eine Kachel hat die Farbe des Knotens, der sie gerade rechnet. Innerhalb eines Knotens gehen die Punkte einer Kachel auf seine Kerne — ein gewöhnliches <code>for</code>, das die Laufzeit von selbst verteilt.',
     about3: 'Schießt man einen Knoten ab, schließt sich seine Verbindung, wie die einer Maschine, die stirbt: Der Koordinator erfährt es sofort, und die Kachel, die der Knoten in Arbeit hatte, geht zurück in die Warteschlange — ein anderer Knoten rechnet sie. Lässt man einen Knoten stattdessen verstummen, bleibt seine Verbindung offen, nur kommt nichts mehr durch, wie wenn ein Kabel gezogen wird: Das findet nur der Heartbeat des Clusters — nach 2,5 Sekunden ohne ein Wort gilt der Knoten als verdächtig, und sein Job geht weiter. Schießt man alle ab, rendert der Koordinator den Rest selbst.',
     about4: 'Was auch unterwegs geschieht, das Bild kommt Bit für Bit gleich heraus: Die Farbe jedes Strahls wird auf ganze 4096stel gerundet, bevor sie addiert wird, also hängt eine Summe nicht von der Reihenfolge ihrer Teile ab — und nicht davon, welcher Knoten welche Kachel gerechnet hat. „Prüfen“ rendert das Bild noch einmal in einem einzigen Programm und vergleicht.',
-    about5: 'Was hier läuft, ist die echte Cluster-Laufzeit von Scaly — ihr Handshake, ihre Rahmen, ihre Heartbeats, Regionen, die aus dem Speicher eines Knotens in den eines anderen geschickt werden —, derselbe Code, der zwischen Maschinen über TCP läuft. Nur TCP fehlt: Die Knoten sind Worker dieser Seite, jeder mit eigenem Speicher und eigenen Threads, und sie sprechen über ein Netz, das die Seite in gemeinsamem Speicher hält. Alle Knoten teilen sich also die Kerne dieser einen Maschine, und vier Knoten sind nicht schneller als ein Programm auf allen Kernen: Die Seite zeigt, wie die Arbeit verteilt wird und wie sie einen Ausfall übersteht, nicht einen Gewinn an Tempo.',
+    about5: 'Was hier läuft, ist die echte Cluster-Laufzeit von Scaly — ihr Handshake, ihre Rahmen, ihre Heartbeats, Regionen, die aus dem Speicher eines Knotens in den eines anderen geschickt werden —, derselbe Code, der zwischen Maschinen über TCP läuft. Nur TCP fehlt: Die Knoten sind Worker dieser Seite, jeder mit eigenem Speicher und eigenen Threads, und sie sprechen über ein Netz, das die Seite in gemeinsamem Speicher hält. Alle Knoten teilen sich also die Kerne dieser einen Maschine: Die Seite verteilt sie auf die Knoten, die zusammen so viele haben wie das Programm allein, und der Cluster ist nicht schneller als das Programm allein — er zahlt für seine Nachrichten. Die Seite zeigt, wie die Arbeit verteilt wird und wie sie einen Ausfall übersteht; einen Gewinn an Tempo bringen erst eigene Maschinen.',
     codeNote: 'Eine Datei, drei Rollen — der Koordinator, ein Knoten, der rendert, oder das Programm allein —, gewählt durch ihre Umgebung. Die Farben des Bildes gehen als Text an die Seite, eine Zeile pro Kachel.',
   },
 };
@@ -311,10 +311,38 @@ $('lang').onchange = () => {
 // --- the program ---------------------------------------------------------------
 
 let bytes = null, module = null;
-const kept = {};                 // each node's place: its memory, kept from run to run (node.mjs)
-// what a node's memory may grow to, in pages of 64 KiB: 64 MiB, and 16 MiB
-// for each of its cores -- every thread keeps pages of its own
-const most = cores => 1024 + 256 * cores;
+// Each node's place keeps the memories its nodes had, from run to run
+// (node.mjs): { memory, maximum, freed }, `freed` when its node ended, 0
+// while one has it. A browser ends a worker some time after it is told
+// to: one still running in a memory that the next run wiped and took
+// again stood in that run's way -- a node waited for ever (Chrome, a run
+// right after another). So a memory is taken again only once it has been
+// free for REST_MS, and a place has more than one where runs follow each
+// other quickly.
+const kept = {};
+const REST_MS = 5000, MEMORIES = 3;
+function memoryFor(place, limit) {
+  const list = kept[place] ??= [];
+  const now = performance.now();
+  return list.find(m => m.freed && now - m.freed >= REST_MS && m.maximum >= limit) ?? null;
+}
+function keep(place, made) {
+  const list = kept[place] ??= [];
+  if (!list.includes(made)) list.push(made);
+  // the oldest goes, where a place has too many: the browser takes it back
+  // when it likes
+  while (list.length > MEMORIES) {
+    const k = list.findIndex(m => m.freed);
+    if (k < 0) break;
+    list.splice(k, 1);
+  }
+}
+// What a node's memory may grow to, in pages of 64 KiB: 24 MiB, 20 MiB for
+// each of its threads -- a thread's stack is 8 MiB here, and it keeps pages
+// of its own -- and the picture's sums where it holds them. A thread is one
+// of its cores, or the reader of one of its connections. What a stack does
+// not touch, the browser does not give it.
+const most = (threads, sums) => 384 + 320 * threads + Math.ceil(sums / 65536);
 
 // --- a run: the coordinator and its nodes, or the program alone -----------------
 
@@ -323,24 +351,27 @@ const seconds = ms => (ms / 1000).toLocaleString(lang, { minimumFractionDigits: 
 
 function farm() {
   const [w, h] = $('size').value.split('x').map(Number);
-  return { w, h, tile: 64, passes: Number($('passes').value), rays: 4 };
+  return { w, h, tile: 128, passes: Number($('passes').value), rays: 4 };
 }
 
 // Start the program as node `rank` of the run (0: the coordinator, or the
-// program alone), its environment `env`, its cores `cores`. Its memory is
-// the one its place had before: the program alone has a place of its own.
-async function start(r, rank, env, cores) {
+// program alone), its environment `env`, its cores `cores`, its threads in
+// all `threads`. Its memory is one its place had before, where one has
+// rested long enough: the program alone has a place of its own.
+async function start(r, rank, env, cores, threads) {
   const place = r.alone ? 'alone' : rank;
-  const n = { rank, state: 'starting', job: null, tiles: 0, ms: 0, out: '', ended: false, silentAt: 0 };
+  const n = { rank, cores, state: 'starting', job: null, tiles: 0, ms: 0, out: '', ended: false, silentAt: 0 };
   const share = { buffer: r.net.buffer, node: rank + 1 };
   const all = { ...env, SCALY_CPUS: String(cores) };
   let finish;
   n.done = new Promise(f => { finish = f; });
+  let memory = null;
   n.end = (status, silent = false) => {
     if (n.ended) return;
     n.ended = true;
     n.threads.end();
     n.worker.terminate();
+    if (memory) memory.freed = performance.now();
     if (silent) r.net.gone(rank + 1);
     else r.net.kill(rank + 1);
     finish(status);
@@ -349,14 +380,22 @@ async function start(r, rank, env, cores) {
   n.worker = new Worker('node.mjs', { type: 'module' });
   n.worker.onmessage = ({ data }) => {
     if (n.threads.handle(data)) return;
-    if (data.type === 'memory') kept[place] = data.kept;
+    if (data.type === 'memory') {
+      // a new one: the one it was given (too small after all) is free again
+      if (memory) memory.freed = performance.now();
+      memory = { ...data.kept, freed: n.ended ? performance.now() : 0 };
+      keep(place, memory);
+    }
     else if (data.type === 'out') heard(r, n, data.text);
     else if (data.type === 'exit') n.end(data.status);
   };
   n.worker.onerror = e => { e.preventDefault(); n.end(134); };
-  // a kept memory too small for this many cores is not taken again
-  const fits = kept[place] && kept[place].maximum >= most(cores) ? kept[place] : null;
-  n.worker.postMessage({ bytes, module, env: all, net: share, kept: fits, most: most(cores) });
+  // a kept memory too small for this many threads is not taken again
+  const limit = most(threads, rank === 0 ? r.farm.w * r.farm.h * 24 : 0);
+  memory = memoryFor(place, limit);
+  if (memory) memory.freed = 0;
+  n.worker.postMessage({ bytes, module, env: all, net: share, kept: memory && { memory: memory.memory, maximum: memory.maximum },
+                         most: limit });
   return n;
 }
 
@@ -445,21 +484,28 @@ async function render(alone = false) {
   if (alone) {
     status('aloneRunning');
     event(r, 'eAloneStart', []);
-    const n = await start(r, 0, { ...env, RENDER_ROLE: 's' }, cpus);
+    const n = await start(r, 0, { ...env, RENDER_ROLE: 's' }, cpus, cpus);
     n.state = 'alone';
     r.nodes.push(n);
+    if (r.stopped) n.end(0);
     r.t0 = r.started;
   } else {
     status(() => t('starting')(count));
-    // each node a machine of its own: the cores shared out among them
-    const cores = Math.max(1, Math.floor(cpus / count));
-    const c = await start(r, 0, { ...env, RENDER_ROLE: 'c' }, cores);
+    // the coordinator only hands out jobs: one core; the rest of the work
+    // has all the cores the program alone has, each node a share of them
+    const cores = k => Math.max(1, Math.floor(cpus / count) + (k <= cpus % count ? 1 : 0));
+    const c = await start(r, 0, { ...env, RENDER_ROLE: 'c' }, 1, 1 + count);
     c.state = 'waiting';
     r.nodes.push(c);
+    if (r.stopped) c.end(0);
     table();
     await Promise.race([waiting, c.done]);
-    for (let k = 1; k <= count && run === r; k++)
-      r.nodes.push(await start(r, k, { ...env, RENDER_ROLE: 'w', RENDER_RANK: String(k) }, cores));
+    // (a run stopped while a node was starting ends that node too)
+    for (let k = 1; k <= count && !r.stopped; k++) {
+      const n = await start(r, k, { ...env, RENDER_ROLE: 'w', RENDER_RANK: String(k) }, cores(k), cores(k) + 1);
+      r.nodes.push(n);
+      if (r.stopped) n.end(0);
+    }
   }
   table();
   wake();
@@ -471,13 +517,13 @@ async function render(alone = false) {
     if (n.state !== 'gone') n.state = 'done';
   }
   r.status = status0;
-  if (run === r) {
+  if (run === r && !r.stopped) {
     setBusy(false);
     if (r.hash) {
       event(r, 'eDone', [seconds(r.ms)]);
       const rays = Math.round(f.w * f.h * f.rays * (2 ** f.passes - 1) / (r.ms / 1000));
       status(() => t('finished')(seconds(r.ms), rays.toLocaleString(lang)));
-    } else if (!r.stopped) {
+    } else {
       status(() => t('cannotStart')(`status ${status0}`), true);
     }
     table();
@@ -580,7 +626,7 @@ function table() {
   const body = $('table');
   const r = run;
   if (!r) {
-    body.innerHTML = `<tr><td colspan="6" class="note">${t('none')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="note">${t('none')}</td></tr>`;
     return;
   }
   const most = Math.max(1, ...r.nodes.map(n => n.tiles));
@@ -592,7 +638,7 @@ function table() {
     const [state, cls] = stateOf(n);
     const colour = COLOURS[n.rank % COLOURS.length];
     tr.innerHTML = `<td><span class="swatch" style="background:${colour}"></span>${name}</td>` +
-      `<td class="state ${cls}" data-rank="${n.rank}">${state}</td><td class="num">${n.tiles}</td>` +
+      `<td class="state ${cls}" data-rank="${n.rank}">${state}</td><td class="num">${n.cores}</td><td class="num">${n.tiles}</td>` +
       `<td class="num">${n.tiles ? Math.round(n.ms / n.tiles) + ' ms' : ''}</td>` +
       `<td class="bar">${n.tiles ? `<span style="width:${100 * n.tiles / most}%;background:${colour}"></span>` : ''}</td><td class="do"></td>`;
     if (n.rank > 0 && !r.alone && !n.ended && run === r) {
@@ -743,7 +789,7 @@ async function selfTest() {
   const a = await check();
   const report = { cpus, args: small, cluster, alone: { hash: a.hash, status: a.status, ms: a.ms },
                    verdict: $('verdict').className,
-                   memory: Object.fromEntries(Object.entries(kept).map(([k, v]) => [k, v.memory.buffer.byteLength])) };
+                   memory: Object.fromEntries(Object.entries(kept).map(([k, v]) => [k, v.map(m => m.memory.buffer.byteLength)])) };
   await fetch('/result', { method: 'POST', body: JSON.stringify(report) });
 }
 
