@@ -15,6 +15,14 @@ template <class U, class V> static inline U scaly_variant(uint8_t tag, V v) { U 
 template <class U> static inline U scaly_unit_variant(uint8_t tag) { U u{}; u.tag = tag; return u; }
 template <class V, class U> static inline V scaly_payload(const U& u) { V v; __builtin_memcpy(&v, u.data, sizeof v); return v; }
 template <class... T> constexpr size_t scaly_max_size() { size_t m = 0; ((m = sizeof(T) > m ? sizeof(T) : m), ...); return m; }
+template <class... T> struct scaly_tuple;
+template <class T0, class T1> struct scaly_tuple<T0, T1> { T0 _0; T1 _1; };
+template <class T0, class T1, class T2> struct scaly_tuple<T0, T1, T2> { T0 _0; T1 _1; T2 _2; };
+template <class T0, class T1, class T2, class T3> struct scaly_tuple<T0, T1, T2, T3> { T0 _0; T1 _1; T2 _2; T3 _3; };
+template <class T0, class T1, class T2, class T3, class T4> struct scaly_tuple<T0, T1, T2, T3, T4> { T0 _0; T1 _1; T2 _2; T3 _3; T4 _4; };
+template <class T0, class T1, class T2, class T3, class T4, class T5> struct scaly_tuple<T0, T1, T2, T3, T4, T5> { T0 _0; T1 _1; T2 _2; T3 _3; T4 _4; T5 _5; };
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6> struct scaly_tuple<T0, T1, T2, T3, T4, T5, T6> { T0 _0; T1 _1; T2 _2; T3 _3; T4 _4; T5 _5; T6 _6; };
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7> struct scaly_tuple<T0, T1, T2, T3, T4, T5, T6, T7> { T0 _0; T1 _1; T2 _2; T3 _3; T4 _4; T5 _5; T6 _6; T7 _7; };
 struct scaly_frame { void* page; scaly_frame* parent; };
 template <size_t N> struct scaly_result { uint8_t status; uint8_t data[N]; };
 template <class W, class V> static inline W scaly_ok(V v) { W w{}; __builtin_memcpy(w.data, &v, sizeof v); return w; }

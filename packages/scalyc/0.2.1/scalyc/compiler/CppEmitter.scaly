@@ -38,6 +38,9 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 
+; the most components a tuple has here (the preamble's scaly_tuple)
+define TUPLE_MOST size_t 8
+
 define CppEmitter
 (
     var skip_tests: bool
@@ -244,6 +247,31 @@ define CppEmitter
         out.append "template <class U> static inline U scaly_unit_variant(uint8_t tag) { U u{}; u.tag = tag; return u; }\n"
         out.append "template <class V, class U> static inline V scaly_payload(const U& u) { V v; __builtin_memcpy(&v, u.data, sizeof v); return v; }\n"
         out.append "template <class... T> constexpr size_t scaly_max_size() { size_t m = 0; ((m = sizeof(T) > m ? sizeof(T) : m), ...); return m; }\n"
+        ; a tuple (Planner.tuple_type#): its components in order, field k
+        ; named _k -- a struct of their types, as the LLVM emitter lays it out
+        out.append "template <class... T> struct scaly_tuple;\n"
+        var arity: size_t 2
+        while arity <= TUPLE_MOST
+        {
+            var params StringBuilder()
+            var args StringBuilder()
+            var fields StringBuilder()
+            var k: size_t 0
+            while k < arity
+            {
+                if k > 0
+                {
+                    params.append ", "
+                    args.append ", "
+                }
+                params.append "class T`k`"
+                args.append "T`k`"
+                fields.append " T`k` _`k`;"
+                k := k + 1
+            }
+            out.append "template <`params.to_string()`> struct scaly_tuple<`args.to_string()`> {`fields.to_string()` };\n"
+            arity := arity + 1
+        }
         ; a routine's frame (root_pages.scaly, Frame): its page, made only
         ; when something is allocated on it, and the frame it received
         out.append "struct scaly_frame { void* page; scaly_frame* parent; };\n"
@@ -1001,6 +1029,14 @@ define CppEmitter
         var i at
         if i >= n
             return i
+        ; a tuple: St5tupleIJ <types> EE (Planner.tuple_type#)
+        if CppEmitter.text_at(m, i, "St5tupleIJ")
+        {
+            i := i + 10
+            while i < n and m.get(i) <> 0x45
+                i := CppEmitter.skip_type(m, i)
+            return i + 2
+        }
         let c m.get i
         if c >= 0x30 and c <= 0x39
         {
@@ -1105,6 +1141,23 @@ define CppEmitter
                 return String("float")
             case 0x64
                 return String("double")
+        ; a tuple: St5tupleIJ <types> EE
+        if CppEmitter.text_at(m, at, "St5tupleIJ")
+        {
+            var parts StringBuilder()
+            var k at + 10
+            while k < n and m.get(k) <> 0x45
+            {
+                let part CppEmitter.cpp_type_at(m, k)
+                if part.get_length() = 0
+                    return String()
+                if parts.get_length() > 0
+                    parts.append ", "
+                parts.append part
+                k := CppEmitter.skip_type(m, k)
+            }
+            return "scaly_tuple<`parts.to_string()`>"
+        }
         var nested false
         var i at
         if c = 0x4E                                 ; N ... E
@@ -1179,6 +1232,9 @@ define CppEmitter
                 return p
             return name
         }
+        ; a tuple named as a type's argument: `3(,)I...E`
+        if name.equals("(,)")
+            return "scaly_tuple<`args`>"
         ; an Option of a reference is the pointer
         if name.equals("Option")
         {
@@ -1507,6 +1563,17 @@ define CppEmitter
         let p CppEmitter.primitive(t.name)
         if p.get_length() > 0
             return p
+        if t.name = "(,)" and t.generics <> null
+        {
+            var parts StringBuilder()
+            for g in t.generics
+            {
+                if parts.get_length() > 0
+                    parts.append ", "
+                parts.append(CppEmitter.ctype(g))
+            }
+            return "scaly_tuple<`parts.to_string()`>"
+        }
         if CppEmitter.is_pointer_type(t)
         {
             var inner CppEmitter.first_generic(t)
@@ -1610,6 +1677,7 @@ define CppEmitter
                     {
                         if CppEmitter.is_record(p.prop_type) and p.prop_type.mangled_name.get_length() > 0
                             this.define_structure(out, plan, p.prop_type.mangled_name, done, depth + 1)
+                        this.define_tuple_parts(out, plan, p.prop_type, done, depth + 1)
                     }
                 }
                 out.append(CppEmitter.record_head(st.mangled_name))
@@ -1644,6 +1712,7 @@ define CppEmitter
                             {
                                 if CppEmitter.is_record(vt) and vt.mangled_name.get_length() > 0
                                     this.define_structure(out, plan, vt.mangled_name, done, depth + 1)
+                                this.define_tuple_parts(out, plan, vt, done, depth + 1)
                                 if sizes.get_length() > 0
                                     sizes.append ", "
                                 sizes.append(CppEmitter.ctype(vt))
@@ -1660,6 +1729,20 @@ define CppEmitter
                 out.append "};\n#endif\n\n"
                 return
             }
+        }
+    }
+
+    ; A tuple held by value: the records of its components defined first
+    ; (scaly_tuple needs them whole), a tuple's among them too.
+    procedure define_tuple_parts(this, mutable out: ref[StringBuilder], plan: Plan, t: PlannedType, mutable done: ref[Array[String]], depth: size_t)
+    {
+        if t.name <> "(,)" or t.generics = null or depth > 64
+            return
+        for g in t.generics
+        {
+            if CppEmitter.is_record(g) and g.name <> "(,)" and g.mangled_name.get_length() > 0
+                this.define_structure(out, plan, g.mangled_name, done, depth + 1)
+            this.define_tuple_parts(out, plan, g, done, depth + 1)
         }
     }
 
@@ -2327,6 +2410,8 @@ define CppEmitter
     {
         var j: size_t 0
         let m pattern.get_length()
+        if at + m > text.get_length()
+            return false
         while j < m
         {
             if text.get(at + j) <> pattern.get(j)
@@ -3424,6 +3509,14 @@ define CppEmitter
                         u := "*(`text`)"
                     text := "scaly_payload<`CppEmitter.ctype(m.result_type)`>(`u`)"
                 }
+                else if m.parent_type.name = "(,)"
+                {
+                    ; a tuple's component, by its place (a label or `$k`)
+                    if through_pointer
+                        text := "`text`->_`m.field_index`"
+                    else
+                        text := "(`text`)._`m.field_index`"
+                }
                 else if through_pointer
                     text := "`text`->`CppEmitter.local_name(m.name)`"
                 else
@@ -3748,6 +3841,14 @@ define CppEmitter
 
     procedure tuple_value(mutable this, t: PlannedTuple) returns String
     {
+        this.tuple_value_as(t, "")
+    }
+
+    ; ... `typed`, where given, the C++ type a literal stands for that the plan
+    ; left without one (`Holder((7, 8))`: the tuple fills a field, and the
+    ; field's type is the tuple's)
+    procedure tuple_value_as(mutable this, t: PlannedTuple, typed: String) returns String
+    {
         var sb StringBuilder()
         var count: size_t 0
         if t.components <> null
@@ -3765,7 +3866,10 @@ define CppEmitter
                     return "(`this.operand(v)`)"
             }
         }
-        sb.append(CppEmitter.ctype(t.tuple_type))
+        var head CppEmitter.ctype(t.tuple_type)
+        if typed.get_length() > 0 and (head.equals("void") or head.get_length() = 0)
+            head := String(typed)
+        sb.append head
         sb.append("{" as char)
         if t.components <> null
         {
@@ -3780,7 +3884,12 @@ define CppEmitter
                     sb.append ", "
                 first := false
                 let field CppEmitter.tab_field(fields, k)
-                if field.get_length() > 1 and c.value <> null and c.value.length > 0
+                var inner: String ""
+                if field.get_length() > 1 and c.value <> null and c.value.length = 1
+                    inner := this.untyped_tuple((*c.value)[0], field.substring(1, field.get_length() - 1))
+                if inner.get_length() > 0
+                    sb.append inner
+                else if field.get_length() > 1 and c.value <> null and c.value.length > 0
                     sb.append(this.as_kind((*c.value)[0], field.substring(0, 1), field.substring(1, field.get_length() - 1)))
                 else
                     sb.append(this.operands(c.value))
@@ -3789,6 +3898,24 @@ define CppEmitter
         }
         sb.append("}" as char)
         sb.to_string()
+    }
+
+    ; A tuple literal the plan left without a type, written as the C++ type
+    ; `typed`; "" for any other operand.
+    procedure untyped_tuple(mutable this, op: PlannedOperand, typed: String) returns String
+    {
+        if op.member_access <> null
+            return ""
+        choose op.expr
+            when inner: Tuple
+            {
+                let ct CppEmitter.ctype(inner.tuple_type)
+                if ct.equals("void") and inner.is_region_alloc = false
+                    return this.tuple_value_as(inner, typed)
+            }
+            else
+                0
+        ""
     }
 
     procedure fields_of(this, mangled: String) returns String

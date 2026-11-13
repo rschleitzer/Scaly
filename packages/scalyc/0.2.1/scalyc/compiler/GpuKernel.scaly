@@ -46,15 +46,6 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.TaskPlanner.TaskPlanner
 
-; Where an init is among the plan's records: the record's place, the
-; init's place (GpuKernel.init_place#). A record, not a tuple: the compiler
-; written as C++ (`--emit-cpp`, trust/) declares no tuple types yet.
-define InitPlace
-(
-    record: int
-    at: int
-)
-
 define GpuKernel
 {
     define GpuKernel
@@ -877,11 +868,11 @@ define GpuKernel
         ; The PlannedInitializer of a construction through an init: where it
         ; is among the plan's records -- the record's place, the init's
         ; place; (-1, -1) where it is not there.
-        function init_place(this: GpuKernel, mangled: String) returns InitPlace
+        function init_place(this: GpuKernel, mangled: String) returns (record: int, at: int)
         {
             let ss: ref[Vector[PlannedStructure]]? plan_structures
             if ss = null
-                return InitPlace(0 - 1, 0 - 1)
+                return (record: 0 - 1, at: 0 - 1)
             var i: size_t 0
             while i < ss.length
             {
@@ -894,13 +885,13 @@ define GpuKernel
                     {
                         let ini_ptr inits.get j
                         if ini_ptr <> null and ini_ptr.mangled_name = mangled
-                            return InitPlace(i as int, j as int)
+                            return (record: i as int, at: j as int)
                         j := j + 1
                     }
                 }
                 i := i + 1
             }
-            InitPlace(0 - 1, 0 - 1)
+            (record: 0 - 1, at: 0 - 1)
         }
 
         ; A record built by its init: the init is a function of the kernel
