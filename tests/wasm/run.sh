@@ -33,6 +33,14 @@
 #      parallel_spike_no_fork (its verdict rests on windows of a few
 #      microseconds, and a clock read through the host costs about that).
 #
+#   5. A CLUSTER IN ONE PROCESS: the programs of tests/cluster built for the
+#      threads profile, their nodes workers of one node process on one
+#      network of the host (web/net.mjs: the sockets WASI does not have),
+#      and tests/cluster/wasm.mjs runs tests/cluster/run.sh's scenarios over
+#      it -- ping-pong, the late frame, kill -9, the stamp mismatch, the
+#      distributed trainer's parity and its fault --, and one of its own: a
+#      node that falls silent, which only the heartbeat finds.
+#
 # Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) and node; SKIPPED by name
 # without either.
 #
@@ -150,5 +158,20 @@ echo "wasm (threads): fixtures $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ] || failed=1
 SCALY_WORKERS=4 REGRESS_TARGET=$TT REGRESS_RUN="$RUN" REGRESS_SKIP=tests/wasm/skip REGRESS_NAME="wasm (threads): regress" \
   "$PY" tests/regress/run.py "$STAGE" "$TOOL" "" "$WORK" "$JOBS" || failed=1
+
+# 5. a cluster in one process
+mkdir -p "$WORK/cluster"
+built=1
+for n in roundtrip xproc_recv xproc_send pingpong lateframe kill9 stamp_a stamp_b train; do
+  if ! "$TOOL" build --target $TT tests/cluster/$n.scaly -o "$WORK/cluster/$n.wasm" > "$WORK/cluster/$n.build" 2>&1; then
+    echo "wasm (cluster): FAIL — $n does not build ($(grep -m1 -i 'error' "$WORK/cluster/$n.build" | cut -c1-120))"
+    built=0
+  fi
+done
+if [ $built -eq 1 ]; then
+  "$NODE" --no-warnings tests/cluster/wasm.mjs "packages/scaly/$(tools/version.sh scaly)/web" "$WORK/cluster" || failed=1
+else
+  failed=1
+fi
 
 [ $failed -eq 0 ]
