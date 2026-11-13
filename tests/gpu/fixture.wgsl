@@ -41,7 +41,6 @@ fn f0(p0: i32, p1: i32, F: ptr<function, u32>) -> i32
     }
     let t6: i32 = v0;
     return t6;
-    return 0;
 }
 @group(0) @binding(0) var<storage, read> U: array<u32>;
 @group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
@@ -139,7 +138,6 @@ fn f0(p0: i32, F: ptr<function, u32>) -> i32
         return 9;
     }
     return p0;
-    return 0;
 }
 @group(0) @binding(0) var<storage, read> U: array<u32>;
 @group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
@@ -213,7 +211,6 @@ fn f0(p0: f32, F: ptr<function, u32>) -> f32
 {
     let t0: f32 = p0 * 0.5f;
     return t0;
-    return 0.0f;
 }
 @group(0) @binding(0) var<storage, read> U: array<u32>;
 @group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
@@ -239,7 +236,6 @@ fn f0(p0: f32, F: ptr<function, u32>) -> f32
 {
     let t0: f32 = p0 * 0.5f;
     return t0;
-    return 0.0f;
 }
 @group(0) @binding(0) var<storage, read> U: array<u32>;
 @group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;

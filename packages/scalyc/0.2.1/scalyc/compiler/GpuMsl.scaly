@@ -89,6 +89,9 @@ define GpuMsl
         ; a called function is being written, and what it answers
         var m_in_function: bool
         var m_return_kind: int
+        ; what was written last returns on every path: a `return`, or an
+        ; `if` whose two arms do
+        var m_returns: bool
         ; the 32-bit words the kernel's scalars take
         var m_uniform_words: size_t
         ; the kind of the value an expression just answered
@@ -123,6 +126,7 @@ define GpuMsl
             m_depth := 0
             m_in_function := false
             m_return_kind := 0
+            m_returns := false
             m_uniform_words := 0
             m_atom_kind := 0
             m_sink := String^this("")
@@ -212,6 +216,7 @@ define GpuMsl
             m_depth := 0
             m_in_function := false
             m_return_kind := 0
+            m_returns := false
             m_uniform_words := 0
             m_atom_kind := 0
             m_atom_high := String^this("")
@@ -1250,13 +1255,19 @@ define GpuMsl
                 out.append "F: ptr<function, u32>) -> `this.ty(rk)`\n{\n"
             else
                 out.append "uint& F)\n{\n"
+            m_returns := false
             choose func.impl
                 when action: Action
                     this.body(out, gk, action, 1, true)
                 else
                     0
-            ; a body that returns on every path never comes here
-            out.append "    return `GpuMsl.zero(rk)`;\n}\n"
+            ; a body that returns on every path never comes here: WGSL's
+            ; compiler says so (Tint, "code is unreachable"), so it gets the
+            ; line only where a path may come; Metal's always (its text
+            ; stays as pinned)
+            if m_returns = false or m_wgsl = false
+                out.append "    return `GpuMsl.zero(rk)`;\n"
+            out.append "}\n"
             this.end_scope(0)
             m_in_function := false
             m_return_kind := 0
@@ -1300,6 +1311,7 @@ define GpuMsl
             if m_refused
                 return
             let ind GpuMsl.indent_of(depth)
+            m_returns := false
             choose stmt
                 when action: Action
                     this.action(out, gk, action, depth, tail)
@@ -1378,16 +1390,19 @@ define GpuMsl
                     when wh: While
                     {
                         this.while_statement(out, gk, wh, depth)
+                        m_returns := false
                         return
                     }
                     when rp: Repeat
                     {
                         this.repeat_statement(out, gk, rp, depth)
+                        m_returns := false
                         return
                     }
                     when fr: For
                     {
                         this.for_statement(out, gk, fr, depth)
+                        m_returns := false
                         return
                     }
                     when call: Call
@@ -1416,6 +1431,7 @@ define GpuMsl
                 {
                     let fitted this.fit(value, have, m_return_kind)
                     out.append "`ind`return `fitted`;\n"
+                    m_returns := true
                 }
             }
         }
@@ -1518,6 +1534,7 @@ define GpuMsl
                 return
             let fitted this.fit(value, m_atom_kind, m_return_kind)
             out.append "`ind`return `fitted`;\n"
+            m_returns := true
         }
 
         procedure if_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], iff: PlannedIf, depth: size_t, tail: bool)
@@ -1543,10 +1560,13 @@ define GpuMsl
             }
             out.append "`ind`if (`c`)\n"
             this.arm(out, gk, iff.consequent, depth, tail)
+            let first m_returns
+            m_returns := false
             if iff.alternative <> null
             {
                 out.append "`ind`else\n"
                 this.arm(out, gk, iff.alternative, depth, tail)
+                m_returns := first and m_returns
             }
         }
 
@@ -1554,6 +1574,7 @@ define GpuMsl
         {
             let ind GpuMsl.indent_of(depth)
             out.append "`ind`{\n"
+            m_returns := false
             if stmt <> null
             {
                 let s stmt

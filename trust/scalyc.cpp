@@ -13581,6 +13581,7 @@ struct GpuMsl
     uint64_t m_depth;
     bool m_in_function;
     int64_t m_return_kind;
+    bool m_returns;
     uint64_t m_uniform_words;
     int64_t m_atom_kind;
     String m_sink;
@@ -119459,6 +119460,7 @@ __attribute__((weak)) void GpuMsl_begin_kernel(GpuMsl& scaly_self, bool wgsl)
     this_->m_depth = 0ULL;
     this_->m_in_function = false;
     this_->m_return_kind = 0LL;
+    this_->m_returns = false;
     this_->m_uniform_words = 0ULL;
     this_->m_atom_kind = 0LL;
     this_->m_atom_high = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{nullptr})); scaly_t2; }));
@@ -121519,6 +121521,7 @@ __attribute__((weak)) void GpuMsl_function_text(GpuMsl& scaly_self, StringBuilde
     {
         StringBuilder_append2(*(out), scaly_lvalue(String{(uint8_t*)"\013uint& F)\012{\012"}));
     }
+    this_->m_returns = false;
     {
         auto&& scaly_t14 = (func).impl;
         if (scaly_t14.tag == 0)
@@ -121531,17 +121534,21 @@ __attribute__((weak)) void GpuMsl_function_text(GpuMsl& scaly_self, StringBuilde
             0LL;
         }
     }
-    StringBuilder_append2(*(out), scaly_lvalue(({
+    if ((((this_->m_returns) == (false)) ? true : ((this_->m_wgsl) == (false))))
+    {
+        StringBuilder_append2(*(out), scaly_lvalue(({
         String scaly_t15{};
         {
             StringBuilder* isb$ = ({ StringBuilder* scaly_t16 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t16 = StringBuilder{}; StringBuilder_init((*scaly_t16)); scaly_t16; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\013    return "}));
             StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_zero(&scaly_local.f, rk))));
-            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004;\012}\012"}));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002;\012"}));
             scaly_t15 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
         scaly_t15;
     })));
+    }
+    StringBuilder_append2(*(out), scaly_lvalue(String{(uint8_t*)"\002}\012"}));
     GpuMsl_end_scope(*(this_), 0ULL);
     this_->m_in_function = false;
     this_->m_return_kind = 0LL;
@@ -121595,6 +121602,7 @@ __attribute__((weak)) void GpuMsl_statement(GpuMsl& scaly_self, StringBuilder* o
         return;
     }
     String ind = GpuMsl_indent_of(&scaly_local.f, depth);
+    this_->m_returns = false;
     {
         auto&& scaly_t1 = stmt;
         if (scaly_t1.tag == 0)
@@ -121717,18 +121725,21 @@ __attribute__((weak)) void GpuMsl_action(GpuMsl& scaly_self, StringBuilder* out,
             {
                 PlannedWhile wh = scaly_payload<PlannedWhile>(scaly_t1);
                 GpuMsl_while_statement(*(this_), out, gk, wh, depth);
+                this_->m_returns = false;
                 return;
             }
             else if (scaly_t1.tag == 13)
             {
                 PlannedRepeat rp = scaly_payload<PlannedRepeat>(scaly_t1);
                 GpuMsl_repeat_statement(*(this_), out, gk, rp, depth);
+                this_->m_returns = false;
                 return;
             }
             else if (scaly_t1.tag == 11)
             {
                 PlannedFor fr = scaly_payload<PlannedFor>(scaly_t1);
                 GpuMsl_for_statement(*(this_), out, gk, fr, depth);
+                this_->m_returns = false;
                 return;
             }
             else if (scaly_t1.tag == 4)
@@ -121788,6 +121799,7 @@ __attribute__((weak)) void GpuMsl_action(GpuMsl& scaly_self, StringBuilder* out,
         }
         scaly_t4;
     })));
+                this_->m_returns = true;
             }
         }
     }
@@ -121942,6 +121954,7 @@ __attribute__((weak)) void GpuMsl_return_statement(GpuMsl& scaly_self, StringBui
         }
         scaly_t1;
     })));
+    this_->m_returns = true;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
@@ -121983,6 +121996,8 @@ __attribute__((weak)) void GpuMsl_if_statement(GpuMsl& scaly_self, StringBuilder
         scaly_t1;
     })));
     GpuMsl_arm(*(this_), out, gk, (iff).consequent, depth, tail);
+    bool first = this_->m_returns;
+    this_->m_returns = false;
     if ((((iff).alternative) != (nullptr)))
     {
         StringBuilder_append2(*(out), scaly_lvalue(({
@@ -121996,6 +122011,7 @@ __attribute__((weak)) void GpuMsl_if_statement(GpuMsl& scaly_self, StringBuilder
         scaly_t3;
     })));
         GpuMsl_arm(*(this_), out, gk, (iff).alternative, depth, tail);
+        this_->m_returns = (first ? this_->m_returns : false);
     }
 }
 
@@ -122015,6 +122031,7 @@ __attribute__((weak)) void GpuMsl_arm(GpuMsl& scaly_self, StringBuilder* out, Gp
         }
         scaly_t1;
     })));
+    this_->m_returns = false;
     if (((stmt) != (nullptr)))
     {
         PlannedStatement* s = stmt;
@@ -124761,6 +124778,7 @@ __attribute__((weak)) void GpuMsl_init(GpuMsl& scaly_self)
     this_->m_depth = 0ULL;
     this_->m_in_function = false;
     this_->m_return_kind = 0LL;
+    this_->m_returns = false;
     this_->m_uniform_words = 0ULL;
     this_->m_atom_kind = 0LL;
     this_->m_sink = (*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), scaly_lvalue(String{nullptr})); scaly_t9; }));
