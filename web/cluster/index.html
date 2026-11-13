@@ -37,8 +37,12 @@
   code, pre { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
   p code { background: var(--code); padding: 1px 4px; border-radius: 4px; }
   .picture { display: flex; flex-direction: column; gap: 8px; }
-  .stage { position: relative; }
-  .stage canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+  /* the picture at its own resolution, one point a pixel of the screen
+     (layout#): where the column is too narrow for it, the picture takes the
+     page's width; where that is too narrow, it scrolls in its frame */
+  .stage { overflow-x: auto; }
+  .frame { position: relative; width: max-content; margin: 0 auto; }
+  .stage canvas { display: block; height: auto; border-radius: 6px; }
   #canvas { background: #000; }
   #overlay { position: absolute; inset: 0; pointer-events: none; }
   .under { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); align-items: center; }
@@ -58,7 +62,7 @@
   #status.bad { color: var(--bad); }
   #verdict { font-size: 14px; min-height: 1.5em; }
   #verdict.same, #verdict.near { color: var(--ok); }
-  #machine { display: block; width: 100%; height: auto; }
+  #machine { display: block; width: 100%; max-width: 560px; height: auto; }
   #machine text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--ink); }
   #machine text.muted { fill: var(--muted); }
   #verdict.differs { color: var(--bad); }
@@ -89,6 +93,7 @@
   @media (min-width: 1000px) {
     main { grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr); }
     .about, .code { grid-column: 1 / -1; }
+    main.wide .picture, main.wide .side { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -108,9 +113,11 @@
 </header>
 <main>
   <section class="picture">
-    <div class="stage">
-      <canvas id="canvas" width="1024" height="768" aria-label="The picture" data-t-label="picture"></canvas>
-      <canvas id="overlay" width="1024" height="768" aria-hidden="true"></canvas>
+    <div class="stage" id="stage">
+      <div class="frame">
+        <canvas id="canvas" width="1024" height="768" aria-label="The picture" data-t-label="picture"></canvas>
+        <canvas id="overlay" width="1024" height="768" aria-hidden="true"></canvas>
+      </div>
     </div>
     <div class="under">
       <span id="progress"></span>
@@ -883,7 +890,21 @@ function sizeCanvas(f) {
   }
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, f.w, f.h);
+  layout();
 }
+
+// The picture at its own resolution: as many CSS pixels wide as the screen
+// shows its points in. Where the picture's column is narrower, the picture
+// and the panel beside it take the page's width, one above the other.
+function layout() {
+  const w = canvas.width / (window.devicePixelRatio || 1);
+  for (const c of [canvas, overlay]) c.style.width = `${w}px`;
+  const page = document.querySelector('main');
+  page.classList.remove('wide');
+  if (w > $('stage').clientWidth) page.classList.add('wide');
+  wake();
+}
+addEventListener('resize', layout);
 
 // A tile as it stands now: six hex digits a point, row by row (render.scaly).
 function paint(r, tile, hex) {
@@ -964,6 +985,7 @@ $('render').onclick = () => renderCluster();
 $('check').onclick = () => check();
 $('stop').onclick = () => stop();
 $('nodes').value = String(cpus >= 8 ? 4 : 3);
+layout();
 // whether the page has a card: where it has none, the setting says why
 cardHello().then(h => {
   if (!h.card) {
