@@ -21,7 +21,6 @@
 ; averages over the remaining ranks.
 
 function scaly_eio_now_ns() returns i64 extern
-function exit(code: int) extern
 
 ; --- message types (7.2 walkable object trees) ---
 
