@@ -57,7 +57,10 @@
   #status { font-size: 14px; color: var(--muted); min-height: 1.5em; }
   #status.bad { color: var(--bad); }
   #verdict { font-size: 14px; min-height: 1.5em; }
-  #verdict.same { color: var(--ok); }
+  #verdict.same, #verdict.near { color: var(--ok); }
+  #machine { display: block; width: 100%; height: auto; }
+  #machine text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--ink); }
+  #machine text.muted { fill: var(--muted); }
   #verdict.differs { color: var(--bad); }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -65,7 +68,8 @@
   td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.bar { width: 22%; }
   .bar span { display: block; height: 10px; border-radius: 5px; min-width: 2px; }
-  td.do { white-space: nowrap; text-align: right; }
+  td.do { text-align: right; }
+  td.do button { margin: 1px 0; }
   .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
   .state { color: var(--muted); }
   .state.gone { color: var(--bad); }
@@ -130,6 +134,9 @@
       <label><span data-t="coresLabel">Cores per program</span> <select id="cores">
         <option value="share" selected data-t="coresShare">shared out</option><option value="1">1</option><option value="2">2</option>
       </select></label>
+      <label><span data-t="cardLabel">Graphics card</span> <select id="card">
+        <option value="none" selected data-t="cardNone">none</option><option value="one" data-t="cardOne">for one node</option><option value="all" data-t="cardAll">for every node</option>
+      </select></label>
     </div>
     <div class="actions">
       <button class="primary" id="render" disabled data-t="render">Render</button>
@@ -138,6 +145,11 @@
     </div>
     <div id="status">Loading…</div>
     <div id="verdict"></div>
+    <div>
+      <h2 data-t="machineTitle">This computer</h2>
+      <svg id="machine" viewBox="0 0 400 200" role="img" data-t-label="machineTitle"></svg>
+      <p class="note" id="machineNote"></p>
+    </div>
     <div>
       <h2 data-t="nodesTitle">The nodes</h2>
       <table>
@@ -160,6 +172,7 @@
     <p data-h="about3"></p>
     <p data-h="about4"></p>
     <p data-h="about5"></p>
+    <p data-h="about6"></p>
   </section>
 
   <section class="code">
@@ -190,6 +203,11 @@ const TEXT = {
     title: 'A render farm in Scaly', fractals: 'Fractals', playground: 'The playground', language: 'Language',
     picture: 'The picture', tint: 'Colour each tile by the node that rendered it',
     nodesLabel: 'Nodes', size: 'Size', rays: 'Rays per point', coresLabel: 'Cores per program', coresShare: 'shared out',
+    cardLabel: 'Graphics card', cardNone: 'none', cardOne: 'for one node', cardAll: 'for every node',
+    noCard: why => `This browser gives the page no graphics card (WebGPU): ${why}`,
+    machineTitle: 'This computer', cardShort: 'GPU', coresWord: k => k === 1 ? '1 core' : `${k} cores`,
+    machineIdle: (k, card) => `${k} cores${card ? ' and a graphics card' : ''}, which every program of the page shares.`,
+    machineBusy: (busy, k, card) => `Working: ${busy} of ${k} cores${card ? ', and the graphics card' : ''}.`,
     render: 'Render', stop: 'Stop', check: 'Check: render it alone',
     nodesTitle: 'The nodes', thNode: 'Node', thState: 'State', thCores: 'Cores', thTiles: 'Tiles', thTile: 'Per tile', none: 'None yet.',
     killNote: '“Kill” ends a node and closes its connection, as when a machine dies; “Silence” ends it and leaves its connection open, as when a cable is pulled — only the heartbeat finds that.',
@@ -209,6 +227,9 @@ const TEXT = {
     aloneRunning: k => `Rendering the same picture once more, in a single program on ${k === 1 ? 'one core' : `${k} cores`}…`,
     same: (a, ak, c, ck, x) => `The same picture, bit for bit: the program alone rendered it in ${a} s on ${ak === 1 ? 'one core' : `${ak} cores`}, the cluster in ${c} s on ${ck} cores — ${x} times the speed.`,
     differs: 'The pictures differ — that should not happen.',
+    near: (a, ak, c, ck, x, same, most) => `The same picture but for the card's rounding: ${same} % of the colour values are equal, none off by more than ${most} of 255. The program alone took ${a} s on ${ak === 1 ? 'one core' : `${ak} cores`}, the cluster ${c} s on ${ck} cores and the graphics card — ${x} times the speed.`,
+    eCard: k => k === 1 ? 'Node 1 renders on the graphics card' : 'Every node renders on the graphics card',
+    eNoCard: why => `No graphics card: ${why}`,
     eLinked: n => `${n} nodes linked; the coordinator hands out the jobs`,
     eKilled: r => `Node ${r} killed: its connection closes`,
     eSilenced: r => `Node ${r} falls silent: its connection stays open, nothing comes through it`,
@@ -223,12 +244,18 @@ const TEXT = {
     about3: 'Kill a node, and its connection closes, as a machine’s does when it dies: the coordinator learns of it at once, and the tile in the node’s hands goes back to the queue — another node renders it. Let a node fall silent instead, and its connection stays open while nothing more comes through it, as when a cable is pulled: only the cluster’s heartbeat finds that — after 2.5 seconds without a word the node is suspected, and its job is handed on. Kill them all, and the coordinator renders the rest itself.',
     about4: 'Whatever happens on the way, the picture comes out the same, bit for bit: the colour of every ray is rounded to a whole number of 4096ths before it is added, so a sum does not depend on the order of its parts — nor on which node rendered which tile. “Check” renders the picture once more in a single program and compares.',
     about5: 'What runs here is Scaly’s real cluster runtime — its handshake, its frames, its heartbeats, regions sent from one node’s memory into another’s —, the same code that runs between machines over TCP. Only TCP is not there: the nodes are workers of this page, each with a memory and threads of its own, and they talk through a network the page keeps in shared memory. So all nodes share the cores of this one machine. With “Cores per program” at “shared out” the page shares them out among the nodes, which together have as many as the program alone: then the cluster is not faster than the program alone — it pays for its messages. Give each program one core instead, and the cluster is faster the more nodes it has, as long as the machine has cores to spare: “Check” then renders on one core and says by how much. Beyond the cores of this one machine, a gain in speed takes machines of their own.',
+    about6: 'A node may also have the graphics card. The loop over a tile’s points is a plain <code>for</code> in 32-bit floating point, written <code>relaxed</code>; the compiler, called with <code>--gpu</code>, writes it as a kernel for WebGPU besides the code for the cores, and a node with the card hands each tile there. The card renders a tile many times faster than the cores. It rounds less strictly than the processor, so the picture it helps make may differ from the program’s alone in the last shade of a point here and there — “Check” counts how often.',
     codeNote: 'One file, three roles — the coordinator, a node that renders, or the program alone —, chosen by its environment. The picture’s colours go to the page as text, one line a tile.',
   },
   de: {
     title: 'Eine Render-Farm in Scaly', fractals: 'Fraktale', playground: 'Der Spielplatz', language: 'Sprache',
     picture: 'Das Bild', tint: 'Jede Kachel in der Farbe des Knotens, der sie gerechnet hat',
     nodesLabel: 'Knoten', size: 'Größe', rays: 'Strahlen pro Punkt', coresLabel: 'Kerne je Programm', coresShare: 'aufgeteilt',
+    cardLabel: 'Grafikkarte', cardNone: 'keine', cardOne: 'für einen Knoten', cardAll: 'für jeden Knoten',
+    noCard: why => `Dieser Browser gibt der Seite keine Grafikkarte (WebGPU): ${why}`,
+    machineTitle: 'Dieser Rechner', cardShort: 'GPU', coresWord: k => k === 1 ? '1 Kern' : `${k} Kerne`,
+    machineIdle: (k, card) => `${k} Kerne${card ? ' und eine Grafikkarte' : ''}, die sich alle Programme der Seite teilen.`,
+    machineBusy: (busy, k, card) => `Es arbeiten ${busy} von ${k} Kernen${card ? ' und die Grafikkarte' : ''}.`,
     render: 'Rendern', stop: 'Anhalten', check: 'Prüfen: allein rendern',
     nodesTitle: 'Die Knoten', thNode: 'Knoten', thState: 'Zustand', thCores: 'Kerne', thTiles: 'Kacheln', thTile: 'Pro Kachel', none: 'Noch keine.',
     killNote: '„Abschießen“ beendet einen Knoten und schließt seine Verbindung, wie wenn eine Maschine stirbt; „Verstummen“ beendet ihn und lässt seine Verbindung offen, wie wenn ein Kabel gezogen wird — das findet nur der Heartbeat.',
@@ -248,6 +275,9 @@ const TEXT = {
     aloneRunning: k => `Dasselbe Bild noch einmal, in einem einzigen Programm auf ${k === 1 ? 'einem Kern' : `${k} Kernen`}…`,
     same: (a, ak, c, ck, x) => `Dasselbe Bild, Bit für Bit: Das Programm allein brauchte ${a} s auf ${ak === 1 ? 'einem Kern' : `${ak} Kernen`}, der Cluster ${c} s auf ${ck} Kernen — ${x}-mal so schnell.`,
     differs: 'Die Bilder unterscheiden sich — das sollte nicht sein.',
+    near: (a, ak, c, ck, x, same, most) => `Dasselbe Bild bis auf die Rundung der Karte: ${same} % der Farbwerte sind gleich, keiner liegt mehr als ${most} von 255 daneben. Das Programm allein brauchte ${a} s auf ${ak === 1 ? 'einem Kern' : `${ak} Kernen`}, der Cluster ${c} s auf ${ck} Kernen und der Grafikkarte — ${x}-mal so schnell.`,
+    eCard: k => k === 1 ? 'Knoten 1 rendert auf der Grafikkarte' : 'Jeder Knoten rendert auf der Grafikkarte',
+    eNoCard: why => `Keine Grafikkarte: ${why}`,
     eLinked: n => `${n} Knoten verbunden; der Koordinator verteilt die Jobs`,
     eKilled: r => `Knoten ${r} abgeschossen: Seine Verbindung schließt sich`,
     eSilenced: r => `Knoten ${r} verstummt: Seine Verbindung bleibt offen, nichts kommt mehr durch`,
@@ -262,6 +292,7 @@ const TEXT = {
     about3: 'Schießt man einen Knoten ab, schließt sich seine Verbindung, wie die einer Maschine, die stirbt: Der Koordinator erfährt es sofort, und die Kachel, die der Knoten in Arbeit hatte, geht zurück in die Warteschlange — ein anderer Knoten rechnet sie. Lässt man einen Knoten stattdessen verstummen, bleibt seine Verbindung offen, nur kommt nichts mehr durch, wie wenn ein Kabel gezogen wird: Das findet nur der Heartbeat des Clusters — nach 2,5 Sekunden ohne ein Wort gilt der Knoten als verdächtig, und sein Job geht weiter. Schießt man alle ab, rendert der Koordinator den Rest selbst.',
     about4: 'Was auch unterwegs geschieht, das Bild kommt Bit für Bit gleich heraus: Die Farbe jedes Strahls wird auf ganze 4096stel gerundet, bevor sie addiert wird, also hängt eine Summe nicht von der Reihenfolge ihrer Teile ab — und nicht davon, welcher Knoten welche Kachel gerechnet hat. „Prüfen“ rendert das Bild noch einmal in einem einzigen Programm und vergleicht.',
     about5: 'Was hier läuft, ist die echte Cluster-Laufzeit von Scaly — ihr Handshake, ihre Rahmen, ihre Heartbeats, Regionen, die aus dem Speicher eines Knotens in den eines anderen geschickt werden —, derselbe Code, der zwischen Maschinen über TCP läuft. Nur TCP fehlt: Die Knoten sind Worker dieser Seite, jeder mit eigenem Speicher und eigenen Threads, und sie sprechen über ein Netz, das die Seite in gemeinsamem Speicher hält. Alle Knoten teilen sich also die Kerne dieser einen Maschine. Steht „Kerne je Programm“ auf „aufgeteilt“, verteilt die Seite sie auf die Knoten, die zusammen so viele haben wie das Programm allein: Dann ist der Cluster nicht schneller als das Programm allein — er zahlt für seine Nachrichten. Gibt man stattdessen jedem Programm einen Kern, ist der Cluster umso schneller, je mehr Knoten er hat, solange die Maschine Kerne frei hat: „Prüfen“ rendert dann auf einem Kern und sagt, um wie viel. Über die Kerne dieser einen Maschine hinaus bringen erst eigene Maschinen mehr Tempo.',
+    about6: 'Ein Knoten kann auch die Grafikkarte bekommen. Die Schleife über die Punkte einer Kachel ist ein gewöhnliches <code>for</code> in 32-Bit-Gleitkomma, als <code>relaxed</code> geschrieben; der Compiler schreibt sie mit <code>--gpu</code> neben dem Code für die Kerne auch als Kernel für WebGPU, und ein Knoten mit Karte gibt jede Kachel dorthin. Die Karte rendert eine Kachel um ein Vielfaches schneller als die Kerne. Sie rundet weniger streng als der Prozessor, darum kann das Bild, an dem sie mitrechnet, von dem des Programms allein hier und da in der letzten Stufe eines Punkts abweichen — „Prüfen“ zählt, wie oft.',
     codeNote: 'Eine Datei, drei Rollen — der Koordinator, ein Knoten, der rendert, oder das Programm allein —, gewählt durch ihre Umgebung. Die Farben des Bildes gehen als Text an die Seite, eine Zeile pro Kachel.',
   },
 };
@@ -301,6 +332,7 @@ function translatePage() {
   for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
   if (said) $('status').textContent = said();
   if (verdict) $('verdict').textContent = verdict.say();
+  if (cardMissing !== null) $('card').title = t('noCard')(cardMissing);
   table();
   logged();
   progress();
@@ -347,6 +379,25 @@ function keep(place, made) {
 // not touch, the browser does not give it.
 const most = (threads, sums) => 384 + 320 * threads + Math.ceil(sums / 65536);
 
+// --- the graphics card ----------------------------------------------------------
+//
+// The page's card is a worker of its own (gpu-worker.mjs), made once: a node
+// that has the card posts its runs here and the page passes them on, so the
+// kernel is compiled once for every node and outlives the nodes. Its first
+// answer, { card, why }, is what a node is given (node.mjs).
+let gpuWorker = null;
+let cardAnswer = null;
+let cardMissing = null;      // why the page has no card, once it is known
+function cardHello() {
+  if (!navigator.gpu) return Promise.resolve({ card: false, why: 'no WebGPU' });
+  cardAnswer ??= new Promise(resolve => {
+    gpuWorker = new Worker('gpu-worker.mjs', { type: 'module' });
+    gpuWorker.onmessage = ({ data }) => resolve({ card: !!(data && data.card), why: data && data.why || '' });
+    gpuWorker.onerror = e => resolve({ card: false, why: `the card's worker failed: ${e.message || e}` });
+  });
+  return cardAnswer;
+}
+
 // --- a run: the coordinator and its nodes, or the program alone -----------------
 
 let run = null;
@@ -361,9 +412,9 @@ function farm() {
 // program alone), its environment `env`, its cores `cores`, its threads in
 // all `threads`. Its memory is one its place had before, where one has
 // rested long enough: the program alone has a place of its own.
-async function start(r, rank, env, cores, threads) {
+async function start(r, rank, env, cores, threads, card = null) {
   const place = r.alone ? 'alone' : rank;
-  const n = { rank, cores, state: 'starting', job: null, tiles: 0, ms: 0, out: '', ended: false, silentAt: 0 };
+  const n = { rank, cores, card: !!card, cards: 0, state: 'starting', job: null, tiles: 0, ms: 0, out: '', ended: false, silentAt: 0 };
   const share = { buffer: r.net.buffer, node: rank + 1 };
   const all = { ...env, SCALY_CPUS: String(cores) };
   let finish;
@@ -383,14 +434,18 @@ async function start(r, rank, env, cores, threads) {
   n.worker = new Worker('node.mjs', { type: 'module' });
   n.worker.onmessage = ({ data }) => {
     if (n.threads.handle(data)) return;
-    if (data.type === 'memory') {
+    if (data.type === 'scaly-gpu') gpuWorker.postMessage(data.run, data.transfer);
+    else if (data.type === 'memory') {
       // a new one: the one it was given (too small after all) is free again
       if (memory) memory.freed = performance.now();
       memory = { ...data.kept, freed: n.ended ? performance.now() : 0 };
       keep(place, memory);
     }
     else if (data.type === 'out') heard(r, n, data.text);
-    else if (data.type === 'exit') n.end(data.status);
+    else if (data.type === 'exit') {
+      n.cards = data.cards || 0;
+      n.end(data.status);
+    }
   };
   n.worker.onerror = e => { e.preventDefault(); n.end(134); };
   // a kept memory too small for this many threads is not taken again
@@ -398,7 +453,7 @@ async function start(r, rank, env, cores, threads) {
   memory = memoryFor(place, limit);
   if (memory) memory.freed = 0;
   n.worker.postMessage({ bytes, module, env: all, net: share, kept: memory && { memory: memory.memory, maximum: memory.maximum },
-                         most: limit });
+                         most: limit, card });
   return n;
 }
 
@@ -473,9 +528,13 @@ async function render(alone = false) {
   const count = Number($('nodes').value);
   // the cores of a program: a fixed number each, or (0) the machine's shared out
   const each = $('cores').value === 'share' ? 0 : Number($('cores').value);
+  // the nodes with the card: none, node 1, or all
+  const cardWanted = alone ? 'none' : $('card').value;
+  const hello = cardWanted === 'none' ? null : await cardHello();
+  const carded = hello && hello.card ? (cardWanted === 'all' ? count : 1) : 0;
   const across = Math.ceil(f.w / f.tile), tiles = across * Math.ceil(f.h / f.tile);
   const r = run = {
-    alone, farm: f, across, tiles, jobs: tiles * f.passes, net: Net.create(), nodes: [], done: 0, events: [],
+    alone, farm: f, across, tiles, jobs: tiles * f.passes, net: Net.create(), nodes: [], done: 0, events: [], carded,
     passOf: new Array(tiles).fill(0), owner: new Array(tiles).fill(-1), flashes: [],
     started: performance.now(), t0: null, ms: null, hash: null,
   };
@@ -497,10 +556,16 @@ async function render(alone = false) {
     r.t0 = r.started;
   } else {
     status(() => t('starting')(count));
+    if (hello && !hello.card) event(r, 'eNoCard', [hello.why || '?'], true);
+    if (carded) event(r, 'eCard', [carded]);
     // the coordinator only hands out jobs: one core; the rest of the work
     // has all the cores the program alone has, each node a share of them --
-    // or each node as many as the program alone, where they are fixed
-    const cores = k => each || Math.max(1, Math.floor(cpus / count) + (k <= cpus % count ? 1 : 0));
+    // or each node as many as the program alone, where they are fixed. A
+    // node with the card renders there and keeps one core to feed it: the
+    // others share what is left.
+    const plain = count - carded, left = Math.max(plain, cpus - carded);
+    const cores = k => k <= carded ? 1
+      : each || Math.max(1, Math.floor(left / plain) + (k - carded <= left % plain ? 1 : 0));
     const c = await start(r, 0, { ...env, RENDER_ROLE: 'c' }, 1, 1 + count);
     c.state = 'waiting';
     r.nodes.push(c);
@@ -509,7 +574,8 @@ async function render(alone = false) {
     await Promise.race([waiting, c.done]);
     // (a run stopped while a node was starting ends that node too)
     for (let k = 1; k <= count && !r.stopped; k++) {
-      const n = await start(r, k, { ...env, RENDER_ROLE: 'w', RENDER_RANK: String(k) }, cores(k), cores(k) + 1);
+      const n = await start(r, k, { ...env, RENDER_ROLE: 'w', RENDER_RANK: String(k) }, cores(k), cores(k) + 1,
+                            k <= carded ? hello : null);
       r.nodes.push(n);
       if (r.stopped) n.end(0);
     }
@@ -524,6 +590,7 @@ async function render(alone = false) {
     if (n.state !== 'gone') n.state = 'done';
   }
   r.status = status0;
+  if (r.hash) r.pixels = ctx.getImageData(0, 0, f.w, f.h).data;
   if (run === r && !r.stopped) {
     setBusy(false);
     if (r.hash) {
@@ -561,7 +628,8 @@ async function renderCluster() {
   const r = await render(false);
   // the cores that rendered: every node's, the coordinator's left out
   if (r.hash) lastCluster = { hash: r.hash, ms: r.ms, args: $('size').value + '/' + $('passes').value,
-                              cores: r.nodes.slice(1).reduce((sum, n) => sum + n.cores, 0) };
+                              cores: r.nodes.slice(1).reduce((sum, n) => sum + n.cores, 0),
+                              card: r.nodes.some(n => n.card && n.tiles > 0), pixels: r.pixels };
   return r;
 }
 async function check() {
@@ -569,11 +637,32 @@ async function check() {
   const r = await render(true);
   if (r.hash && before && before.args === $('size').value + '/' + $('passes').value) {
     const times = (r.ms / before.ms).toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const near = r.hash === before.hash ? null : nearness(before.pixels, r.pixels);
     if (r.hash === before.hash)
       judge(() => t('same')(seconds(r.ms), r.nodes[0].cores, seconds(before.ms), before.cores, times), 'same');
+    else if (before.card && near && near.most <= 16) {
+      const share = near.same.toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      judge(() => t('near')(seconds(r.ms), r.nodes[0].cores, seconds(before.ms), before.cores, times, share, near.most), 'near');
+    }
     else judge(() => t('differs'), 'differs');
   }
   return r;
+}
+
+// How near two pictures are: the share of colour values that are equal, in
+// percent below 100 where any is not, and the largest difference.
+function nearness(a, b) {
+  if (!a || !b || a.length !== b.length) return null;
+  let equal = 0, most = 0, all = 0;
+  for (let i = 0; i < a.length; i++) {
+    if ((i & 3) === 3) continue;
+    const d = Math.abs(a[i] - b[i]);
+    all++;
+    if (d === 0) equal++;
+    else if (d > most) most = d;
+  }
+  const same = equal === all ? 100 : Math.min(99.99, Math.floor(10000 * equal / all) / 100);
+  return { same, most };
 }
 
 function setBusy(busy) {
@@ -581,6 +670,7 @@ function setBusy(busy) {
   $('check').disabled = busy || !module;
   $('stop').disabled = !busy;
   for (const id of ['nodes', 'size', 'passes', 'cores']) $(id).disabled = busy;
+  $('card').disabled = busy || cardMissing !== null;
 }
 
 // --- what happened ----------------------------------------------------------------
@@ -638,6 +728,7 @@ function table() {
   const r = run;
   if (!r) {
     body.innerHTML = `<tr><td colspan="7" class="note">${t('none')}</td></tr>`;
+    machine();
     return;
   }
   const most = Math.max(1, ...r.nodes.map(n => n.tiles));
@@ -649,7 +740,7 @@ function table() {
     const [state, cls] = stateOf(n);
     const colour = COLOURS[n.rank % COLOURS.length];
     tr.innerHTML = `<td><span class="swatch" style="background:${colour}"></span>${name}</td>` +
-      `<td class="state ${cls}" data-rank="${n.rank}">${state}</td><td class="num">${n.cores}</td><td class="num">${n.tiles}</td>` +
+      `<td class="state ${cls}" data-rank="${n.rank}">${state}</td><td class="num">${n.card ? `${n.cores} + ${t('cardShort')}` : n.cores}</td><td class="num">${n.tiles}</td>` +
       `<td class="num">${n.tiles ? Math.round(n.ms / n.tiles) + ' ms' : ''}</td>` +
       `<td class="bar">${n.tiles ? `<span style="width:${100 * n.tiles / most}%;background:${colour}"></span>` : ''}</td><td class="do"></td>`;
     if (n.rank > 0 && !r.alone && !n.ended && run === r) {
@@ -665,7 +756,103 @@ function table() {
     }
     body.appendChild(tr);
   }
+  machine();
 }
+// --- the diagram: this computer, its programs, their cores and the card -----------
+//
+// The coordinator above, the nodes below it, a line from each to it; a
+// node's cores are squares, its card a chip. What works lights up in its
+// node's colour: a node's cores while it renders a tile on them, its card
+// while it renders one there, the line while a job is in its hands. A node
+// that is gone is struck out.
+const SVGNS = 'http://www.w3.org/2000/svg';
+let machineKey = '';
+function machine() {
+  const r = run;
+  const card = cardMissing === null && !!navigator.gpu;
+  const key = !r ? `idle ${card} ${lang}` :
+    lang + ' ' + r.nodes.map(n => `${n.rank}:${n.state}:${n.job ? 1 : 0}:${n.cores}:${n.card}`).join(' ');
+  if (key === machineKey) return;
+  machineKey = key;
+  const svg = $('machine');
+  const W = 400;
+  const parts = [];
+  const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const text = (x, y, words, cls = '', anchor = 'middle') =>
+    parts.push(`<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${esc(words)}</text>`);
+  const rect = (x, y, w, h, fill, stroke = 'var(--line)', rx = 4, extra = '') =>
+    parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" style="fill:${fill};stroke:${stroke}" ${extra}/>`);
+  // a node's cores: squares in rows of up to five
+  const CORE = 9, GAP = 3;
+  const coreGrid = (x, y, k, lit, colour) => {
+    for (let i = 0; i < k; i++)
+      rect(x + (i % 5) * (CORE + GAP), y + Math.floor(i / 5) * (CORE + GAP), CORE, CORE,
+           lit ? colour : 'var(--bg)', lit ? colour : 'var(--muted)', 2);
+  };
+  const chip = (x, y, lit, colour) => {
+    for (let i = 0; i < 5; i++)
+      parts.push(`<line x1="${x + 4 + i * 6}" y1="${y - 3}" x2="${x + 4 + i * 6}" y2="${y + 17}" style="stroke:var(--muted)"/>`);
+    rect(x, y, 32, 14, lit ? colour : 'var(--panel)', lit ? colour : 'var(--muted)', 2);
+    parts.push(`<text x="${x + 16}" y="${y + 10.5}" text-anchor="middle" style="font-size:9px;font-weight:600;fill:${lit ? '#fff' : 'var(--muted)'}">GPU</text>`);
+  };
+  let H;
+  let busy = 0, cardBusy = false;
+  if (!r) {
+    H = 92;
+    rect(1, 1, W - 2, H - 2, 'none', 'var(--line)', 8);
+    coreGrid(16, 22, Math.min(cpus, 20), false, '');
+    if (card) chip(16 + 5 * (CORE + GAP) + 20, 24, false, '');
+    $('machineNote').textContent = t('machineIdle')(cpus, card);
+  } else {
+    const nodes = r.nodes.slice(r.alone ? 0 : 1);
+    const per = Math.max(1, nodes.length);
+    const boxW = Math.min(120, (W - 24 - (per - 1) * 8) / per);
+    const rowsOf = n => Math.ceil(n.cores / 5);
+    const boxH = 34 + Math.max(...nodes.map(n => rowsOf(n) * (CORE + GAP) + (n.card ? 26 : 0)), CORE);
+    const top = r.alone ? 14 : 62;
+    H = top + boxH + 14;
+    rect(1, 1, W - 2, H - 2, 'none', 'var(--line)', 8);
+    const coord = r.alone ? null : r.nodes[0];
+    const cx = W / 2;
+    if (coord) {
+      const lit = coord.state === 'rest' || coord.state === 'handing';
+      rect(cx - 60, 10, 120, 30, 'var(--panel)', COLOURS[0], 6);
+      text(cx - 22, 29, t('coordinator'));
+      coreGrid(cx + 30, 15, 1, coord.state === 'rest', COLOURS[0]);
+      if (coord.state === 'rest') busy += 1;
+    }
+    nodes.forEach((n, i) => {
+      const x = 12 + i * (boxW + 8), y = top;
+      const colour = COLOURS[n.rank % COLOURS.length];
+      const gone = n.state === 'gone' || n.state === 'silent';
+      const working = !gone && (!!n.job || n.state === 'alone');
+      if (coord) {
+        const style = working ? `stroke:${colour};stroke-width:2.5` : 'stroke:var(--line);stroke-width:1.5';
+        const dash = n.state === 'silent' ? ' stroke-dasharray="4 4"' : '';
+        parts.push(`<line x1="${cx}" y1="40" x2="${x + boxW / 2}" y2="${y}" style="${style}"${dash}/>`);
+      }
+      rect(x, y, boxW, boxH, 'var(--panel)', colour, 6, gone ? 'opacity="0.45"' : '');
+      const name = n.rank === 0 ? t('alone') : t('node')(n.rank);
+      text(x + 8, y + 16, name, '', 'start');
+      const onCard = n.card;
+      coreGrid(x + 8, y + 24, n.cores, working && !onCard, colour);
+      if (onCard) chip(x + 8, y + 26 + rowsOf(n) * (CORE + GAP), working, colour);
+      if (working) {
+        busy += onCard ? 0 : n.cores;
+        if (onCard) cardBusy = true;
+      }
+      if (gone) {
+        parts.push(`<line x1="${x + 4}" y1="${y + 4}" x2="${x + boxW - 4}" y2="${y + boxH - 4}" style="stroke:var(--bad);stroke-width:2"/>`);
+        parts.push(`<line x1="${x + boxW - 4}" y1="${y + 4}" x2="${x + 4}" y2="${y + boxH - 4}" style="stroke:var(--bad);stroke-width:2"/>`);
+      }
+    });
+    const runningNow = r.nodes.some(n => !n.ended);
+    $('machineNote').textContent = runningNow ? t('machineBusy')(Math.min(busy, cpus), cpus, cardBusy) : t('machineIdle')(cpus, card);
+  }
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = parts.join('');
+}
+
 function killNode(r, n, silent) {
   if (n.ended) return;
   if (silent) {
@@ -760,6 +947,7 @@ function draw() {
   }
   const running = r.nodes.some(n => !n.ended);
   if (running) progress();
+  machine();
   // a silent node's clock, without building the table again under the pointer
   for (const n of r.nodes)
     if (n.state === 'silent') {
@@ -776,12 +964,23 @@ $('render').onclick = () => renderCluster();
 $('check').onclick = () => check();
 $('stop').onclick = () => stop();
 $('nodes').value = String(cpus >= 8 ? 4 : 3);
+// whether the page has a card: where it has none, the setting says why
+cardHello().then(h => {
+  if (!h.card) {
+    cardMissing = h.why || '?';
+    $('card').disabled = true;
+    $('card').title = t('noCard')(cardMissing);
+  }
+  machineKey = '';
+  machine();
+});
 
 // --- the self-test (tests/gpu/web/run.sh) ------------------------------------------
 //
 // A small picture on three nodes: node 2 killed once it has rendered a tile,
 // node 3 silenced once it has; then the program alone. Both pictures must be
-// the one the program renders natively.
+// the one the program renders natively. Then, where the page has a card,
+// three nodes with it, and the program alone again.
 async function selfTest() {
   const small = { w: 128, h: 96, tile: 16, passes: 6, rays: 2 };
   farm = () => small;
@@ -799,8 +998,20 @@ async function selfTest() {
                     events: r.events.map(e => say(TEXT.en, e)) };
   $('cores').value = '1';
   const a = await check();
+  const verdict = $('verdict').className;
+  // then with the card for every node, where the page has one: the picture
+  // must be the program's alone, or near it (the card rounds less strictly)
+  const hello = await cardHello();
+  let card = { missing: hello.why || '?' };
+  if (hello.card) {
+    $('card').value = 'all';
+    const c = await renderCluster();
+    const a2 = await check();
+    card = { hash: c.hash, status: c.status, tiles: c.nodes.map(n => n.tiles), cards: c.nodes.map(n => n.cards),
+             verdict: $('verdict').className, said: $('verdict').textContent, alone: a2.hash };
+  }
   const report = { cpus, args: small, cluster, alone: { hash: a.hash, status: a.status, ms: a.ms },
-                   verdict: $('verdict').className,
+                   verdict, card,
                    memory: Object.fromEntries(Object.entries(kept).map(([k, v]) => [k, v.map(m => m.memory.buffer.byteLength)])) };
   await fetch('/result', { method: 'POST', body: JSON.stringify(report) });
 }

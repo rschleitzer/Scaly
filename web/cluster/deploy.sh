@@ -15,7 +15,7 @@ if [ ! -f "$SITE/render.wasm" ]; then
 fi
 up() { aws s3 cp --only-show-errors "$SITE/$1" "$B/$1" --cache-control no-cache --content-type "$2"; }
 up index.html 'text/html; charset=utf-8'
-for f in node.mjs wasi.mjs threads.mjs thread.mjs net.mjs; do up "$f" 'text/javascript; charset=utf-8'; done
+for f in node.mjs wasi.mjs threads.mjs thread.mjs net.mjs gpu.mjs gpu-host.mjs gpu-worker.mjs; do up "$f" 'text/javascript; charset=utf-8'; done
 up render.scaly 'text/plain; charset=utf-8'
 up render.wasm application/wasm
 aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/play/cluster/*' --query Invalidation.Id --output text

@@ -222,7 +222,7 @@ else
             check "$name: no kernel the card refuses" '! grep -q "^gpu: webgpu: \|(no kernel)$" "$T/$name.wtrace"'
         done
         check "relaxed: nothing beyond the tolerance" '[ "$(cat "$T/wgpu_relaxed.wgpu")" = "0 beyond the tolerance, the counts within a thousandth: true" ]'
-        check "records: nothing beyond the tolerance" '[ "$(cat "$T/wgpu_records.wgpu")" = "0 beyond the tolerance, the whole numbers equal: true" ]'
+        check "records_relaxed: nothing beyond the tolerance" '[ "$(cat "$T/wgpu_records_relaxed.wgpu")" = "0 beyond the tolerance, the whole numbers equal: true" ]'
         # left to the gate, the heavy loop is not relaxed: it has no kernel
         # for this card and stays on the processor
         SCALY_GPU_BACKEND=webgpu SCALY_GPU_TRACE=1 "$T/gate_heavy" >"$T/gate_heavy.wgpu" 2>"$T/gate_heavy.wtrace"

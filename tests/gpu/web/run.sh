@@ -71,6 +71,9 @@
 #    kills one once it has rendered a tile and silences another, then
 #    renders it alone. Both pictures must be the native program's, bit for
 #    bit, and what happened must say each node gone and its tile handed on.
+#    Then three nodes with the page's card: the card must take tiles, and
+#    the page must call the picture the program's alone or near it (the
+#    card rounds less strictly than the processor).
 #
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
@@ -387,10 +390,25 @@ said = ' / '.join(c['events'])
 for want in ('Node 2 killed', 'finds node 2 gone', 'Node 3 falls silent', 'suspects node 3', 'goes back to the queue'):
     if want not in said:
         fails.append('no "%s" among what happened: %s' % (want, said))
+# with the card for every node: the card took tiles, and the picture is the
+# program's alone -- bit for bit, or near it, the card rounding less strictly
+k = r.get('card') or {}
+if 'missing' in k:
+    card_said = 'no card (%s)' % k['missing']
+else:
+    if k.get('status') != 0 or not k.get('hash'):
+        fails.append('the cluster with the card did not finish (status %s)' % k.get('status'))
+    if sum(k.get('cards') or [0]) < 1:
+        fails.append('no node ran a tile on the card (%s)' % k.get('cards'))
+    if k.get('alone') != native:
+        fails.append('the program alone after the card run rendered another picture (%s)' % k.get('alone'))
+    if k.get('verdict') not in ('same', 'near'):
+        fails.append('the page did not call the card\'s picture the same or near (%s: %s)' % (k.get('verdict'), k.get('said')))
+    card_said = 'the card %s times, %s' % (sum(k.get('cards') or [0]), k.get('verdict'))
 for f in fails:
     print('  FAIL ' + f)
-print('gpu-web: cluster %s — three nodes, one killed and one silenced, %.0f ms; alone %.0f ms; tiles %s' %
-      ('FAIL' if fails else 'PASS', c['ms'] or 0, a['ms'] or 0, c['tiles']))
+print('gpu-web: cluster %s — three nodes, one killed and one silenced, %.0f ms; alone %.0f ms; tiles %s; %s' %
+      ('FAIL' if fails else 'PASS', c['ms'] or 0, a['ms'] or 0, c['tiles'], card_said))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
