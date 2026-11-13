@@ -444,6 +444,7 @@ const char* scaly_argument(unsigned long long index)
 /* ---- threads (wasm32-wasip1-threads) --------------------------------------- */
 #ifdef __wasm_atomics__
 #include <pthread.h>
+#include <stdint.h>
 
 /* The CPUs the host gives this program: SCALY_CPUS, which a host that runs
  * threads sets (a page from navigator.hardwareConcurrency, node from its
@@ -623,5 +624,44 @@ int __wrap_close(int fd)
         pthread_mutex_unlock(&scaly_wasm_pipes_lock);
     }
     return 0;
+}
+
+/* The break, which wasi-libc's malloc grows its heap by. Its own sbrk takes
+ * the break to be the END OF THE MEMORY: each call grows the memory and hands
+ * out what was added. That is right for a memory the program was given new --
+ * but a host that runs a program again and again keeps ONE shared memory and
+ * wipes it (threads.mjs, runMemory: a browser gives the address space of a
+ * memory back late), and that memory is as large as the last run made it. The
+ * next run's malloc began at its end, past everything the runs before had
+ * grown, and a page that ran the program some dozens of times had used up
+ * its gigabyte. So the break is this program's own: it begins where the heap
+ * the link set aside ends (__heap_end, where malloc's first region ends) and
+ * the memory grows only where the break goes past it. As wasi-libc's: whole
+ * pages, never back; malloc calls it under its lock. Rule (a). */
+extern char __heap_end;
+static uintptr_t scaly_wasm_break;
+void* sbrk(intptr_t increment)
+{
+    if (scaly_wasm_break == 0)
+        scaly_wasm_break = (uintptr_t)&__heap_end;
+    uintptr_t old = scaly_wasm_break;
+    if (increment == 0)
+        return (void*)old;
+    if (increment < 0 || increment % 65536 != 0) {
+        errno = EINVAL;
+        return (void*)-1;
+    }
+    uintptr_t want = old + (uintptr_t)increment;
+    if (want < old) {
+        errno = ENOMEM;
+        return (void*)-1;
+    }
+    uintptr_t have = (uintptr_t)__builtin_wasm_memory_size(0) * 65536;
+    if (want > have && __builtin_wasm_memory_grow(0, (want - have + 65535) / 65536) == (size_t)-1) {
+        errno = ENOMEM;
+        return (void*)-1;
+    }
+    scaly_wasm_break = want;
+    return (void*)old;
 }
 #endif
