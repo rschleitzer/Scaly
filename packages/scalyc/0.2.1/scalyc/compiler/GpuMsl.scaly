@@ -1392,6 +1392,14 @@ define GpuMsl
         {
             if m_refused
                 return
+            ; an init (GpuKernel.k_init#), which the plan lists among its
+            ; functions too, answering nothing
+            let place gk.init_place(mangled)
+            if place.record >= 0
+            {
+                this.init_text(out, gk, place.record as size_t, place.at as size_t, fi)
+                return
+            }
             let idx GpuMsl.function_index(gk, mangled)
             let fns: ref[Vector[PlannedFunction]]? gk.plan_functions
             if idx < 0 or fns = null
@@ -1484,6 +1492,137 @@ define GpuMsl
             this.end_scope(0)
             m_in_function := false
             m_return_kind := 0
+        }
+
+        ; An init as a function of the source: `it` starts with every field
+        ; 0, the body writes it (`this` is `it`), and the function answers
+        ; it.
+        procedure init_text(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], record: size_t, at: size_t, fi: size_t)
+        {
+            let ss: ref[Vector[PlannedStructure]]? gk.plan_structures
+            let s_ptr ss.get record
+            let ini_ptr s_ptr.initializers.get at
+            let ini ini_ptr.unwrap()
+            let rk gk.kind_by_symbol(s_ptr.mangled_name)
+            if rk < 100
+            {
+                this.refuse_named("an init of a record the kernel does not hold: ", s_ptr.name)
+                return
+            }
+            m_in_function := true
+            m_return_kind := rk
+            m_depth := 0
+            m_temps := 0
+            m_made := 0
+            if m_wgsl
+                out.append "fn f`fi`("
+            else
+                out.append "static `GpuMsl.type_name(rk)` f`fi`("
+            if ini.input <> null
+            {
+                var pi: size_t 0
+                while pi < ini.input.length
+                {
+                    let p_ptr ini.input.get pi
+                    if p_ptr <> null
+                    {
+                        let p p_ptr.unwrap()
+                        if p.name = null or p.item_type = null
+                        {
+                            this.refuse("a parameter without a name or a type")
+                            return
+                        }
+                        let pt p.item_type
+                        let pk gk.kind((*pt))
+                        if GpuMsl.is_value(pk) = false
+                        {
+                            this.refuse("a parameter that is no value of a card's")
+                            return
+                        }
+                        let pname (*p.name)
+                        let cname "p`pi`"
+                        if this.refuse_pair(pk, pname)
+                            return
+                        if m_wgsl
+                            out.append "`cname`: `this.ty(pk)`, "
+                        else
+                            out.append "`GpuMsl.type_name(pk)` `cname`, "
+                        this.declare(pname, cname, pk, 0)
+                    }
+                    pi := pi + 1
+                }
+            }
+            if m_wgsl
+                out.append "F: ptr<function, u32>) -> `this.ty(rk)`\n{\n"
+            else
+                out.append "uint& F)\n{\n"
+            out.append(this.declare_name("    ", rk, "it", this.zero_of(rk)))
+            this.declare("this", "it", rk, 1)
+            choose ini.impl
+                when action: Action
+                    this.body(out, gk, action, 1, false)
+                else
+                    0
+            out.append "    return it;\n}\n"
+            this.end_scope(0)
+            m_in_function := false
+            m_return_kind := 0
+        }
+
+        ; A construction through an init (GpuKernel.k_init#): a call of the
+        ; init's function.
+        procedure init_call(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            let fi GpuKernel.GpuKernel.index_of(&gk.k_functions, call.mangled_name)
+            let place gk.init_place(call.mangled_name)
+            let rk gk.kind(call.result_type)
+            if fi < 0 or place.record < 0 or rk < 100
+            {
+                this.refuse_named("constructs through an init the kernel does not hold: ", call.name)
+                return ""
+            }
+            let ss: ref[Vector[PlannedStructure]]? gk.plan_structures
+            let s_ptr ss.get(place.record as size_t)
+            let ini_ptr s_ptr.initializers.get(place.at as size_t)
+            let ini ini_ptr.unwrap()
+            var n_params: size_t 0
+            if ini.input <> null
+                n_params := ini.input.length
+            var n_args: size_t 0
+            if call.args <> null
+                n_args := call.args.length
+            if n_params <> n_args
+            {
+                this.refuse_named("another count of arguments than parameters: ", call.name)
+                return ""
+            }
+            var args StringBuilder()
+            var ai: size_t 0
+            while ai < n_args
+            {
+                let a this.operand(out, gk, (*call.args)[ai], depth)
+                if m_refused
+                    return ""
+                let have m_atom_kind
+                let p_ptr ini.input.get ai
+                let p p_ptr.unwrap()
+                let pt p.item_type
+                let fitted this.fit(a, have, gk.kind((*pt)))
+                if m_refused
+                    return ""
+                if this.refuse_pair(have, call.name)
+                    return ""
+                args.append fitted
+                args.append ", "
+                ai := ai + 1
+            }
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            let arg_text args.to_string()
+            out.append(this.declare_value(ind, rk, t, "f`fi`(`arg_text``this.fault_arg()`)"))
+            m_atom_kind := rk
+            m_atom_high := String^this("")
+            t
         }
 
         ; ================================================================
@@ -1652,12 +1791,12 @@ define GpuMsl
         ; `name := value` into a name of the round that can change.
         procedure assignment(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], top: PlannedOperand, op: PlannedOperand, depth: size_t)
         {
+            let ind GpuMsl.indent_of(depth)
             if GpuKernel.GpuKernel.has_members(top)
             {
-                this.refuse("writes a member")
+                this.field_write(out, gk, top, op, depth)
                 return
             }
-            let ind GpuMsl.indent_of(depth)
             choose top.expr
                 when v: Variable
                 {
@@ -1681,6 +1820,59 @@ define GpuMsl
                 }
                 else
                     this.refuse("an indirect write")
+        }
+
+        ; `r.x.y := value`: a field of a name of the routine that can change.
+        procedure field_write(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], top: PlannedOperand, op: PlannedOperand, depth: size_t)
+        {
+            let ind GpuMsl.indent_of(depth)
+            var li 0 - 1
+            choose top.expr
+                when v: Variable
+                    li := this.lookup(v.name)
+                else
+                    0
+            if li < 0
+            {
+                this.refuse("writes a field of what is no name of the routine")
+                return
+            }
+            if GpuMsl.int_at(&m_mutables, li) = 0
+            {
+                this.refuse("writes a field of a name that does not change")
+                return
+            }
+            var path StringBuilder()
+            path.append(this.cname_at(li))
+            var kind GpuMsl.int_at(&m_kinds, li)
+            var i: size_t 0
+            while i < top.member_access.length
+            {
+                let ma_ptr top.member_access.get i
+                if ma_ptr = null
+                    return
+                let ma ma_ptr.unwrap()
+                let f gk.field_at(kind, ma)
+                if ma.is_method or f < 0
+                {
+                    this.refuse_named("writes a member that is no field: ", ma.name)
+                    return
+                }
+                let from gk.k_record_from[(kind - 100) as size_t]
+                let j (f as size_t) - from
+                path.append ".m"
+                path.append j
+                kind := gk.k_field_kinds[f as size_t]
+                i := i + 1
+            }
+            let value this.operand(out, gk, op, depth)
+            if m_refused
+                return
+            let fitted this.fit(value, m_atom_kind, kind)
+            if m_refused
+                return
+            let target path.to_string()
+            out.append "`ind``target` = `fitted`;\n"
         }
 
         ; `let x …` / `var x …`: the value first, then the name.
@@ -1721,6 +1913,9 @@ define GpuMsl
             let cname this.fresh_local()
             var changes 0
             if b.binding_type = "var" or b.binding_type = "mutable"
+                changes := 1
+            ; a record with a `var` field may be written through a `let`
+            if gk.record_writable(want)
                 changes := 1
             if changes = 1
                 out.append(this.declare_name(ind, want, cname, fitted))
@@ -2525,6 +2720,8 @@ define GpuMsl
                 this.refuse_named("uses a record's operator ", call.name)
                 return ""
             }
+            if GpuKernel.GpuKernel.is_construction_name(call.name)
+                return this.init_call(out, gk, call, depth)
             this.function_call(out, gk, call, depth)
         }
 

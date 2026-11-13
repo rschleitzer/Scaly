@@ -858,6 +858,19 @@ said=$(cat "$TMP/storesmask-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/
 out=$(cd "$sm" && SCALY_CACHE="$TMP/storesmask-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/storesmask-bin" 2>&1 && "$TMP/storesmask-bin"); rc=$?
 [ "$out" = "7" ] && ok || bad "storesmask: the build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
 
+# a routine that answers a tuple: its type has blanks and colons, and the
+# interface keeps it whole (Interface.skip_type#) -- it was cut after
+# `(lo:`, and a program using the package could not be compiled
+tp="$TMP/tuplepkg"
+mkdir -p "$tp/packages/span/0.1.0"
+printf 'package span 0.1.0\n\nfunction bounds(at: int, width: int) returns (lo: int, hi: int)\n    (lo: at, hi: at + width)\n\nfunction both(n: int) returns (int, int)\n    (n * 2, n * 3)\n' > "$tp/packages/span/0.1.0/span.scaly"
+printf 'package span 0.1.0\nlet b span.bounds(3, 4)\nlet (n, s) span.both(5)\nprint "`b.lo` `b.hi` `n` `s`"\n' > "$tp/main.scaly"
+out=$(cd "$tp" && SCALY_HOME="$here" SCALY_CACHE="$TMP/tuple-cache" "$sm_bin" --emit-interface packages/span/0.1.0/span.scaly 2>&1 \
+  && SCALY_HOME="$here" SCALY_CACHE="$TMP/tuple-cache" "$scaly_abs" run main.scaly 2>&1); rc=$?
+kept=$(grep -c 'returns (lo: int, hi: int) linked' "$TMP/tuple-cache"/span-*.iface/interface/span.scaly 2>/dev/null)
+[ "$rc" = 0 ] && [ "$(echo "$out" | tail -1)" = "3 7 10 15" ] && [ "$kept" = 1 ] && ok \
+  || bad "a tuple answered through an interface: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)', $kept header(s) kept whole"
+
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
 fetched="$TMP/userhome2/.scaly/packages"

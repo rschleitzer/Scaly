@@ -443,6 +443,7 @@ struct Planner;
 struct Planner;
 struct TaskPlanner;
 struct TaskPlanner;
+struct InitPlace;
 struct GpuKernel;
 struct GpuKernel;
 struct GpuMsl;
@@ -13518,6 +13519,15 @@ struct TaskPlanner
 };
 #endif
 
+#ifndef SCALY_TYPE__Z9InitPlaceB6scalycB4v0_2
+#define SCALY_TYPE__Z9InitPlaceB6scalycB4v0_2
+struct InitPlace
+{
+    int64_t record;
+    int64_t at;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z9GpuKernelB6scalycB4v0_2
 #define SCALY_TYPE__Z9GpuKernelB6scalycB4v0_2
 struct GpuKernel
@@ -13566,6 +13576,7 @@ struct GpuKernel
     Array<uint64_t> k_record_count;
     Array<String> k_field_names;
     Array<int64_t> k_field_kinds;
+    Array<bool> k_record_vars;
 };
 #endif
 
@@ -17444,20 +17455,27 @@ int64_t GpuKernel_structure_index(GpuKernel&, PlannedType&) asm("_ZN9GpuKernelB6
 String GpuKernel_field_misfit(scaly_frame*, GpuKernel&, PlannedType&, String&, PlannedType&, String&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_212field_misfitEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String11PlannedTypeB6scalycB4v0_26Stringi");
 String GpuKernel_record_misfit(scaly_frame*, GpuKernel&, PlannedType&, String&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_213record_misfitEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26Stringi");
 int64_t GpuKernel_field_kind(GpuKernel&, PlannedType&, String&) asm("_ZN9GpuKernelB6scalycB4v0_210field_kindE11PlannedTypeB6scalycB4v0_26String");
+bool GpuKernel_attributes_say_var(Vector<PlannedAttribute>*) asm("_ZN9GpuKernelB6scalycB4v0_218attributes_say_varE6OptionIR6VectorI16PlannedAttributeB6scalycB4v0_2EE");
+bool GpuKernel_record_writable(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_215record_writableEi");
+int64_t GpuKernel_kind_by_symbol(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_214kind_by_symbolE6String");
 int64_t GpuKernel_field_at(GpuKernel&, int64_t, PlannedMemberAccess&) asm("_ZN9GpuKernelB6scalycB4v0_28field_atEi19PlannedMemberAccessB6scalycB4v0_2");
 bool GpuKernel_has_members(PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_211has_membersE14PlannedOperandB6scalycB4v0_2");
 PlannedMemberAccess* Option_unwrap13(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_k_members(GpuKernel&, PlannedOperand&, String&) asm("_ZN9GpuKernelB6scalycB4v0_29k_membersE14PlannedOperandB6scalycB4v0_26String");
-String GpuKernel_builtin_of(scaly_frame*, GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_210builtin_ofEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
-void GpuKernel_drop_locals(GpuKernel&, uint64_t) asm("_ZN9GpuKernelB6scalycB4v0_211drop_localsEm");
 int64_t GpuKernel_local_index(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_211local_indexE6String");
 int64_t GpuKernel_kind_at(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_27kind_atEi");
+void GpuKernel_k_field_write(GpuKernel&, PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_213k_field_writeE14PlannedOperandB6scalycB4v0_2");
+InitPlace GpuKernel_init_place(scaly_frame*, GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_210init_placeEPN4scaly6memory4PageE6String");
+void GpuKernel_k_operand(GpuKernel&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_29k_operandE14PlannedOperandB6scalycB4v0_2b");
+PlannedInitializer* Option_unwrap14(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
+void GpuKernel_drop_locals(GpuKernel&, uint64_t) asm("_ZN9GpuKernelB6scalycB4v0_211drop_localsEm");
+void GpuKernel_k_init(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_26k_initE11PlannedCallB6scalycB4v0_2");
+String GpuKernel_builtin_of(scaly_frame*, GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_210builtin_ofEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
 bool GpuKernel_note_name(GpuKernel&, Array<String>*, Array<String>*, String&, PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_29note_nameER5ArrayI6StringER5ArrayI6StringE6String11PlannedTypeB6scalycB4v0_2");
 bool GpuKernel_is_array_buffer(PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_215is_array_bufferE11PlannedTypeB6scalycB4v0_2");
 bool GpuKernel_is_buffer_reference(PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_219is_buffer_referenceE11PlannedTypeB6scalycB4v0_2");
 bool GpuKernel_is_grouping(PlannedTuple&) asm("_ZN9GpuKernelB6scalycB4v0_211is_groupingE12PlannedTupleB6scalycB4v0_2");
 bool GpuKernel_is_construction_name(String&) asm("_ZN9GpuKernelB6scalycB4v0_220is_construction_nameE6String");
-void GpuKernel_k_operand(GpuKernel&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_29k_operandE14PlannedOperandB6scalycB4v0_2b");
 void GpuKernel_k_operands(GpuKernel&, Vector<PlannedOperand>*, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEb");
 void GpuKernel_k_variable(GpuKernel&, PlannedVariable&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_variableE15PlannedVariableB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
 void GpuKernel_k_constant(GpuKernel&, PlannedConstant&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_constantE15PlannedConstantB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
@@ -17469,7 +17487,7 @@ void GpuKernel_k_statement(GpuKernel&, PlannedStatement&) asm("_ZN9GpuKernelB6sc
 void GpuKernel_k_statement_ref(GpuKernel&, PlannedStatement*) asm("_ZN9GpuKernelB6scalycB4v0_215k_statement_refE6OptionIR16PlannedStatementB6scalycB4v0_2E");
 void GpuKernel_k_integer_constant(GpuKernel&, PlannedType&, bool) asm("_ZN9GpuKernelB6scalycB4v0_218k_integer_constantE11PlannedTypeB6scalycB4v0_2b");
 void GpuKernel_k_external(GpuKernel&, String&, PlannedType&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_externalE6String11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
-PlannedGlobal* Option_unwrap14(PlannedGlobal*) asm("_ZN6OptionIR13PlannedGlobalB6scalycB4v0_2E6unwrapEv");
+PlannedGlobal* Option_unwrap15(PlannedGlobal*) asm("_ZN6OptionIR13PlannedGlobalB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_k_uniform_field(GpuKernel&, String&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_215k_uniform_fieldE6String14PlannedOperandB6scalycB4v0_2b");
 void GpuKernel_k_uniform_record(GpuKernel&, String&, PlannedType&, PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_216k_uniform_recordE6String11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 bool GpuKernel_is_float_constant(PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_217is_float_constantE14PlannedOperandB6scalycB4v0_2");
@@ -17481,7 +17499,7 @@ int64_t GpuKernel_buffer_receiver(GpuKernel&, PlannedCall&, String&) asm("_ZN9Gp
 String GpuKernel_receiver_name(scaly_frame*, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_213receiver_nameEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
 PlannedType GpuKernel_receiver_type(scaly_frame*, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_213receiver_typeEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
 bool GpuKernel_is_own_counter(GpuKernel&, PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_214is_own_counterE14PlannedOperandB6scalycB4v0_2");
-PlannedFunction* Option_unwrap15(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
+PlannedFunction* Option_unwrap16(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_k_function_body(GpuKernel&, PlannedFunction&) asm("_ZN9GpuKernelB6scalycB4v0_215k_function_bodyE15PlannedFunctionB6scalycB4v0_2");
 void GpuKernel_k_binding(GpuKernel&, PlannedBinding&) asm("_ZN9GpuKernelB6scalycB4v0_29k_bindingE14PlannedBindingB6scalycB4v0_2");
 void GpuKernel_init(GpuKernel&) asm("_ZN9GpuKernelB6scalycB4v0_2C1Ev");
@@ -17544,7 +17562,9 @@ String GpuMsl_fresh_local(scaly_frame*, GpuMsl&) asm("_ZN6GpuMslB6scalycB4v0_211
 int64_t GpuMsl_lookup(GpuMsl&, String&) asm("_ZN6GpuMslB6scalycB4v0_26lookupE6String");
 String GpuMsl_cname_at(scaly_frame*, GpuMsl&, int64_t) asm("_ZN6GpuMslB6scalycB4v0_28cname_atEPN4scaly6memory4PageEi");
 int64_t GpuMsl_function_index(GpuKernel*, String&) asm("_ZN6GpuMslB6scalycB4v0_214function_indexER9GpuKernelB6scalycB4v0_26String");
+void GpuMsl_init_text(GpuMsl&, StringBuilder*, GpuKernel*, uint64_t, uint64_t, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_29init_textER13StringBuilderR9GpuKernelB6scalycB4v0_2mmm");
 void GpuMsl_function_text(GpuMsl&, StringBuilder*, GpuKernel*, PlannedFunction&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_213function_textER13StringBuilderR9GpuKernelB6scalycB4v0_215PlannedFunctionB6scalycB4v0_2m");
+String GpuMsl_init_call(scaly_frame*, GpuMsl&, StringBuilder*, GpuKernel*, PlannedCall&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_29init_callEPN4scaly6memory4PageER13StringBuilderR9GpuKernelB6scalycB4v0_211PlannedCallB6scalycB4v0_2m");
 void GpuMsl_action(GpuMsl&, StringBuilder*, GpuKernel*, PlannedAction&, uint64_t, bool) asm("_ZN6GpuMslB6scalycB4v0_26actionER13StringBuilderR9GpuKernelB6scalycB4v0_213PlannedActionB6scalycB4v0_2mb");
 void GpuMsl_statement(GpuMsl&, StringBuilder*, GpuKernel*, PlannedStatement&, uint64_t, bool) asm("_ZN6GpuMslB6scalycB4v0_29statementER13StringBuilderR9GpuKernelB6scalycB4v0_216PlannedStatementB6scalycB4v0_2mb");
 void GpuMsl_statements(GpuMsl&, StringBuilder*, GpuKernel*, Vector<PlannedStatement>*, uint64_t, bool) asm("_ZN6GpuMslB6scalycB4v0_210statementsER13StringBuilderR9GpuKernelB6scalycB4v0_26OptionIR6VectorI16PlannedStatementB6scalycB4v0_2EEmb");
@@ -17556,6 +17576,7 @@ void GpuMsl_while_statement(GpuMsl&, StringBuilder*, GpuKernel*, PlannedWhile&, 
 void GpuMsl_repeat_statement(GpuMsl&, StringBuilder*, GpuKernel*, PlannedRepeat&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_216repeat_statementER13StringBuilderR9GpuKernelB6scalycB4v0_213PlannedRepeatB6scalycB4v0_2m");
 void GpuMsl_for_statement(GpuMsl&, StringBuilder*, GpuKernel*, PlannedFor&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_213for_statementER13StringBuilderR9GpuKernelB6scalycB4v0_210PlannedForB6scalycB4v0_2m");
 void GpuMsl_put_statement(GpuMsl&, StringBuilder*, GpuKernel*, PlannedCall&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_213put_statementER13StringBuilderR9GpuKernelB6scalycB4v0_211PlannedCallB6scalycB4v0_2m");
+void GpuMsl_field_write(GpuMsl&, StringBuilder*, GpuKernel*, PlannedOperand&, PlannedOperand&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_211field_writeER13StringBuilderR9GpuKernelB6scalycB4v0_214PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2m");
 void GpuMsl_arm(GpuMsl&, StringBuilder*, GpuKernel*, PlannedStatement*, uint64_t, bool) asm("_ZN6GpuMslB6scalycB4v0_23armER13StringBuilderR9GpuKernelB6scalycB4v0_26OptionIR16PlannedStatementB6scalycB4v0_2Emb");
 String GpuMsl_expression(scaly_frame*, GpuMsl&, StringBuilder*, GpuKernel*, PlannedOperand&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_210expressionEPN4scaly6memory4PageER13StringBuilderR9GpuKernelB6scalycB4v0_214PlannedOperandB6scalycB4v0_2m");
 String GpuMsl_variable(scaly_frame*, GpuMsl&, StringBuilder*, GpuKernel*, String&, PlannedOperand&, uint64_t) asm("_ZN6GpuMslB6scalycB4v0_28variableEPN4scaly6memory4PageER13StringBuilderR9GpuKernelB6scalycB4v0_26String14PlannedOperandB6scalycB4v0_2m");
@@ -17613,7 +17634,7 @@ bool StackVectors_has(StackVectors&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v
 bool StackVectors_is_sized_ctor(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_213is_sized_ctorE11PlannedCallB6scalycB4v0_2");
 bool StackVectors_is_element_access(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_217is_element_accessE11PlannedCallB6scalycB4v0_2");
 void StackVectors_find_action(StackVectors&, PlannedAction&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_211find_actionE13PlannedActionB6scalycB4v0_2m");
-String* Option_unwrap16(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
+String* Option_unwrap17(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
 void StackVectors_use_action(StackVectors&, PlannedAction&) asm("_ZN12StackVectorsB6scalycB4v0_210use_actionE13PlannedActionB6scalycB4v0_2");
 void StackVectors_scan(StackVectors&, PlannedFunction&) asm("_ZN12StackVectorsB6scalycB4v0_24scanE15PlannedFunctionB6scalycB4v0_2");
 void StackVectors_find_ops(StackVectors&, Vector<PlannedOperand>*, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_28find_opsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEm");
@@ -17665,8 +17686,7 @@ uint64_t PointerCensus_extern_declared_writes(PointerCensus&, String&) asm("_ZN1
 void PointerCensus_collect_externs_members(PointerCensus&, Vector<Member>&) asm("_ZN13PointerCensusB6scalycB4v0_223collect_externs_membersE6VectorI6MemberB6scalycB4v0_2E");
 bool PointerCensus_model_is_ref(Type&) asm("_ZN13PointerCensusB6scalycB4v0_212model_is_refE4TypeB6scalycB4v0_2");
 bool PointerCensus_fn_is_body(PlannedFunction&) asm("_ZN13PointerCensusB6scalycB4v0_210fn_is_bodyE15PlannedFunctionB6scalycB4v0_2");
-PlannedStructure* Option_unwrap17(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
-PlannedInitializer* Option_unwrap18(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
+PlannedStructure* Option_unwrap18(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
 PlannedInitializer* PointerCensus_find_initializer(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_216find_initializerE6String");
 PlannedFunction* PointerCensus_find_function(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_213find_functionE6String");
 Vector<PlannedOperand>* PointerCensus_arith_args(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_210arith_argsE14PlannedOperandB6scalycB4v0_2");
@@ -37735,13 +37755,13 @@ __attribute__((weak)) uint64_t Interface_skip_type(String& t, uint64_t i)
     while ((k < String_get_length(t)))
     {
         uint8_t c = String_get(t, k);
-        if ((c == (uint8_t)91ULL))
+        if (((c == (uint8_t)91ULL) ? true : (c == (uint8_t)40ULL)))
         {
             depth = (depth + 1LL);
         }
         else
         {
-            if ((c == (uint8_t)93ULL))
+            if (((c == (uint8_t)93ULL) ? true : (c == (uint8_t)41ULL)))
             {
                 depth = (depth - 1LL);
             }
@@ -117700,6 +117720,7 @@ __attribute__((weak)) void GpuKernel_classify_loop(GpuKernel& scaly_self, Planne
     (this_->k_record_count).length = 0ULL;
     (this_->k_field_names).length = 0ULL;
     (this_->k_field_kinds).length = 0ULL;
+    (this_->k_record_vars).length = 0ULL;
     if ((fr).is_iterator_loop)
     {
         GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\025iterates a collection"}));
@@ -118297,6 +118318,7 @@ __attribute__((weak)) int64_t GpuKernel_take_record(GpuKernel& scaly_self, Plann
     }
     Array<String>* names = ({ Array<String>* scaly_t1 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t1 = Array<String>{}; (void)0; scaly_t1; });
     Array<int64_t>* kinds = ({ Array<int64_t>* scaly_t2 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t2 = Array<int64_t>{}; (void)0; scaly_t2; });
+    bool writable = false;
     if (String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\003(,)"})))
     {
         uint64_t gi = 0ULL;
@@ -118328,6 +118350,10 @@ __attribute__((weak)) int64_t GpuKernel_take_record(GpuKernel& scaly_self, Plann
             PlannedProperty* p_ptr = Vector_get<PlannedProperty>(*(props), pi);
             Array_add<String>((*names), scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), p_ptr->name); scaly_t5; }))));
             Array_add88<int64_t>((*kinds), GpuKernel_field_kind(*(this_), p_ptr->prop_type, what));
+            if (GpuKernel_attributes_say_var(p_ptr->attributes))
+            {
+                writable = true;
+            }
             pi = (pi + 1ULL);
         }
     }
@@ -118343,11 +118369,64 @@ __attribute__((weak)) int64_t GpuKernel_take_record(GpuKernel& scaly_self, Plann
         String* n_copy = ({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue(Array5((*names), fi))); scaly_t6; });
         Array_add<String>(this_->k_field_names, (*n_copy));
         Array_add88<int64_t>(this_->k_field_kinds, Array19((*kinds), fi));
+        if (((Array19((*kinds), fi) >= 100LL) ? GpuKernel_record_writable(*(this_), Array19((*kinds), fi)) : false))
+        {
+            writable = true;
+        }
         fi = (fi + 1ULL);
     }
+    Array_add276(this_->k_record_vars, writable);
     String* sym_copy = ({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), (t).mangled_name); scaly_t7; });
     Array_add<String>(this_->k_records, (*sym_copy));
     return (100LL + (((int64_t)((((this_->k_records).length - 1ULL))))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_kind_by_symbol(GpuKernel& scaly_self, String& mangled)
+{
+    GpuKernel* this_ = &scaly_self;
+    int64_t i = GpuKernel_index_of((&(this_->k_records)), mangled);
+    if ((i < 0LL))
+    {
+        return 0LL;
+    }
+    return (100LL + i);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_record_writable(GpuKernel& scaly_self, int64_t kind)
+{
+    GpuKernel* this_ = &scaly_self;
+    if ((kind < 100LL))
+    {
+        return false;
+    }
+    uint64_t ri = ((uint64_t)(((kind - 100LL))));
+    if ((ri >= (this_->k_record_vars).length))
+    {
+        return false;
+    }
+    return Array6<bool>(this_->k_record_vars, ri);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_attributes_say_var(Vector<PlannedAttribute>* attrs)
+{
+    if (((attrs) == (nullptr)))
+    {
+        return false;
+    }
+    uint64_t i = 0ULL;
+    while ((i < attrs->length))
+    {
+        PlannedAttribute* a_ptr = Vector_get<PlannedAttribute>(*(attrs), i);
+        if ((((a_ptr) != (nullptr)) ? String_equals(a_ptr->name, scaly_lvalue(String{(uint8_t*)"\003var"})) : false))
+        {
+            return true;
+        }
+        i = (i + 1ULL);
+    }
+    return false;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
@@ -118430,6 +118509,219 @@ __attribute__((weak)) void GpuKernel_k_members(GpuKernel& scaly_self, PlannedOpe
         GpuKernel_check_value_type(*(this_), ma->result_type, ma->name);
         i = (i + 1ULL);
     }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_field_write(GpuKernel& scaly_self, PlannedOperand& top)
+{
+    GpuKernel* this_ = &scaly_self;
+    {
+        auto&& scaly_t1 = (top).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            int64_t li = GpuKernel_local_index(*(this_), (v).name);
+            if ((li < 0LL))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\022writes a field of "}), (v).name);
+                return;
+            }
+            if ((GpuKernel_kind_at(*(this_), li) > 0LL))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\023writes the counter "}), (v).name);
+                return;
+            }
+            GpuKernel_k_members(*(this_), top, (v).name);
+        }
+        else
+        {
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\043writes a member of a computed value"}));
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) InitPlace GpuKernel_init_place(scaly_frame* scaly_rp, GpuKernel& scaly_self, String& mangled)
+{
+    GpuKernel* this_ = &scaly_self;
+    Vector<PlannedStructure>* ss = this_->plan_structures;
+    if (((ss) == (nullptr)))
+    {
+        return InitPlace{(0LL - 1LL), (0LL - 1LL)};
+    }
+    uint64_t i = 0ULL;
+    while ((i < ss->length))
+    {
+        PlannedStructure* s_ptr = Vector_get<PlannedStructure>(*(ss), i);
+        if ((((s_ptr) != (nullptr)) ? ((s_ptr->initializers) != (nullptr)) : false))
+        {
+            Vector<PlannedInitializer>* inits = s_ptr->initializers;
+            uint64_t j = 0ULL;
+            while ((j < inits->length))
+            {
+                PlannedInitializer* ini_ptr = Vector_get<PlannedInitializer>(*(inits), j);
+                if ((((ini_ptr) != (nullptr)) ? String_equals(ini_ptr->mangled_name, mangled) : false))
+                {
+                    return InitPlace{((int64_t)(i)), ((int64_t)(j))};
+                }
+                j = (j + 1ULL);
+            }
+        }
+        i = (i + 1ULL);
+    }
+    return InitPlace{(0LL - 1LL), (0LL - 1LL)};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_init(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((((call).args) != (nullptr)))
+    {
+        uint64_t ai = 0ULL;
+        while ((ai < (call).args->length))
+        {
+            PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), ai);
+            if (((a_ptr) != (nullptr)))
+            {
+                GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))), false);
+            }
+            ai = (ai + 1ULL);
+        }
+    }
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if ((call).can_throw)
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\027constructs and throws: "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (call).result_type)));
+        return;
+    }
+    int64_t rk = GpuKernel_take_record(*(this_), (call).result_type, scaly_lvalue(String{(uint8_t*)"\022a record it builds"}));
+    if ((rk < 100LL))
+    {
+        return;
+    }
+    if ((GpuKernel_index_of((&(this_->k_functions)), (call).mangled_name) >= 0LL))
+    {
+        return;
+    }
+    InitPlace place = GpuKernel_init_place(&scaly_local.f, *(this_), (call).mangled_name);
+    if (((place).record < 0LL))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\063constructs through an init whose body is not here: "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (call).result_type)));
+        return;
+    }
+    Vector<PlannedStructure>* ss = this_->plan_structures;
+    PlannedStructure* s_ptr = Vector_get<PlannedStructure>(*(ss), ((uint64_t)((place).record)));
+    Vector<PlannedProperty>* props = s_ptr->properties;
+    uint64_t pi = 0ULL;
+    while ((pi < props->length))
+    {
+        PlannedProperty* p_ptr = Vector_get<PlannedProperty>(*(props), pi);
+        if ((((p_ptr) != (nullptr)) ? ((p_ptr->initializer) != (nullptr)) : false))
+        {
+            GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\061constructs a record with a default for its field "}), p_ptr->name);
+            return;
+        }
+        pi = (pi + 1ULL);
+    }
+    PlannedInitializer* ini_ptr = Vector_get<PlannedInitializer>(*(s_ptr->initializers), ((uint64_t)((place).at)));
+    PlannedInitializer* ini = ((PlannedInitializer*)(ini_ptr));
+    bool has_body = false;
+    {
+        auto&& scaly_t1 = ini->impl;
+        if (scaly_t1.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t1);
+            has_body = true;
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if (((has_body) == (false)))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\063constructs through an init whose body is not here: "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (call).result_type)));
+        return;
+    }
+    uint64_t saved_base = this_->k_base;
+    uint64_t saved_depth = this_->k_depth;
+    String* saved_in = ({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), this_->k_in_function); scaly_t2; });
+    this_->k_base = (this_->k_locals).length;
+    this_->k_depth = 0ULL;
+    String where = ({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue((s_ptr->name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005.init"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    });
+    this_->k_in_function = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), where); scaly_t5; }));
+    if (((ini->input) != (nullptr)))
+    {
+        uint64_t ii = 0ULL;
+        while ((ii < ini->input->length))
+        {
+            PlannedItem* p_ptr = Vector_get<PlannedItem>(*(ini->input), ii);
+            if ((((p_ptr) != (nullptr)) ? ((this_->k_blocked) == (false)) : false))
+            {
+                PlannedItem* p = ((PlannedItem*)(p_ptr));
+                if ((((p->name) == (nullptr)) ? true : ((p->item_type) == (nullptr))))
+                {
+                    GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\044a parameter without a name or a type"}));
+                }
+                else
+                {
+                    PlannedType* pt = p->item_type;
+                    String pname = ((*(p->name)));
+                    GpuKernel_check_value_type(*(this_), scaly_lvalue(((*(pt)))), scaly_lvalue(({
+        String scaly_t6{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016the parameter "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((pname)));
+            scaly_t6 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t6;
+    })));
+                    GpuKernel_add_local(*(this_), pname, 0LL);
+                }
+            }
+            ii = (ii + 1ULL);
+        }
+    }
+    GpuKernel_add_local(*(this_), scaly_lvalue(String{(uint8_t*)"\004this"}), 0LL);
+    {
+        auto&& scaly_t8 = ini->impl;
+        if (scaly_t8.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t8);
+            GpuKernel_k_action(*(this_), action);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    GpuKernel_drop_locals(*(this_), this_->k_base);
+    this_->k_base = saved_base;
+    this_->k_depth = saved_depth;
+    this_->k_in_function = (*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), (*saved_in)); scaly_t9; }));
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    String* sym_copy = ({ String* scaly_t10 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t10 = String{}; String_init2((*scaly_t10), (call).mangled_name); scaly_t10; });
+    Array_add<String>(this_->k_functions, (*sym_copy));
+    String* name_copy = ({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init2((*scaly_t11), where); scaly_t11; });
+    Array_add<String>(this_->k_function_names, (*name_copy));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
@@ -119353,7 +119645,7 @@ __attribute__((weak)) void GpuKernel_k_call(GpuKernel& scaly_self, PlannedCall& 
     }
     if (GpuKernel_is_construction_name((call).name))
     {
-        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\013constructs "}), (call).name);
+        GpuKernel_k_init(*(this_), call);
         return;
     }
     GpuKernel_k_function(*(this_), call);
@@ -119889,7 +120181,7 @@ __attribute__((weak)) void GpuKernel_k_action(GpuKernel& scaly_self, PlannedActi
     PlannedOperand* top = ((PlannedOperand*)(t_ptr));
     if (GpuKernel_has_members(scaly_lvalue((*(top)))))
     {
-        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017writes a member"}));
+        GpuKernel_k_field_write(*(this_), scaly_lvalue((*(top))));
         return;
     }
     {
@@ -120086,6 +120378,7 @@ __attribute__((weak)) void GpuKernel_init(GpuKernel& scaly_self)
     this_->k_record_count = (*({ Array<uint64_t>* scaly_t29 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t29 = Array<uint64_t>{}; (void)0; scaly_t29; }));
     this_->k_field_names = (*({ Array<String>* scaly_t30 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t30 = Array<String>{}; (void)0; scaly_t30; }));
     this_->k_field_kinds = (*({ Array<int64_t>* scaly_t31 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t31 = Array<int64_t>{}; (void)0; scaly_t31; }));
+    this_->k_record_vars = (*({ Array<bool>* scaly_t32 = (Array<bool>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<bool>), alignof(Array<bool>)); *scaly_t32 = Array<bool>{}; (void)0; scaly_t32; }));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
@@ -122667,8 +122960,15 @@ __attribute__((weak)) int64_t GpuMsl_function_index(GpuKernel* gk, String& mangl
 __attribute__((weak)) void GpuMsl_function_source(GpuMsl& scaly_self, StringBuilder* out, GpuKernel* gk, String& mangled, uint64_t fi)
 {
     GpuMsl* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (this_->m_refused)
     {
+        return;
+    }
+    InitPlace place = GpuKernel_init_place(&scaly_local.f, *(gk), mangled);
+    if (((place).record >= 0LL))
+    {
+        GpuMsl_init_text(*(this_), out, gk, ((uint64_t)((place).record)), ((uint64_t)((place).at)), fi);
         return;
     }
     int64_t idx = GpuMsl_function_index(gk, mangled);
@@ -122862,6 +123162,245 @@ __attribute__((weak)) void GpuMsl_function_text(GpuMsl& scaly_self, StringBuilde
     GpuMsl_end_scope(*(this_), 0ULL);
     this_->m_in_function = false;
     this_->m_return_kind = 0LL;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
+__attribute__((weak)) void GpuMsl_init_text(GpuMsl& scaly_self, StringBuilder* out, GpuKernel* gk, uint64_t record, uint64_t at, uint64_t fi)
+{
+    GpuMsl* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    Vector<PlannedStructure>* ss = gk->plan_structures;
+    PlannedStructure* s_ptr = Vector_get<PlannedStructure>(*(ss), record);
+    PlannedInitializer* ini_ptr = Vector_get<PlannedInitializer>(*(s_ptr->initializers), at);
+    PlannedInitializer* ini = ((PlannedInitializer*)(ini_ptr));
+    int64_t rk = GpuKernel_kind_by_symbol(*(gk), s_ptr->mangled_name);
+    if ((rk < 100LL))
+    {
+        GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\056an init of a record the kernel does not hold: "}), s_ptr->name);
+        return;
+    }
+    this_->m_in_function = true;
+    this_->m_return_kind = rk;
+    this_->m_depth = 0ULL;
+    this_->m_temps = 0ULL;
+    this_->m_made = 0ULL;
+    if (this_->m_wgsl)
+    {
+        StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004fn f"}));
+            StringBuilder_append4((*isb$), (fi));
+            StringBuilder_append((*isb$), ((uint8_t)'('));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+    }
+    else
+    {
+        StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\007static "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_type_name(&scaly_local.f, rk))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002 f"}));
+            StringBuilder_append4((*isb$), (fi));
+            StringBuilder_append((*isb$), ((uint8_t)'('));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    })));
+    }
+    if (((ini->input) != (nullptr)))
+    {
+        uint64_t pi = 0ULL;
+        while ((pi < ini->input->length))
+        {
+            PlannedItem* p_ptr = Vector_get<PlannedItem>(*(ini->input), pi);
+            if (((p_ptr) != (nullptr)))
+            {
+                PlannedItem* p = ((PlannedItem*)(p_ptr));
+                if ((((p->name) == (nullptr)) ? true : ((p->item_type) == (nullptr))))
+                {
+                    GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\044a parameter without a name or a type"}));
+                    return;
+                }
+                PlannedType* pt = p->item_type;
+                int64_t pk = GpuKernel_kind(*(gk), scaly_lvalue((*({ PlannedType* scaly_t5 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(PlannedType), alignof(PlannedType)); *scaly_t5 = ((*(pt))); scaly_t5; }))));
+                if (((GpuMsl_is_value(pk)) == (false)))
+                {
+                    GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\050a parameter that is no value of a card\047s"}));
+                    return;
+                }
+                String pname = ((*(p->name)));
+                String cname = ({
+        String scaly_t6{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
+            StringBuilder_append((*isb$), ((uint8_t)'p'));
+            StringBuilder_append4((*isb$), (pi));
+            scaly_t6 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t6;
+    });
+                if (GpuMsl_refuse_pair(*(this_), pk, pname))
+                {
+                    return;
+                }
+                if (this_->m_wgsl)
+                {
+                    StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t8{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t9 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t9 = StringBuilder{}; StringBuilder_init((*scaly_t9)); scaly_t9; });
+            StringBuilder_append2((*isb$), scaly_lvalue((cname)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_ty(&scaly_local.f, *(this_), pk))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002, "}));
+            scaly_t8 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t8;
+    })));
+                }
+                else
+                {
+                    StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t10{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t11 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t11 = StringBuilder{}; StringBuilder_init((*scaly_t11)); scaly_t11; });
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_type_name(&scaly_local.f, pk))));
+            StringBuilder_append((*isb$), ((uint8_t)' '));
+            StringBuilder_append2((*isb$), scaly_lvalue((cname)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002, "}));
+            scaly_t10 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t10;
+    })));
+                }
+                GpuMsl_declare(*(this_), pname, cname, pk, 0LL);
+            }
+            pi = (pi + 1ULL);
+        }
+    }
+    if (this_->m_wgsl)
+    {
+        StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t12{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t13 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t13 = StringBuilder{}; StringBuilder_init((*scaly_t13)); scaly_t13; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\032F: ptr<function, u32>) -> "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_ty(&scaly_local.f, *(this_), rk))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\003\012{\012"}));
+            scaly_t12 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t12;
+    })));
+    }
+    else
+    {
+        StringBuilder_append2(*(out), scaly_lvalue(String{(uint8_t*)"\013uint& F)\012{\012"}));
+    }
+    StringBuilder_append2(*(out), scaly_lvalue(GpuMsl_declare_name(&scaly_local.f, *(this_), scaly_lvalue(String{(uint8_t*)"\004    "}), rk, scaly_lvalue(String{(uint8_t*)"\002it"}), scaly_lvalue(GpuMsl_zero_of(&scaly_local.f, *(this_), rk)))));
+    GpuMsl_declare(*(this_), scaly_lvalue(String{(uint8_t*)"\004this"}), scaly_lvalue(String{(uint8_t*)"\002it"}), rk, 1LL);
+    {
+        auto&& scaly_t14 = ini->impl;
+        if (scaly_t14.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t14);
+            GpuMsl_body(*(this_), out, gk, action, 1ULL, false);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    StringBuilder_append2(*(out), scaly_lvalue(String{(uint8_t*)"\021    return it;\012}\012"}));
+    GpuMsl_end_scope(*(this_), 0ULL);
+    this_->m_in_function = false;
+    this_->m_return_kind = 0LL;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
+__attribute__((weak)) String GpuMsl_init_call(scaly_frame* scaly_rp, GpuMsl& scaly_self, StringBuilder* out, GpuKernel* gk, PlannedCall& call, uint64_t depth)
+{
+    GpuMsl* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    int64_t fi = GpuKernel_index_of((&(gk->k_functions)), (call).mangled_name);
+    InitPlace place = GpuKernel_init_place(&scaly_local.f, *(gk), (call).mangled_name);
+    int64_t rk = GpuKernel_kind(*(gk), (call).result_type);
+    if ((((fi < 0LL) ? true : ((place).record < 0LL)) ? true : (rk < 100LL)))
+    {
+        GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\065constructs through an init the kernel does not hold: "}), (call).name);
+        return String{nullptr};
+    }
+    Vector<PlannedStructure>* ss = gk->plan_structures;
+    PlannedStructure* s_ptr = Vector_get<PlannedStructure>(*(ss), ((uint64_t)((place).record)));
+    PlannedInitializer* ini_ptr = Vector_get<PlannedInitializer>(*(s_ptr->initializers), ((uint64_t)((place).at)));
+    PlannedInitializer* ini = ((PlannedInitializer*)(ini_ptr));
+    uint64_t n_params = 0ULL;
+    if (((ini->input) != (nullptr)))
+    {
+        n_params = ini->input->length;
+    }
+    uint64_t n_args = 0ULL;
+    if ((((call).args) != (nullptr)))
+    {
+        n_args = (call).args->length;
+    }
+    if ((n_params != n_args))
+    {
+        GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\054another count of arguments than parameters: "}), (call).name);
+        return String{nullptr};
+    }
+    StringBuilder* args = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    uint64_t ai = 0ULL;
+    while ((ai < n_args))
+    {
+        String a = GpuMsl_operand(scaly_rp, *(this_), out, gk, scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), ai)), depth);
+        if (this_->m_refused)
+        {
+            return String{nullptr};
+        }
+        int64_t have = this_->m_atom_kind;
+        PlannedItem* p_ptr = Vector_get<PlannedItem>(*(ini->input), ai);
+        PlannedItem* p = ((PlannedItem*)(p_ptr));
+        PlannedType* pt = p->item_type;
+        String fitted = GpuMsl_fit(&scaly_local.f, *(this_), a, have, GpuKernel_kind(*(gk), scaly_lvalue(((*(pt))))));
+        if (this_->m_refused)
+        {
+            return String{nullptr};
+        }
+        if (GpuMsl_refuse_pair(*(this_), have, (call).name))
+        {
+            return String{nullptr};
+        }
+        StringBuilder_append2((*args), fitted);
+        StringBuilder_append2((*args), scaly_lvalue(String{(uint8_t*)"\002, "}));
+        ai = (ai + 1ULL);
+    }
+    String ind = GpuMsl_indent_of(&scaly_local.f, depth);
+    String t = GpuMsl_temp(scaly_rp, *(this_));
+    String arg_text = StringBuilder_to_string(&scaly_local.f, (*args));
+    StringBuilder_append2(*(out), scaly_lvalue(GpuMsl_declare_value(&scaly_local.f, *(this_), ind, rk, t, scaly_lvalue(({
+        String scaly_t2{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+            StringBuilder_append((*isb$), ((uint8_t)'f'));
+            StringBuilder_append6((*isb$), (fi));
+            StringBuilder_append((*isb$), ((uint8_t)'('));
+            StringBuilder_append2((*isb$), scaly_lvalue((arg_text)));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuMsl_fault_arg(&scaly_local.f, *(this_)))));
+            StringBuilder_append((*isb$), ((uint8_t)')'));
+            scaly_t2 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t2;
+    })))));
+    this_->m_atom_kind = rk;
+    this_->m_atom_high = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{nullptr})); scaly_t4; }));
+    return t;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
@@ -123120,12 +123659,12 @@ __attribute__((weak)) void GpuMsl_assignment(GpuMsl& scaly_self, StringBuilder* 
 {
     GpuMsl* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    String ind = GpuMsl_indent_of(&scaly_local.f, depth);
     if (GpuKernel_has_members(top))
     {
-        GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\017writes a member"}));
+        GpuMsl_field_write(*(this_), out, gk, top, op, depth);
         return;
     }
-    String ind = GpuMsl_indent_of(&scaly_local.f, depth);
     {
         auto&& scaly_t1 = (top).expr;
         if (scaly_t1.tag == 2)
@@ -123168,6 +123707,86 @@ __attribute__((weak)) void GpuMsl_assignment(GpuMsl& scaly_self, StringBuilder* 
             GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\021an indirect write"}));
         }
     }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
+__attribute__((weak)) void GpuMsl_field_write(GpuMsl& scaly_self, StringBuilder* out, GpuKernel* gk, PlannedOperand& top, PlannedOperand& op, uint64_t depth)
+{
+    GpuMsl* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    String ind = GpuMsl_indent_of(&scaly_local.f, depth);
+    int64_t li = (0LL - 1LL);
+    {
+        auto&& scaly_t1 = (top).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            li = GpuMsl_lookup(*(this_), (v).name);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if ((li < 0LL))
+    {
+        GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\060writes a field of what is no name of the routine"}));
+        return;
+    }
+    if ((GpuMsl_int_at((&(this_->m_mutables)), li) == 0LL))
+    {
+        GpuMsl_refuse(*(this_), scaly_lvalue(String{(uint8_t*)"\055writes a field of a name that does not change"}));
+        return;
+    }
+    StringBuilder* path = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+    StringBuilder_append2((*path), scaly_lvalue(GpuMsl_cname_at(&scaly_local.f, *(this_), li)));
+    int64_t kind = GpuMsl_int_at((&(this_->m_kinds)), li);
+    uint64_t i = 0ULL;
+    while ((i < (top).member_access->length))
+    {
+        PlannedMemberAccess* ma_ptr = Vector_get<PlannedMemberAccess>(*((top).member_access), i);
+        if (((ma_ptr) == (nullptr)))
+        {
+            return;
+        }
+        PlannedMemberAccess* ma = ((PlannedMemberAccess*)(ma_ptr));
+        int64_t f = GpuKernel_field_at(*(gk), kind, scaly_lvalue((*(ma))));
+        if ((ma->is_method ? true : (f < 0LL)))
+        {
+            GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\042writes a member that is no field: "}), ma->name);
+            return;
+        }
+        uint64_t from = Array3(gk->k_record_from, ((uint64_t)(((kind - 100LL)))));
+        uint64_t j = ((((uint64_t)(f))) - from);
+        StringBuilder_append2((*path), scaly_lvalue(String{(uint8_t*)"\002.m"}));
+        StringBuilder_append4((*path), j);
+        kind = Array19(gk->k_field_kinds, ((uint64_t)(f)));
+        i = (i + 1ULL);
+    }
+    String value = GpuMsl_operand(&scaly_local.f, *(this_), out, gk, op, depth);
+    if (this_->m_refused)
+    {
+        return;
+    }
+    String fitted = GpuMsl_fit(&scaly_local.f, *(this_), value, this_->m_atom_kind, kind);
+    if (this_->m_refused)
+    {
+        return;
+    }
+    String target = StringBuilder_to_string(&scaly_local.f, (*path));
+    StringBuilder_append2(*(out), scaly_lvalue(({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue((ind)));
+            StringBuilder_append2((*isb$), scaly_lvalue((target)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\003 = "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((fitted)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002;\012"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    })));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuMsl.scaly
@@ -123216,6 +123835,10 @@ __attribute__((weak)) void GpuMsl_binding(GpuMsl& scaly_self, StringBuilder* out
     String cname = GpuMsl_fresh_local(&scaly_local.f, *(this_));
     int64_t changes = 0LL;
     if ((String_equals((b).binding_type, scaly_lvalue(String{(uint8_t*)"\003var"})) ? true : String_equals((b).binding_type, scaly_lvalue(String{(uint8_t*)"\007mutable"}))))
+    {
+        changes = 1LL;
+    }
+    if (GpuKernel_record_writable(*(gk), want))
     {
         changes = 1LL;
     }
@@ -124687,6 +125310,10 @@ __attribute__((weak)) String GpuMsl_call_value(scaly_frame* scaly_rp, GpuMsl& sc
     {
         GpuMsl_refuse_named(*(this_), scaly_lvalue(String{(uint8_t*)"\031uses a record\047s operator "}), (call).name);
         return String{nullptr};
+    }
+    if (GpuKernel_is_construction_name((call).name))
+    {
+        return GpuMsl_init_call(scaly_rp, *(this_), out, gk, call, depth);
     }
     return GpuMsl_function_call(scaly_rp, *(this_), out, gk, call, depth);
 }

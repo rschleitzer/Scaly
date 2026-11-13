@@ -1,0 +1,57 @@
+; Records in a kernel built by their init, and fields written: through a
+; `var`, through a `let` holding a record with `var` fields, a field of a
+; record inside a record, and an init that builds a record by its own init.
+; Whole numbers only, so a card under WebGPU runs it too.
+; cards: 1
+
+define Span
+(
+    var low: i32
+    var high: i32
+)
+{
+    init(at: i32, width: i32)
+    {
+        low := at
+        high := at + width
+    }
+}
+
+define Window
+(
+    var span: Span
+    var hits: i32
+)
+{
+    init(at: i32)
+    {
+        span := Span(at, 3)
+        hits := 0
+    }
+}
+
+function wide(s: Span) returns i32
+    s.high - s.low
+
+let n: size_t 4096
+var lows Vector[i32](n)
+var sums Vector[i32](n)
+for i in n
+{
+    let k (i as i32) % 97
+    var w Window(k)
+    w.span.high := w.span.high + k % 5
+    w.hits := w.hits + wide(w.span)
+    let s Span(k * 2, 1)
+    s.low := s.low - 1
+    lows.put(i, w.span.low + s.low)
+    sums.put(i, w.hits * 1000 + s.high - s.low)
+}
+var j: size_t 0
+var total 0
+while j < n
+{
+    total := total + (lows[j] as int) * 7 + (sums[j] as int)
+    j := j + 1
+}
+print "`lows[5]` `sums[5]` `lows[200]` `sums[200]` `total`"

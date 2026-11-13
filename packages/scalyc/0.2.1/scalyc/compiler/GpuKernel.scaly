@@ -46,6 +46,15 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.TaskPlanner.TaskPlanner
 
+; Where an init is among the plan's records: the record's place, the
+; init's place (GpuKernel.init_place#). A record, not a tuple: the compiler
+; written as C++ (`--emit-cpp`, trust/) declares no tuple types yet.
+define InitPlace
+(
+    record: int
+    at: int
+)
+
 define GpuKernel
 {
     define GpuKernel
@@ -126,6 +135,9 @@ define GpuKernel
         k_record_count: Array[size_t]
         k_field_names: Array[String]
         k_field_kinds: Array[int]
+        ; per record: a field of it (or of a record in it) may be written --
+        ; it says `var` --, so a name holding it can change (GpuMsl.binding#)
+        k_record_vars: Array[bool]
     )
     {
         init()
@@ -174,6 +186,7 @@ define GpuKernel
             k_record_count := Array[size_t]^this()
             k_field_names := Array[String]^this()
             k_field_kinds := Array[int]^this()
+            k_record_vars := Array[bool]^this()
         }
 
         ; ================================================================
@@ -300,6 +313,7 @@ define GpuKernel
             k_record_count.length := 0
             k_field_names.length := 0
             k_field_kinds.length := 0
+            k_record_vars.length := 0
             if fr.is_iterator_loop
             {
                 this.block("iterates a collection")
@@ -680,6 +694,7 @@ define GpuKernel
             }
             var names Array[String]()
             var kinds Array[int]()
+            var writable false
             if t.name = "(,)"
             {
                 var gi: size_t 0
@@ -709,6 +724,8 @@ define GpuKernel
                     let p_ptr props.get pi
                     names.add(String(p_ptr.name))
                     kinds.add(this.field_kind(p_ptr.prop_type, what))
+                    if GpuKernel.attributes_say_var(p_ptr.attributes)
+                        writable := true
                     pi := pi + 1
                 }
             }
@@ -722,11 +739,51 @@ define GpuKernel
                 let n_copy String^this(names[fi])
                 k_field_names.add n_copy
                 k_field_kinds.add(kinds[fi])
+                if kinds[fi] >= 100 and this.record_writable(kinds[fi])
+                    writable := true
                 fi := fi + 1
             }
+            k_record_vars.add writable
             let sym_copy String^this(t.mangled_name)
             k_records.add sym_copy
             100 + ((k_records.length - 1) as int)
+        }
+
+        ; The kind of the record of that symbol, 0 where the kernel does not
+        ; hold it.
+        function kind_by_symbol(this: GpuKernel, mangled: String) returns int
+        {
+            let i GpuKernel.index_of(&k_records, mangled)
+            if i < 0
+                return 0
+            100 + i
+        }
+
+        ; Does a field of the record of that kind (or of a record in it) say
+        ; `var`?
+        function record_writable(this: GpuKernel, kind: int) returns bool
+        {
+            if kind < 100
+                return false
+            let ri (kind - 100) as size_t
+            if ri >= k_record_vars.length
+                return false
+            k_record_vars[ri]
+        }
+
+        function attributes_say_var(attrs: ref[Vector[PlannedAttribute]]?) returns bool
+        {
+            if attrs = null
+                return false
+            var i: size_t 0
+            while i < attrs.length
+            {
+                let a_ptr attrs.get i
+                if a_ptr <> null and a_ptr.name = "var"
+                    return true
+                i := i + 1
+            }
+            false
         }
 
         ; A field's kind, a record taken first; what its numbers cost.
@@ -789,6 +846,171 @@ define GpuKernel
                 this.check_value_type(ma.result_type, ma.name)
                 i := i + 1
             }
+        }
+
+        ; `r.x := v`: a field of a record of the round -- a local, or the
+        ; record an init builds (`this`) -- written. Fields only, each of a
+        ; record the kernel holds; what the language allows to be written
+        ; (a `var` field, any field in an init) the planner has judged.
+        procedure k_field_write(mutable this: GpuKernel, top: PlannedOperand)
+        {
+            choose top.expr
+                when v: Variable
+                {
+                    let li this.local_index(v.name)
+                    if li < 0
+                    {
+                        this.block_named("writes a field of ", v.name)
+                        return
+                    }
+                    if this.kind_at(li) > 0
+                    {
+                        this.block_named("writes the counter ", v.name)
+                        return
+                    }
+                    this.k_members(top, v.name)
+                }
+                else
+                    this.block("writes a member of a computed value")
+        }
+
+        ; The PlannedInitializer of a construction through an init: where it
+        ; is among the plan's records -- the record's place, the init's
+        ; place; (-1, -1) where it is not there.
+        function init_place(this: GpuKernel, mangled: String) returns InitPlace
+        {
+            let ss: ref[Vector[PlannedStructure]]? plan_structures
+            if ss = null
+                return InitPlace(0 - 1, 0 - 1)
+            var i: size_t 0
+            while i < ss.length
+            {
+                let s_ptr ss.get i
+                if s_ptr <> null and s_ptr.initializers <> null
+                {
+                    let inits s_ptr.initializers
+                    var j: size_t 0
+                    while j < inits.length
+                    {
+                        let ini_ptr inits.get j
+                        if ini_ptr <> null and ini_ptr.mangled_name = mangled
+                            return InitPlace(i as int, j as int)
+                        j := j + 1
+                    }
+                }
+                i := i + 1
+            }
+            InitPlace(0 - 1, 0 - 1)
+        }
+
+        ; A record built by its init: the init is a function of the kernel
+        ; (listed among k_functions by its symbol, callees first) that
+        ; starts from the record with every field 0 and answers it when its
+        ; body is through; in the body `this` is that record. A field with a
+        ; default of its own is not given one there: such a record is refused.
+        procedure k_init(mutable this: GpuKernel, call: PlannedCall)
+        {
+            if call.args <> null
+            {
+                var ai: size_t 0
+                while ai < call.args.length
+                {
+                    let a_ptr call.args.get ai
+                    if a_ptr <> null
+                        this.k_operand(a_ptr.unwrap(), false)
+                    ai := ai + 1
+                }
+            }
+            if k_blocked
+                return
+            if call.can_throw
+            {
+                this.block_named("constructs and throws: ", GpuKernel.type_text(call.result_type))
+                return
+            }
+            let rk this.take_record(call.result_type, "a record it builds")
+            if rk < 100
+                return
+            if GpuKernel.index_of(&k_functions, call.mangled_name) >= 0
+                return
+            let place this.init_place(call.mangled_name)
+            if place.record < 0
+            {
+                this.block_named("constructs through an init whose body is not here: ", GpuKernel.type_text(call.result_type))
+                return
+            }
+            let ss: ref[Vector[PlannedStructure]]? plan_structures
+            let s_ptr ss.get(place.record as size_t)
+            let props s_ptr.properties
+            var pi: size_t 0
+            while pi < props.length
+            {
+                let p_ptr props.get pi
+                if p_ptr <> null and p_ptr.initializer <> null
+                {
+                    this.block_named("constructs a record with a default for its field ", p_ptr.name)
+                    return
+                }
+                pi := pi + 1
+            }
+            let ini_ptr s_ptr.initializers.get(place.at as size_t)
+            let ini ini_ptr.unwrap()
+            var has_body false
+            choose ini.impl
+                when action: Action
+                    has_body := true
+                else
+                    0
+            if has_body = false
+            {
+                this.block_named("constructs through an init whose body is not here: ", GpuKernel.type_text(call.result_type))
+                return
+            }
+            let saved_base k_base
+            let saved_depth k_depth
+            let saved_in String(k_in_function)
+            k_base := k_locals.length
+            k_depth := 0
+            let where "`s_ptr.name`.init"
+            k_in_function := String^this(where)
+            if ini.input <> null
+            {
+                var ii: size_t 0
+                while ii < ini.input.length
+                {
+                    let p_ptr ini.input.get ii
+                    if p_ptr <> null and k_blocked = false
+                    {
+                        let p p_ptr.unwrap()
+                        if p.name = null or p.item_type = null
+                            this.block("a parameter without a name or a type")
+                        else
+                        {
+                            let pt p.item_type
+                            let pname (*p.name)
+                            this.check_value_type((*pt), "the parameter `pname`")
+                            this.add_local(pname, 0)
+                        }
+                    }
+                    ii := ii + 1
+                }
+            }
+            this.add_local("this", 0)
+            choose ini.impl
+                when action: Action
+                    this.k_action(action)
+                else
+                    0
+            this.drop_locals(k_base)
+            k_base := saved_base
+            k_depth := saved_depth
+            k_in_function := String^this(saved_in)
+            if k_blocked
+                return
+            let sym_copy String^this(call.mangled_name)
+            k_functions.add sym_copy
+            let name_copy String^this(where)
+            k_function_names.add name_copy
         }
 
         ; `sqrtf`: a function of the card's own, by the extern's name.
@@ -1474,7 +1696,7 @@ define GpuKernel
             }
             if GpuKernel.is_construction_name(call.name)
             {
-                this.block_named("constructs ", call.name)
+                this.k_init(call)
                 return
             }
             this.k_function(call)
@@ -1855,7 +2077,7 @@ define GpuKernel
             let top t_ptr.unwrap()
             if GpuKernel.has_members(top)
             {
-                this.block("writes a member")
+                this.k_field_write(top)
                 return
             }
             choose top.expr
