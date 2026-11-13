@@ -127,6 +127,9 @@
       <label><span data-t="rays">Rays per point</span> <select id="passes">
         <option value="6">252</option><option value="7" selected>508</option><option value="8">1020</option><option value="9">2044</option>
       </select></label>
+      <label><span data-t="coresLabel">Cores per program</span> <select id="cores">
+        <option value="share" selected data-t="coresShare">shared out</option><option value="1">1</option><option value="2">2</option>
+      </select></label>
     </div>
     <div class="actions">
       <button class="primary" id="render" disabled data-t="render">Render</button>
@@ -186,7 +189,7 @@ const TEXT = {
   en: {
     title: 'A render farm in Scaly', fractals: 'Fractals', playground: 'The playground', language: 'Language',
     picture: 'The picture', tint: 'Colour each tile by the node that rendered it',
-    nodesLabel: 'Nodes', size: 'Size', rays: 'Rays per point',
+    nodesLabel: 'Nodes', size: 'Size', rays: 'Rays per point', coresLabel: 'Cores per program', coresShare: 'shared out',
     render: 'Render', stop: 'Stop', check: 'Check: render it alone',
     nodesTitle: 'The nodes', thNode: 'Node', thState: 'State', thCores: 'Cores', thTiles: 'Tiles', thTile: 'Per tile', none: 'None yet.',
     killNote: '“Kill” ends a node and closes its connection, as when a machine dies; “Silence” ends it and leaves its connection open, as when a cable is pulled — only the heartbeat finds that.',
@@ -203,8 +206,8 @@ const TEXT = {
     progress: (pass, passes, rays, s) => `pass ${pass} of ${passes} · ${rays} rays a point so far · ${s} s`,
     finished: (s, rays) => `Rendered in ${s} s — ${rays} rays a second.`,
     stopped: 'Stopped.',
-    aloneRunning: 'Rendering the same picture once more, in a single program on all cores…',
-    same: (a, c) => `The same picture, bit for bit: the program alone rendered it in ${a} s on all ${cpus} cores, the cluster in ${c} s.`,
+    aloneRunning: k => `Rendering the same picture once more, in a single program on ${k === 1 ? 'one core' : `${k} cores`}…`,
+    same: (a, ak, c, ck, x) => `The same picture, bit for bit: the program alone rendered it in ${a} s on ${ak === 1 ? 'one core' : `${ak} cores`}, the cluster in ${c} s on ${ck} cores — ${x} times the speed.`,
     differs: 'The pictures differ — that should not happen.',
     eLinked: n => `${n} nodes linked; the coordinator hands out the jobs`,
     eKilled: r => `Node ${r} killed: its connection closes`,
@@ -213,19 +216,19 @@ const TEXT = {
     eAgain: (p, t) => `Tile ${t} of pass ${p + 1} goes back to the queue`,
     eAlone: 'No node is left: the coordinator renders the rest itself',
     eDone: s => `Done in ${s} s`,
-    eAloneStart: 'The program alone, on all cores',
+    eAloneStart: k => `The program alone, on ${k === 1 ? 'one core' : `${k} cores`}`,
     eStopped: 'Stopped',
     about1: 'One Scaly program, compiled to WebAssembly, renders this room — a lamp in the ceiling, a mirror ball and a glass ball — by <em>path tracing</em>: from the eye a ray goes through each point of the picture, bounces off what it meets and brings back the light it picks up on its way. Each ray is a guess; many of them per point average into the picture, and you see the noise settle.',
     about2: 'The program runs as a <em>cluster</em>: one node coordinates, the others render. The picture is cut into tiles, the work into jobs — one pass over one tile: the first pass sends four rays through each point, and each pass after it as many as all before it together, so that the noise halves with every pass. The coordinator hands each node a job, and a node that sends back what it rendered gets the next one: a fast node renders more than a slow one, without anyone deciding so. The frame around a tile has the colour of the node rendering it. Within a node the points of a tile go to its cores — a plain <code>for</code>, which the runtime spreads by itself.',
     about3: 'Kill a node, and its connection closes, as a machine’s does when it dies: the coordinator learns of it at once, and the tile in the node’s hands goes back to the queue — another node renders it. Let a node fall silent instead, and its connection stays open while nothing more comes through it, as when a cable is pulled: only the cluster’s heartbeat finds that — after 2.5 seconds without a word the node is suspected, and its job is handed on. Kill them all, and the coordinator renders the rest itself.',
     about4: 'Whatever happens on the way, the picture comes out the same, bit for bit: the colour of every ray is rounded to a whole number of 4096ths before it is added, so a sum does not depend on the order of its parts — nor on which node rendered which tile. “Check” renders the picture once more in a single program and compares.',
-    about5: 'What runs here is Scaly’s real cluster runtime — its handshake, its frames, its heartbeats, regions sent from one node’s memory into another’s —, the same code that runs between machines over TCP. Only TCP is not there: the nodes are workers of this page, each with a memory and threads of its own, and they talk through a network the page keeps in shared memory. So all nodes share the cores of this one machine: the page shares them out among the nodes, which together have as many as the program alone, and the cluster is not faster than the program alone — it pays for its messages. What the page shows is how the work is spread and how it survives a failure; a gain in speed takes machines of their own.',
+    about5: 'What runs here is Scaly’s real cluster runtime — its handshake, its frames, its heartbeats, regions sent from one node’s memory into another’s —, the same code that runs between machines over TCP. Only TCP is not there: the nodes are workers of this page, each with a memory and threads of its own, and they talk through a network the page keeps in shared memory. So all nodes share the cores of this one machine. With “Cores per program” at “shared out” the page shares them out among the nodes, which together have as many as the program alone: then the cluster is not faster than the program alone — it pays for its messages. Give each program one core instead, and the cluster is faster the more nodes it has, as long as the machine has cores to spare: “Check” then renders on one core and says by how much. Beyond the cores of this one machine, a gain in speed takes machines of their own.',
     codeNote: 'One file, three roles — the coordinator, a node that renders, or the program alone —, chosen by its environment. The picture’s colours go to the page as text, one line a tile.',
   },
   de: {
     title: 'Eine Render-Farm in Scaly', fractals: 'Fraktale', playground: 'Der Spielplatz', language: 'Sprache',
     picture: 'Das Bild', tint: 'Jede Kachel in der Farbe des Knotens, der sie gerechnet hat',
-    nodesLabel: 'Knoten', size: 'Größe', rays: 'Strahlen pro Punkt',
+    nodesLabel: 'Knoten', size: 'Größe', rays: 'Strahlen pro Punkt', coresLabel: 'Kerne je Programm', coresShare: 'aufgeteilt',
     render: 'Rendern', stop: 'Anhalten', check: 'Prüfen: allein rendern',
     nodesTitle: 'Die Knoten', thNode: 'Knoten', thState: 'Zustand', thCores: 'Kerne', thTiles: 'Kacheln', thTile: 'Pro Kachel', none: 'Noch keine.',
     killNote: '„Abschießen“ beendet einen Knoten und schließt seine Verbindung, wie wenn eine Maschine stirbt; „Verstummen“ beendet ihn und lässt seine Verbindung offen, wie wenn ein Kabel gezogen wird — das findet nur der Heartbeat.',
@@ -242,8 +245,8 @@ const TEXT = {
     progress: (pass, passes, rays, s) => `Durchgang ${pass} von ${passes} · bisher ${rays} Strahlen pro Punkt · ${s} s`,
     finished: (s, rays) => `Gerendert in ${s} s — ${rays} Strahlen pro Sekunde.`,
     stopped: 'Angehalten.',
-    aloneRunning: 'Dasselbe Bild noch einmal, in einem einzigen Programm auf allen Kernen…',
-    same: (a, c) => `Dasselbe Bild, Bit für Bit: Das Programm allein brauchte ${a} s auf allen ${cpus} Kernen, der Cluster ${c} s.`,
+    aloneRunning: k => `Dasselbe Bild noch einmal, in einem einzigen Programm auf ${k === 1 ? 'einem Kern' : `${k} Kernen`}…`,
+    same: (a, ak, c, ck, x) => `Dasselbe Bild, Bit für Bit: Das Programm allein brauchte ${a} s auf ${ak === 1 ? 'einem Kern' : `${ak} Kernen`}, der Cluster ${c} s auf ${ck} Kernen — ${x}-mal so schnell.`,
     differs: 'Die Bilder unterscheiden sich — das sollte nicht sein.',
     eLinked: n => `${n} Knoten verbunden; der Koordinator verteilt die Jobs`,
     eKilled: r => `Knoten ${r} abgeschossen: Seine Verbindung schließt sich`,
@@ -252,13 +255,13 @@ const TEXT = {
     eAgain: (p, t) => `Kachel ${t} von Durchgang ${p + 1} geht zurück in die Warteschlange`,
     eAlone: 'Kein Knoten ist mehr da: Der Koordinator rendert den Rest selbst',
     eDone: s => `Fertig nach ${s} s`,
-    eAloneStart: 'Das Programm allein, auf allen Kernen',
+    eAloneStart: k => `Das Programm allein, auf ${k === 1 ? 'einem Kern' : `${k} Kernen`}`,
     eStopped: 'Angehalten',
     about1: 'Ein Scaly-Programm, nach WebAssembly übersetzt, rendert diesen Raum — eine Lampe in der Decke, eine Spiegelkugel und eine Glaskugel — durch <em>Path Tracing</em>: Vom Auge geht durch jeden Punkt des Bildes ein Strahl, prallt von dem ab, was er trifft, und bringt das Licht zurück, das er unterwegs aufsammelt. Jeder Strahl ist eine Stichprobe; viele davon pro Punkt mitteln sich zum Bild, und man sieht das Rauschen sich legen.',
     about2: 'Das Programm läuft als <em>Cluster</em>: Ein Knoten koordiniert, die anderen rendern. Das Bild ist in Kacheln geteilt, die Arbeit in Jobs — ein Durchgang über eine Kachel: Der erste Durchgang schickt vier Strahlen durch jeden Punkt, jeder weitere so viele wie alle vorigen zusammen, sodass sich das Rauschen mit jedem Durchgang halbiert. Der Koordinator gibt jedem Knoten einen Job, und ein Knoten, der zurückschickt, was er gerechnet hat, bekommt den nächsten: Ein schneller Knoten rendert mehr als ein langsamer, ohne dass das jemand entscheidet. Der Rahmen um eine Kachel hat die Farbe des Knotens, der sie gerade rechnet. Innerhalb eines Knotens gehen die Punkte einer Kachel auf seine Kerne — ein gewöhnliches <code>for</code>, das die Laufzeit von selbst verteilt.',
     about3: 'Schießt man einen Knoten ab, schließt sich seine Verbindung, wie die einer Maschine, die stirbt: Der Koordinator erfährt es sofort, und die Kachel, die der Knoten in Arbeit hatte, geht zurück in die Warteschlange — ein anderer Knoten rechnet sie. Lässt man einen Knoten stattdessen verstummen, bleibt seine Verbindung offen, nur kommt nichts mehr durch, wie wenn ein Kabel gezogen wird: Das findet nur der Heartbeat des Clusters — nach 2,5 Sekunden ohne ein Wort gilt der Knoten als verdächtig, und sein Job geht weiter. Schießt man alle ab, rendert der Koordinator den Rest selbst.',
     about4: 'Was auch unterwegs geschieht, das Bild kommt Bit für Bit gleich heraus: Die Farbe jedes Strahls wird auf ganze 4096stel gerundet, bevor sie addiert wird, also hängt eine Summe nicht von der Reihenfolge ihrer Teile ab — und nicht davon, welcher Knoten welche Kachel gerechnet hat. „Prüfen“ rendert das Bild noch einmal in einem einzigen Programm und vergleicht.',
-    about5: 'Was hier läuft, ist die echte Cluster-Laufzeit von Scaly — ihr Handshake, ihre Rahmen, ihre Heartbeats, Regionen, die aus dem Speicher eines Knotens in den eines anderen geschickt werden —, derselbe Code, der zwischen Maschinen über TCP läuft. Nur TCP fehlt: Die Knoten sind Worker dieser Seite, jeder mit eigenem Speicher und eigenen Threads, und sie sprechen über ein Netz, das die Seite in gemeinsamem Speicher hält. Alle Knoten teilen sich also die Kerne dieser einen Maschine: Die Seite verteilt sie auf die Knoten, die zusammen so viele haben wie das Programm allein, und der Cluster ist nicht schneller als das Programm allein — er zahlt für seine Nachrichten. Die Seite zeigt, wie die Arbeit verteilt wird und wie sie einen Ausfall übersteht; einen Gewinn an Tempo bringen erst eigene Maschinen.',
+    about5: 'Was hier läuft, ist die echte Cluster-Laufzeit von Scaly — ihr Handshake, ihre Rahmen, ihre Heartbeats, Regionen, die aus dem Speicher eines Knotens in den eines anderen geschickt werden —, derselbe Code, der zwischen Maschinen über TCP läuft. Nur TCP fehlt: Die Knoten sind Worker dieser Seite, jeder mit eigenem Speicher und eigenen Threads, und sie sprechen über ein Netz, das die Seite in gemeinsamem Speicher hält. Alle Knoten teilen sich also die Kerne dieser einen Maschine. Steht „Kerne je Programm“ auf „aufgeteilt“, verteilt die Seite sie auf die Knoten, die zusammen so viele haben wie das Programm allein: Dann ist der Cluster nicht schneller als das Programm allein — er zahlt für seine Nachrichten. Gibt man stattdessen jedem Programm einen Kern, ist der Cluster umso schneller, je mehr Knoten er hat, solange die Maschine Kerne frei hat: „Prüfen“ rendert dann auf einem Kern und sagt, um wie viel. Über die Kerne dieser einen Maschine hinaus bringen erst eigene Maschinen mehr Tempo.',
     codeNote: 'Eine Datei, drei Rollen — der Koordinator, ein Knoten, der rendert, oder das Programm allein —, gewählt durch ihre Umgebung. Die Farben des Bildes gehen als Text an die Seite, eine Zeile pro Kachel.',
   },
 };
@@ -468,6 +471,8 @@ async function render(alone = false) {
   stop(false);
   const f = farm();
   const count = Number($('nodes').value);
+  // the cores of a program: a fixed number each, or (0) the machine's shared out
+  const each = $('cores').value === 'share' ? 0 : Number($('cores').value);
   const across = Math.ceil(f.w / f.tile), tiles = across * Math.ceil(f.h / f.tile);
   const r = run = {
     alone, farm: f, across, tiles, jobs: tiles * f.passes, net: Net.create(), nodes: [], done: 0, events: [],
@@ -482,9 +487,10 @@ async function render(alone = false) {
   const env = { RENDER_WIDTH: String(f.w), RENDER_HEIGHT: String(f.h), RENDER_TILE: String(f.tile),
                 RENDER_PASSES: String(f.passes), RENDER_SAMPLES: String(f.rays), RENDER_NODES: String(count) };
   if (alone) {
-    status('aloneRunning');
-    event(r, 'eAloneStart', []);
-    const n = await start(r, 0, { ...env, RENDER_ROLE: 's' }, cpus, cpus);
+    const k = each || cpus;
+    status(() => t('aloneRunning')(k));
+    event(r, 'eAloneStart', [k]);
+    const n = await start(r, 0, { ...env, RENDER_ROLE: 's' }, k, k);
     n.state = 'alone';
     r.nodes.push(n);
     if (r.stopped) n.end(0);
@@ -492,8 +498,9 @@ async function render(alone = false) {
   } else {
     status(() => t('starting')(count));
     // the coordinator only hands out jobs: one core; the rest of the work
-    // has all the cores the program alone has, each node a share of them
-    const cores = k => Math.max(1, Math.floor(cpus / count) + (k <= cpus % count ? 1 : 0));
+    // has all the cores the program alone has, each node a share of them --
+    // or each node as many as the program alone, where they are fixed
+    const cores = k => each || Math.max(1, Math.floor(cpus / count) + (k <= cpus % count ? 1 : 0));
     const c = await start(r, 0, { ...env, RENDER_ROLE: 'c' }, 1, 1 + count);
     c.state = 'waiting';
     r.nodes.push(c);
@@ -552,14 +559,18 @@ let lastCluster = null;
 async function renderCluster() {
   judge(null);
   const r = await render(false);
-  if (r.hash) lastCluster = { hash: r.hash, ms: r.ms, args: $('size').value + '/' + $('passes').value };
+  // the cores that rendered: every node's, the coordinator's left out
+  if (r.hash) lastCluster = { hash: r.hash, ms: r.ms, args: $('size').value + '/' + $('passes').value,
+                              cores: r.nodes.slice(1).reduce((sum, n) => sum + n.cores, 0) };
   return r;
 }
 async function check() {
   const before = lastCluster;
   const r = await render(true);
   if (r.hash && before && before.args === $('size').value + '/' + $('passes').value) {
-    if (r.hash === before.hash) judge(() => t('same')(seconds(r.ms), seconds(before.ms)), 'same');
+    const times = (r.ms / before.ms).toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (r.hash === before.hash)
+      judge(() => t('same')(seconds(r.ms), r.nodes[0].cores, seconds(before.ms), before.cores, times), 'same');
     else judge(() => t('differs'), 'differs');
   }
   return r;
@@ -569,7 +580,7 @@ function setBusy(busy) {
   $('render').disabled = busy || !module;
   $('check').disabled = busy || !module;
   $('stop').disabled = !busy;
-  for (const id of ['nodes', 'size', 'passes']) $(id).disabled = busy;
+  for (const id of ['nodes', 'size', 'passes', 'cores']) $(id).disabled = busy;
 }
 
 // --- what happened ----------------------------------------------------------------
@@ -786,6 +797,7 @@ async function selfTest() {
   await watch;
   const cluster = { hash: r.hash, status: r.status, ms: r.ms, tiles: r.nodes.map(n => n.tiles),
                     events: r.events.map(e => say(TEXT.en, e)) };
+  $('cores').value = '1';
   const a = await check();
   const report = { cpus, args: small, cluster, alone: { hash: a.hash, status: a.status, ms: a.ms },
                    verdict: $('verdict').className,
