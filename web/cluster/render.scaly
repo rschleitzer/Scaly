@@ -21,6 +21,12 @@
 ; picture comes out the same, bit for bit, whichever node rendered which
 ; job, and whatever node fell out on the way.
 ;
+; The rays are computed in 32-bit floating point, and the loop over a
+; tile's points is `relaxed`: built with --gpu, the program may hand it to a
+; graphics card. Metal rounds as the processor does, and the picture stays
+; the same bit for bit; a card under WebGPU rounds less strictly, and a
+; tile it rendered may differ in the last shade of a point here and there.
+;
 ;   RENDER_ROLE  c (the coordinator), w (a node that renders), s (solo:
 ;                one program renders every job itself)
 ;   RENDER_RANK  a rendering node's number, 1, 2, ...
@@ -45,14 +51,19 @@
 
 function scaly_eio_now_ns() returns i64 extern
 function sqrt(x: f64) returns f64 extern
+function sqrtf(x: f32) returns f32 extern
 
 ; --- vectors -------------------------------------------------------------------
+;
+; The rays are computed in 32-bit floating point, which a graphics card
+; has: where the program is built with --gpu, the loop over a tile's points
+; may run on one (render#), and its numbers are those of a card's.
 
 define Vec3
 (
-    x: f64
-    y: f64
-    z: f64
+    x: f32
+    y: f32
+    z: f32
 )
 
 function plus(a: Vec3, b: Vec3) returns Vec3
@@ -64,20 +75,20 @@ function minus(a: Vec3, b: Vec3) returns Vec3
 function times(a: Vec3, b: Vec3) returns Vec3
     Vec3(a.x * b.x, a.y * b.y, a.z * b.z)
 
-function scaled(a: Vec3, k: f64) returns Vec3
+function scaled(a: Vec3, k: f32) returns Vec3
     Vec3(a.x * k, a.y * k, a.z * k)
 
-function dot(a: Vec3, b: Vec3) returns f64
+function dot(a: Vec3, b: Vec3) returns f32
     a.x * b.x + a.y * b.y + a.z * b.z
 
 function cross(a: Vec3, b: Vec3) returns Vec3
     Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
 
 function unit(a: Vec3) returns Vec3
-    scaled(a, 1.0 / sqrt(dot(a, a)))
+    scaled(a, 1.0 / sqrtf(dot(a, a)))
 
 ; the point at distance t along d from o
-function along(o: Vec3, d: Vec3, t: f64) returns Vec3
+function along(o: Vec3, d: Vec3, t: f32) returns Vec3
     Vec3(o.x + d.x * t, o.y + d.y * t, o.z + d.z * t)
 
 function reflected(d: Vec3, n: Vec3) returns Vec3
@@ -85,23 +96,25 @@ function reflected(d: Vec3, n: Vec3) returns Vec3
 
 ; --- random numbers --------------------------------------------------------------
 
-; A permuted congruential step: the next state.
-function next(s: u64) returns u64
-    s * 0x5851F42D4C957F2D + 0x14057B7EF767814F
+; A permuted congruential generator in 32 bits: the next state, and the
+; number a state gives.
+function next(s: u32) returns u32
+    s * 747796405 + 2891336453
+
+function mixed(s: u32) returns u32
+{
+    let w ((s >> ((s >> 28) + 4)) xor s) * 277803737
+    (w >> 22) xor w
+}
 
 ; A number in [0, 1) from a state.
-function chance(s: u64) returns f64
-    ((s >> 11) as f64) / 9007199254740992.0
+function chance(s: u32) returns f32
+    ((mixed(s) >> 8) as f32) / 16777216.0
 
 ; The first state of a ray: from the point, the pass and the ray within the
 ; pass -- the same wherever it is rendered.
-function seed(point: int, pass: int, ray: int) returns u64
-{
-    var z (point as u64) * 0x9E3779B97F4A7C15 + ((pass * 1048576 + ray) as u64) * 0xD1B54A32D192ED03 + 0x632BE59BD9B4E019
-    z := (z xor (z >> 30)) * 0xBF58476D1CE4E5B9
-    z := (z xor (z >> 27)) * 0x94D049BB133111EB
-    z xor (z >> 31)
-}
+function seed(point: i32, pass: i32, ray: i32) returns u32
+    mixed(mixed(point as u32) + mixed((pass as u32) * 65536 + (ray as u32)))
 
 ; --- the room ----------------------------------------------------------------------
 
@@ -109,32 +122,32 @@ function seed(point: int, pass: int, ray: int) returns u64
 ; wall seen from within only: the eye looks in through it from in front, and
 ; what is inside sees a wall there, in a mirror too. The lamp is a square in
 ; the ceiling, LAMP to either side of its middle.
-define LAMP f64 0.35
-define NEAR f64 0.0001
-define DEPTH int 6
+define LAMP f32 0.35
+define NEAR f32 0.001
+define DEPTH i32 6
 
 function lamp() returns Vec3
     Vec3(15.0, 12.0, 7.0)
 
 function mirror_ball() returns Vec3
-    Vec3(0.0 - 0.42, 0.4, 0.0 - 0.45)
+    Vec3(-0.42, 0.4, -0.45)
 
 function glass_ball() returns Vec3
-    Vec3(0.45, 0.4, 0.0 - 0.02)
+    Vec3(0.45, 0.4, -0.02)
 
-define BALL f64 0.4
+define BALL f32 0.4
 
 ; What a ray met: how far, of what, and the surface's normal there. The
 ; kinds: 0 nothing, 1 a white wall, 2 the red wall, 3 the green wall, 4 the
 ; lamp, 5 the mirror ball, 6 the glass ball.
 define Hit
 (
-    t: f64
-    kind: int
+    t: f32
+    kind: i32
     n: Vec3
 )
 
-function albedo(kind: int) returns Vec3
+function albedo(kind: i32) returns Vec3
 {
     if kind = 2
         return Vec3(0.63, 0.065, 0.05)
@@ -144,33 +157,33 @@ function albedo(kind: int) returns Vec3
 }
 
 ; Where a ray from o along d enters a ball, or -1.
-function ball(o: Vec3, d: Vec3, c: Vec3) returns f64
+function ball(o: Vec3, d: Vec3, c: Vec3) returns f32
 {
     let oc minus(o, c)
     let b dot(oc, d)
     let disc b * b - (dot(oc, oc) - BALL * BALL)
     if disc < 0.0
         return -1.0
-    let h sqrt(disc)
-    let t1 0.0 - b - h
+    let h sqrtf(disc)
+    let t1 (0.0 - b) - h
     if t1 > NEAR
         return t1
-    let t2 0.0 - b + h
+    let t2 (0.0 - b) + h
     if t2 > NEAR: t2 else -1.0
 }
 
-function within(a: f64, low: f64, high: f64) returns bool
+function within(a: f32, low: f32, high: f32) returns bool
     a >= low and a <= high
 
 ; The first thing a ray meets.
 function hit(o: Vec3, d: Vec3) returns Hit
 {
-    var t 1000000.0
-    var kind 0
+    var t: f32 1000000.0
+    var kind: i32 0
     var n Vec3(0.0, 0.0, 0.0)
     if d.x < 0.0
     {
-        let s (0.0 - 1.0 - o.x) / d.x
+        let s (-1.0 - o.x) / d.x
         let p along(o, d, s)
         if s > NEAR and within(p.y, 0.0, 2.0) and within(p.z, -1.0, 1.0)
         {
@@ -187,7 +200,7 @@ function hit(o: Vec3, d: Vec3) returns Hit
         {
             t := s
             kind := 3
-            n := Vec3(0.0 - 1.0, 0.0, 0.0)
+            n := Vec3(-1.0, 0.0, 0.0)
         }
     }
     if d.y < 0.0
@@ -208,13 +221,13 @@ function hit(o: Vec3, d: Vec3) returns Hit
         if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.z, -1.0, 1.0)
         {
             t := s
-            kind := if within(p.x, 0.0 - LAMP, LAMP) and within(p.z, 0.0 - LAMP, LAMP): 4 else 1
-            n := Vec3(0.0, 0.0 - 1.0, 0.0)
+            kind := if within(p.x, -LAMP, LAMP) and within(p.z, -LAMP, LAMP): 4 else 1
+            n := Vec3(0.0, -1.0, 0.0)
         }
     }
     if d.z < 0.0
     {
-        let s (0.0 - 1.0 - o.z) / d.z
+        let s (-1.0 - o.z) / d.z
         let p along(o, d, s)
         if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.y, 0.0, 2.0)
         {
@@ -232,7 +245,7 @@ function hit(o: Vec3, d: Vec3) returns Hit
         {
             t := s
             kind := 1
-            n := Vec3(0.0, 0.0, 0.0 - 1.0)
+            n := Vec3(0.0, 0.0, -1.0)
         }
     }
     let m ball(o, d, mirror_ball())
@@ -253,7 +266,7 @@ function hit(o: Vec3, d: Vec3) returns Hit
 }
 
 ; Whether a ball stands between o and the point at distance far along d.
-function shadowed(o: Vec3, d: Vec3, far: f64) returns bool
+function shadowed(o: Vec3, d: Vec3, far: f32) returns bool
 {
     let m ball(o, d, mirror_ball())
     let g ball(o, d, glass_ball())
@@ -268,7 +281,7 @@ function shadowed(o: Vec3, d: Vec3, far: f64) returns bool
 ; steeper; a mirror turns it, glass turns it or lets it through, the more
 ; likely through the more head-on. Light seen straight off the lamp counts
 ; only where the lamp was not asked for it already.
-function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
+function radiance(o0: Vec3, d0: Vec3, seed0: u32) returns Vec3
 {
     var o o0
     var d d0
@@ -276,7 +289,7 @@ function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
     var through Vec3(1.0, 1.0, 1.0)
     var sum Vec3(0.0, 0.0, 0.0)
     var direct true
-    var depth 0
+    var depth: i32 0
     while depth < DEPTH
     {
         let h hit(o, d)
@@ -302,20 +315,20 @@ function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
             {
                 let inside dot(d, h.n) > 0.0
                 let n if inside: scaled(h.n, -1.0) else h.n
-                let eta if inside: 1.5 else 1.0 / 1.5
+                let eta: f32 if inside: 1.5 else 0.6666667
                 let ci 0.0 - dot(d, n)
                 let k 1.0 - eta * eta * (1.0 - ci * ci)
                 s := next(s)
                 var turned true
                 if k > 0.0
                 {
-                    let c if inside: sqrt(k) else ci
+                    let c if inside: sqrtf(k) else ci
                     let f 1.0 - c
                     let fresnel 0.04 + 0.96 * f * f * f * f * f
                     if chance(s) >= fresnel
                     {
                         turned := false
-                        d := unit(plus(scaled(d, eta), scaled(n, eta * ci - sqrt(k))))
+                        d := unit(plus(scaled(d, eta), scaled(n, eta * ci - sqrtf(k))))
                         o := along(p, n, 0.0 - NEAR * 10.0)
                     }
                 }
@@ -337,18 +350,18 @@ function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
                 let lz (2.0 * chance(s) - 1.0) * LAMP
                 let to minus(Vec3(lx, 2.0, lz), off)
                 let far2 dot(to, to)
-                let far sqrt(far2)
+                let far sqrtf(far2)
                 let wi scaled(to, 1.0 / far)
                 let cs dot(wi, h.n)
                 if cs > 0.0 and wi.y > 0.0 and shadowed(off, wi, far) = false
                 {
                     let area 4.0 * LAMP * LAMP
-                    sum := plus(sum, scaled(times(through, times(a, lamp())), cs * wi.y * area / (3.141592653589793 * far2)))
+                    sum := plus(sum, scaled(times(through, times(a, lamp())), cs * wi.y * area / (3.1415927 * far2)))
                 }
                 ; on, the steeper the likelier: a point of the unit disc,
                 ; lifted onto the half sphere over the wall
-                var u 1.0
-                var v 1.0
+                var u: f32 1.0
+                var v: f32 1.0
                 while u * u + v * v >= 1.0
                 {
                     s := next(s)
@@ -356,7 +369,7 @@ function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
                     s := next(s)
                     v := 2.0 * chance(s) - 1.0
                 }
-                let w sqrt(1.0 - u * u - v * v)
+                let w sqrtf(1.0 - u * u - v * v)
                 let helper if h.n.x > 0.9 or h.n.x < -0.9: Vec3(0.0, 1.0, 0.0) else Vec3(1.0, 0.0, 0.0)
                 let tu unit(cross(helper, h.n))
                 let tv cross(h.n, tu)
@@ -374,30 +387,30 @@ function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
 ; A colour as whole 1/4096ths, at most 2: brighter only the lamp is, and
 ; the picture shows it white anyway -- a ray that found it the rare way, over
 ; a wall and a ball, would otherwise stand out as a speck.
-function whole(x: f64) returns int
+function whole(x: f32) returns i32
 {
     if x <= 0.0
         return 0
     if x >= 2.0
         return 8192
-    (x * 4096.0) as int
+    (x * 4096.0) as i32
 }
 
 ; The sums of one pass at one point of the picture: `rays` rays through
 ; places within it.
-function point(x: int, y: int, w: int, h: int, pass: int, rays: int) returns (r: int, g: int, b: int)
+function point(x: i32, y: i32, w: i32, h: i32, pass: i32, rays: i32) returns (r: i32, g: i32, b: i32)
 {
     ; the eye in front of the open side, as far off as it sees the room
     ; whole: the picture's edges just inside the opening, no frame of
     ; darkness round it
-    let eye 2.6
+    let eye: f32 2.6
     let reach 0.97 / (eye - 1.0)
-    let aspect (w as f64) / (h as f64)
+    let aspect (w as f32) / (h as f32)
     let tan if aspect > 1.0: reach / aspect else reach
-    var r 0
-    var g 0
-    var b 0
-    var k 0
+    var r: i32 0
+    var g: i32 0
+    var b: i32 0
+    var k: i32 0
     while k < rays
     {
         var s seed(y * w + x, pass, k)
@@ -405,8 +418,8 @@ function point(x: int, y: int, w: int, h: int, pass: int, rays: int) returns (r:
         let jx chance(s)
         s := next(s)
         let jy chance(s)
-        let u (2.0 * ((x as f64) + jx) / (w as f64) - 1.0) * aspect * tan
-        let v (1.0 - 2.0 * ((y as f64) + jy) / (h as f64)) * tan
+        let u (2.0 * ((x as f32) + jx) / (w as f32) - 1.0) * aspect * tan
+        let v (1.0 - 2.0 * ((y as f32) + jy) / (h as f32)) * tan
         let c radiance(Vec3(0.0, 1.1, eye), unit(Vec3(u, v, -1.0)), next(s))
         r := r + whole(c.x)
         g := g + whole(c.y)
@@ -482,33 +495,46 @@ define Farm
 )
 
 ; One pass over one tile into `out` (red, green, blue a point), the points
-; on the cores.
+; on the cores -- or on a graphics card, where the program is built with
+; --gpu and the card pays: the loop is `relaxed`, so a card that rounds
+; less strictly than the processor (WebGPU) may take it.
 procedure render(f: Farm, pass: int, tile: int, mutable out: Vector[i64])
 {
-    let tx (tile % f.across) * f.tile
-    let ty (tile / f.across) * f.tile
+    let tx ((tile % f.across) * f.tile) as i32
+    let ty ((tile / f.across) * f.tile) as i32
+    let side f.tile as i32
+    let w f.w as i32
+    let h f.h as i32
+    let p pass as i32
+    let rays (f.rays << pass) as i32
     let n f.tile * f.tile
-    var rs Vector[i64](n as size_t)
-    var gs Vector[i64](n as size_t)
-    var bs Vector[i64](n as size_t)
-    for i in n
+    var rs Vector[i32](n as size_t)
+    var gs Vector[i32](n as size_t)
+    var bs Vector[i32](n as size_t)
+    relaxed for i in n
     {
-        let x tx + i % f.tile
-        let y ty + i / f.tile
-        if x < f.w and y < f.h
+        let x tx + (i as i32) % side
+        let y ty + (i as i32) / side
+        var r: i32 0
+        var g: i32 0
+        var b: i32 0
+        if x < w and y < h
         {
-            let c point(x, y, f.w, f.h, pass, f.rays << pass)
-            rs.put(i as size_t, c.r as i64)
-            gs.put(i as size_t, c.g as i64)
-            bs.put(i as size_t, c.b as i64)
+            let c point(x, y, w, h, p, rays)
+            r := c.r
+            g := c.g
+            b := c.b
         }
+        rs.put(i as size_t, r)
+        gs.put(i as size_t, g)
+        bs.put(i as size_t, b)
     }
     var i 0
     while i < n
     {
-        out.put((i * 3) as size_t, rs[i as size_t])
-        out.put((i * 3 + 1) as size_t, gs[i as size_t])
-        out.put((i * 3 + 2) as size_t, bs[i as size_t])
+        out.put((i * 3) as size_t, rs[i as size_t] as i64)
+        out.put((i * 3 + 1) as size_t, gs[i as size_t] as i64)
+        out.put((i * 3 + 2) as size_t, bs[i as size_t] as i64)
         i := i + 1
     }
 }
