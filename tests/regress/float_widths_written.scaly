@@ -1,0 +1,15 @@
+; Two widths of floating point in one operation, the conversion written:
+; either side may be cast, and a literal takes the other side's width.
+
+function sum(x: f32, y: f64) returns f32
+    x + (y as f32)
+
+function wide(x: f32, y: f64) returns f64
+    (x as f64) * y + 0.5
+
+let a sum(1.5, 2.25)
+let b wide(1.5, 2.0)
+if a = 3.75 and b = 3.5
+    print "PASS"
+else
+    print "FAIL"

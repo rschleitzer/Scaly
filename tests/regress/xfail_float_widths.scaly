@@ -1,0 +1,9 @@
+; xfail: no operator + between f32 and f64 - a floating-point number is not converted to another width by itself: write the conversion (x as f64, or y as f32)
+; An f32 beside an f64 that is no literal: neither is converted by itself.
+; Before, the f32 side was widened and the sum computed in double -- and a
+; function answering it as an f32 answered 0.
+
+function sum(x: f32, y: f64) returns f32
+    x + y
+
+print "`(sum(1.0, 2.0) as f64)`"

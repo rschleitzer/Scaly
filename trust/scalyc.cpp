@@ -73736,7 +73736,21 @@ __attribute__((weak)) void Planner_report_mixed_number_operator(Planner& scaly_s
         whole = (rhs).name;
         real = (lhs).name;
     }
-    if ((String_get_length(whole) == 0ULL))
+    String narrow = String{nullptr};
+    if ((Planner_type_is_float_like(lhs) ? Planner_type_is_float_like(rhs) : false))
+    {
+        if ((!(String_equals(scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, (lhs).name)), scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, (rhs).name))))))
+        {
+            narrow = (lhs).name;
+            real = (rhs).name;
+            if (String_equals(scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, (rhs).name)), scaly_lvalue(String{(uint8_t*)"\003f32"})))
+            {
+                narrow = (rhs).name;
+                real = (lhs).name;
+            }
+        }
+    }
+    if (((String_get_length(whole) == 0ULL) ? (String_get_length(narrow) == 0ULL) : false))
     {
         return;
     }
@@ -73766,9 +73780,20 @@ __attribute__((weak)) void Planner_report_mixed_number_operator(Planner& scaly_s
     StringBuilder_append2((*sb), (lhs).name);
     StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\005 and "}));
     StringBuilder_append2((*sb), (rhs).name);
-    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\140 - an integer is not converted to a floating-point number by itself: write the conversion (n as "}));
-    StringBuilder_append2((*sb), real);
-    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\042), or a literal with a point (2.0)"}));
+    if ((String_get_length(narrow) > 0ULL))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\143 - a floating-point number is not converted to another width by itself: write the conversion (x as "}));
+        StringBuilder_append2((*sb), real);
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\012, or y as "}));
+        StringBuilder_append2((*sb), narrow);
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\001)"}));
+    }
+    else
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\140 - an integer is not converted to a floating-point number by itself: write the conversion (n as "}));
+        StringBuilder_append2((*sb), real);
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\042), or a literal with a point (2.0)"}));
+    }
     String msg = StringBuilder_to_string(&scaly_local.f, (*sb));
     Planner_add_diagnostic(*(this_), at, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), msg); scaly_t3; }))));
 }

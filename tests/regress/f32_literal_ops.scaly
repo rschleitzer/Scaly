@@ -73,9 +73,10 @@ if (c > 1.2) = false
 if (c < 1.3) = false
     ok := false
 
-; Mixed float/double comparison stays valid IR (emitter fpext net).
+; A float/double comparison: the widening is written (two widths in one
+; operator are rc 4 since 2026-11-13, xfail_float_widths).
 let d 3.75
-if (d > a)
+if (d > (a as f64))
     ok := false
 
 ; double still works alongside.

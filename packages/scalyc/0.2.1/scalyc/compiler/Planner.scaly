@@ -38870,7 +38870,24 @@ define Planner
                 whole := rhs.name
                 real := lhs.name
             }
-            if whole.get_length() = 0
+            ; two widths of floating point: neither is converted either --
+            ; before 2026-11-13 the emitter widened the f32 side and computed
+            ; in double, and a value of the f32 the planner expected then
+            ; answered 0 (the join bail). A literal never comes here: it has
+            ; taken the other side's width (raw_operation#).
+            var narrow: String ""
+            if Planner.type_is_float_like(lhs) and Planner.type_is_float_like(rhs)
+                if Planner.normalize_type_name(lhs.name) <> Planner.normalize_type_name(rhs.name)
+                {
+                    narrow := lhs.name
+                    real := rhs.name
+                    if Planner.normalize_type_name(rhs.name) = "f32"
+                    {
+                        narrow := rhs.name
+                        real := lhs.name
+                    }
+                }
+            if whole.get_length() = 0 and narrow.get_length() = 0
                 return
             match op_name
                 case "+" case "-" case "*" case "/" case "%" case "div" case "mod": 0
@@ -38884,9 +38901,20 @@ define Planner
             sb.append lhs.name
             sb.append " and "
             sb.append rhs.name
-            sb.append " - an integer is not converted to a floating-point number by itself: write the conversion (n as "
-            sb.append real
-            sb.append "), or a literal with a point (2.0)"
+            if narrow.get_length() > 0
+            {
+                sb.append " - a floating-point number is not converted to another width by itself: write the conversion (x as "
+                sb.append real
+                sb.append ", or y as "
+                sb.append narrow
+                sb.append ")"
+            }
+            else
+            {
+                sb.append " - an integer is not converted to a floating-point number by itself: write the conversion (n as "
+                sb.append real
+                sb.append "), or a literal with a point (2.0)"
+            }
             let msg sb.to_string()
             this.add_diagnostic(at, String^this(msg))
         }
