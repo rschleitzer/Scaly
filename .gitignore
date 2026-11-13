@@ -50,3 +50,4 @@ docs/scaly-spec.rtf
 
 # the fractal showcase, built (web/fractals/build.sh)
 /web/fractals/site/
+/web/cluster/site/

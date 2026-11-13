@@ -66,6 +66,12 @@
 #    printed (the card's floating point, `relaxed`, and chaos: the Lyapunov
 #    fractal is made of places where a last digit decides).
 #
+# 6. THE CLUSTER SHOWCASE (web/cluster): built by its build.sh, its page's
+#    self-test (index.html?selftest) renders a small picture on three nodes,
+#    kills one once it has rendered a tile and silences another, then
+#    renders it alone. Both pictures must be the native program's, bit for
+#    bit, and what happened must say each node gone and its tile handed on.
+#
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
 # and is SKIPPED by name without one of them. Run it after a change to the
@@ -347,6 +353,44 @@ print('gpu-web: showcase %s — %s' % ('FAIL' if fails else 'PASS',
       ', '.join('%s %.0f ms' % (x['label'], x['ms'] or 0) for x in r['runs'])))
 if said:
     print('gpu-web: showcase — of 24000 points the card drew otherwise: ' + ', '.join(said))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# --- 6. the cluster showcase ---------------------------------------------
+if ! web/cluster/build.sh "$T/farm" "$STAGE" > "$T/farm.build" 2>&1; then
+  echo "gpu-web: FAIL — the cluster showcase does not build ($(tail -1 "$T/farm.build" | cut -c1-160))"; exit 1
+fi
+"$STAGE" -o "$T/bin/farm" web/cluster/render.scaly > "$T/bin/farm.build" 2>&1 ||
+  { echo "gpu-web: FAIL — the render farm does not build natively"; exit 1; }
+native=$(RENDER_ROLE=s RENDER_WIDTH=128 RENDER_HEIGHT=96 RENDER_TILE=16 RENDER_PASSES=6 RENDER_SAMPLES=2 "$T/bin/farm" | sed -n 's/^C: image //p')
+page "$T/farm" "index.html?selftest" 300
+python3 - "$T/result" "$native" <<'PY' || failed=1
+import json, os, sys
+result, native = sys.argv[1:3]
+try:
+    r = json.load(open(result))
+except Exception:
+    print('  FAIL the cluster page did not answer (%s)' % (open(result).read()[:200] if os.path.exists(result) else 'nothing'))
+    sys.exit(1)
+fails = []
+c, a = r['cluster'], r['alone']
+if not native:
+    fails.append('the native program said no hash')
+if c['status'] != 0 or c['hash'] != native:
+    fails.append('the cluster rendered another picture (%s, status %s) than the native program (%s)' % (c['hash'], c['status'], native))
+if a['status'] != 0 or a['hash'] != native:
+    fails.append('the program alone rendered another picture (%s, status %s)' % (a['hash'], a['status']))
+if r['verdict'] != 'same':
+    fails.append('the page did not say the pictures are the same (%s)' % r['verdict'])
+said = ' / '.join(c['events'])
+for want in ('Node 2 killed', 'finds node 2 gone', 'Node 3 falls silent', 'suspects node 3', 'goes back to the queue'):
+    if want not in said:
+        fails.append('no "%s" among what happened: %s' % (want, said))
+for f in fails:
+    print('  FAIL ' + f)
+print('gpu-web: cluster %s — three nodes, one killed and one silenced, %.0f ms; alone %.0f ms; tiles %s' %
+      ('FAIL' if fails else 'PASS', c['ms'] or 0, a['ms'] or 0, c['tiles']))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
