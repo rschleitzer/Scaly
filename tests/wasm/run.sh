@@ -38,8 +38,10 @@
 #      network of the host (web/net.mjs: the sockets WASI does not have),
 #      and tests/cluster/wasm.mjs runs tests/cluster/run.sh's scenarios over
 #      it -- ping-pong, the late frame, kill -9, the stamp mismatch, the
-#      distributed trainer's parity and its fault --, and one of its own: a
-#      node that falls silent, which only the heartbeat finds.
+#      distributed trainer's parity and its fault --, and two of its own: a
+#      node that falls silent, which only the heartbeat finds, and the render
+#      farm of the cluster showcase (web/cluster/render.scaly), whose picture
+#      is the solo program's bit for bit whatever node is lost on the way.
 #
 # Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) and node; SKIPPED by name
 # without either.
@@ -168,6 +170,10 @@ for n in roundtrip xproc_recv xproc_send pingpong lateframe kill9 stamp_a stamp_
     built=0
   fi
 done
+if ! "$TOOL" build --target $TT web/cluster/render.scaly -o "$WORK/cluster/render.wasm" > "$WORK/cluster/render.build" 2>&1; then
+  echo "wasm (cluster): FAIL — render does not build ($(grep -m1 -i 'error' "$WORK/cluster/render.build" | cut -c1-120))"
+  built=0
+fi
 if [ $built -eq 1 ]; then
   "$NODE" --no-warnings tests/cluster/wasm.mjs "packages/scaly/$(tools/version.sh scaly)/web" "$WORK/cluster" || failed=1
 else

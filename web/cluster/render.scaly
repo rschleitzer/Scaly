@@ -1,0 +1,808 @@
+; A render farm: ONE program, which a cluster of nodes runs -- one of them
+; the coordinator, the others render. The picture is a room lit by a lamp in
+; its ceiling, a mirror ball and a glass ball in it, path traced: from the
+; eye a ray goes into the room, bounces off what it meets, and what light it
+; picks up on its way is the colour it brings back. Many rays per point, and
+; the noise of each settles into the picture.
+;
+; The picture is cut into tiles and the work into JOBS: one pass over one
+; tile, a pass being SAMPLES rays per point. The coordinator hands a job to
+; each node, and a node that sends back what it rendered gets the next one --
+; so a fast node renders more than a slow one. A node that is gone -- its
+; connection closed, or silent past the cluster's heartbeat -- has its job
+; handed to another; where none is left, the coordinator renders the rest
+; itself. Within a node, the points of a tile go to its cores: the loop over
+; them is a plain `for`.
+;
+; The colour of every ray is rounded to a whole number of 1/4096ths before
+; it is added, so a sum does not depend on the order of its parts: the
+; picture comes out the same, bit for bit, whichever node rendered which
+; job, and whatever node fell out on the way.
+;
+;   RENDER_ROLE  c (the coordinator), w (a node that renders), s (solo:
+;                one program renders every job itself)
+;   RENDER_RANK  a rendering node's number, 1, 2, ...
+;   RENDER_NODES how many nodes render (the coordinator waits for them)
+;   RENDER_PORT  where the coordinator listens (default 47740)
+;   RENDER_WIDTH, RENDER_HEIGHT, RENDER_TILE, RENDER_PASSES, RENDER_SAMPLES
+;                the picture: 256 x 192 in tiles of 32 x 32, 16 passes of 4
+;
+; What the coordinator says, a line each:
+;
+;   C: ready                       it listens
+;   C: linked <n>                  n nodes are there
+;   J <pass> <tile> <node>         the job goes to the node
+;   P <pass> <tile> <node> <ms> <colours>   it came back, rendered in ms
+;                                  milliseconds; the tile as it stands now,
+;                                  six hex digits a point, row by row
+;   C: down <node>                 the node is gone
+;   C: again <pass> <tile>         its job goes back to the queue
+;   C: image <hash>                every sum, hashed (FNV-1a)
+;   C: done <ms> ms
+
+function scaly_eio_now_ns() returns i64 extern
+function sqrt(x: f64) returns f64 extern
+
+; --- vectors -------------------------------------------------------------------
+
+define Vec3
+(
+    x: f64
+    y: f64
+    z: f64
+)
+
+function plus(a: Vec3, b: Vec3) returns Vec3
+    Vec3(a.x + b.x, a.y + b.y, a.z + b.z)
+
+function minus(a: Vec3, b: Vec3) returns Vec3
+    Vec3(a.x - b.x, a.y - b.y, a.z - b.z)
+
+function times(a: Vec3, b: Vec3) returns Vec3
+    Vec3(a.x * b.x, a.y * b.y, a.z * b.z)
+
+function scaled(a: Vec3, k: f64) returns Vec3
+    Vec3(a.x * k, a.y * k, a.z * k)
+
+function dot(a: Vec3, b: Vec3) returns f64
+    a.x * b.x + a.y * b.y + a.z * b.z
+
+function cross(a: Vec3, b: Vec3) returns Vec3
+    Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
+
+function unit(a: Vec3) returns Vec3
+    scaled(a, 1.0 / sqrt(dot(a, a)))
+
+; the point at distance t along d from o
+function along(o: Vec3, d: Vec3, t: f64) returns Vec3
+    Vec3(o.x + d.x * t, o.y + d.y * t, o.z + d.z * t)
+
+function reflected(d: Vec3, n: Vec3) returns Vec3
+    minus(d, scaled(n, 2.0 * dot(d, n)))
+
+; --- random numbers --------------------------------------------------------------
+
+; A permuted congruential step: the next state.
+function next(s: u64) returns u64
+    s * 0x5851F42D4C957F2D + 0x14057B7EF767814F
+
+; A number in [0, 1) from a state.
+function chance(s: u64) returns f64
+    ((s >> 11) as f64) / 9007199254740992.0
+
+; The first state of a ray: from the point, the pass and the ray within the
+; pass -- the same wherever it is rendered.
+function seed(point: int, pass: int, ray: int) returns u64
+{
+    var z (point as u64) * 0x9E3779B97F4A7C15 + ((pass * 64 + ray) as u64) * 0xD1B54A32D192ED03 + 0x632BE59BD9B4E019
+    z := (z xor (z >> 30)) * 0xBF58476D1CE4E5B9
+    z := (z xor (z >> 27)) * 0x94D049BB133111EB
+    z xor (z >> 31)
+}
+
+; --- the room ----------------------------------------------------------------------
+
+; It spans -1 to 1 across, 0 to 2 up and -1 to 1 in depth; its front is open,
+; and the eye looks in through it from in front. The lamp is a square in the
+; ceiling, LAMP to either side of its middle.
+define LAMP f64 0.25
+define NEAR f64 0.0001
+define DEPTH int 6
+
+function lamp() returns Vec3
+    Vec3(15.0, 12.0, 7.0)
+
+function mirror_ball() returns Vec3
+    Vec3(0.0 - 0.42, 0.4, 0.0 - 0.32)
+
+function glass_ball() returns Vec3
+    Vec3(0.45, 0.4, 0.3)
+
+define BALL f64 0.4
+
+; What a ray met: how far, of what, and the surface's normal there. The
+; kinds: 0 nothing, 1 a white wall, 2 the red wall, 3 the green wall, 4 the
+; lamp, 5 the mirror ball, 6 the glass ball.
+define Hit
+(
+    t: f64
+    kind: int
+    n: Vec3
+)
+
+function albedo(kind: int) returns Vec3
+{
+    if kind = 2
+        return Vec3(0.63, 0.065, 0.05)
+    if kind = 3
+        return Vec3(0.14, 0.45, 0.091)
+    Vec3(0.725, 0.71, 0.68)
+}
+
+; Where a ray from o along d enters a ball, or -1.
+function ball(o: Vec3, d: Vec3, c: Vec3) returns f64
+{
+    let oc minus(o, c)
+    let b dot(oc, d)
+    let disc b * b - (dot(oc, oc) - BALL * BALL)
+    if disc < 0.0
+        return -1.0
+    let h sqrt(disc)
+    let t1 0.0 - b - h
+    if t1 > NEAR
+        return t1
+    let t2 0.0 - b + h
+    if t2 > NEAR: t2 else -1.0
+}
+
+function within(a: f64, low: f64, high: f64) returns bool
+    a >= low and a <= high
+
+; The first thing a ray meets.
+function hit(o: Vec3, d: Vec3) returns Hit
+{
+    var t 1000000.0
+    var kind 0
+    var n Vec3(0.0, 0.0, 0.0)
+    if d.x < 0.0
+    {
+        let s (0.0 - 1.0 - o.x) / d.x
+        let p along(o, d, s)
+        if s > NEAR and within(p.y, 0.0, 2.0) and within(p.z, -1.0, 1.0)
+        {
+            t := s
+            kind := 2
+            n := Vec3(1.0, 0.0, 0.0)
+        }
+    }
+    if d.x > 0.0
+    {
+        let s (1.0 - o.x) / d.x
+        let p along(o, d, s)
+        if s > NEAR and within(p.y, 0.0, 2.0) and within(p.z, -1.0, 1.0)
+        {
+            t := s
+            kind := 3
+            n := Vec3(0.0 - 1.0, 0.0, 0.0)
+        }
+    }
+    if d.y < 0.0
+    {
+        let s (0.0 - o.y) / d.y
+        let p along(o, d, s)
+        if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.z, -1.0, 1.0)
+        {
+            t := s
+            kind := 1
+            n := Vec3(0.0, 1.0, 0.0)
+        }
+    }
+    if d.y > 0.0
+    {
+        let s (2.0 - o.y) / d.y
+        let p along(o, d, s)
+        if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.z, -1.0, 1.0)
+        {
+            t := s
+            kind := if within(p.x, 0.0 - LAMP, LAMP) and within(p.z, 0.0 - LAMP, LAMP): 4 else 1
+            n := Vec3(0.0, 0.0 - 1.0, 0.0)
+        }
+    }
+    if d.z < 0.0
+    {
+        let s (0.0 - 1.0 - o.z) / d.z
+        let p along(o, d, s)
+        if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.y, 0.0, 2.0)
+        {
+            t := s
+            kind := 1
+            n := Vec3(0.0, 0.0, 1.0)
+        }
+    }
+    let m ball(o, d, mirror_ball())
+    if m > 0.0 and m < t
+    {
+        t := m
+        kind := 5
+        n := unit(minus(along(o, d, m), mirror_ball()))
+    }
+    let g ball(o, d, glass_ball())
+    if g > 0.0 and g < t
+    {
+        t := g
+        kind := 6
+        n := unit(minus(along(o, d, g), glass_ball()))
+    }
+    Hit(t, kind, n)
+}
+
+; Whether a ball stands between o and the point at distance far along d.
+function shadowed(o: Vec3, d: Vec3, far: f64) returns bool
+{
+    let m ball(o, d, mirror_ball())
+    let g ball(o, d, glass_ball())
+    m > 0.0 and m < far or g > 0.0 and g < far
+}
+
+; --- a ray -------------------------------------------------------------------------
+
+; The light a ray from o along d brings back. At a wall it asks the lamp
+; directly -- a point on it, chosen at random, unless a ball is in the way
+; -- and then goes on in a direction chosen at random, more likely the
+; steeper; a mirror turns it, glass turns it or lets it through, the more
+; likely through the more head-on. Light seen straight off the lamp counts
+; only where the lamp was not asked for it already.
+function radiance(o0: Vec3, d0: Vec3, seed0: u64) returns Vec3
+{
+    var o o0
+    var d d0
+    var s seed0
+    var through Vec3(1.0, 1.0, 1.0)
+    var sum Vec3(0.0, 0.0, 0.0)
+    var direct true
+    var depth 0
+    while depth < DEPTH
+    {
+        let h hit(o, d)
+        if h.kind = 0
+            break
+        if h.kind = 4
+        {
+            if direct
+                sum := plus(sum, times(through, lamp()))
+            break
+        }
+        let p along(o, d, h.t)
+        if h.kind = 5
+        {
+            d := reflected(d, h.n)
+            o := along(p, h.n, NEAR * 10.0)
+            through := scaled(through, 0.9)
+            direct := true
+        }
+        else
+        {
+            if h.kind = 6
+            {
+                let inside dot(d, h.n) > 0.0
+                let n if inside: scaled(h.n, -1.0) else h.n
+                let eta if inside: 1.5 else 1.0 / 1.5
+                let ci 0.0 - dot(d, n)
+                let k 1.0 - eta * eta * (1.0 - ci * ci)
+                s := next(s)
+                var turned true
+                if k > 0.0
+                {
+                    let c if inside: sqrt(k) else ci
+                    let f 1.0 - c
+                    let fresnel 0.04 + 0.96 * f * f * f * f * f
+                    if chance(s) >= fresnel
+                    {
+                        turned := false
+                        d := unit(plus(scaled(d, eta), scaled(n, eta * ci - sqrt(k))))
+                        o := along(p, n, 0.0 - NEAR * 10.0)
+                    }
+                }
+                if turned
+                {
+                    d := reflected(d, n)
+                    o := along(p, n, NEAR * 10.0)
+                }
+                direct := true
+            }
+            else
+            {
+                let a albedo(h.kind)
+                let off along(p, h.n, NEAR * 10.0)
+                ; the lamp, at a point of it
+                s := next(s)
+                let lx (2.0 * chance(s) - 1.0) * LAMP
+                s := next(s)
+                let lz (2.0 * chance(s) - 1.0) * LAMP
+                let to minus(Vec3(lx, 2.0, lz), off)
+                let far2 dot(to, to)
+                let far sqrt(far2)
+                let wi scaled(to, 1.0 / far)
+                let cs dot(wi, h.n)
+                if cs > 0.0 and wi.y > 0.0 and shadowed(off, wi, far) = false
+                {
+                    let area 4.0 * LAMP * LAMP
+                    sum := plus(sum, scaled(times(through, times(a, lamp())), cs * wi.y * area / (3.141592653589793 * far2)))
+                }
+                ; on, the steeper the likelier: a point of the unit disc,
+                ; lifted onto the half sphere over the wall
+                var u 1.0
+                var v 1.0
+                while u * u + v * v >= 1.0
+                {
+                    s := next(s)
+                    u := 2.0 * chance(s) - 1.0
+                    s := next(s)
+                    v := 2.0 * chance(s) - 1.0
+                }
+                let w sqrt(1.0 - u * u - v * v)
+                let helper if h.n.x > 0.9 or h.n.x < -0.9: Vec3(0.0, 1.0, 0.0) else Vec3(1.0, 0.0, 0.0)
+                let tu unit(cross(helper, h.n))
+                let tv cross(h.n, tu)
+                d := plus(plus(scaled(tu, u), scaled(tv, v)), scaled(h.n, w))
+                o := off
+                through := times(through, a)
+                direct := false
+            }
+        }
+        depth := depth + 1
+    }
+    sum
+}
+
+; A colour as whole 1/4096ths, at most 2: brighter only the lamp is, and
+; the picture shows it white anyway -- a ray that found it the rare way, over
+; a wall and a ball, would otherwise stand out as a speck.
+function whole(x: f64) returns int
+{
+    if x <= 0.0
+        return 0
+    if x >= 2.0
+        return 8192
+    (x * 4096.0) as int
+}
+
+; The sums of one pass at one point of the picture: `rays` rays through
+; places within it.
+function point(x: int, y: int, w: int, h: int, pass: int, rays: int) returns (r: int, g: int, b: int)
+{
+    let tan 0.42
+    let aspect (w as f64) / (h as f64)
+    var r 0
+    var g 0
+    var b 0
+    var k 0
+    while k < rays
+    {
+        var s seed(y * w + x, pass, k)
+        s := next(s)
+        let jx chance(s)
+        s := next(s)
+        let jy chance(s)
+        let u (2.0 * ((x as f64) + jx) / (w as f64) - 1.0) * aspect * tan
+        let v (1.0 - 2.0 * ((y as f64) + jy) / (h as f64)) * tan
+        let c radiance(Vec3(0.0, 1.0, 3.6), unit(Vec3(u, v, -1.0)), next(s))
+        r := r + whole(c.x)
+        g := g + whole(c.y)
+        b := b + whole(c.z)
+        k := k + 1
+    }
+    (r: r, g: g, b: b)
+}
+
+; --- the farm ------------------------------------------------------------------------
+
+function parse_int(s: pointer[const_char]) returns int
+{
+    if s = null
+        return 0 - 1
+    var v 0
+    var any false
+    var i 0 as size_t
+    repeat
+    {
+        let c s[i] as int
+        if c < 48 or c > 57
+            break
+        v := v * 10 + (c - 48)
+        any := true
+        i := i + (1 as size_t)
+    }
+    if any: v else 0 - 1
+}
+
+procedure env_int(name: pointer[const_char], dflt: int) returns int
+{
+    let v parse_int(getenv(name))
+    if v < 0: dflt else v
+}
+
+define HELLO u64 100
+define JOB u64 1
+define DONE u64 2
+
+define HelloMsg
+(
+    rank: i64
+)
+
+; tile -1: no more work
+define JobMsg
+(
+    pass: i64
+    tile: i64
+)
+
+; a tile's sums, red, green, blue a point, row by row
+define TileMsg
+(
+    pass: i64
+    tile: i64
+    rank: i64
+    ms: i64
+    sums: Vector[i64]
+)
+
+; The picture: its size, its tiles and how many rays a pass sends through
+; a point.
+define Farm
+(
+    w: int
+    h: int
+    tile: int
+    rays: int
+    across: int
+    tiles: int
+)
+
+; One pass over one tile into `out` (red, green, blue a point), the points
+; on the cores.
+procedure render(f: Farm, pass: int, tile: int, mutable out: Vector[i64])
+{
+    let tx (tile % f.across) * f.tile
+    let ty (tile / f.across) * f.tile
+    let n f.tile * f.tile
+    var rs Vector[i64](n as size_t)
+    var gs Vector[i64](n as size_t)
+    var bs Vector[i64](n as size_t)
+    for i in n
+    {
+        let x tx + i % f.tile
+        let y ty + i / f.tile
+        if x < f.w and y < f.h
+        {
+            let c point(x, y, f.w, f.h, pass, f.rays)
+            rs.put(i as size_t, c.r as i64)
+            gs.put(i as size_t, c.g as i64)
+            bs.put(i as size_t, c.b as i64)
+        }
+    }
+    var i 0
+    while i < n
+    {
+        out.put((i * 3) as size_t, rs[i as size_t])
+        out.put((i * 3 + 1) as size_t, gs[i as size_t])
+        out.put((i * 3 + 2) as size_t, bs[i as size_t])
+        i := i + 1
+    }
+}
+
+function hex(d: int) returns char
+    if d < 10: ((48 + d) as char) else ((87 + d) as char)
+
+; A channel's sum over `rays` rays as a shade: the mean light, its square
+; root (brighter where it is dim, as an eye sees), 0 to 255.
+function shade(sum: i64, rays: int) returns int
+{
+    if rays = 0
+        return 0
+    let mean (sum as f64) / ((rays as f64) * 4096.0)
+    if mean >= 1.0
+        return 255
+    (sqrt(mean) * 255.0 + 0.5) as int
+}
+
+; Add a tile's sums into the picture -- every point's sums, and how many
+; passes each tile has -- and say the tile as it stands now.
+procedure take(f: Farm, mutable sums: Vector[i64], mutable counts: Vector[int], pass: int, tile: int, rank: int, ms: i64, got: Vector[i64])
+{
+    let tx (tile % f.across) * f.tile
+    let ty (tile / f.across) * f.tile
+    counts.put(tile as size_t, counts[tile as size_t] + 1)
+    let rays counts[tile as size_t] * f.rays
+    var line StringBuilder()
+    line.append "P `pass` `tile` `rank` `ms` "
+    var i 0
+    while i < f.tile * f.tile
+    {
+        let x tx + i % f.tile
+        let y ty + i / f.tile
+        if x < f.w and y < f.h
+        {
+            let at ((y * f.w + x) * 3) as size_t
+            var c 0
+            while c < 3
+            {
+                let k at + (c as size_t)
+                sums.put(k, sums[k] + got[(i * 3 + c) as size_t])
+                let v shade(sums[k], rays)
+                line.append(hex(v / 16))
+                line.append(hex(v % 16))
+                c := c + 1
+            }
+        }
+        i := i + 1
+    }
+    let text line.to_string()
+    print text
+}
+
+procedure finish(sums: Vector[i64], t0: i64)
+{
+    var hash: u64 0xCBF29CE484222325
+    var i: size_t 0
+    while i < sums.length
+    {
+        hash := (hash xor (sums[i] as u64)) * 0x100000001B3
+        i := i + 1
+    }
+    print "C: image `hash as size_t`"
+    print "C: done `(scaly_eio_now_ns() - t0) / 1000000` ms"
+}
+
+; A job rendered here.
+procedure alone(f: Farm, mutable sums: Vector[i64], mutable counts: Vector[int], job: int)
+{
+    let pass job / f.tiles
+    let tile job % f.tiles
+    var out Vector[i64]((f.tile * f.tile * 3) as size_t)
+    let t0 scaly_eio_now_ns()
+    render(f, pass, tile, out)
+    take(f, sums, counts, pass, tile, 0, (scaly_eio_now_ns() - t0) / 1000000, out)
+}
+
+let W env_int("RENDER_WIDTH", 256)
+let H env_int("RENDER_HEIGHT", 192)
+let TILE env_int("RENDER_TILE", 32)
+let PASSES env_int("RENDER_PASSES", 16)
+let NODES env_int("RENDER_NODES", 3)
+let RANK env_int("RENDER_RANK", 0)
+let PORT env_int("RENDER_PORT", 47740) as i32
+let ACROSS (W + TILE - 1) / TILE
+let TILES ACROSS * ((H + TILE - 1) / TILE)
+let JOBS TILES * PASSES
+let farm Farm(W, H, TILE, env_int("RENDER_SAMPLES", 4), ACROSS, TILES)
+var sums Vector[i64]((W * H * 3) as size_t)
+var counts Vector[int](TILES as size_t)
+
+let role getenv("RENDER_ROLE")
+let which if role = null: 115 else (*role) as int
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+
+if which = 115
+{
+    ; solo: every job here, in order
+    let t0 scaly_eio_now_ns()
+    var job 0
+    while job < JOBS
+    {
+        alone(farm, sums, counts, job)
+        job := job + 1
+    }
+    finish(sums, t0)
+    exit 0
+}
+
+if which = 99
+{
+    let lfd Cluster.listen(PORT)
+    if lfd < (0 as i32)
+        exit 3
+    print "C: ready"
+    var peers Vector[pointer[NodePeer]]((NODES + 1) as size_t)
+    var chans Vector[pointer[Channel]]((NODES + 1) as size_t)
+    var live Vector[bool]((NODES + 1) as size_t)
+    var busy Vector[int]((NODES + 1) as size_t)
+    var joined 0
+    while joined < NODES
+    {
+        let peer Cluster.accept(lfd)
+        if peer = null
+            exit 3
+        let hraw Channel.receive(Cluster.channel(peer, HELLO))
+        if hraw = null
+            exit 3
+        let hrr hraw as pointer[ReceivedRegion]
+        let hm hrr.root as pointer[HelloMsg]
+        hrr.fix_graph(hm)
+        let r hm.rank as int
+        Cluster.dispose_message(hrr)
+        if r < 1 or r > NODES
+            exit 3
+        peers.put(r as size_t, peer)
+        chans.put(r as size_t, Cluster.channel(peer, DONE))
+        live.put(r as size_t, true)
+        busy.put(r as size_t, 0 - 1)
+        joined := joined + 1
+    }
+    print "C: linked `joined`"
+
+    ; the jobs not handed out: those of nodes that fell out first, then the
+    ; next in order
+    var again Vector[int](JOBS as size_t)
+    var agains 0
+    var next_job 0
+    var done 0
+    var alive NODES
+    let t0 scaly_eio_now_ns()
+    while done < JOBS
+    {
+        ; every node without a job gets one
+        var r 1
+        while r <= NODES
+        {
+            if live[r as size_t] and busy[r as size_t] < 0 and (agains > 0 or next_job < JOBS)
+            {
+                var job 0
+                if agains > 0
+                {
+                    agains := agains - 1
+                    job := again[agains as size_t]
+                }
+                else
+                {
+                    job := next_job
+                    next_job := next_job + 1
+                }
+                busy.put(r as size_t, job)
+                let mp Page.allocate_page()
+                let m mp.allocate(sizeof JobMsg, alignof JobMsg) as pointer[JobMsg]
+                m.pass := (job / TILES) as i64
+                m.tile := (job % TILES) as i64
+                print "J `job / TILES` `job % TILES` `r`"
+                Cluster.send(peers[r as size_t], JOB, m as pointer[void])
+            }
+            r := r + 1
+        }
+        if alive = 0
+        {
+            ; nobody left: the rest here
+            if agains > 0
+            {
+                agains := agains - 1
+                alone(farm, sums, counts, again[agains as size_t])
+                done := done + 1
+            }
+            else
+            {
+                alone(farm, sums, counts, next_job)
+                next_job := next_job + 1
+                done := done + 1
+            }
+        }
+        else
+        {
+            ; what came back
+            var got false
+            r := 1
+            while r <= NODES
+            {
+                if live[r as size_t] and busy[r as size_t] >= 0
+                {
+                    var timed false
+                    let raw Channel.receive_timeout(chans[r as size_t], 0 as i32, &timed)
+                    if raw <> null
+                    {
+                        let rr raw as pointer[ReceivedRegion]
+                        let tm rr.root as pointer[TileMsg]
+                        rr.fix_graph(tm)
+                        take(farm, sums, counts, tm.pass as int, tm.tile as int, r, tm.ms, tm.sums)
+                        Cluster.dispose_message(rr)
+                        busy.put(r as size_t, 0 - 1)
+                        done := done + 1
+                        got := true
+                    }
+                    else
+                    {
+                        if timed = false
+                        {
+                            ; closed: the node is gone, its job goes back
+                            let job busy[r as size_t]
+                            print "C: down `r`"
+                            print "C: again `job / TILES` `job % TILES`"
+                            again.put(agains as size_t, job)
+                            agains := agains + 1
+                            live.put(r as size_t, false)
+                            busy.put(r as size_t, 0 - 1)
+                            alive := alive - 1
+                            got := true
+                        }
+                    }
+                }
+                r := r + 1
+            }
+            if got = false
+                poll(null as pointer[pollfd], 0, 1)
+        }
+    }
+    finish(sums, t0)
+    ; no more work: every node that is still there is told so
+    var e 1
+    while e <= NODES
+    {
+        if live[e as size_t]
+        {
+            let mp Page.allocate_page()
+            let m mp.allocate(sizeof JobMsg, alignof JobMsg) as pointer[JobMsg]
+            m.pass := 0 as i64
+            m.tile := 0 - 1 as i64
+            Cluster.send(peers[e as size_t], JOB, m as pointer[void])
+        }
+        e := e + 1
+    }
+    e := 1
+    while e <= NODES
+    {
+        if live[e as size_t]
+            Cluster.disconnect(peers[e as size_t] as ref[NodePeer])
+        else
+            Cluster.dispose_peer(peers[e as size_t] as ref[NodePeer])
+        e := e + 1
+    }
+    exit 0
+}
+
+; a node that renders
+var peer Cluster.connect("127.0.0.1", PORT)
+var tries 0
+while peer = null
+{
+    tries := tries + 1
+    if tries > 200
+        exit 3
+    poll(null as pointer[pollfd], 0, 50)
+    peer := Cluster.connect("127.0.0.1", PORT)
+}
+let hp Page.allocate_page()
+let hello hp.allocate(sizeof HelloMsg, alignof HelloMsg) as pointer[HelloMsg]
+hello.rank := RANK as i64
+Cluster.send(peer, HELLO, hello as pointer[void])
+let jobs Cluster.channel(peer, JOB)
+print "W`RANK`: ready"
+var rendered 0
+repeat
+{
+    let raw Channel.receive(jobs)
+    if raw = null
+        break
+    let rr raw as pointer[ReceivedRegion]
+    let jm rr.root as pointer[JobMsg]
+    rr.fix_graph(jm)
+    let pass jm.pass as int
+    let tile jm.tile as int
+    Cluster.dispose_message(rr)
+    if tile < 0
+        break
+    let mp Page.allocate_page()
+    let m mp.allocate(sizeof TileMsg, alignof TileMsg) as pointer[TileMsg]
+    m.pass := pass as i64
+    m.tile := tile as i64
+    m.rank := RANK as i64
+    let out Vector[i64]^mp((TILE * TILE * 3) as size_t)
+    m.sums := out
+    let t0 scaly_eio_now_ns()
+    render(farm, pass, tile, out)
+    m.ms := (scaly_eio_now_ns() - t0) / 1000000
+    Cluster.send(peer, DONE, m as pointer[void])
+    rendered := rendered + 1
+}
+print "W`RANK`: rendered `rendered`"
+Cluster.disconnect(peer)
+exit 0
