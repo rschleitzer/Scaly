@@ -12793,6 +12793,112 @@ define Planner
             out_ref
         }
 
+        ; fit_number_components: a number in a positional construction takes
+        ; its field's type, as an argument takes its parameter's
+        ; (plan_call_args#). A floating-point value of the other width: a
+        ; literal is retyped, anything else converted -- before 2026-11-13 the
+        ; path took either as it stood, and `V3(1.0, 0.0, 0.5)` with f32
+        ; fields stored the eight bytes of a double into each four-byte field
+        ; (the next field's bits, and past the record's end), the type check
+        ; accepting it, floats being one family. An integer literal is settled
+        ; to the field's width (settle_constant#: rc 4 where it does not fit)
+        ; instead of being cut at the store -- a kernel (GpuKernel) reads the
+        ; plan's types, and `Ray(o, d, 0)` held a 64-bit 0 for an i32 field.
+        ; Positional like coerce_string_components_to_cstr#, whose shape this
+        ; is; the vector is rebuilt only where a component changed.
+        procedure fit_number_components(
+            mutable this: Planner,
+            mutable struct_name: String,
+            comps: ref[Vector[PlannedComponent]]?
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            if comps = null
+                return comps
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return comps
+            let c (*concept_ref)
+            var out_ref: ref[Vector[PlannedComponent]]? comps
+            choose c.definition
+                when s: Structure
+                {
+                    let cv (*comps)
+                    var changed: bool false
+                    var built Array[PlannedComponent]()
+                    var ci: size_t 0
+                    while ci < cv.length
+                    {
+                        let cp cv.get ci
+                        if cp <> null
+                        {
+                            let cc (*cp)
+                            var nc_value: ref[Vector[PlannedOperand]]? cc.value
+                            if cc.name = null and cc.value <> null and ci < s.properties.length
+                            {
+                                let prop_ptr s.properties.get ci
+                                if prop_ptr <> null and prop_ptr.type <> null
+                                {
+                                    let ft this.plan_type((*prop_ptr.type))
+                                    let vals (*cc.value)
+                                    if Planner.type_is_integer_like(ft) and vals.length = 1 and Planner.constant_type_is_untyped(ft) = false
+                                    {
+                                        let ivp vals.get 0
+                                        if ivp <> null
+                                        {
+                                            let ia (*ivp)
+                                            if this.operand_is_integer_constant(ia) and Planner.types_equal(ia.result_type, ft) = false
+                                            {
+                                                var int_arr Array[PlannedOperand]()
+                                                int_arr.add(this.settle_constant(ia, ft))
+                                                var int_vec Vector[PlannedOperand](int_arr)
+                                                nc_value := &int_vec
+                                                changed := true
+                                            }
+                                        }
+                                    }
+                                    if Planner.type_is_float_like(ft) and vals.length = 1
+                                    {
+                                        let vp vals.get 0
+                                        if vp <> null
+                                        {
+                                            let a (*vp)
+                                            let at a.result_type
+                                            if Planner.type_is_float_like(at) and Planner.normalize_type_name(ft.name) <> Planner.normalize_type_name(at.name)
+                                            {
+                                                var one_arr Array[PlannedOperand]()
+                                                if this.operand_is_float_constant(a)
+                                                    one_arr.add(this.retype_float_operand(a, ft))
+                                                else
+                                                {
+                                                    let fcast PlannedAs(a.loc, ft, &^this a)
+                                                    one_arr.add(PlannedOperand(a.loc, PlannedExpression.As fcast, null, ft))
+                                                }
+                                                var one_vec Vector[PlannedOperand](one_arr)
+                                                nc_value := &one_vec
+                                                changed := true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            built.add(PlannedComponent(
+                                cc.loc, cc.name, nc_value, cc.attributes
+                            ))
+                        }
+                        ci := ci + 1
+                    }
+                    if changed
+                    {
+                        var built_vec Vector[PlannedComponent](built)
+                        out_ref := &built_vec
+                    }
+                    0
+                }
+                else
+                    0
+            out_ref
+        }
+
         ; A `ref[T]` component filling a field declared `T` is the VALUE, as a
         ; `ref[T]` argument into a `T` parameter is (deref_ref_into_pointee#):
         ; the same construction through an init# of that arity has always read
@@ -13037,6 +13143,10 @@ define Planner
             if at.variable <> null
                 return
             if Planner.type_mentions_generic_param(at)
+                return
+
+            ; a float of the other width was converted (fit_number_components#)
+            if Planner.type_is_float_like(ft) and Planner.type_is_float_like(at)
                 return
 
             ; ★★★The acceptor is type_conformance_accepted# MINUS its class 8,
@@ -18749,6 +18859,7 @@ define Planner
                             ; own literal is covered by the same walk.
                             components_holder := this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
                             components_holder := this.deref_ref_components(fn_name, components_holder)
+                            components_holder := this.fit_number_components(fn_name, components_holder)
 
                             ; The type check for this path. AFTER the coercion
                             ; above, whose whole job is to give a String

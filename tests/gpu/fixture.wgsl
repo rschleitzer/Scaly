@@ -127,8 +127,36 @@ gpu-wgsl: tests/gpu-plan/fixture.scaly:81:1: no kernel for webgpu: kernel (metal
 gpu-wgsl: tests/gpu-plan/fixture.scaly:86:1: no kernel: e is a Vector[double]
 gpu-wgsl: tests/gpu-plan/fixture.scaly:91:1: no kernel: down is recursive
 gpu-wgsl: tests/gpu-plan/fixture.scaly:96:1: no kernel: blocked: extern call toupper
-gpu-wgsl: tests/gpu-plan/fixture.scaly:101:1: no kernel: text_of allocates or throws
-gpu-wgsl: tests/gpu-plan/fixture.scaly:109:1: no kernel: builds a Pair
+gpu-wgsl: tests/gpu-plan/fixture.scaly:101:1: no kernel: in text_of: the result is a String
+gpu-wgsl: tests/gpu-plan/fixture.scaly:109:1: kernel
+struct s0
+{
+    m0: i32,
+    m1: i32,
+}
+@group(0) @binding(0) var<storage, read> U: array<u32>;
+@group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
+@group(0) @binding(2) var<storage, read_write> o0: array<i32>;
+@compute @workgroup_size(64)
+fn k(@builtin(global_invocation_id) id: vec3<u32>)
+{
+    let gid: u32 = id.x + id.y * U[2];
+    if (gid >= U[1]) { return; }
+    var F: u32 = 0u;
+    let u0: i32 = bitcast<i32>(U[0]);
+    let v0: u32 = gid;
+    for (var once: u32 = 0u; once < 1u; once++)
+    {
+        let t0: s0 = s0(i32(v0), u0);
+        let v1: s0 = t0;
+        let t1: i32 = v1.m0;
+        let t2: i32 = v1.m1;
+        let t3: i32 = i32(u32(t1) + u32(t2));
+        o0[gid] = t3;
+    }
+    if (F != 0u) { atomicStore(&FLT[0], 1u); }
+}
+
 gpu-wgsl: tests/gpu-plan/fixture.scaly:117:1: kernel
 fn f0(p0: i32, F: ptr<function, u32>) -> i32
 {

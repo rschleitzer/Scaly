@@ -1,0 +1,33 @@
+; A floating-point component of the other width in a positional
+; construction takes its field's: a literal is retyped, a value converted.
+; Before, `V3(1.0, 0.0, 0.5)` with f32 fields stored the eight bytes of a
+; double into each four-byte field (x read 0, z 0, dot 0).
+
+define V3
+(
+    x: f32
+    y: f32
+    z: f32
+)
+
+define Wide
+(
+    a: f64
+    b: f32
+)
+
+function dot(a: V3, b: V3) returns f32
+    a.x * b.x + a.y * b.y + a.z * b.z
+
+let d V3(1.0, 0.0, 0.5)
+let big: f64 2.25
+let small: f32 0.75
+let w Wide(small, big)
+var ok d.x = 1.0 and d.y = 0.0 and d.z = 0.5 and dot(d, d) = 1.25
+ok := ok and w.a = 0.75 and w.b = 2.25
+let n V3(0.0 - 0.5, big, 1.0)
+ok := ok and n.x = -0.5 and n.y = 2.25 and n.z = 1.0
+if ok
+    print "PASS"
+else
+    print "FAIL"

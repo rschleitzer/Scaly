@@ -104,7 +104,7 @@ for i in n
     h.put(i as size_t, s.length())
 }
 
-; no kernel: a record
+; both backends: a record of numbers, built and read field by field
 var r Vector[i32](n as size_t)
 for i in n
 {

@@ -1,0 +1,98 @@
+; Records and tuples of numbers in a `relaxed` loop, under WebGPU: the same
+; rays as tests/gpu/records.scaly, once where rounding is the processor's
+; and once relaxed. The floating-point results must lie within a tolerance
+; of each other, the whole numbers must be equal.
+; cards-min: 1
+
+function sqrtf(x: f32) returns f32 extern
+
+define V3
+(
+    x: f32
+    y: f32
+    z: f32
+)
+
+define Ray
+(
+    o: V3
+    d: V3
+    bounces: i32
+)
+
+define Box
+(
+    w: i32
+    h: i32
+)
+
+function plus(a: V3, b: V3) returns V3
+    V3(a.x + b.x, a.y + b.y, a.z + b.z)
+
+function scaled(a: V3, k: f32) returns V3
+    V3(a.x * k, a.y * k, a.z * k)
+
+function dot(a: V3, b: V3) returns f32
+    a.x * b.x + a.y * b.y + a.z * b.z
+
+function unit(a: V3) returns V3
+    scaled(a, 1.0 / sqrtf(dot(a, a)))
+
+function step(r: Ray) returns Ray
+    Ray(plus(r.o, r.d), unit(plus(r.d, V3(0.0, 0.5, 0.25))), r.bounces + 1)
+
+function parts(v: V3) returns (whole: i32, rest: f32)
+{
+    let s v.x + v.y + v.z
+    let w s as i32
+    (whole: w, rest: s - (w as f32))
+}
+
+function traced(i: size_t, box: Box) returns (x: f32, w: i32)
+{
+    var r Ray(V3((i as f32) * 0.01, 0.0, 1.0), unit(V3(1.0, (i as f32) * 0.001, 0.5)), 0)
+    while r.bounces < box.h / 8
+        r := step(r)
+    let pick if r.o.x > (box.w as f32): r.o else r.d
+    let p parts(pick)
+    (x: p.rest + pick.y, w: p.whole + r.bounces)
+}
+
+let box Box(64, 40)
+let n: size_t 2048
+var xs Vector[f32](n)
+var ws Vector[i32](n)
+for i in n
+{
+    let t traced(i, box)
+    xs.put(i, t.x)
+    ws.put(i, t.w)
+}
+var lx Vector[f32](n)
+var lw Vector[i32](n)
+relaxed for i in n
+{
+    var r Ray(V3((i as f32) * 0.01, 0.0, 1.0), unit(V3(1.0, (i as f32) * 0.001, 0.5)), 0)
+    while r.bounces < box.h / 8
+        r := step(r)
+    let pick if r.o.x > (box.w as f32): r.o else r.d
+    let p parts(pick)
+    lx.put(i, p.rest + pick.y)
+    lw.put(i, p.whole + r.bounces)
+}
+
+var off 0
+var same true
+var k: size_t 0
+while k < n
+{
+    var d (xs[k] as f64) - (lx[k] as f64)
+    if d < 0.0
+        d := 0.0 - d
+    if d > 0.00001
+        off := off + 1
+    if ws[k] <> lw[k]
+        same := false
+    k := k + 1
+}
+print "`off` beyond the tolerance, the whole numbers equal: `same`"

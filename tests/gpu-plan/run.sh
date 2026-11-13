@@ -23,12 +23,13 @@ check "report rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^gpu-plan:')
 check "report matches fixture.expected" 'diff <(printf "%s\n" "$got") tests/gpu-plan/fixture.expected >/dev/null'
 check "nothing but the report is printed" '[ "$out" = "$got" ]'
-check "head counts loops, parallel ones and kernels" 'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 16 for-loops, 14 parallel, 8 kernels$"'
+check "head counts loops, parallel ones and kernels" 'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 16 for-loops, 14 parallel, 9 kernels$"'
 
 # The kernels: both backends where the body computes in 32 bits.
 check "i32 body, counter cast away: both backends"   'line 61 | grep -q "kernel (metal, webgpu): out a; in k; calls triple$"'
 check "inner counted loop and a buffer read: both"   'line 66 | grep -q "kernel (metal, webgpu): out b; in a$"'
 check "Slice parameter and a ref out parameter"      'line 49 | grep -q "kernel (metal, webgpu): out out; in k, xs$"'
+check "a record of numbers, built and read"           'line 109 | grep -q "kernel (metal, webgpu): out r; in k$"'
 check "program constant, a length, an if value"      'line 117 | grep -q "kernel (metal, webgpu): out q; in k, a.length, a; calls capped$"'
 # Metal alone: a 64-bit integer, and floating point without `relaxed`.
 check "64-bit integer: metal only"                   'line 76 | grep -q "kernel (metal): .*not webgpu: .*64-bit integer"'
@@ -37,8 +38,7 @@ check "floating point, not relaxed: metal only"      'line 81 | grep -q "kernel 
 # No kernel, each for its own reason.
 check "double"                                       'line 86 | grep -q "no kernel: e is a Vector\[double\]$"'
 check "recursion"                                    'line 91 | grep -q "no kernel: down is recursive$"'
-check "a String"                                     'line 101 | grep -q "no kernel: text_of allocates or throws$"'
-check "a record"                                     'line 109 | grep -q "no kernel: builds a Pair$"'
+check "a String"                                     'line 101 | grep -q "no kernel: in text_of: the result is a String$"'
 # A reduction is a kernel: the card gives each round's part, the processor folds.
 check "a reduction into an outer name"               'line 125 | grep -q "kernel (metal, webgpu): reduces total; in a$"'
 check "a put beside the counter"                     'line 130 | grep -q "no kernel: a put at another index"'
@@ -49,7 +49,7 @@ check "a printing loop: blocked"                     'line 138 | grep -q "no ker
 # An inner loop is a loop of its own and never a kernel beside its outer one.
 check "the inner loop is reported for itself"        'line 69 | grep -q "kernel (metal, webgpu): reduces s; in i, a$"'
 n=$(printf '%s\n' "$got" | grep -c ': kernel (')
-check "eight kernels listed (got $n)" '[ "$n" = "8" ]'
+check "nine kernels listed (got $n)" '[ "$n" = "9" ]'
 
 # The task plan's report, which checked transcripts print, is not touched.
 tp=$("$STAGE" --task-plan "$FIX" 2>&1)

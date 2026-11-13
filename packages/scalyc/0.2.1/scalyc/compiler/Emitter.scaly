@@ -18773,6 +18773,7 @@ define Emitter
             var gk GpuKernel.GpuKernel()
             gk.plan_functions := plan.functions
             gk.plan_globals := plan.globals
+            gk.plan_structures := plan.structures
             ; the reductions promote_for# just found for THIS loop
             gk.set_reductions(&parfor_checker.red_names, &parfor_checker.red_ops, 0, parfor_checker.red_names.length)
             gk.classify_loop(for_expr)

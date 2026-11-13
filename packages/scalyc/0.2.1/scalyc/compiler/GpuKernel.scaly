@@ -5,7 +5,9 @@
 ; is a KERNEL: code a shading language can say, over data a card can hold.
 ; This pass decides that per loop and collects what an emitter needs:
 ;   - the body computes with bool, i32, u32 and f32 only; i64 and u64 are
-;     taken by a backend that has them (Metal), double by none;
+;     taken by a backend that has them (Metal), double by none; and with
+;     records and tuples of such numbers (and of such records), which it
+;     builds, hands on and reads field by field -- a struct of the source;
 ;   - it reads scalars of its environment (the kernel's UNIFORMS) and
 ;     elements of a Vector, Slice or Array of such numbers (its BUFFERS);
 ;   - it writes with `put` at exactly the loop's counter into a Vector of
@@ -15,11 +17,12 @@
 ;     at the operation's identity as on the processor, and the kernel gives
 ;     one such number per round; the processor folds them in the rounds'
 ;     order, which is its own order, bit for bit;
-;   - the functions it calls take and answer such scalars, are not
+;   - the functions it calls take and answer such values, are not
 ;     recursive, allocate nothing and are kernels themselves -- they are
 ;     listed callees first, the order a shading language wants them in;
-;   - nothing in it allocates, builds a record or a String, or leaves the
-;     loop early.
+;     `sqrtf` is the card's own square root;
+;   - nothing in it allocates, builds a String or a record on a page, or
+;     leaves the loop early.
 ; The loop's own counter and a scalar of the environment are exempt from
 ; the 64-bit rule where they are narrowed on the spot: as the operand of a
 ; cast to a 32-bit type or as an index. The count of rounds itself is
@@ -58,6 +61,7 @@ define GpuKernel
 
         var plan_functions: ref[Vector[PlannedFunction]]?
         var plan_globals: ref[Vector[PlannedGlobal]]?
+        var plan_structures: ref[Vector[PlannedStructure]]?
 
         ; The verdict of the loop being classified. k_reason is the first
         ; blocker; k_wide_reason the first use of a 64-bit integer, which
@@ -112,6 +116,16 @@ define GpuKernel
         k_functions: Array[String]
         k_function_names: Array[String]
         fn_stack: Array[String]
+        ; The records it computes with -- a record of the program or a
+        ; tuple, every field a card's number or such a record --, a field's
+        ; record before the record holding it: the type's symbol, and where
+        ; its fields begin in the field lists and how many it has. A
+        ; record's kind is 100 + its place here (kind#).
+        k_records: Array[String]
+        k_record_from: Array[size_t]
+        k_record_count: Array[size_t]
+        k_field_names: Array[String]
+        k_field_kinds: Array[int]
     )
     {
         init()
@@ -124,6 +138,7 @@ define GpuKernel
             kernels := 0
             plan_functions := null
             plan_globals := null
+            plan_structures := null
             k_blocked := false
             k_reason := String^this("")
             k_wide := false
@@ -154,6 +169,11 @@ define GpuKernel
             k_functions := Array[String]^this()
             k_function_names := Array[String]^this()
             fn_stack := Array[String]^this()
+            k_records := Array[String]^this()
+            k_record_from := Array[size_t]^this()
+            k_record_count := Array[size_t]^this()
+            k_field_names := Array[String]^this()
+            k_field_kinds := Array[int]^this()
         }
 
         ; ================================================================
@@ -165,6 +185,7 @@ define GpuKernel
         {
             plan_functions := plan.functions
             plan_globals := plan.globals
+            plan_structures := plan.structures
             var i: size_t 0
             while i < tp.report_fors.length
             {
@@ -274,6 +295,11 @@ define GpuKernel
             k_functions.length := 0
             k_function_names.length := 0
             fn_stack.length := 0
+            k_records.length := 0
+            k_record_from.length := 0
+            k_record_count.length := 0
+            k_field_names.length := 0
+            k_field_kinds.length := 0
             if fr.is_iterator_loop
             {
                 this.block("iterates a collection")
@@ -522,8 +548,7 @@ define GpuKernel
             let kind GpuKernel.scalar_kind(t)
             if kind = 0
             {
-                let msg "`what` is a `GpuKernel.type_text(t)`"
-                this.block(msg)
+                this.take_record(t, what)
                 return
             }
             if kind = 7
@@ -536,6 +561,261 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind)
                 this.note_wide(what)
+        }
+
+        ; ================================================================
+        ; Records
+        ; ================================================================
+
+        ; The kind of a type as the kernel knows it: a card's number, a
+        ; record it took (100 + its place), 0 for anything else.
+        function kind(this: GpuKernel, t: PlannedType) returns int
+        {
+            let k GpuKernel.scalar_kind(t)
+            if k > 0
+                return k
+            let i GpuKernel.index_of(&k_records, t.mangled_name)
+            if i >= 0
+                return 100 + i
+            0
+        }
+
+        ; Where the record of that type is in the plan; -1 for a generic
+        ; one, a union or any other type.
+        function structure_index(this: GpuKernel, t: PlannedType) returns int
+        {
+            if t.generics <> null and t.generics.length > 0
+                return 0 - 1
+            if t.array_size.get_length() > 0
+                return 0 - 1
+            let ss: ref[Vector[PlannedStructure]]? plan_structures
+            if ss = null
+                return 0 - 1
+            var i: size_t 0
+            while i < ss.length
+            {
+                let s_ptr ss.get i
+                if s_ptr <> null and s_ptr.mangled_name = t.mangled_name
+                {
+                    if s_ptr.properties = null or s_ptr.properties.length = 0
+                        return 0 - 1
+                    return i as int
+                }
+                i := i + 1
+            }
+            0 - 1
+        }
+
+        ; Is t a record or a tuple a card holds -- every field a card's
+        ; number or such a record? "" where it is, else why not.
+        function record_misfit(this: GpuKernel, t: PlannedType, what: String, depth: int) returns String
+        {
+            let plain "`what` is a `GpuKernel.type_text(t)`"
+            if depth > 8
+                return plain
+            if t.name = "(,)"
+            {
+                if t.generics = null or t.generics.length = 0
+                    return plain
+                var gi: size_t 0
+                while gi < t.generics.length
+                {
+                    let g_ptr t.generics.get gi
+                    if g_ptr = null
+                        return plain
+                    let why this.field_misfit(g_ptr.unwrap(), what, t, "", depth)
+                    if why.get_length() > 0
+                        return why
+                    gi := gi + 1
+                }
+                return ""
+            }
+            let si this.structure_index(t)
+            if si < 0
+                return plain
+            let ss: ref[Vector[PlannedStructure]]? plan_structures
+            let s_ptr ss.get(si as size_t)
+            let props s_ptr.properties
+            var pi: size_t 0
+            while pi < props.length
+            {
+                let p_ptr props.get pi
+                if p_ptr = null
+                    return plain
+                let why this.field_misfit(p_ptr.prop_type, what, t, p_ptr.name, depth)
+                if why.get_length() > 0
+                    return why
+                pi := pi + 1
+            }
+            ""
+        }
+
+        function field_misfit(this: GpuKernel, ft: PlannedType, what: String, t: PlannedType, field: String, depth: int) returns String
+        {
+            let fk GpuKernel.scalar_kind(ft)
+            if fk = 7
+                return "`what` is a `GpuKernel.type_text(t)`, which holds a double"
+            if fk > 0
+                return ""
+            let inner this.record_misfit(ft, what, depth + 1)
+            if inner.get_length() > 0
+                return "`what` is a `GpuKernel.type_text(t)`"
+            ""
+        }
+
+        ; Take a record or a tuple into the kernel, the records of its
+        ; fields first: its kind, or 0 after blocking.
+        procedure take_record(mutable this: GpuKernel, t: PlannedType, what: String) returns int
+        {
+            if k_blocked
+                return 0
+            let known this.kind(t)
+            if known >= 100
+                return known
+            let why this.record_misfit(t, what, 0)
+            if why.get_length() > 0
+            {
+                this.block(why)
+                return 0
+            }
+            var names Array[String]()
+            var kinds Array[int]()
+            if t.name = "(,)"
+            {
+                var gi: size_t 0
+                while gi < t.generics.length
+                {
+                    let g_ptr t.generics.get gi
+                    var tag String("")
+                    if t.labels <> null and gi < t.labels.length
+                    {
+                        let l_ptr t.labels.get gi
+                        if l_ptr <> null
+                            tag := String((*l_ptr))
+                    }
+                    names.add tag
+                    kinds.add(this.field_kind(g_ptr.unwrap(), what))
+                    gi := gi + 1
+                }
+            }
+            else
+            {
+                let ss: ref[Vector[PlannedStructure]]? plan_structures
+                let s_ptr ss.get(this.structure_index(t) as size_t)
+                let props s_ptr.properties
+                var pi: size_t 0
+                while pi < props.length
+                {
+                    let p_ptr props.get pi
+                    names.add(String(p_ptr.name))
+                    kinds.add(this.field_kind(p_ptr.prop_type, what))
+                    pi := pi + 1
+                }
+            }
+            if k_blocked
+                return 0
+            k_record_from.add k_field_names.length
+            k_record_count.add names.length
+            var fi: size_t 0
+            while fi < names.length
+            {
+                let n_copy String^this(names[fi])
+                k_field_names.add n_copy
+                k_field_kinds.add(kinds[fi])
+                fi := fi + 1
+            }
+            let sym_copy String^this(t.mangled_name)
+            k_records.add sym_copy
+            100 + ((k_records.length - 1) as int)
+        }
+
+        ; A field's kind, a record taken first; what its numbers cost.
+        procedure field_kind(mutable this: GpuKernel, ft: PlannedType, what: String) returns int
+        {
+            let fk GpuKernel.scalar_kind(ft)
+            if fk = 0
+                return this.take_record(ft, what)
+            if fk = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(fk)
+                this.note_wide(what)
+            fk
+        }
+
+        ; The field of record kind `kind` that a member access reads: its
+        ; place in the field lists, -1 where there is none. A record's field
+        ; is found by its name, a tuple's by its position.
+        function field_at(this: GpuKernel, kind: int, ma: PlannedMemberAccess) returns int
+        {
+            if kind < 100
+                return 0 - 1
+            let ri (kind - 100) as size_t
+            if ri >= k_records.length
+                return 0 - 1
+            let from k_record_from[ri]
+            let count k_record_count[ri]
+            var i: size_t 0
+            while i < count
+            {
+                if k_field_names[from + i] = ma.name
+                    return (from + i) as int
+                i := i + 1
+            }
+            if ma.parent_type.name = "(,)" and ma.field_index < count
+                return (from + ma.field_index) as int
+            0 - 1
+        }
+
+        ; The members an operand reads off a record value: fields, each of
+        ; a type the kernel takes.
+        procedure k_members(mutable this: GpuKernel, op: PlannedOperand, what: String)
+        {
+            if GpuKernel.has_members(op) = false
+                return
+            var i: size_t 0
+            while i < op.member_access.length
+            {
+                if k_blocked
+                    return
+                let ma_ptr op.member_access.get i
+                if ma_ptr = null
+                    return
+                let ma ma_ptr.unwrap()
+                if ma.is_method or ma.is_union_value or this.field_at(this.kind(ma.parent_type), ma) < 0
+                {
+                    this.block_named("reads a member of ", what)
+                    return
+                }
+                this.check_value_type(ma.result_type, ma.name)
+                i := i + 1
+            }
+        }
+
+        ; `sqrtf`: a function of the card's own, by the extern's name.
+        function builtin_of(this: GpuKernel, call: PlannedCall) returns String
+        {
+            if call.name <> "sqrtf" or call.args = null or call.args.length <> 1
+                return ""
+            if GpuKernel.scalar_kind(call.result_type) <> 4
+                return ""
+            let fns: ref[Vector[PlannedFunction]]? plan_functions
+            if fns = null
+                return ""
+            var i: size_t 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null and f_ptr.mangled_name = call.mangled_name
+                {
+                    choose f_ptr.impl
+                        when ext: Extern
+                            return "sqrt"
+                        else
+                            return ""
+                }
+                i := i + 1
+            }
+            ""
         }
 
         ; ================================================================
@@ -718,12 +998,8 @@ define GpuKernel
                     this.k_global(g, op, narrowed)
                 when call: Call
                 {
-                    if GpuKernel.has_members(op)
-                    {
-                        this.block_named("reads a member of what it gets from ", call.name)
-                        return
-                    }
                     this.k_call(call)
+                    this.k_members(op, "what it gets from `call.name`")
                 }
                 when as_expr: As
                 {
@@ -736,9 +1012,15 @@ define GpuKernel
                 }
                 when tp: Tuple
                 {
-                    if GpuKernel.has_members(op) or GpuKernel.is_grouping(tp) = false
+                    if GpuKernel.is_grouping(tp) = false
                     {
-                        this.block_named("builds a ", GpuKernel.type_text(tp.tuple_type))
+                        this.k_construction(tp)
+                        this.k_members(op, "a record it builds")
+                        return
+                    }
+                    if GpuKernel.has_members(op)
+                    {
+                        this.block("reads a member of a grouping")
                         return
                     }
                     let c_ptr tp.components.get 0
@@ -885,7 +1167,7 @@ define GpuKernel
             {
                 if GpuKernel.has_members(op)
                 {
-                    this.block_named("reads a member of ", v.name)
+                    this.k_members(op, v.name)
                     return
                 }
                 ; a local was judged where it was bound; a counter is 64
@@ -964,7 +1246,7 @@ define GpuKernel
                         }
                     }
                 }
-                this.block_named("reads a member of ", name)
+                this.k_uniform_field(name, op, narrowed)
                 return
             }
             let kind GpuKernel.scalar_kind(t)
@@ -987,6 +1269,97 @@ define GpuKernel
             {
                 k_uniform_ops.add op
                 k_uniform_kinds.add kind
+            }
+        }
+
+        ; A field of a record of the environment (`box.h`, `f.tile.w`): a
+        ; scalar of its own, named by the whole chain.
+        procedure k_uniform_field(mutable this: GpuKernel, name: String, op: PlannedOperand, narrowed: bool)
+        {
+            var chain StringBuilder()
+            chain.append name
+            var i: size_t 0
+            while i < op.member_access.length
+            {
+                let ma_ptr op.member_access.get i
+                if ma_ptr = null
+                    return
+                let ma ma_ptr.unwrap()
+                if ma.is_method or ma.is_union_value or (ma.parent_type.name <> "(,)" and this.structure_index(ma.parent_type) < 0)
+                {
+                    this.block_named("reads a member of ", name)
+                    return
+                }
+                chain.append("." as char)
+                chain.append ma.name
+                i := i + 1
+            }
+            let full chain.to_string()
+            let last_ptr op.member_access.get(op.member_access.length - 1)
+            if last_ptr = null
+                return
+            let lt last_ptr.unwrap().result_type
+            let kind GpuKernel.scalar_kind(lt)
+            if kind = 0
+            {
+                let msg "uses `full`, a `GpuKernel.type_text(lt)`, as a whole"
+                this.block(msg)
+                return
+            }
+            if kind = 7
+            {
+                this.block_named("computes in double: ", full)
+                return
+            }
+            if kind = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(kind) and narrowed = false
+                this.note_wide(full)
+            if this.note_name(&k_uniforms, &k_uniform_types, full, lt)
+            {
+                k_uniform_ops.add op
+                k_uniform_kinds.add kind
+            }
+        }
+
+        ; A record or a tuple built in the round: a value of the kernel's,
+        ; its components in the order of its fields.
+        procedure k_construction(mutable this: GpuKernel, tp: PlannedTuple)
+        {
+            ; Where the processor puts it -- the frame, or a page the planner
+            ; chose because a value built of it outlives the call -- does not
+            ; matter on the card: a record of numbers is copied, never
+            ; pointed at (an address is refused where it is taken).
+            let rk this.take_record(tp.tuple_type, "a record it builds")
+            if rk < 100
+                return
+            let count k_record_count[(rk - 100) as size_t]
+            if tp.components = null or tp.components.length <> count
+            {
+                this.block_named("builds a record of another count of parts: ", GpuKernel.type_text(tp.tuple_type))
+                return
+            }
+            var i: size_t 0
+            while i < tp.components.length
+            {
+                let c_ptr tp.components.get i
+                if c_ptr = null
+                    return
+                let c c_ptr.unwrap()
+                ; a record's components stand in its fields' order, named
+                ; ones put there by the planner; a tuple's are its own
+                if c.name <> null and tp.tuple_type.name <> "(,)"
+                {
+                    this.block_named("builds a record by names: ", GpuKernel.type_text(tp.tuple_type))
+                    return
+                }
+                if c.value = null or c.value.length <> 1
+                {
+                    this.block("a part of a record that is no single value")
+                    return
+                }
+                this.k_operands(c.value, false)
+                i := i + 1
             }
         }
 
@@ -1310,6 +1683,11 @@ define GpuKernel
             }
             if k_blocked
                 return
+            if this.builtin_of(call).get_length() > 0
+            {
+                this.check_value_type(call.result_type, call.name)
+                return
+            }
             if GpuKernel.index_of(&k_functions, call.mangled_name) >= 0
                 return
             if GpuKernel.index_of(&fn_stack, call.mangled_name) >= 0
@@ -1319,9 +1697,13 @@ define GpuKernel
                 this.block_named(call.name, " is recursive")
                 return
             }
-            if call.requires_page_param or call.can_throw
+            ; a caller page alone is no allocation: a function answering a
+            ; record by value is given one (the planner's rule 1 answers yes
+            ; where it cannot see that nothing lands there), and the walk of
+            ; its body refuses whatever would be built on it
+            if call.can_throw
             {
-                this.block_named(call.name, " allocates or throws")
+                this.block_named(call.name, " throws")
                 return
             }
             if plan_functions = null
@@ -1363,8 +1745,8 @@ define GpuKernel
             let stack_copy String^this(func.mangled_name)
             fn_stack.add stack_copy
 
-            if func.page_parameter <> null or func.can_throw
-                this.block("allocates or throws")
+            if func.can_throw
+                this.block("throws")
             if func.return_type = null
                 this.block("answers nothing")
             if func.return_type <> null

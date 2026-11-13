@@ -32,7 +32,8 @@
 ; The names of the source are generated: u<i> a scalar of the environment,
 ; n<i> the length of input i, b<i> an input, o<i> an output, v<n> a name
 ; the program binds, t<n> a value on its way, p<i> a parameter, f<i> a
-; function.
+; function, s<i> a record or a tuple (GpuKernel's kind 100 + i) and m<j>
+; its field j.
 ;
 ; THE SECOND DIALECT. The same walk writes the kernel in WGSL, the shading
 ; language of WebGPU (m_wgsl; `kernel_source_wgsl#`). What differs is said
@@ -145,6 +146,7 @@ define GpuMsl
         {
             gk.plan_functions := plan.functions
             gk.plan_globals := plan.globals
+            gk.plan_structures := plan.structures
             var i: size_t 0
             while i < tp.report_fors.length
             {
@@ -235,6 +237,7 @@ define GpuMsl
         {
             this.begin_kernel(true)
             var out StringBuilder()
+            this.records(&out, gk)
 
             var fi: size_t 0
             while fi < gk.k_functions.length
@@ -353,7 +356,7 @@ define GpuMsl
                 this.refuse("a count of rounds that is no single value")
                 return ""
             }
-            let ck GpuMsl.planned_kind((*fr.expr)[0])
+            let ck GpuMsl.planned_kind(gk, (*fr.expr)[0])
             if GpuKernel.GpuKernel.kind_is_integer(ck) = false
             {
                 this.refuse("a count of rounds that is no integer")
@@ -470,6 +473,7 @@ define GpuMsl
 
             var out StringBuilder()
             out.append "#include <metal_stdlib>\nusing namespace metal;\n#pragma METAL fp math_mode(safe)\n#pragma METAL fp contract(off)\n"
+            this.records(&out, gk)
 
             ; the functions, a callee before its caller
             var fi: size_t 0
@@ -578,7 +582,7 @@ define GpuMsl
                 this.refuse("a count of rounds that is no single value")
                 return ""
             }
-            let ck GpuMsl.planned_kind((*fr.expr)[0])
+            let ck GpuMsl.planned_kind(gk, (*fr.expr)[0])
             if GpuKernel.GpuKernel.kind_is_integer(ck) = false
             {
                 this.refuse("a count of rounds that is no integer")
@@ -632,6 +636,8 @@ define GpuMsl
 
         function type_name(kind: int) returns String
         {
+            if kind >= 100
+                return "s`kind - 100`"
             if kind = 1
                 return "bool"
             if kind = 2
@@ -651,7 +657,7 @@ define GpuMsl
         ; 64-bit integer: such a value is two words, each a u32.
         function ty(this: GpuMsl, kind: int) returns String
         {
-            if m_wgsl = false
+            if m_wgsl = false or kind >= 100
                 return GpuMsl.type_name(kind)
             if kind = 1
                 return "bool"
@@ -815,6 +821,8 @@ define GpuMsl
 
         function zero(kind: int) returns String
         {
+            if kind >= 100
+                return "s`kind - 100`{}"
             if kind = 1
                 return "false"
             if kind = 2
@@ -849,8 +857,8 @@ define GpuMsl
         }
 
         ; The kind the plan gives an operand: its last member's where it
-        ; reads one (the length of a buffer), else its own.
-        function planned_kind(op: PlannedOperand) returns int
+        ; reads one (the length of a buffer, a field), else its own.
+        function planned_kind(gk: ref[GpuKernel.GpuKernel], op: PlannedOperand) returns int
         {
             if op.member_access <> null and op.member_access.length > 0
             {
@@ -858,9 +866,136 @@ define GpuMsl
                 if ma_ptr = null
                     return 0
                 let ma ma_ptr.unwrap()
-                return GpuKernel.GpuKernel.scalar_kind(ma.result_type)
+                return gk.kind(ma.result_type)
             }
-            GpuKernel.GpuKernel.scalar_kind(op.result_type)
+            gk.kind(op.result_type)
+        }
+
+        ; A kind a value of the source can have: a number, or a record.
+        function is_value(kind: int) returns bool
+        {
+            if kind >= 100
+                return true
+            kind >= 1 and kind <= 6
+        }
+
+        ; The records, a field's before the record holding it: a struct
+        ; each, its fields m<j>.
+        procedure records(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel])
+        {
+            var ri: size_t 0
+            while ri < gk.k_records.length
+            {
+                let from gk.k_record_from[ri]
+                let count gk.k_record_count[ri]
+                if m_wgsl
+                    out.append "struct s`ri`\n{\n"
+                else
+                    out.append "struct s`ri`\n{\n"
+                var j: size_t 0
+                while j < count
+                {
+                    let fk gk.k_field_kinds[from + j]
+                    if this.refuse_pair(fk, "a field")
+                        return
+                    if m_wgsl
+                        out.append "    m`j`: `this.ty(fk)`,\n"
+                    else
+                        out.append "    `GpuMsl.type_name(fk)` m`j`;\n"
+                    j := j + 1
+                }
+                if m_wgsl
+                    out.append "}\n"
+                else
+                    out.append "};\n"
+                ri := ri + 1
+            }
+        }
+
+        ; The fields an operand reads off the record value `atom`, each a
+        ; value of its own.
+        procedure members(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], atom: String, op: PlannedOperand, depth: size_t) returns String
+        {
+            if m_refused
+                return ""
+            var at String(atom)
+            if GpuKernel.GpuKernel.has_members(op) = false
+                return at
+            let ind GpuMsl.indent_of(depth)
+            var i: size_t 0
+            while i < op.member_access.length
+            {
+                let ma_ptr op.member_access.get i
+                if ma_ptr = null
+                    return ""
+                let ma ma_ptr.unwrap()
+                let f gk.field_at(m_atom_kind, ma)
+                if ma.is_method or f < 0
+                {
+                    this.refuse_named("reads a member that is no field: ", ma.name)
+                    return ""
+                }
+                let from gk.k_record_from[(m_atom_kind - 100) as size_t]
+                let j (f as size_t) - from
+                let fk gk.k_field_kinds[f as size_t]
+                let t this.temp()
+                out.append(this.declare_value(ind, fk, t, "`at`.m`j`"))
+                at := String(t)
+                m_atom_kind := fk
+                i := i + 1
+            }
+            at
+        }
+
+        ; A record or a tuple built in the round, from its parts in the order
+        ; of its fields.
+        procedure construction(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], tp: PlannedTuple, depth: size_t) returns String
+        {
+            let rk gk.kind(tp.tuple_type)
+            if rk < 100 or tp.components = null
+            {
+                this.refuse("builds a record the kernel does not hold")
+                return ""
+            }
+            let from gk.k_record_from[(rk - 100) as size_t]
+            let count gk.k_record_count[(rk - 100) as size_t]
+            if tp.components.length <> count
+            {
+                this.refuse("builds a record of another count of parts")
+                return ""
+            }
+            var parts StringBuilder()
+            var i: size_t 0
+            while i < count
+            {
+                let c_ptr tp.components.get i
+                if c_ptr = null or c_ptr.value = null or c_ptr.value.length <> 1
+                {
+                    this.refuse("a part of a record that is no single value")
+                    return ""
+                }
+                let c c_ptr.unwrap()
+                let v this.operand(out, gk, (*c.value)[0], depth)
+                if m_refused
+                    return ""
+                let fitted this.fit(v, m_atom_kind, gk.k_field_kinds[from + i])
+                if m_refused
+                    return ""
+                if i > 0
+                    parts.append ", "
+                parts.append fitted
+                i := i + 1
+            }
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            let text parts.to_string()
+            if m_wgsl
+                out.append(this.declare_value(ind, rk, t, "s`rk - 100`(`text`)"))
+            else
+                out.append(this.declare_value(ind, rk, t, "s`rk - 100`{`text`}"))
+            m_atom_kind := rk
+            m_atom_high := String^this("")
+            t
         }
 
         ; A count of rounds the processor can compute twice without a
@@ -1005,6 +1140,8 @@ define GpuMsl
         {
             if m_wgsl = false
                 return GpuMsl.zero(kind)
+            if kind >= 100
+                return "s`kind - 100`()"
             if kind = 1
                 return "false"
             if kind = 2
@@ -1200,10 +1337,10 @@ define GpuMsl
                 return
             }
             let rt func.return_type
-            let rk GpuKernel.GpuKernel.scalar_kind((*rt))
-            if rk < 1 or rk > 6
+            let rk gk.kind((*rt))
+            if GpuMsl.is_value(rk) = false
             {
-                this.refuse_named(func.name, " answers no number of a card's")
+                this.refuse_named(func.name, " answers no value of a card's")
                 return
             }
             m_in_function := true
@@ -1232,10 +1369,10 @@ define GpuMsl
                             return
                         }
                         let pt p.item_type
-                        let pk GpuKernel.GpuKernel.scalar_kind((*pt))
-                        if pk < 1 or pk > 6
+                        let pk gk.kind((*pt))
+                        if GpuMsl.is_value(pk) = false
                         {
-                            this.refuse("a parameter that is no number of a card's")
+                            this.refuse("a parameter that is no value of a card's")
                             return
                         }
                         let pname (*p.name)
@@ -1266,7 +1403,7 @@ define GpuMsl
             ; line only where a path may come; Metal's always (its text
             ; stays as pinned)
             if m_returns = false or m_wgsl = false
-                out.append "    return `GpuMsl.zero(rk)`;\n"
+                out.append "    return `this.zero_of(rk)`;\n"
             out.append "}\n"
             this.end_scope(0)
             m_in_function := false
@@ -1493,11 +1630,11 @@ define GpuMsl
             if b.binding_item.item_type <> null
             {
                 let it b.binding_item.item_type
-                want := GpuKernel.GpuKernel.scalar_kind((*it))
+                want := gk.kind((*it))
             }
-            if want < 1 or want > 6
+            if GpuMsl.is_value(want) = false
             {
-                this.refuse_named("a name that is no number of a card's: ", name)
+                this.refuse_named("a name that is no value of a card's: ", name)
                 return
             }
             let fitted this.fit(value, have, want)
@@ -1734,10 +1871,10 @@ define GpuMsl
             if m_refused
                 return ""
             let have m_atom_kind
-            let want GpuMsl.planned_kind(op)
-            if have < 1 or have > 6 or want < 1 or want > 6
+            let want GpuMsl.planned_kind(gk, op)
+            if GpuMsl.is_value(have) = false or GpuMsl.is_value(want) = false
             {
-                this.refuse("a value that is no number of a card's")
+                this.refuse("a value that is no value of a card's")
                 return ""
             }
             let fitted this.fit(atom, have, want)
@@ -1765,12 +1902,8 @@ define GpuMsl
                     return this.global_value(gk, g, op)
                 when call: Call
                 {
-                    if GpuKernel.GpuKernel.has_members(op)
-                    {
-                        this.refuse_named("reads a member of what it gets from ", call.name)
-                        return ""
-                    }
-                    return this.call_value(out, gk, call, depth)
+                    let got this.call_value(out, gk, call, depth)
+                    return this.members(out, gk, got, op, depth)
                 }
                 when as_expr: As
                 {
@@ -1783,9 +1916,14 @@ define GpuMsl
                 }
                 when tp: Tuple
                 {
-                    if GpuKernel.GpuKernel.has_members(op) or GpuKernel.GpuKernel.is_grouping(tp) = false
+                    if GpuKernel.GpuKernel.is_grouping(tp) = false
                     {
-                        this.refuse("builds a tuple")
+                        let built this.construction(out, gk, tp, depth)
+                        return this.members(out, gk, built, op, depth)
+                    }
+                    if GpuKernel.GpuKernel.has_members(op)
+                    {
+                        this.refuse("reads a member of a grouping")
                         return ""
                     }
                     let c_ptr tp.components.get 0
@@ -1812,10 +1950,10 @@ define GpuMsl
                 this.refuse("reads a member of a statement's value")
                 return ""
             }
-            let kind GpuKernel.GpuKernel.scalar_kind(op.result_type)
-            if kind < 1 or kind > 6
+            let kind gk.kind(op.result_type)
+            if GpuMsl.is_value(kind) = false
             {
-                this.refuse("a statement whose value is no number of a card's")
+                this.refuse("a statement whose value is no value of a card's")
                 return ""
             }
             if this.refuse_pair(kind, "a statement's value")
@@ -1848,14 +1986,11 @@ define GpuMsl
             let li this.lookup(name)
             if li >= 0
             {
-                if GpuKernel.GpuKernel.has_members(op)
-                {
-                    this.refuse_named("reads a member of ", name)
-                    return ""
-                }
                 let kind GpuMsl.int_at(&m_kinds, li)
                 let cname this.cname_at(li)
                 m_atom_kind := kind
+                if GpuKernel.GpuKernel.has_members(op)
+                    return this.members(out, gk, cname, op, depth)
                 if this.is_pair(kind)
                 {
                     let h_ptr m_highs.get(li as size_t)
@@ -1886,23 +2021,24 @@ define GpuMsl
             var idx 0 - 1
             if GpuKernel.GpuKernel.has_members(op)
             {
-                var is_length false
-                if op.member_access.length = 1
+                ; the length of a buffer, or a field of a record: a scalar
+                ; named by the whole chain (GpuKernel.k_uniform_field#)
+                var chain StringBuilder()
+                chain.append name
+                var mi: size_t 0
+                while mi < op.member_access.length
                 {
-                    let ma_ptr op.member_access.get 0
-                    if ma_ptr <> null
+                    let ma_ptr op.member_access.get mi
+                    if ma_ptr = null or ma_ptr.is_method
                     {
-                        let ma ma_ptr.unwrap()
-                        if ma.name = "length" and ma.is_method = false
-                            is_length := true
+                        this.refuse_named("reads a member of ", name)
+                        return ""
                     }
+                    chain.append("." as char)
+                    chain.append ma_ptr.name
+                    mi := mi + 1
                 }
-                if is_length = false
-                {
-                    this.refuse_named("reads a member of ", name)
-                    return ""
-                }
-                let lname "`name`.length"
+                let lname chain.to_string()
                 idx := GpuKernel.GpuKernel.index_of(&gk.k_uniforms, lname)
             }
             else
@@ -2369,6 +2505,9 @@ define GpuMsl
 
         procedure function_call(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
         {
+            let builtin gk.builtin_of(call)
+            if builtin.get_length() > 0
+                return this.builtin_call(out, gk, call, builtin, depth)
             let fi GpuKernel.GpuKernel.index_of(&gk.k_functions, call.mangled_name)
             let idx GpuMsl.function_index(gk, call.mangled_name)
             let fns: ref[Vector[PlannedFunction]]? gk.plan_functions
@@ -2387,7 +2526,7 @@ define GpuMsl
                 return ""
             }
             let rt func.return_type
-            let rk GpuKernel.GpuKernel.scalar_kind((*rt))
+            let rk gk.kind((*rt))
             var n_params: size_t 0
             if func.input <> null
                 n_params := func.input.length
@@ -2417,7 +2556,7 @@ define GpuMsl
                     return ""
                 }
                 let pt p.item_type
-                let fitted this.fit(a, have, GpuKernel.GpuKernel.scalar_kind((*pt)))
+                let fitted this.fit(a, have, gk.kind((*pt)))
                 if m_refused
                     return ""
                 if this.refuse_pair(have, call.name)
@@ -2431,6 +2570,28 @@ define GpuMsl
             let arg_text args.to_string()
             out.append(this.declare_value(ind, rk, t, "f`fi`(`arg_text``this.fault_arg()`)"))
             m_atom_kind := rk
+            m_atom_high := String^this("")
+            t
+        }
+
+        ; A function of the card's own (GpuKernel.builtin_of#): `sqrtf`,
+        ; which Metal's safe math and the processor round alike -- WGSL's
+        ; does not promise it, and floating point goes there only relaxed.
+        procedure builtin_call(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, builtin: String, depth: size_t) returns String
+        {
+            let a this.operand(out, gk, (*call.args)[0], depth)
+            if m_refused
+                return ""
+            let fitted this.fit(a, m_atom_kind, 4)
+            if m_refused
+                return ""
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            if m_wgsl
+                out.append(this.declare_value(ind, 4, t, "`builtin`(`fitted`)"))
+            else
+                out.append(this.declare_value(ind, 4, t, "precise::`builtin`(`fitted`)"))
+            m_atom_kind := 4
             m_atom_high := String^this("")
             t
         }

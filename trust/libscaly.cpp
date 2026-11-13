@@ -7498,7 +7498,7 @@ __attribute__((weak)) uint64_t String_hash(String& scaly_self)
     String* this_ = &scaly_self;
     if (((this_->data) == (nullptr)))
     {
-        return hashing_hash(scaly_lvalue(Slice<uint8_t>{(uint64_t)(0LL), ((uint8_t*)(nullptr))}));
+        return hashing_hash(scaly_lvalue(Slice<uint8_t>{0ULL, ((uint8_t*)(nullptr))}));
     }
     uint64_t length = 0ULL;
     uint64_t bit_count = 0ULL;
@@ -8481,7 +8481,7 @@ __attribute__((weak)) void scheduler_entry(void* first_ctx)
 // packages/scaly/0.2.1/scaly/fiber.scaly
 __attribute__((weak)) Scheduler* Scheduler_create(Page* host)
 {
-    Scheduler* s = (&((*({ Scheduler* scaly_t1 = (Scheduler*)scaly_rt_allocate((void*)(host), sizeof(Scheduler), alignof(Scheduler)); *scaly_t1 = Scheduler{host, (SchedTask*)(nullptr), (SchedTask*)(nullptr), 0LL, ((int32_t)(((0LL - 1LL)))), 0LL, ((int32_t)(((0LL - 1LL)))), (uint64_t)(0LL), 0LL, (SchedTask*)(nullptr), (SchedTask*)(nullptr), 0LL, (SchedTask*)(nullptr), (uint64_t*)(nullptr), (uint64_t)(0LL), 0LL, false, (int32_t)100ULL, 0LL, 0LL, 0LL, 0LL}; scaly_t1; }))));
+    Scheduler* s = (&((*({ Scheduler* scaly_t1 = (Scheduler*)scaly_rt_allocate((void*)(host), sizeof(Scheduler), alignof(Scheduler)); *scaly_t1 = Scheduler{host, (SchedTask*)(nullptr), (SchedTask*)(nullptr), 0LL, ((int32_t)(((0LL - 1LL)))), 0LL, ((int32_t)(((0LL - 1LL)))), 0ULL, 0LL, (SchedTask*)(nullptr), (SchedTask*)(nullptr), 0LL, (SchedTask*)(nullptr), (uint64_t*)(nullptr), 0ULL, 0LL, false, (int32_t)100ULL, 0LL, 0LL, 0LL, 0LL}; scaly_t1; }))));
     current_scheduler = ((void*)(s));
     return s;
 }
@@ -10018,7 +10018,7 @@ __attribute__((weak)) Channel* Channel_create()
 __attribute__((weak)) Channel* Channel_create_bounded(int64_t capacity)
 {
     Page* p = Page_allocate_page_traced(((const char*)"Channel.record_page"));
-    Channel* m = (&((*({ Channel* scaly_t1 = (Channel*)scaly_rt_allocate((void*)(p), sizeof(Channel), alignof(Channel)); *scaly_t1 = Channel{(uint64_t)(0LL), 1LL, false, (ChannelNode*)(nullptr), (ChannelNode*)(nullptr), (SchedTask*)(nullptr), (SchedTask*)(nullptr), nullptr, capacity, 0LL, (SchedTask*)(nullptr), (SchedTask*)(nullptr)}; scaly_t1; }))));
+    Channel* m = (&((*({ Channel* scaly_t1 = (Channel*)scaly_rt_allocate((void*)(p), sizeof(Channel), alignof(Channel)); *scaly_t1 = Channel{0ULL, 1LL, false, (ChannelNode*)(nullptr), (ChannelNode*)(nullptr), (SchedTask*)(nullptr), (SchedTask*)(nullptr), nullptr, capacity, 0LL, (SchedTask*)(nullptr), (SchedTask*)(nullptr)}; scaly_t1; }))));
     return m;
 }
 
@@ -10428,7 +10428,7 @@ __attribute__((weak)) TaskGroup* TaskGroup_create()
     {
         guard = ((uint64_t)(1LL));
     }
-    TaskGroup* g = (&((*({ TaskGroup* scaly_t1 = (TaskGroup*)scaly_rt_allocate((void*)(p), sizeof(TaskGroup), alignof(TaskGroup)); *scaly_t1 = TaskGroup{(uint64_t)(0LL), (uint64_t)(0LL), (*(((int32_t*)(fds)))), (*(((int32_t*)((((((uint64_t)(fds))) + 4ULL)))))), guard, (uint64_t)(0LL), ((const char*)(nullptr)), (uint64_t)(0LL), (uint64_t)(0LL), ((int32_t)(0LL))}; scaly_t1; }))));
+    TaskGroup* g = (&((*({ TaskGroup* scaly_t1 = (TaskGroup*)scaly_rt_allocate((void*)(p), sizeof(TaskGroup), alignof(TaskGroup)); *scaly_t1 = TaskGroup{0ULL, 0ULL, (*(((int32_t*)(fds)))), (*(((int32_t*)((((((uint64_t)(fds))) + 4ULL)))))), guard, 0ULL, ((const char*)(nullptr)), 0ULL, 0ULL, ((int32_t)(0LL))}; scaly_t1; }))));
     return g;
 }
 
@@ -11254,7 +11254,7 @@ __attribute__((weak)) Slice<uint8_t> os_environment_variable(scaly_frame* scaly_
     const char* v = getenv(name);
     if (((v) == (nullptr)))
     {
-        return Slice<uint8_t>{(uint64_t)(0LL), (uint8_t*)(nullptr)};
+        return Slice<uint8_t>{0ULL, (uint8_t*)(nullptr)};
     }
     return Slice<uint8_t>{((uint64_t)(strlen(v))), ((uint8_t*)(v))};
 }
@@ -12844,7 +12844,7 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd)
         return (NodePeer*)(nullptr);
     }
     Page* p = Page_allocate_page();
-    NodePeer* np = (&((*({ NodePeer* scaly_t1 = (NodePeer*)scaly_rt_allocate((void*)(p), sizeof(NodePeer), alignof(NodePeer)); *scaly_t1 = NodePeer{(uint64_t)(0LL), fd, true, theirs, ((uint64_t*)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), (uint64_t)(0LL), ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), (uint64_t)(0LL), (uint64_t)(0LL), scaly_eio_now_ns(), (uint64_t)(0LL), 0LL}; scaly_t1; }))));
+    NodePeer* np = (&((*({ NodePeer* scaly_t1 = (NodePeer*)scaly_rt_allocate((void*)(p), sizeof(NodePeer), alignof(NodePeer)); *scaly_t1 = NodePeer{0ULL, fd, true, theirs, ((uint64_t*)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, 0ULL, scaly_eio_now_ns(), 0ULL, 0LL}; scaly_t1; }))));
     Io_set_nonblocking(fd);
     uint64_t handle = Thread_spawn(((void*)&node_reader_entry), ((void*)(np)));
     np->reader = handle;

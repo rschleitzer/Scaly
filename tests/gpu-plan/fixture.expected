@@ -1,4 +1,4 @@
-gpu-plan: 16 for-loops, 14 parallel, 8 kernels
+gpu-plan: 16 for-loops, 14 parallel, 9 kernels
 gpu-plan: tests/gpu-plan/fixture.scaly:49:5: kernel (metal, webgpu): out out; in k, xs
 gpu-plan: tests/gpu-plan/fixture.scaly:61:1: kernel (metal, webgpu): out a; in k; calls triple
 gpu-plan: tests/gpu-plan/fixture.scaly:66:1: kernel (metal, webgpu): out b; in a
@@ -8,8 +8,8 @@ gpu-plan: tests/gpu-plan/fixture.scaly:81:1: kernel (metal): out d; in scale; ca
 gpu-plan: tests/gpu-plan/fixture.scaly:86:1: no kernel: e is a Vector[double]
 gpu-plan: tests/gpu-plan/fixture.scaly:91:1: no kernel: down is recursive
 gpu-plan: tests/gpu-plan/fixture.scaly:96:1: no kernel: blocked: extern call toupper
-gpu-plan: tests/gpu-plan/fixture.scaly:101:1: no kernel: text_of allocates or throws
-gpu-plan: tests/gpu-plan/fixture.scaly:109:1: no kernel: builds a Pair
+gpu-plan: tests/gpu-plan/fixture.scaly:101:1: no kernel: in text_of: the result is a String
+gpu-plan: tests/gpu-plan/fixture.scaly:109:1: kernel (metal, webgpu): out r; in k
 gpu-plan: tests/gpu-plan/fixture.scaly:117:1: kernel (metal, webgpu): out q; in k, a.length, a; calls capped
 gpu-plan: tests/gpu-plan/fixture.scaly:125:1: kernel (metal, webgpu): reduces total; in a
 gpu-plan: tests/gpu-plan/fixture.scaly:130:1: no kernel: a put at another index than the loop's counter

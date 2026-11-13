@@ -167,8 +167,34 @@ kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1
 gpu-msl: tests/gpu-plan/fixture.scaly:86:1: no kernel: e is a Vector[double]
 gpu-msl: tests/gpu-plan/fixture.scaly:91:1: no kernel: down is recursive
 gpu-msl: tests/gpu-plan/fixture.scaly:96:1: no kernel: blocked: extern call toupper
-gpu-msl: tests/gpu-plan/fixture.scaly:101:1: no kernel: text_of allocates or throws
-gpu-msl: tests/gpu-plan/fixture.scaly:109:1: no kernel: builds a Pair
+gpu-msl: tests/gpu-plan/fixture.scaly:101:1: no kernel: in text_of: the result is a String
+gpu-msl: tests/gpu-plan/fixture.scaly:109:1: kernel
+#include <metal_stdlib>
+using namespace metal;
+#pragma METAL fp math_mode(safe)
+#pragma METAL fp contract(off)
+struct s0
+{
+    int m0;
+    int m1;
+};
+kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1)]], device int* o0 [[buffer(2)]], uint gid [[thread_position_in_grid]])
+{
+    uint F = 0u;
+    const int u0 = as_type<int>(U[0]);
+    const long v0 = (long)gid;
+    do
+    {
+        const s0 t0 = s0{((int)v0), u0};
+        const s0 v1 = t0;
+        const int t1 = v1.m0;
+        const int t2 = v1.m1;
+        const int t3 = (int)((uint)t1 + (uint)t2);
+        o0[gid] = t3;
+    } while (false);
+    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);
+}
+
 gpu-msl: tests/gpu-plan/fixture.scaly:117:1: kernel
 #include <metal_stdlib>
 using namespace metal;
