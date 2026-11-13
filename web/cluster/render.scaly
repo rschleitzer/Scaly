@@ -105,10 +105,11 @@ function seed(point: int, pass: int, ray: int) returns u64
 
 ; --- the room ----------------------------------------------------------------------
 
-; It spans -1 to 1 across, 0 to 2 up and -1 to 1 in depth; its front is open,
-; and the eye looks in through it from in front. The lamp is a square in the
-; ceiling, LAMP to either side of its middle.
-define LAMP f64 0.25
+; It spans -1 to 1 across, 0 to 2 up and -1 to 1 in depth. Its front is a
+; wall seen from within only: the eye looks in through it from in front, and
+; what is inside sees a wall there, in a mirror too. The lamp is a square in
+; the ceiling, LAMP to either side of its middle.
+define LAMP f64 0.35
 define NEAR f64 0.0001
 define DEPTH int 6
 
@@ -116,10 +117,10 @@ function lamp() returns Vec3
     Vec3(15.0, 12.0, 7.0)
 
 function mirror_ball() returns Vec3
-    Vec3(0.0 - 0.42, 0.4, 0.0 - 0.32)
+    Vec3(0.0 - 0.42, 0.4, 0.0 - 0.45)
 
 function glass_ball() returns Vec3
-    Vec3(0.45, 0.4, 0.3)
+    Vec3(0.45, 0.4, 0.0 - 0.02)
 
 define BALL f64 0.4
 
@@ -220,6 +221,18 @@ function hit(o: Vec3, d: Vec3) returns Hit
             t := s
             kind := 1
             n := Vec3(0.0, 0.0, 1.0)
+        }
+    }
+    ; the front, seen from within only: the eye looks in through it
+    if d.z > 0.0 and o.z < 1.0
+    {
+        let s (1.0 - o.z) / d.z
+        let p along(o, d, s)
+        if s > NEAR and s < t and within(p.x, -1.0, 1.0) and within(p.y, 0.0, 2.0)
+        {
+            t := s
+            kind := 1
+            n := Vec3(0.0, 0.0, 0.0 - 1.0)
         }
     }
     let m ball(o, d, mirror_ball())
@@ -374,8 +387,13 @@ function whole(x: f64) returns int
 ; places within it.
 function point(x: int, y: int, w: int, h: int, pass: int, rays: int) returns (r: int, g: int, b: int)
 {
-    let tan 0.42
+    ; the eye in front of the open side, as far off as it sees the room
+    ; whole: the picture's edges just inside the opening, no frame of
+    ; darkness round it
+    let eye 2.6
+    let reach 0.97 / (eye - 1.0)
     let aspect (w as f64) / (h as f64)
+    let tan if aspect > 1.0: reach / aspect else reach
     var r 0
     var g 0
     var b 0
@@ -389,7 +407,7 @@ function point(x: int, y: int, w: int, h: int, pass: int, rays: int) returns (r:
         let jy chance(s)
         let u (2.0 * ((x as f64) + jx) / (w as f64) - 1.0) * aspect * tan
         let v (1.0 - 2.0 * ((y as f64) + jy) / (h as f64)) * tan
-        let c radiance(Vec3(0.0, 1.0, 3.6), unit(Vec3(u, v, -1.0)), next(s))
+        let c radiance(Vec3(0.0, 1.1, eye), unit(Vec3(u, v, -1.0)), next(s))
         r := r + whole(c.x)
         g := g + whole(c.y)
         b := b + whole(c.z)
