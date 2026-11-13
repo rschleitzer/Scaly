@@ -21,14 +21,17 @@
  *
  * THE OTHER PROFILE: wasm32-wasip1-threads (wasi-threads: a shared memory, a
  * thread a new instance of the module in a worker of the host). Compiled for
- * it -- clang defines __wasm_atomics__ there -- this file answers three of
+ * it -- clang defines __wasm_atomics__ there -- this file answers five of
  * the questions differently, in the section `threads` at its end: the CPUs
  * are the host's (SCALY_CPUS, which the host sets; SCALY_WORKERS caps them as
- * everywhere), a thread starts (wasi-libc's pthreads), and a pipe is one in
- * this program's memory -- WASI has none, and the task pool's workers wait on
- * one. Its close goes through __wrap_close (the link wraps `close` for this
+ * everywhere), a thread starts (wasi-libc's pthreads), a pipe is one in this
+ * program's memory -- WASI has none, and the task pool's workers wait on
+ * one --, a TCP socket is the host's (a node of a cluster in a page: the
+ * import module scaly_net), and the evented-I/O queue is one of wakes and
+ * readiness that a thread's main context waits on (a channel, a socket).
+ * Its close goes through __wrap_close (the link wraps `close` for this
  * target). Everything else is the one-thread profile's: a thread does no
- * file I/O, and a parallel loop's body performs none.
+ * file I/O, and a parallel loop's body performs none; no task ever parks.
  */
 #include <dirent.h>
 #include <errno.h>
@@ -67,15 +70,19 @@ int getpid(void) { return 1; }
 
 /* ---- the evented-I/O queue: there is none ------------------------------- */
 
+/* (The threads profile has one, for what a cluster's node waits on: the
+ * section `threads` at the end.) */
+#ifndef __wasm_atomics__
 int scaly_eio_create(void) { return -1; }
 int scaly_eio_arm(int q, int fd, int for_write, void* tag) { (void)q; (void)fd; (void)for_write; (void)tag; return -1; }
-int scaly_eio_watch(int q, int fd, void* tag) { (void)q; (void)fd; (void)tag; return -1; }
 int scaly_eio_wait(int q, void** tags, int max) { (void)q; (void)tags; (void)max; return -1; }
 int scaly_eio_wait_timeout(int q, void** tags, int max, int ms) { (void)q; (void)tags; (void)max; (void)ms; return -1; }
 int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns) { (void)q; (void)tags; (void)max; (void)ns; return -1; }
 int scaly_eio_wake_create(int q, void* tag) { (void)q; (void)tag; return -1; }
 int scaly_eio_wake(int q, int w) { (void)q; (void)w; return -1; }
 int scaly_eio_wake_close(int q, int w) { (void)q; (void)w; return 0; }
+#endif
+int scaly_eio_watch(int q, int fd, void* tag) { (void)q; (void)fd; (void)tag; return -1; }
 int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, void* tag) { (void)q; (void)fd; (void)buf; (void)count; (void)tag; return -1; }
 int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag) { (void)q; (void)fd; (void)buf; (void)count; (void)tag; return -1; }
 int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long scount,
@@ -86,8 +93,12 @@ int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long sco
 }
 int scaly_eio_completions(int q) { (void)q; return 0; }
 int scaly_eio_backend(int q) { (void)q; return 0; }
+#ifndef __wasm_atomics__
 int scaly_eio_close(int q) { return close(q); }
+#endif
+#ifndef __wasm_atomics__
 int scaly_eio_set_nonblocking(int fd) { (void)fd; return -1; }
+#endif
 
 /* ---- reading and writing a descriptor, blocking ------------------------- */
 
@@ -109,6 +120,9 @@ static int scaly_wasm_would_block(int fd, short events)
 static int scaly_wasm_is_pipe(int fd);
 static long long scaly_wasm_pipe_read(int fd, void* buf, unsigned long long count);
 static long long scaly_wasm_pipe_write(int fd, const void* buf, unsigned long long count);
+static int scaly_wasm_is_net(int fd);
+static long long scaly_wasm_net_read(int fd, void* buf, unsigned long long count);
+static long long scaly_wasm_net_write(int fd, const void* buf, unsigned long long count);
 #endif
 
 long long scaly_eio_read(int fd, void* buf, unsigned long long count)
@@ -116,6 +130,8 @@ long long scaly_eio_read(int fd, void* buf, unsigned long long count)
 #ifdef __wasm_atomics__
     if (scaly_wasm_is_pipe(fd))
         return scaly_wasm_pipe_read(fd, buf, count);
+    if (scaly_wasm_is_net(fd))
+        return scaly_wasm_net_read(fd, buf, count);
 #endif
     long long r;
     do
@@ -135,6 +151,8 @@ long long scaly_eio_write(int fd, const void* buf, unsigned long long count)
 #ifdef __wasm_atomics__
     if (scaly_wasm_is_pipe(fd))
         return scaly_wasm_pipe_write(fd, buf, count);
+    if (scaly_wasm_is_net(fd))
+        return scaly_wasm_net_write(fd, buf, count);
 #endif
     long long r;
     do
@@ -173,6 +191,9 @@ int scaly_eio_sockname(int fd, void* addr, unsigned long long addrcap, unsigned 
     (void)fd; (void)addr; (void)addrcap; (void)len;
     return -1;
 }
+/* (The threads profile has TCP through its host: the section `threads` at
+ * the end.) */
+#ifndef __wasm_atomics__
 int scaly_eio_tcp_listen(int port) { (void)port; return -1; }
 int scaly_eio_tcp_listen_host(const char* host, int port) { (void)host; (void)port; return -1; }
 int scaly_eio_tcp_listen_any(int port) { (void)port; return -1; }
@@ -181,6 +202,9 @@ int scaly_eio_tcp_connect(int port) { (void)port; return -1; }
 int scaly_eio_tcp_connect_host(const char* host, int port) { (void)host; (void)port; return -1; }
 long long scaly_eio_tcp_write(int fd, const void* buf, unsigned long long count) { (void)fd; (void)buf; (void)count; return -1; }
 int scaly_eio_tcp_nodelay(int fd, int on) { (void)fd; (void)on; return -1; }
+int scaly_eio_accept(int fd) { (void)fd; return -1; }
+int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
+#endif
 void scaly_eio_tcp_served(int fd) { (void)fd; }
 void scaly_eio_tcp_unserved(int fd) { (void)fd; }
 int scaly_eio_tcp_wake_served(void) { return 0; }
@@ -189,8 +213,6 @@ int scaly_eio_tcp_idle(int fd, long long seconds) { (void)fd; (void)seconds; ret
 int scaly_eio_tcp_sweep(void) { return 0; }
 void scaly_eio_tcp_sweeper(void *task) { (void)task; }
 void *scaly_eio_tcp_idle_done(void) { return 0; }
-int scaly_eio_accept(int fd) { (void)fd; return -1; }
-int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
 int scaly_eio_tcp_listen_twin(int fd) { (void)fd; return -1; }
 int scaly_eio_listen_end(int fd) { (void)fd; return -1; }
 
@@ -601,8 +623,11 @@ static long long scaly_wasm_pipe_write(int fd, const void* buf, unsigned long lo
  * `close` for this target (-Wl,--wrap=close, cli.scaly), so every caller of
  * it -- the standard library's and wasi-libc's own -- comes through here. */
 int __real_close(int fd);
+static int scaly_wasm_net_close(int fd);
 int __wrap_close(int fd)
 {
+    if (scaly_wasm_is_net(fd))
+        return scaly_wasm_net_close(fd);
     if (!scaly_wasm_is_pipe(fd))
         return __real_close(fd);
     struct scaly_wasm_pipe* p = scaly_wasm_pipe_of(fd);
@@ -625,6 +650,339 @@ int __wrap_close(int fd)
     }
     return 0;
 }
+
+/* ---- sockets, through the host (a node of a cluster) --------------------- */
+
+/* WASI preview 1 opens no socket, so this profile asks its host: the import
+ * module `scaly_net` (packages/scaly/<version>/web/net.mjs), where the nodes
+ * of a cluster in one page -- or in one node process -- listen and connect,
+ * one port space for all of them, whatever host a connect names. A host
+ * without a network refuses every call (wasi.mjs, NO_NET). Its descriptors
+ * are numbers no WASI descriptor and no pipe of this file reaches; read and
+ * write go through scaly_eio_read/_write, close through __wrap_close.
+ *
+ * Blocking as POSIX's sockets are, until Io.set_nonblocking: then a call
+ * that would wait answers -2 -- after waiting a little in the host, for the
+ * host's poll_oneoff answers a descriptor it does not know at once, and a
+ * caller that polls before it calls again (the cluster's reader, keeping its
+ * heartbeat clock) would spin. Rule (a). */
+#define SCALY_NET_FD 0x40000000
+#define SCALY_NET_LISTEN_FD (SCALY_NET_FD + 0x100000)
+#define SCALY_NET_NAP_MS 50
+#define SCALY_NET_IMPORT(name) __attribute__((import_module("scaly_net"), import_name(name)))
+
+SCALY_NET_IMPORT("listen") int scaly_net_listen(int port);
+SCALY_NET_IMPORT("port") int scaly_net_port(int fd);
+SCALY_NET_IMPORT("connect") int scaly_net_connect(int port);
+SCALY_NET_IMPORT("accept") int scaly_net_accept(int fd, int ms);
+SCALY_NET_IMPORT("read") int scaly_net_read(int fd, void* buf, unsigned n, int ms);
+SCALY_NET_IMPORT("write") int scaly_net_write(int fd, const void* buf, unsigned n, int ms);
+SCALY_NET_IMPORT("ready") int scaly_net_ready(int fd, int for_write);
+SCALY_NET_IMPORT("close") int scaly_net_close(int fd);
+
+/* which descriptors were made non-blocking: the connections' and the
+ * listeners' (their numbers as net.mjs makes them) */
+static unsigned char scaly_wasm_net_nb[256 + 64];
+
+static int scaly_wasm_is_net(int fd)
+{
+    return fd >= SCALY_NET_FD;
+}
+
+static unsigned char* scaly_wasm_net_flag(int fd)
+{
+    if (fd >= SCALY_NET_LISTEN_FD && fd < SCALY_NET_LISTEN_FD + 64)
+        return &scaly_wasm_net_nb[256 + (fd - SCALY_NET_LISTEN_FD)];
+    if (fd >= SCALY_NET_FD && fd < SCALY_NET_FD + 256)
+        return &scaly_wasm_net_nb[fd - SCALY_NET_FD];
+    return 0;
+}
+
+static int scaly_wasm_net_wait_ms(int fd)
+{
+    unsigned char* nb = scaly_wasm_net_flag(fd);
+    return nb && *nb ? SCALY_NET_NAP_MS : -1;
+}
+
+int scaly_eio_set_nonblocking(int fd)
+{
+    unsigned char* nb = scaly_wasm_net_flag(fd);
+    if (!nb)
+        return -1;
+    *nb = 1;
+    return 0;
+}
+
+static long long scaly_wasm_net_read(int fd, void* buf, unsigned long long count)
+{
+    unsigned n = count > 0x40000000ULL ? 0x40000000U : (unsigned)count;
+    return scaly_net_read(fd, buf, n, scaly_wasm_net_wait_ms(fd));
+}
+
+static long long scaly_wasm_net_write(int fd, const void* buf, unsigned long long count)
+{
+    unsigned n = count > 0x40000000ULL ? 0x40000000U : (unsigned)count;
+    int r = scaly_net_write(fd, buf, n, scaly_wasm_net_wait_ms(fd));
+    if (r == -1)
+        errno = EPIPE;
+    return r;
+}
+
+static int scaly_wasm_net_close(int fd)
+{
+    unsigned char* nb = scaly_wasm_net_flag(fd);
+    if (nb)
+        *nb = 0;
+    if (scaly_net_close(fd) < 0) {
+        errno = EBADF;
+        return -1;
+    }
+    return 0;
+}
+
+static int scaly_wasm_net_accept(int fd)
+{
+    int c = scaly_net_accept(fd, scaly_wasm_net_wait_ms(fd));
+    if (c >= 0) {
+        unsigned char* nb = scaly_wasm_net_flag(c);
+        if (nb)
+            *nb = 0;
+    }
+    return c;
+}
+
+int scaly_eio_tcp_listen(int port) { return scaly_net_listen(port); }
+int scaly_eio_tcp_listen_host(const char* host, int port) { (void)host; return scaly_net_listen(port); }
+int scaly_eio_tcp_listen_any(int port) { return scaly_net_listen(port); }
+int scaly_eio_tcp_port(int fd) { return scaly_net_port(fd); }
+int scaly_eio_tcp_connect(int port)
+{
+    int c = scaly_net_connect(port);
+    unsigned char* nb = c >= 0 ? scaly_wasm_net_flag(c) : 0;
+    if (nb)
+        *nb = 0;
+    return c;
+}
+int scaly_eio_tcp_connect_host(const char* host, int port) { (void)host; return scaly_eio_tcp_connect(port); }
+long long scaly_eio_tcp_write(int fd, const void* buf, unsigned long long count)
+{
+    return scaly_wasm_is_net(fd) ? scaly_wasm_net_write(fd, buf, count) : -1;
+}
+/* the host sends at once: there is no Nagle to switch off */
+int scaly_eio_tcp_nodelay(int fd, int on) { (void)on; return scaly_wasm_is_net(fd) ? 0 : -1; }
+int scaly_eio_accept(int fd) { return scaly_wasm_is_net(fd) ? scaly_wasm_net_accept(fd) : -1; }
+int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
+
+/* ---- the evented-I/O queue: wakes and readiness, in this program's memory -- */
+
+/* What a scheduler waits on where there are no fibers: a task never parks
+ * here, but the MAIN context of a thread does -- Channel.receive with a
+ * scheduler made (a cluster's node: its connection's reader thread delivers
+ * a message and wakes it), and Io.park of a descriptor. So a queue holds one
+ * wake handle (scaly_eio_wake from any thread) and the descriptors armed on
+ * it (each once, as kqueue's EV_ONESHOT), and a wait answers their tags as
+ * they come ready: a wake at once, a descriptor of the network or a pipe
+ * when the host or the pipe says so -- looked at every few milliseconds, as
+ * nothing here can wake on both --, any other descriptor at once. Rule (a). */
+#define SCALY_QUEUES 64
+#define SCALY_ARMED 64
+
+struct scaly_wasm_queue
+{
+    int used, wake_pending, has_wake, armed;
+    void* wake_tag;
+    int fd[SCALY_ARMED], for_write[SCALY_ARMED];
+    void* tag[SCALY_ARMED];
+    pthread_mutex_t lock;
+    pthread_cond_t changed;
+};
+
+static struct scaly_wasm_queue* scaly_wasm_queues[SCALY_QUEUES];
+static pthread_mutex_t scaly_wasm_queues_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static struct scaly_wasm_queue* scaly_wasm_queue_of(int q)
+{
+    return q >= 0 && q < SCALY_QUEUES ? scaly_wasm_queues[q] : 0;
+}
+
+int scaly_eio_create(void)
+{
+    pthread_mutex_lock(&scaly_wasm_queues_lock);
+    int i = 0;
+    while (i < SCALY_QUEUES && scaly_wasm_queues[i] && scaly_wasm_queues[i]->used)
+        i++;
+    if (i == SCALY_QUEUES) {
+        pthread_mutex_unlock(&scaly_wasm_queues_lock);
+        return -1;
+    }
+    struct scaly_wasm_queue* q = scaly_wasm_queues[i];
+    if (!q) {
+        q = (struct scaly_wasm_queue*)calloc(1, sizeof *q);
+        if (!q) {
+            pthread_mutex_unlock(&scaly_wasm_queues_lock);
+            return -1;
+        }
+        pthread_mutex_init(&q->lock, 0);
+        pthread_cond_init(&q->changed, 0);
+        scaly_wasm_queues[i] = q;
+    }
+    q->used = 1;
+    q->wake_pending = q->has_wake = q->armed = 0;
+    q->wake_tag = 0;
+    pthread_mutex_unlock(&scaly_wasm_queues_lock);
+    return i;
+}
+
+int scaly_eio_arm(int qi, int fd, int for_write, void* tag)
+{
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return -1;
+    pthread_mutex_lock(&q->lock);
+    int k = 0;
+    while (k < q->armed && !(q->fd[k] == fd && q->for_write[k] == (for_write != 0)))
+        k++;
+    if (k == q->armed) {
+        if (q->armed == SCALY_ARMED) {
+            pthread_mutex_unlock(&q->lock);
+            return -1;
+        }
+        q->armed++;
+    }
+    q->fd[k] = fd;
+    q->for_write[k] = for_write != 0;
+    q->tag[k] = tag;
+    pthread_cond_broadcast(&q->changed);
+    pthread_mutex_unlock(&q->lock);
+    return 0;
+}
+
+int scaly_eio_wake_create(int qi, void* tag)
+{
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return -1;
+    pthread_mutex_lock(&q->lock);
+    q->has_wake = 1;
+    q->wake_tag = tag;
+    pthread_mutex_unlock(&q->lock);
+    return 1;
+}
+
+int scaly_eio_wake(int qi, int w)
+{
+    (void)w;
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return -1;
+    pthread_mutex_lock(&q->lock);
+    q->wake_pending = 1;
+    pthread_cond_broadcast(&q->changed);
+    pthread_mutex_unlock(&q->lock);
+    return 0;
+}
+
+int scaly_eio_wake_close(int qi, int w)
+{
+    (void)w;
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return 0;
+    pthread_mutex_lock(&q->lock);
+    q->has_wake = 0;
+    q->wake_pending = 0;
+    pthread_mutex_unlock(&q->lock);
+    return 0;
+}
+
+/* whether an armed descriptor is ready: the host's, a pipe's, or at once */
+static int scaly_wasm_fd_ready(int fd, int for_write)
+{
+    if (scaly_wasm_is_net(fd))
+        return scaly_net_ready(fd, for_write);
+    if (scaly_wasm_is_pipe(fd)) {
+        struct scaly_wasm_pipe* p = scaly_wasm_pipe_of(fd);
+        if (!p || !p->used)
+            return 1;
+        pthread_mutex_lock(&p->lock);
+        int r = for_write ? (p->closed_read || p->count < SCALY_PIPE_BYTES) : (p->closed_write || p->count > 0);
+        pthread_mutex_unlock(&p->lock);
+        return r;
+    }
+    return 1;
+}
+
+/* (under q's lock) the tags that are ready, each armed descriptor once */
+static int scaly_wasm_queue_take(struct scaly_wasm_queue* q, void** tags, int max)
+{
+    int n = 0;
+    if (q->wake_pending && q->has_wake && n < max) {
+        tags[n++] = q->wake_tag;
+        q->wake_pending = 0;
+    }
+    int k = 0;
+    while (k < q->armed && n < max) {
+        if (scaly_wasm_fd_ready(q->fd[k], q->for_write[k])) {
+            tags[n++] = q->tag[k];
+            q->armed--;
+            q->fd[k] = q->fd[q->armed];
+            q->for_write[k] = q->for_write[q->armed];
+            q->tag[k] = q->tag[q->armed];
+        } else
+            k++;
+    }
+    return n;
+}
+
+/* ns below 0: no bound */
+static int scaly_wasm_queue_wait(int qi, void** tags, int max, long long ns)
+{
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return -1;
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    long long until = ns < 0 ? -1 : (long long)now.tv_sec * 1000000000LL + now.tv_nsec + ns;
+    pthread_mutex_lock(&q->lock);
+    for (;;) {
+        int n = scaly_wasm_queue_take(q, tags, max);
+        clock_gettime(CLOCK_REALTIME, &now);
+        long long t = (long long)now.tv_sec * 1000000000LL + now.tv_nsec;
+        if (n > 0 || (until >= 0 && t >= until)) {
+            pthread_mutex_unlock(&q->lock);
+            return n;
+        }
+        /* an armed descriptor can come ready without a word to this queue:
+         * look again in a few milliseconds */
+        long long next = q->armed > 0 ? t + 5000000LL : until;
+        if (until >= 0 && next > until)
+            next = until;
+        if (next < 0)
+            pthread_cond_wait(&q->changed, &q->lock);
+        else {
+            struct timespec at = { (time_t)(next / 1000000000LL), (long)(next % 1000000000LL) };
+            pthread_cond_timedwait(&q->changed, &q->lock, &at);
+        }
+    }
+}
+
+/* a queue is a number of this file's, no descriptor: it is given back */
+int scaly_eio_close(int qi)
+{
+    struct scaly_wasm_queue* q = scaly_wasm_queue_of(qi);
+    if (!q)
+        return -1;
+    pthread_mutex_lock(&scaly_wasm_queues_lock);
+    pthread_mutex_lock(&q->lock);
+    q->used = q->armed = q->has_wake = q->wake_pending = 0;
+    pthread_mutex_unlock(&q->lock);
+    pthread_mutex_unlock(&scaly_wasm_queues_lock);
+    return 0;
+}
+
+int scaly_eio_wait(int q, void** tags, int max) { return scaly_wasm_queue_wait(q, tags, max, -1); }
+int scaly_eio_wait_timeout(int q, void** tags, int max, int ms) { return scaly_wasm_queue_wait(q, tags, max, ms < 0 ? -1 : (long long)ms * 1000000LL); }
+int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns) { return scaly_wasm_queue_wait(q, tags, max, ns); }
 
 /* The break, which wasi-libc's malloc grows its heap by. Its own sbrk takes
  * the break to be the END OF THE MEMORY: each call grows the memory and hands

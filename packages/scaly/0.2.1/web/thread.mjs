@@ -27,9 +27,11 @@ const post = node ? m => port.postMessage(m) : m => self.postMessage(m);
 const write = node ? (await import('node:fs')).writeSync : null;
 const listen = node ? f => port.on('message', f) : f => { self.onmessage = e => f(e.data); };
 
-listen(async ({ module, memory, counter, tid, arg, env }) => {
+listen(async ({ module, memory, counter, tid, arg, env, net }) => {
+  // a node of a cluster: its network, which its threads read and write too
+  const network = net ? new (await import('./net.mjs')).Net(net.buffer, net.node) : null;
   const wasi = new Wasi({
-    args: ['thread'], env,
+    args: ['thread'], env, net: network,
     stdout: bytes => write ? write(1, bytes) : post({ type: 'scaly-thread-out', bytes }),
     stderr: bytes => write ? write(2, bytes) : post({ type: 'scaly-thread-err', bytes }),
     threads: new ThreadHost({ memory, post, counter }),

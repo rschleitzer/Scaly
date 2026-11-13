@@ -169,9 +169,11 @@ export class ThreadHost {
 // asked for and kept for the next one. `out` and `err` take a thread's
 // bytes, `exit` the status where a thread ended the program. `env` is what a
 // thread's environment holds (as the program's, which wasi-libc may read in
-// a thread first). `script` is thread.mjs.
+// a thread first). `net`, where the program is a node of a cluster, is its
+// network as a thread hands it on, { buffer, node } (net.mjs). `script` is
+// thread.mjs.
 export class Threads {
-  static async create({ out, err, exit, env = {}, script = new URL('./thread.mjs', import.meta.url) }) {
+  static async create({ out, err, exit, env = {}, net = null, script = new URL('./thread.mjs', import.meta.url) }) {
     let make;
     if (typeof Worker !== 'undefined') {
       make = () => {
@@ -186,15 +188,16 @@ export class Threads {
         return { post: m => w.postMessage(m), listen: f => w.on('message', f), end: () => w.terminate() };
       };
     }
-    return new Threads(make, { out, err, exit, env });
+    return new Threads(make, { out, err, exit, env, net });
   }
 
-  constructor(make, { out, err, exit, env }) {
+  constructor(make, { out, err, exit, env, net = null }) {
     this.make = make;
     this.out = out;
     this.err = err;
     this.exit = exit;
     this.env = env;
+    this.net = net;
     this.idle = [];
     this.all = [];
     this.started = 0;
@@ -217,7 +220,7 @@ export class Threads {
         }
         this.started++;
         const { module, memory, counter, tid, arg } = data;
-        worker.post({ module, memory, counter, tid, arg, env: this.env });
+        worker.post({ module, memory, counter, tid, arg, env: this.env, net: this.net });
         break;
       }
       case 'scaly-thread-out': this.out(data.bytes); break;

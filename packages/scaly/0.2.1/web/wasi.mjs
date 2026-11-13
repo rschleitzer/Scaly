@@ -191,8 +191,10 @@ export class Wasi {
   // threads: the threads of a program built for wasm32-wasip1-threads (a
   // ThreadHost of threads.mjs): its memory and the start of a thread; a
   // module that asks for them is then instantiated with imports(module).
+  // net: the network of a node of a cluster (a Net of net.mjs, as this node
+  // sees it); without one every socket the program asks for is refused.
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
-                stdin_more = null, stdout = null, stderr = null, gpu = null, threads = null } = {}) {
+                stdin_more = null, stdout = null, stderr = null, gpu = null, threads = null, net = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
@@ -207,6 +209,7 @@ export class Wasi {
     this.memory = null;
     this.gpu = gpu;
     this.threads = threads;
+    this.net = net;
   }
 
   // a thread of the program (thread.mjs): the instance's
@@ -614,6 +617,9 @@ export class Wasi {
       // what a program built with --gpu asks of its host (scaly/gpu/gpu_wasm.c);
       // any other program does not import the module
       scaly_gpu: w.gpu ? w.gpu.imports(() => w.memory) : NO_CARD,
+      // the sockets of a program built for threads (scaly/fiber/eio_wasm.c);
+      // a program built without them does not import the module
+      scaly_net: w.net ? w.net.imports(() => w.memory) : NO_NET,
       ...(w.threads ? w.threads.imports(module) : {}),
     };
   }
@@ -630,6 +636,13 @@ function sleep_ms(ms) {
 // The host of a kernel where there is no card: every loop stays on the
 // processor.
 export const NO_CARD = { forced: () => 0, run: () => 0, kept: () => { } };
+
+// The host of the sockets where there is no network (net.mjs has the one
+// there is): every socket refused, nothing to wait for.
+export const NO_NET = {
+  listen: () => -1, port: () => -1, connect: () => -1, accept: () => -1,
+  read: () => -1, write: () => -1, ready: () => 1, close: () => -1,
+};
 
 // write a chunk at an open file's position (its end when appending), growing it
 function write_at(f, chunk) {

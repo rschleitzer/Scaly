@@ -18,6 +18,14 @@
 // program runs in a worker of its own -- this file again --, each thread in
 // one of thread.mjs. The program is told the cores of this machine
 // (SCALY_CPUS); SCALY_WORKERS caps them, as natively.
+//
+// A coordinator of several programs -- the nodes of a cluster, as
+// tests/cluster/wasm.mjs runs them -- makes this file's worker itself and
+// hands it, beside `args`, `env` (what the node's environment holds besides
+// this process's), `net` (its network, { buffer, node }: net.mjs) and
+// `relay`: the program's standard output and error go to that coordinator
+// as messages, { type: 'out', fd, bytes }, not to this process's -- the
+// nodes' outputs are told apart.
 import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import process from 'node:process';
@@ -32,7 +40,9 @@ const bytes = readFileSync(program_args[program_args[0] === '--argv0' ? 2 : 0]);
 // then (a page that serves this file beside wasi.mjs alone runs every other one)
 const threaded = WebAssembly.Module.imports(new WebAssembly.Module(bytes)).some(i => i.kind === 'memory');
 const { ThreadHost, Threads, threadMemory } = threaded ? await import('./threads.mjs') : {};
-const env = { ...process.env, SCALY_CPUS: String(availableParallelism()) };
+const env = { ...process.env, SCALY_CPUS: String(availableParallelism()), ...(isMainThread ? {} : workerData.env ?? {}) };
+const net = isMainThread || !workerData.net ? null : new (await import('./net.mjs')).Net(workerData.net.buffer, workerData.net.node);
+const relay = !isMainThread && !!workerData.relay;
 
 if (isMainThread && threaded) {
   // the coordinator: the program in a worker, the threads in theirs
@@ -105,9 +115,9 @@ const stdin = () => {
   try { return readFileSync(0); } catch { return new Uint8Array(); }
 };
 const wasi = new Wasi({
-  args: [argv0 ?? module_path, ...args], env: memory ? env : process.env, cwd: process.cwd(), files, stdin,
-  stdout: chunk => writeFileSync(1, chunk),
-  stderr: chunk => writeFileSync(2, chunk),
+  args: [argv0 ?? module_path, ...args], env: memory ? env : process.env, cwd: process.cwd(), files, stdin, net,
+  stdout: relay ? chunk => parentPort.postMessage({ type: 'out', fd: 1, bytes: chunk.slice() }) : chunk => writeFileSync(1, chunk),
+  stderr: relay ? chunk => parentPort.postMessage({ type: 'out', fd: 2, bytes: chunk.slice() }) : chunk => writeFileSync(2, chunk),
   threads: memory ? new ThreadHost({ memory, post: m => parentPort.postMessage(m) }) : null,
 });
 const module = await WebAssembly.compile(bytes);
