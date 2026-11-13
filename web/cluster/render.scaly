@@ -624,11 +624,15 @@ let ACROSS (W + TILE - 1) / TILE
 let TILES ACROSS * ((H + TILE - 1) / TILE)
 let JOBS TILES * PASSES
 let farm Farm(W, H, TILE, env_int("RENDER_SAMPLES", 4), ACROSS, TILES)
-var sums Vector[i64]((W * H * 3) as size_t)
-var counts Vector[int](TILES as size_t)
 
 let role getenv("RENDER_ROLE")
 let which if role = null: 115 else (*role) as int
+
+; the picture's sums: the coordinator's and the program's alone -- a node
+; that renders holds a tile at a time, never the picture
+let held if which = 119: 0 else W * H * 3
+var sums Vector[i64](held as size_t)
+var counts Vector[int](TILES as size_t)
 
 let page Page.allocate_page()
 let sched Scheduler.create(page)

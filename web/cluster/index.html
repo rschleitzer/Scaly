@@ -133,7 +133,11 @@
       </select></label>
       <label><span data-t="size">Size</span> <select id="size">
         <option value="768x576">768 × 576</option><option value="1024x768" selected>1024 × 768</option>
-        <option value="1536x1152">1536 × 1152</option>
+        <option value="1536x1152">1536 × 1152</option><option value="2048x1536">2048 × 1536</option>
+        <option value="2560x1920">2560 × 1920</option>
+      </select></label>
+      <label><span data-t="tileLabel">Tiles</span> <select id="tile">
+        <option value="128" selected>128 × 128</option><option value="256">256 × 256</option>
       </select></label>
       <label><span data-t="rays">Rays per point</span> <select id="passes">
         <option value="6">252</option><option value="7" selected>508</option><option value="8">1020</option><option value="9">2044</option>
@@ -209,7 +213,7 @@ const TEXT = {
   en: {
     title: 'A render farm in Scaly', fractals: 'Fractals', playground: 'The playground', language: 'Language',
     picture: 'The picture', tint: 'Colour each tile by the node that rendered it',
-    nodesLabel: 'Nodes', size: 'Size', rays: 'Rays per point', coresLabel: 'Cores per program', coresShare: 'shared out',
+    nodesLabel: 'Nodes', size: 'Size', tileLabel: 'Tiles', rays: 'Rays per point', coresLabel: 'Cores per program', coresShare: 'shared out',
     cardLabel: 'Graphics card', cardNone: 'none', cardOne: 'for one node', cardAll: 'for every node',
     noCard: why => `This browser gives the page no graphics card (WebGPU): ${why}`,
     machineTitle: 'This computer', cardShort: 'GPU', coresWord: k => k === 1 ? '1 core' : `${k} cores`,
@@ -257,7 +261,7 @@ const TEXT = {
   de: {
     title: 'Eine Render-Farm in Scaly', fractals: 'Fraktale', playground: 'Der Spielplatz', language: 'Sprache',
     picture: 'Das Bild', tint: 'Jede Kachel in der Farbe des Knotens, der sie gerechnet hat',
-    nodesLabel: 'Knoten', size: 'Größe', rays: 'Strahlen pro Punkt', coresLabel: 'Kerne je Programm', coresShare: 'aufgeteilt',
+    nodesLabel: 'Knoten', size: 'Größe', tileLabel: 'Kacheln', rays: 'Strahlen pro Punkt', coresLabel: 'Kerne je Programm', coresShare: 'aufgeteilt',
     cardLabel: 'Grafikkarte', cardNone: 'keine', cardOne: 'für einen Knoten', cardAll: 'für jeden Knoten',
     noCard: why => `Dieser Browser gibt der Seite keine Grafikkarte (WebGPU): ${why}`,
     machineTitle: 'Dieser Rechner', cardShort: 'GPU', coresWord: k => k === 1 ? '1 Kern' : `${k} Kerne`,
@@ -412,7 +416,7 @@ const seconds = ms => (ms / 1000).toLocaleString(lang, { minimumFractionDigits: 
 
 function farm() {
   const [w, h] = $('size').value.split('x').map(Number);
-  return { w, h, tile: 128, passes: Number($('passes').value), rays: 4 };
+  return { w, h, tile: Number($('tile').value), passes: Number($('passes').value), rays: 4 };
 }
 
 // Start the program as node `rank` of the run (0: the coordinator, or the
@@ -676,7 +680,7 @@ function setBusy(busy) {
   $('render').disabled = busy || !module;
   $('check').disabled = busy || !module;
   $('stop').disabled = !busy;
-  for (const id of ['nodes', 'size', 'passes', 'cores']) $(id).disabled = busy;
+  for (const id of ['nodes', 'size', 'tile', 'passes', 'cores']) $(id).disabled = busy;
   $('card').disabled = busy || cardMissing !== null;
 }
 
