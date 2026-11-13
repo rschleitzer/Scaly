@@ -5820,6 +5820,49 @@ define Planner
                         else
                             return false
                 }
+                when call: Call
+                    return this.is_negated_float_constant(call)
+                else
+                    return false
+            false
+        }
+
+        ; `-1.0`: the negation of a float literal, which takes a width as the
+        ; literal does. Before 2026-11-13 it stayed a double wherever an f32
+        ; stood -- converted at a binding or a parameter, two widths in the
+        ; arms of a value (rc 4), and a double in a kernel (GpuKernel), which
+        ; then stayed on the processor.
+        function is_negated_float_constant(this: Planner, call: PlannedCall) returns bool
+        {
+            if call.name <> "-" or call.is_operator = false or call.args = null or call.args.length <> 1
+                return false
+            let a_ptr call.args.get 0
+            if a_ptr = null
+                return false
+            this.operand_is_float_constant(a_ptr.unwrap())
+        }
+
+        ; A float literal written where it stands (`10.0`, `-1.0`), not a
+        ; define's constant put in for its name: the constant's own span
+        ; begins where the operand does.
+        function is_written_float_literal(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when f: FloatingPointConstant
+                            return f.span.start = op.loc.start
+                        else
+                            return false
+                }
+                when call: Call
+                {
+                    if this.is_negated_float_constant(call)
+                        return this.is_written_float_literal((*call.args)[0])
+                }
                 else
                     return false
             false
@@ -5833,6 +5876,21 @@ define Planner
         ; operands operand_is_float_constant accepted.
         function retype_float_operand(this: Planner, op: PlannedOperand, float_type: PlannedType) returns PlannedOperand
         {
+            choose op.expr
+                when call: Call
+                {
+                    ; a negated literal: the literal and its negation
+                    if this.is_negated_float_constant(call)
+                    {
+                        var arg_arr Array[PlannedOperand]()
+                        arg_arr.add(this.retype_float_operand((*call.args)[0], float_type))
+                        var arg_vec Vector[PlannedOperand](arg_arr)
+                        let negated PlannedCall(call.loc, call.name, call.mangled_name, call.is_intrinsic, call.is_operator, call.can_throw, call.requires_page_param, &arg_vec, float_type, call.life, call.throws_type, call.is_indirect)
+                        return PlannedOperand(op.loc, PlannedExpression.Call negated, null, float_type)
+                    }
+                }
+                else
+                    0
             PlannedOperand(op.loc, op.expr, null, float_type)
         }
 
@@ -19426,6 +19484,19 @@ define Planner
             if Planner.type_is_float_like(rhs.result_type)
                 if this.operand_is_float_constant(result) and this.operand_is_float_constant(rhs) = false
                     result := this.retype_float_operand(result, rhs.result_type)
+            ; Two float constants of two widths: a define is put in as its
+            ; constant, typed as declared (`define NEAR f32 0.001`), and the
+            ; literal beside it takes that width. Before 2026-11-13 neither
+            ; moved -- `NEAR * 10.0` multiplied an f32 by an f64, and a
+            ; function answering it answered 0.
+            if this.operand_is_float_constant(rhs) and this.operand_is_float_constant(result)
+                if Planner.normalize_type_name(rhs.result_type.name) <> Planner.normalize_type_name(result.result_type.name)
+                {
+                    if this.is_written_float_literal(rhs) and this.is_written_float_literal(result) = false
+                        rhs := this.retype_float_operand(rhs, result.result_type)
+                    else if this.is_written_float_literal(result) and this.is_written_float_literal(rhs) = false
+                        result := this.retype_float_operand(result, rhs.result_type)
+                }
 
             ; A `ref[T]` beside a value of type `T` in a COMPARISON is
             ; the VALUE -- deref_ref_into_pointee#. `count <> 0` on a
@@ -37709,6 +37780,13 @@ define Planner
             if a.target.length > 0
                 planned_source_collapsed := this.deref_ref_into_pointee(planned_target_collapsed.result_type, planned_source_collapsed)
 
+            ; A value `if`/`match`/block as the source agrees on the target's
+            ; type FIRST (settle_value_arms#; asked again below, where it
+            ; stood before, and a no-op there): judged unsettled, `kind := if
+            ; c: 4 else 1` into an i32 read as an `int` narrowed (rc 4).
+            if a.target.length > 0
+                planned_source_collapsed := this.settle_value_arms(planned_source_collapsed, planned_target_collapsed.result_type, true)
+
             ; ... and does the source conform to the target -- report_type_mismatch#.
             if a.target.length > 0
                 this.report_type_mismatch(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
@@ -51953,7 +52031,10 @@ define Planner
                     return PlannedOperand^this(op.loc, PlannedExpression.As ccast, null, rt)
                 }
             if Planner.type_is_float_like(rt) and this.operand_is_float_constant(op)
-                return PlannedOperand^this(op.loc, op.expr, null, rt)
+            {
+                let retyped this.retype_float_operand(op, rt)
+                return PlannedOperand^this(retyped.loc, retyped.expr, null, rt)
+            }
             ; an untyped integer constant takes the return type, or is rc 4
             ; (settle_constant#)
             if Planner.type_is_integer_like(rt) and this.constant_shape(op)

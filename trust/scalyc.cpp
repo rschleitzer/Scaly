@@ -16055,7 +16055,10 @@ bool Planner_operand_is_string_constant(Planner&, PlannedOperand&) asm("_ZN7Plan
 bool Planner_type_is_char_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217type_is_char_likeE11PlannedTypeB6scalycB4v0_2");
 bool Planner_type_is_char_slice(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218type_is_char_sliceE11PlannedTypeB6scalycB4v0_2");
 bool Planner_type_is_float_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218type_is_float_likeE11PlannedTypeB6scalycB4v0_2");
+bool Planner_is_negated_float_constant(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_225is_negated_float_constantE11PlannedCallB6scalycB4v0_2");
 bool Planner_operand_is_float_constant(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_225operand_is_float_constantE14PlannedOperandB6scalycB4v0_2");
+PlannedOperand* Option_unwrap3(PlannedOperand*) asm("_ZN6OptionIR14PlannedOperandB6scalycB4v0_2E6unwrapEv");
+bool Planner_is_written_float_literal(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224is_written_float_literalE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand Planner_retype_float_operand(scaly_frame*, Planner&, PlannedOperand&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_220retype_float_operandEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_type_is_integer_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_220type_is_integer_likeE11PlannedTypeB6scalycB4v0_2");
 bool Planner_integer_literal_fits(uint64_t, String&) asm("_ZN7PlannerB6scalycB4v0_220integer_literal_fitsEm6String");
@@ -16175,7 +16178,7 @@ String Planner_ops_root_name(scaly_frame*, Vector<Operand>&, bool) asm("_ZN7Plan
 uint64_t Planner_root_bit(String&, Array<String>&, Array<String>&) asm("_ZN7PlannerB6scalycB4v0_28root_bitE6String5ArrayI6StringE5ArrayI6StringE");
 bool Planner_ops_store_build_into(Planner&, Vector<Operand>&, Array<String>&, Array<String>&) asm("_ZN7PlannerB6scalycB4v0_220ops_store_build_intoE6VectorI7OperandB6scalycB4v0_2E5ArrayI6StringE5ArrayI6StringE");
 bool Planner_stmt_stores_build_into(Planner&, Statement&, Array<String>&, Array<String>&) asm("_ZN7PlannerB6scalycB4v0_222stmt_stores_build_intoE9StatementB6scalycB4v0_25ArrayI6StringE5ArrayI6StringE");
-Statement* Option_unwrap3(Statement*) asm("_ZN6OptionIR9StatementB6scalycB4v0_2E6unwrapEv");
+Statement* Option_unwrap4(Statement*) asm("_ZN6OptionIR9StatementB6scalycB4v0_2E6unwrapEv");
 bool Planner_concept_needs_this_residency(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_228concept_needs_this_residencyE6String");
 String Planner_last_name_segment(scaly_frame*, String&) asm("_ZN7PlannerB6scalycB4v0_217last_name_segmentEPN4scaly6memory4PageE6String");
 bool Planner_field_type_needs_residency(Planner&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_226field_type_needs_residencyE6Stringm");
@@ -16229,7 +16232,6 @@ bool Planner_candidate_matches_char_fold(Planner&, Function&, Vector<PlannedType
 bool Planner_persist_receiver_is_frame_local(Planner&, bool, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_231persist_receiver_is_frame_localEb14PlannedOperandB6scalycB4v0_2");
 bool Planner_persists_args_for(Planner&, String&, Function&) asm("_ZN7PlannerB6scalycB4v0_217persists_args_forE6String8FunctionB6scalycB4v0_2");
 uint64_t Planner_persists_mask_for(Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_217persists_mask_forE8FunctionB6scalycB4v0_2");
-PlannedOperand* Option_unwrap4(PlannedOperand*) asm("_ZN6OptionIR14PlannedOperandB6scalycB4v0_2E6unwrapEv");
 String Planner_lifetime_kind_name(scaly_frame*, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_218lifetime_kind_nameEPN4scaly6memory4PageE8LifetimeB6scalycB4v0_2");
 void Planner_inline_gate_trace(String&, Vector<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_217inline_gate_traceE6StringR6VectorI14PlannedOperandB6scalycB4v0_2E");
 bool Planner_args_have_local_life_masked(Vector<PlannedType>&, uint64_t, uint64_t) asm("_ZN7PlannerB6scalycB4v0_227args_have_local_life_maskedE6VectorI11PlannedTypeB6scalycB4v0_2E3u64m");
@@ -42884,6 +42886,69 @@ __attribute__((weak)) bool Planner_operand_is_float_constant(Planner& scaly_self
                 }
             }
         }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            return Planner_is_negated_float_constant(*(this_), call);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_is_negated_float_constant(Planner& scaly_self, PlannedCall& call)
+{
+    Planner* this_ = &scaly_self;
+    if (((((!(String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001-"})))) ? true : (((call).is_operator) == (false))) ? true : (((call).args) == (nullptr))) ? true : ((call).args->length != 1ULL)))
+    {
+        return false;
+    }
+    PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+    if (((a_ptr) == (nullptr)))
+    {
+        return false;
+    }
+    return Planner_operand_is_float_constant(*(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_is_written_float_literal(Planner& scaly_self, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    if ((((op).member_access) != (nullptr)))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 0)
+        {
+            PlannedConstant pc = scaly_payload<PlannedConstant>(scaly_t1);
+            {
+                auto&& scaly_t2 = (pc).value;
+                if (scaly_t2.tag == 3)
+                {
+                    FloatingPointConstant f = scaly_payload<FloatingPointConstant>(scaly_t2);
+                    return (((f).span).start == ((op).loc).start);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            if (Planner_is_negated_float_constant(*(this_), call))
+            {
+                return Planner_is_written_float_literal(*(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)));
+            }
+        }
         else
         {
             return false;
@@ -42896,6 +42961,25 @@ __attribute__((weak)) bool Planner_operand_is_float_constant(Planner& scaly_self
 __attribute__((weak)) PlannedOperand Planner_retype_float_operand(scaly_frame* scaly_rp, Planner& scaly_self, PlannedOperand& op, PlannedType& float_type)
 {
     Planner* this_ = &scaly_self;
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            if (Planner_is_negated_float_constant(*(this_), call))
+            {
+                Array<PlannedOperand>* arg_arr = ({ Array<PlannedOperand>* scaly_t2 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t2 = Array<PlannedOperand>{}; (void)0; scaly_t2; });
+                Array_add<PlannedOperand>((*arg_arr), scaly_lvalue(Planner_retype_float_operand(scaly_rp, *(this_), scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*((call).args)))), 0LL)), float_type)));
+                Vector<PlannedOperand>* arg_vec = ({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t3), (*arg_arr)); scaly_t3; });
+                PlannedCall* negated = ({ PlannedCall* scaly_t4 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t4 = PlannedCall{(call).loc, (call).name, (call).mangled_name, (call).is_intrinsic, (call).is_operator, (call).can_throw, (call).requires_page_param, (&((*arg_vec))), float_type, (call).life, (call).throws_type, (call).is_indirect}; scaly_t4; });
+                return PlannedOperand{(op).loc, scaly_variant<PlannedExpression>(4, (*negated)), (Vector<PlannedMemberAccess>*)(nullptr), float_type};
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
     return PlannedOperand{(op).loc, (op).expr, (Vector<PlannedMemberAccess>*)(nullptr), float_type};
 }
 
@@ -55164,6 +55248,23 @@ __attribute__((weak)) PlannedOperand Planner_raw_operation(scaly_frame* scaly_rp
         if ((Planner_operand_is_float_constant(*(this_), result) ? ((Planner_operand_is_float_constant(*(this_), rhs)) == (false)) : false))
         {
             result = Planner_retype_float_operand(scaly_rp, *(this_), result, (rhs).result_type);
+        }
+    }
+    if ((Planner_operand_is_float_constant(*(this_), rhs) ? Planner_operand_is_float_constant(*(this_), result) : false))
+    {
+        if ((!(String_equals(scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, ((rhs).result_type).name)), scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, ((result).result_type).name))))))
+        {
+            if ((Planner_is_written_float_literal(*(this_), rhs) ? ((Planner_is_written_float_literal(*(this_), result)) == (false)) : false))
+            {
+                rhs = Planner_retype_float_operand(scaly_rp, *(this_), rhs, (result).result_type);
+            }
+            else
+            {
+                if ((Planner_is_written_float_literal(*(this_), result) ? ((Planner_is_written_float_literal(*(this_), rhs)) == (false)) : false))
+                {
+                    result = Planner_retype_float_operand(scaly_rp, *(this_), result, (rhs).result_type);
+                }
+            }
         }
     }
     if (Planner_is_integer_comparison_operator(op_name))
@@ -72563,6 +72664,10 @@ __attribute__((weak)) PlannedAction Planner_plan_action(scaly_frame* scaly_rp, P
     if ((((a).target).length > 0ULL))
     {
         planned_source_collapsed = Planner_deref_ref_into_pointee(scaly_rp, *(this_), (planned_target_collapsed).result_type, planned_source_collapsed);
+    }
+    if ((((a).target).length > 0ULL))
+    {
+        planned_source_collapsed = Planner_settle_value_arms(scaly_rp, *(this_), planned_source_collapsed, (planned_target_collapsed).result_type, true);
     }
     if ((((a).target).length > 0ULL))
     {
@@ -90458,7 +90563,8 @@ __attribute__((weak)) PlannedOperand* Planner_convert_tail_literal(scaly_frame* 
     }
     if ((Planner_type_is_float_like(rt) ? Planner_operand_is_float_constant(*(this_), op) : false))
     {
-        return (PlannedOperand*)&((*({ PlannedOperand* scaly_t8 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t8 = PlannedOperand{(op).loc, (op).expr, (Vector<PlannedMemberAccess>*)(nullptr), rt}; scaly_t8; })));
+        PlannedOperand retyped = Planner_retype_float_operand(scaly_rp, *(this_), op, rt);
+        return (PlannedOperand*)&((*({ PlannedOperand* scaly_t8 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t8 = PlannedOperand{(retyped).loc, (retyped).expr, (Vector<PlannedMemberAccess>*)(nullptr), rt}; scaly_t8; })));
     }
     if ((Planner_type_is_integer_like(rt) ? Planner_constant_shape(*(this_), op) : false))
     {

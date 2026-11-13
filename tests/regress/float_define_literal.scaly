@@ -1,0 +1,27 @@
+; A float literal beside a define's float constant takes the define's
+; width: a define is put in as its constant, typed as declared. Before,
+; `NEAR * 10.0` multiplied an f32 by an f64, and a function answering it
+; answered 0.
+
+define NEAR f32 0.001
+
+function off() returns f32
+    NEAR * 10.0
+
+function back(x: f32) returns f32
+    x - 10.0 * NEAR
+
+function kind(x: f32) returns i32
+{
+    var k: i32 0
+    k := if x > 1.0: 4 else 1
+    k
+}
+
+let f: f32 0.01
+var ok off() = NEAR * (10.0 as f32) and off() > 0.0099 and off() < 0.0101
+ok := ok and back(1.0) = (1.0 as f32) - f and kind(2.0) = 4 and kind(0.5) = 1
+if ok
+    print "PASS"
+else
+    print "FAIL"

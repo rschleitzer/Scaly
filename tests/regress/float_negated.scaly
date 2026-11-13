@@ -1,0 +1,33 @@
+; A negated float literal takes a width as the literal does: at a binding,
+; a parameter, a return, a field, and in the arms of a value. Before, `-1.0`
+; stayed a double -- converted at most positions, and two widths in the
+; arms of a value (rc 4).
+
+define P
+(
+    a: f32
+    b: f32
+)
+
+function sign(x: f32) returns f32
+{
+    if x < 0.0
+        return -1.0
+    1.0
+}
+
+function pick(x: f32) returns f32
+{
+    let y if x > 1.0: x else -1.0
+    y * -0.5
+}
+
+let z: f32 -0.25
+let p P(-0.5, -2.0)
+var ok sign(-3.0) = -1.0 and sign(2.0) = 1.0
+ok := ok and pick(4.0) = -2.0 and pick(0.5) = 0.5
+ok := ok and z = -0.25 and p.a = -0.5 and p.b = -2.0
+if ok
+    print "PASS"
+else
+    print "FAIL"
