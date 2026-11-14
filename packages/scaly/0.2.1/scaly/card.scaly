@@ -1,4 +1,4 @@
-; A vector whose home may be the graphics card (ROADMAP-card.md).
+; A vector whose home may be the graphics card.
 ;
 ; Its home is decided once, when it is made: on the card where the program's
 ; host has one (scaly_card_available: a page that handed the program a card,

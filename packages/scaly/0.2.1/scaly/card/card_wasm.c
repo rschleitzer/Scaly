@@ -1,5 +1,5 @@
 /* The graphics card's vectors on wasm32: the page the program runs in
- * (scaly/card.scaly, ROADMAP-card.md).
+ * (scaly/card.scaly).
  *
  * Containment: this is C because it names symbols of ONE system -- the
  * imports of the module "scaly_card", which only a WebAssembly host has --,

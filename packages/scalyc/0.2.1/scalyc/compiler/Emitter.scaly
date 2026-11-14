@@ -19123,7 +19123,7 @@ define Emitter
             ; the reductions promote_for# just found for THIS loop
             gk.set_reductions(&parfor_checker.red_names, &parfor_checker.red_ops, 0, parfor_checker.red_names.length)
             gk.classify_loop(for_expr)
-            ; a loop over CardVectors must run on the card (ROADMAP-card.md):
+            ; a loop over CardVectors must run on the card (scaly/card.scaly):
             ; one that is no kernel is the program's error, not a loop for
             ; the processor
             if gk.k_blocked and gk.k_card
@@ -19252,7 +19252,7 @@ define Emitter
                 oi := oi + 1
             }
 
-            ; a loop over CardVectors (ROADMAP-card.md): where its vectors live
+            ; a loop over CardVectors (scaly/card.scaly): where its vectors live
             ; on the card, ONE run handed to the host, which only lists it --
             ; nothing waits --, else the processor's loop; never the gates'
             ; weighing. A host without CardVectors (Metal, so far) keeps them

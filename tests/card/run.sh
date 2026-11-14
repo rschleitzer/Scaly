@@ -1,6 +1,6 @@
 #!/bin/bash
 # tests/card/run.sh [compiler] -- CardVectors on a page's graphics card
-# (ROADMAP-card.md, scaly/card.scaly, scaly/card/card_wasm.c,
+# (scaly/card.scaly, scaly/card/card_wasm.c,
 # web/card-host.mjs, web/card-worker.mjs).
 #
 # Each program here is built twice: natively, where its CardVectors live in

@@ -69,7 +69,7 @@ check "whole numbers in the block: as without"      'line 23 | grep -q "kernel (
 check "a 64-bit integer stays metal's, relaxed or not" 'line 25 | grep -q "kernel (metal): .*not webgpu: .*64-bit integer$"'
 check "after the block the word no longer holds"    'line 28 | grep -q "kernel (metal): .*the loop is not relaxed$"'
 
-# CardVectors (ROADMAP-card.md): a buffer and an output like a Vector's, a put
+# CardVectors (scaly/card.scaly): a buffer and an output like a Vector's, a put
 # also at an offset every round shares; a loop naming one writes CardVectors
 # alone and reduces nothing -- and under --gpu one that is no kernel is rc 4.
 got=$("$STAGE" --gpu-plan tests/gpu-plan/card.scaly 2>&1 | grep '^gpu-plan:')

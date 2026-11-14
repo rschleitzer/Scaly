@@ -1,5 +1,5 @@
 // Where a Scaly program's CardVectors live in a web page: the graphics card
-// (scaly/card.scaly, ROADMAP-card.md).
+// (scaly/card.scaly).
 //
 // The program runs in a worker and calls its host synchronously
 // (scaly/card/card_wasm.c: the import module "scaly_card"); WebGPU answers

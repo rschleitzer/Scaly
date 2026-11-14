@@ -27,7 +27,7 @@
 ;     `expf` its exponential (a card and the processor round exp apart);
 ;   - nothing in it allocates, builds a String or a record on a page, or
 ;     leaves the loop early;
-;   - a loop that names a CardVector (ROADMAP-card.md) writes CardVectors
+;   - a loop that names a CardVector (scaly/card.scaly) writes CardVectors
 ;     alone and reduces nothing: its results stay where its vectors live,
 ;     and nothing in it makes the processor wait for the card.
 ; The loop's own counter and a scalar of the environment are exempt from

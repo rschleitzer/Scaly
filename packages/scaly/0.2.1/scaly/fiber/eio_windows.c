@@ -2520,7 +2520,7 @@ const char* scaly_argument(unsigned long long index)
 }
 
 
-/* The graphics card's vectors (scaly/card.scaly, ROADMAP-card.md): no host of
+/* The graphics card's vectors (scaly/card.scaly): no host of
  * this file has a card, so every CardVector lives in the program's memory and
  * none of the others is ever called. They are here, not in a file of their
  * own, because every runtime archive carries this file: a CardVector, which
