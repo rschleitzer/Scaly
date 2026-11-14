@@ -3247,9 +3247,9 @@ int64_t Cluster_desc_word(void*, uint64_t) asm("_ZN7Cluster9desc_wordEPvm");
 void* Cluster_find_loop(uint64_t) asm("_ZN7Cluster9find_loopE3u64");
 uint8_t* Cluster_capture_record(void*, void*, uint64_t) asm("_ZN7Cluster14capture_recordEPvPvm");
 bool Cluster_travels_out(int64_t) asm("_ZN7Cluster11travels_outE3i64");
-scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(scaly_frame*, uint8_t*, int64_t) asm("_ZN7Cluster9buffer_ofEPN4scaly6memory4PageEP2u83i64");
+scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(uint8_t*, int64_t) asm("_ZN7Cluster9buffer_ofEP2u83i64");
 bool Cluster_read_only(int64_t) asm("_ZN7Cluster9read_onlyE3i64");
-scaly_tuple<uint64_t, uint64_t> Cluster_weight(scaly_frame*, void*, void*) asm("_ZN7Cluster6weightEPN4scaly6memory4PageEPvPv");
+scaly_tuple<uint64_t, uint64_t> Cluster_weight(void*, void*) asm("_ZN7Cluster6weightEPvPv");
 uint64_t Cluster_send_job(NodePeer*, void*, void*, uint64_t, int64_t, int64_t, bool) asm("_ZN7Cluster8send_jobEP8NodePeerPvPv3u643i643i64b");
 void Cluster_take_result(void*, void*, ClusterResult*) asm("_ZN7Cluster11take_resultEPvPvR13ClusterResult");
 void Cluster_fix_parts(ReceivedRegion*, void*, uint64_t) asm("_ZN7Cluster9fix_partsER14ReceivedRegionPvm");
@@ -14646,7 +14646,7 @@ __attribute__((weak)) bool Cluster_travels_out(int64_t kind)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
-__attribute__((weak)) scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(scaly_frame* scaly_rp, uint8_t* rec, int64_t kind)
+__attribute__((weak)) scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(uint8_t* rec, int64_t kind)
 {
     uint64_t* words = ((uint64_t*)(rec));
     int64_t base = (kind & 15LL);
@@ -14672,9 +14672,8 @@ __attribute__((weak)) bool Cluster_read_only(int64_t kind)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
-__attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(scaly_frame* scaly_rp, void* desc, void* cell)
+__attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(void* desc, void* cell)
 {
-    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
     uint64_t read = 0ULL;
     uint64_t per_round = 0ULL;
@@ -14692,7 +14691,7 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(scaly_frame
         {
             if (((base == 2LL) ? true : (base == 3LL)))
             {
-                read = (read + ((Cluster_buffer_of(&scaly_local.f, Cluster_capture_record(desc, cell, c), kind))._0 * elem));
+                read = (read + ((Cluster_buffer_of(Cluster_capture_record(desc, cell, c), kind))._0 * elem));
             }
             else
             {
@@ -14710,7 +14709,6 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(scaly_frame
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void* cell, uint64_t offer, int64_t lo, int64_t hi, bool cached)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     uint64_t size = ((uint64_t)(Cluster_desc_word(desc, 1ULL)));
     uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
     uint64_t nin = 0ULL;
@@ -14749,7 +14747,7 @@ __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void
                 uint64_t bytes = elem;
                 if ((kind != 17LL))
                 {
-                    scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(&scaly_local.f, rec, kind);
+                    scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(rec, kind);
                     int64_t base = (kind & 15LL);
                     from = (b)._1;
                     bytes = ((b)._0 * elem);
@@ -14777,7 +14775,6 @@ __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void Cluster_take_result(void* desc, void* cell, ClusterResult* res)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
     uint64_t j = 0ULL;
     uint64_t c = 0ULL;
@@ -14788,7 +14785,7 @@ __attribute__((weak)) void Cluster_take_result(void* desc, void* cell, ClusterRe
         if (((base == 4LL) ? true : (base == 5LL)))
         {
             uint64_t elem = ((uint64_t)(Cluster_desc_word(desc, (8ULL + (c * 3ULL)))));
-            scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(&scaly_local.f, Cluster_capture_record(desc, cell, c), kind);
+            scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(Cluster_capture_record(desc, cell, c), kind);
             Vector<uint8_t> part = Vector9<Vector<uint8_t>>(res->outputs, j);
             void* at = ((void*)((((((uint64_t)((b)._1))) + ((((uint64_t)(res->lo))) * elem)))));
             memcpy(at, ((void*)((part).data)), ((size_t)((part).length)));
@@ -15471,7 +15468,6 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int64_t count, int64_t done, double round, int64_t workers, int64_t slot)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     int64_t left = (count - done);
     int64_t cores = ((workers > 0LL) ? workers : 1LL);
     double here_ns = ((double)((double)(((double)((double)((((double)(left)))) * (double)(round)))) / (double)((((double)(cores))))));
@@ -15497,7 +15493,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
         Scheduler_create(Page_allocate_page());
     }
     uint64_t n = cluster_peer_count;
-    scaly_tuple<uint64_t, uint64_t> w = Cluster_weight(&scaly_local.f, desc, cell);
+    scaly_tuple<uint64_t, uint64_t> w = Cluster_weight(desc, cell);
     double byte_ns = ((double)(10LL));
     int64_t share = (left / (((((((int64_t)(n))) + 1LL)) * 4LL)));
     if ((share < 1LL))

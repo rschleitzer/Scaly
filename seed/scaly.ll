@@ -49575,17 +49575,17 @@ entry:
   ret i1 %ne
 }
 
-define linkonce_odr void @_ZN7Cluster9buffer_ofEPN4scaly6memory4PageEP2u83i64(ptr noalias sret({ i64, ptr }) %0, ptr %1, ptr %2, i64 %3) {
+define linkonce_odr void @_ZN7Cluster9buffer_ofEP2u83i64(ptr noalias sret({ i64, ptr }) %0, ptr %1, i64 %2) {
 entry:
   %tuple = alloca { i64, ptr }, align 8
-  %and = and i64 %3, 15
+  %and = and i64 %2, 15
   %eq = icmp eq i64 %and, 3
   br i1 %eq, label %if.then, label %lor.rhs
 
 if.then:                                          ; preds = %lor.rhs, %entry
-  %ptr.add = getelementptr inbounds i64, ptr %2, i64 0
+  %ptr.add = getelementptr inbounds i64, ptr %1, i64 0
   %deref = load i64, ptr %ptr.add, align 8
-  %ptr.add2 = getelementptr inbounds i64, ptr %2, i64 2
+  %ptr.add2 = getelementptr inbounds i64, ptr %1, i64 2
   %deref3 = load i64, ptr %ptr.add2, align 8
   %as.inttoptr = inttoptr i64 %deref3 to ptr
   %tuple.field = getelementptr inbounds nuw { i64, ptr }, ptr %tuple, i32 0, i32 0
@@ -49597,9 +49597,9 @@ if.then:                                          ; preds = %lor.rhs, %entry
   ret void
 
 if.end:                                           ; preds = %lor.rhs
-  %ptr.add5 = getelementptr inbounds i64, ptr %2, i64 0
+  %ptr.add5 = getelementptr inbounds i64, ptr %1, i64 0
   %deref6 = load i64, ptr %ptr.add5, align 8
-  %ptr.add7 = getelementptr inbounds i64, ptr %2, i64 1
+  %ptr.add7 = getelementptr inbounds i64, ptr %1, i64 1
   %deref8 = load i64, ptr %ptr.add7, align 8
   %as.inttoptr9 = inttoptr i64 %deref8 to ptr
   %tuple.field10 = getelementptr inbounds nuw { i64, ptr }, ptr %tuple, i32 0, i32 0
@@ -49638,11 +49638,11 @@ lor.end3:                                         ; preds = %lor.rhs2, %lor.end
   ret i1 %lor.result5
 }
 
-define linkonce_odr void @_ZN7Cluster6weightEPN4scaly6memory4PageEPvPv(ptr noalias sret({ i64, i64 }) %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN7Cluster6weightEPvPv(ptr noalias sret({ i64, i64 }) %0, ptr %1, ptr %2) {
 entry:
   %tuple = alloca { i64, i64 }, align 8
   %sret.result = alloca { i64, ptr }, align 8
-  %call = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %2, i64 5)
+  %call = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %1, i64 5)
   %read = alloca i64, align 8
   store i64 0, ptr %read, align 1
   %per_round = alloca i64, align 8
@@ -49660,11 +49660,11 @@ while.body:                                       ; preds = %while.cond
   %c2 = load i64, ptr %c, align 8
   %mul = mul i64 %c2, 3
   %add = add i64 7, %mul
-  %call3 = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %2, i64 %add)
+  %call3 = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %1, i64 %add)
   %c4 = load i64, ptr %c, align 8
   %mul5 = mul i64 %c4, 3
   %add6 = add i64 8, %mul5
-  %call7 = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %2, i64 %add6)
+  %call7 = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %1, i64 %add6)
   %and = and i64 %call3, 15
   %eq = icmp eq i64 %call3, 17
   br i1 %eq, label %if.then, label %if.else
@@ -49699,8 +49699,8 @@ if.end:                                           ; preds = %if.end12, %if.then
 if.then10:                                        ; preds = %lor.rhs, %if.else
   %read15 = load i64, ptr %read, align 8
   %c16 = load i64, ptr %c, align 8
-  %call17 = call ptr @_ZN7Cluster14capture_recordEPvPvm(ptr %2, ptr %3, i64 %c16)
-  call void @_ZN7Cluster9buffer_ofEPN4scaly6memory4PageEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr null, ptr %call17, i64 %call3)
+  %call17 = call ptr @_ZN7Cluster14capture_recordEPvPvm(ptr %1, ptr %2, i64 %c16)
+  call void @_ZN7Cluster9buffer_ofEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr %call17, i64 %call3)
   %load.struct = load { i64, ptr }, ptr %sret.result, align 8
   %length = extractvalue { i64, ptr } %load.struct, 0
   %mul18 = mul i64 %length, %call7
@@ -49957,7 +49957,7 @@ if.end79:                                         ; preds = %frame.forced105, %i
   br label %if.end60
 
 if.then86:                                        ; preds = %if.then78
-  call void @_ZN7Cluster9buffer_ofEPN4scaly6memory4PageEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr null, ptr %call85, i64 %call58)
+  call void @_ZN7Cluster9buffer_ofEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr %call85, i64 %call58)
   %and = and i64 %call58, 15
   %load.struct88 = load { i64, ptr }, ptr %sret.result, align 8
   %data89 = extractvalue { i64, ptr } %load.struct88, 1
@@ -50086,7 +50086,7 @@ if.then:                                          ; preds = %lor.rhs, %while.bod
   %call8 = call i64 @_ZN7Cluster9desc_wordEPvm(ptr %0, i64 %add7)
   %c9 = load i64, ptr %c, align 8
   %call10 = call ptr @_ZN7Cluster14capture_recordEPvPvm(ptr %0, ptr %1, i64 %c9)
-  call void @_ZN7Cluster9buffer_ofEPN4scaly6memory4PageEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr null, ptr %call10, i64 %call3)
+  call void @_ZN7Cluster9buffer_ofEP2u83i64(ptr noalias sret({ i64, ptr }) %sret.result, ptr %call10, i64 %call3)
   %field.inplace = getelementptr inbounds nuw %_Z13ClusterResult, ptr %2, i32 0, i32 3
   %j12 = load i64, ptr %j, align 8
   call void @_ZN6VectorI6VectorI2u8EEixEm(ptr noalias sret(%_Z6VectorI2u8E) %sret.result11, ptr %field.inplace, i64 %j12)
@@ -52010,7 +52010,7 @@ if.then11:                                        ; preds = %if.end5
 
 if.end12:                                         ; preds = %if.then11, %if.end5
   %global.load15 = load i64, ptr @cluster_peer_count, align 8
-  call void @_ZN7Cluster6weightEPN4scaly6memory4PageEPvPv(ptr noalias sret({ i64, i64 }) %sret.result, ptr null, ptr %0, ptr %1)
+  call void @_ZN7Cluster6weightEPvPv(ptr noalias sret({ i64, i64 }) %sret.result, ptr %0, ptr %1)
   %add = add i64 %global.load15, 1
   %mul = mul i64 %add, 4
   %sdiv = sdiv i64 %sub, %mul
@@ -66627,27 +66627,125 @@ entry:
   ret void
 }
 
-define linkonce_odr ptr @_Z3exp1T(ptr %0) {
+; Function Attrs: alwaysinline
+define linkonce_odr i1 @_Z11is_nan_bits1T3u64(ptr %0, i64 %1) #2 {
+stub.entry:
+  ret i1 false
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z12infinity_f641T(ptr %0) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z10exp_finish1T3i643f64(ptr %0, i64 %1, double %2) #2 {
 stub.entry:
   ret ptr null
 }
 
-define linkonce_odr ptr @_Z3log1T(ptr %0) {
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z11round_whole1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z11expm1_small1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z12expm1_series1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { i64, double } @_Z10exp_reduce1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { i64, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double } @_Z11log1p_small1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { double, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double, double, double } @_Z8log_core1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { double, double, double, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double } @_Z9log_parts1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { double, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z11log_special1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z3exp1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4exp21T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z5expm11T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z3log1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4log21T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z5log101T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z5log1p1T(ptr %0) #2 {
 stub.entry:
   ret ptr null
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.cttz.i64(i64, i1 immarg) #3
+declare i64 @llvm.cttz.i64(i64, i1 immarg) #4
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.ctlz.i64(i64, i1 immarg) #3
+declare i64 @llvm.ctlz.i64(i64, i1 immarg) #4
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i64 @llvm.ctpop.i64(i64) #3
+declare i64 @llvm.ctpop.i64(i64) #4
 
 define linkonce_odr ptr @_Z3getPv(ptr %0) {
 entry:
@@ -69709,5 +69807,6 @@ while.exit122:                                    ; preds = %while.cond120
 
 attributes #0 = { noreturn }
 attributes #1 = { cold noinline noreturn }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { alwaysinline }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #4 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

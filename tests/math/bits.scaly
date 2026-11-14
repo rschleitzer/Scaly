@@ -1,5 +1,5 @@
 ; tests/math/bits.scaly <function> <file> -- the function of scaly/math.scaly
-; (exp, log) of each number in the file, one bit pattern a line (a decimal
+; (exp, exp2, expm1, log, log2, log10, log1p) of each number in the file, one bit pattern a line (a decimal
 ; u64), as bit patterns: what tests/math/check.py compares with the exact
 ; values and, across builds, with each other.
 let args os.arguments()
@@ -22,10 +22,14 @@ while i < n
     {
         let x v.float_from_bits()
         var y x
-        if which = "exp"
-            y := exp(x)
-        if which = "log"
-            y := log(x)
+        match which
+            case "exp": y := exp(x)
+            case "exp2": y := exp2(x)
+            case "expm1": y := expm1(x)
+            case "log": y := log(x)
+            case "log2": y := log2(x)
+            case "log10": y := log10(x)
+            case "log1p": y := log1p(x)
         out.append "`y.to_bits()`\n"
         v := 0
         any := false

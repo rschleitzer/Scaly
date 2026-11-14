@@ -7712,6 +7712,17 @@ define Emitter
                 fj_name := func.name
                 fj_file := func.file
             }
+            ; `@inline true` (scaly/math.scaly's helpers): put in line
+            ; wherever called -- LLVM weighs a linkonce_odr routine with more
+            ; than one caller against its threshold and would keep a call
+            if current_plan.inline_functions <> null
+            {
+                for nm in (*current_plan.inline_functions)
+                {
+                    if nm = func.mangled_name
+                        add_function_attribute(llvm_func, "alwaysinline")
+                }
+            }
             let ok this.emit_function_body_into(func, llvm_func)
             if fj_seen
                 this.emit_fork_join_function(func, llvm_func)

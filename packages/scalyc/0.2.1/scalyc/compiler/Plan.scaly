@@ -770,5 +770,8 @@ define Plan
     ; Type inference state
     next_type_var_id: size_t
     constraints: ref[Vector[TypeConstraint]]?
+    ; the symbols of the routines declared `@inline true`: put in line
+    ; wherever they are called (scaly/math.scaly's helpers)
+    inline_functions: ref[Vector[String]]?
 )
 

@@ -9,7 +9,8 @@
 #   2. Where this is a Mac that runs x86_64 (Rosetta 2): the same program
 #      built for x86_64 with -mcpu=haswell (FMA) prints the same bits as the
 #      one built here -- the condition for a cluster of both -- and built
-#      for the generic x86_64 (no FMA: relaxed) stays within 0.51 too.
+#      for the generic x86_64 (no FMA: relaxed -- as fast, not as exact)
+#      stays within a unit in the last place.
 #      SKIPPED by name elsewhere.
 set -u
 cd "$(dirname "$0")/../.."
@@ -25,7 +26,7 @@ verdict() { if [ "$1" = 0 ]; then pass=$((pass+1)); else fail=$((fail+1)); failu
 if ! SCALY_POISON=1 "$BIN" -O2 -o "$WORK/bits" tests/math/bits.scaly > "$WORK/build.log" 2>&1; then
   echo "math: FAIL — tests/math/bits.scaly does not build ($(grep -m1 error "$WORK/build.log" | cut -c1-120))"; exit 1
 fi
-for fn in exp log; do
+for fn in exp exp2 expm1 log log2 log10 log1p; do
   python3 tests/math/check.py $fn 20000 1 "$WORK/bits"; verdict $? "$fn"
 done
 
@@ -43,7 +44,7 @@ cross() {
     "$BIN" --target $T -mcpu=$cpu -O2 -c -o "$X/bits_$cpu.o" tests/math/bits.scaly > /dev/null 2>&1 &&
       clang -arch x86_64 "$X/bits_$cpu.o" "$X/libscaly.a" -lm -o "$X/bits_$cpu" 2>/dev/null || { verdict 1 "x86_64 $cpu build"; return 0; }
   done
-  for fn in exp log; do
+  for fn in exp exp2 expm1 log log2 log10 log1p; do
     python3 tests/math/check.py $fn 20000 2 "$WORK/bits" > /dev/null
     "$WORK/bits" $fn "$MATH_INPUTS" > "$WORK/$fn.here"
     "$X/bits_haswell" $fn "$MATH_INPUTS" > "$WORK/$fn.haswell"
@@ -53,7 +54,7 @@ cross() {
       echo "$fn: x86_64 haswell differs from here in $(diff "$WORK/$fn.here" "$WORK/$fn.haswell" | grep -c '^<') results"; verdict 1 "$fn haswell bits"
     fi
     printf '%s (x86_64 generic, relaxed) ' "$fn"
-    python3 tests/math/check.py $fn 20000 3 "$X/bits_generic"; verdict $? "$fn generic"
+    python3 tests/math/check.py $fn 20000 3 "$X/bits_generic" 1.0; verdict $? "$fn generic"
   done
 }
 cross

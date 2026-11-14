@@ -97,3 +97,16 @@ print('; log1p coefficients, (-1)^(n+1)/n')
 for n in range(2, 14):
     v = Decimal((-1) ** (n + 1)) / n
     print(';   %d: %s' % (n, literal(v)))
+
+# exp2: 2^r - 1 = sum (r ln2)^n / n!, |r| <= 1/256; the coefficients
+print('; exp2: 2^r - 1, coefficient of r^n = ln2^n / n!')
+f = 1
+for n in range(1, 7):
+    f *= n
+    print(';   %d: %s' % (n, literal(LN2 ** n / f)))
+
+# log2, log10: 1/ln2 and 1/ln10 as hi + lo
+for name, v in [('INV_LN2', 1 / LN2), ('INV_LN10', 1 / Decimal(10).ln())]:
+    h = float(v)
+    l = float(v - Decimal(h))
+    print('; %s: hi %s, lo bits %s' % (name, literal(h), hexbits(l)))

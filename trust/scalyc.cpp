@@ -434,6 +434,7 @@ struct MemberIndex;
 struct EscIndex;
 struct ResidenceIndex;
 struct DeepIndexes;
+struct GenericWork;
 struct RrSelf;
 struct DeepRetWhole;
 struct Planner_CallArm;
@@ -10733,6 +10734,7 @@ struct Plan
     Vector<String>* delegates;
     uint64_t next_type_var_id;
     Vector<TypeConstraint>* constraints;
+    Vector<String>* inline_functions;
 };
 #endif
 
@@ -11287,6 +11289,16 @@ struct DeepIndexes
     GrowIndex* ret_names;
     GrowIndex* returns_seg;
     GrowIndex* qualified;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z11GenericWorkB6scalycB4v0_2
+#define SCALY_TYPE__Z11GenericWorkB6scalycB4v0_2
+struct GenericWork
+{
+    uint64_t depth;
+    Array<String> keys;
+    Array<String> inline_names;
 };
 #endif
 
@@ -12936,7 +12948,7 @@ struct Planner
     PlannedType* current_return_type;
     bool planning_template;
     bool char_fold_single;
-    uint64_t instantiating_functions;
+    GenericWork* generic_work;
     String root_package;
     Array<String> local_closure_names;
     Array<String> local_box_names;
@@ -16230,8 +16242,14 @@ int64_t Planner_lookup_variant_tag_by_name(Planner&, String&, String&) asm("_ZN7
 PlannedType* Planner_lookup_variant_type(Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_219lookup_variant_typeE6String6String");
 bool Planner_is_generic_type_param_name(String&) asm("_ZN7PlannerB6scalycB4v0_226is_generic_type_param_nameE6String");
 Vector<KeyValuePair<String, PlannedType>> Planner_match_type_pattern(scaly_frame*, Planner&, PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218match_type_patternEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
-PlannedFunction Planner_plan_function(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_213plan_functionEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
+String Planner_generic_instance_key(scaly_frame*, Planner&, Function&, Vector<KeyValuePair<String, PlannedType>>&) asm("_ZN7PlannerB6scalycB4v0_220generic_instance_keyEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE");
+String Planner_generic_instance_symbol(scaly_frame*, Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_223generic_instance_symbolEPN4scaly6memory4PageE8FunctionB6scalycB4v0_2");
 PlannedFunction Planner_instantiate_generic_function(scaly_frame*, Planner&, Function&, Vector<KeyValuePair<String, PlannedType>>&) asm("_ZN7PlannerB6scalycB4v0_228instantiate_generic_functionEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE");
+MethodMatch* Planner_ensure_generic_instance(scaly_frame*, Planner&, Function&, MethodMatch*) asm("_ZN7PlannerB6scalycB4v0_223ensure_generic_instanceEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11MethodMatchB6scalycB4v0_2E");
+String Planner_encode_type(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211encode_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
+Vector<PlannedItem> Planner_plan_items(scaly_frame*, Planner&, Vector<Item>&) asm("_ZN7PlannerB6scalycB4v0_210plan_itemsEPN4scaly6memory4PageE6VectorI4ItemB6scalycB4v0_2E");
+String Planner_mangle_function_in(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool, String&) asm("_ZN7PlannerB6scalycB4v0_218mangle_function_inEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb6String");
+PlannedFunction Planner_plan_function(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_213plan_functionEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 PlannedType Planner_fresh_type_var(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_214fresh_type_varEPN4scaly6memory4PageE6String");
 PlannedType Planner_rehome_type(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211rehome_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 String* Planner_concept_origin_file(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_219concept_origin_fileE6String");
@@ -16407,7 +16425,6 @@ PlannedOperand Planner_collapse_construction_in(scaly_frame*, Planner&, Vector<P
 String Planner_pointee_mangled(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_215pointee_mangledEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 void Planner_ensure_layout_by_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_221ensure_layout_by_nameE6String");
 Vector<PlannedType> Planner_extract_arg_types(scaly_frame*, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_217extract_arg_typesEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
-Vector<PlannedItem> Planner_plan_items(scaly_frame*, Planner&, Vector<Item>&) asm("_ZN7PlannerB6scalycB4v0_210plan_itemsEPN4scaly6memory4PageE6VectorI4ItemB6scalycB4v0_2E");
 Vector<PlannedOperand>* Planner_restamp_args(scaly_frame*, Planner&, Vector<PlannedOperand>&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_212restamp_argsEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E8LifetimeB6scalycB4v0_2");
 Vector<PlannedComponent>* Planner_restamp_components(scaly_frame*, Planner&, Vector<PlannedComponent>&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_218restamp_componentsEPN4scaly6memory4PageE6VectorI16PlannedComponentB6scalycB4v0_2E8LifetimeB6scalycB4v0_2");
 PlannedOperand Planner_collapse_variant_in(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedOperand&, PlannedOperand&, PlannedType&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_219collapse_variant_inEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_26Stringm");
@@ -16440,7 +16457,6 @@ Vector<PlannedType> Planner_operator_planned_param_types(scaly_frame*, Planner&,
 bool Planner_operator_is_intrinsic(Operator&) asm("_ZN7PlannerB6scalycB4v0_221operator_is_intrinsicE8OperatorB6scalycB4v0_2");
 String Planner_encode_parent(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_213encode_parentEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 String Planner_encode_name(scaly_frame*, String&) asm("_ZN7PlannerB6scalycB4v0_211encode_nameEPN4scaly6memory4PageE6String");
-String Planner_encode_type(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211encode_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 String Planner_mangle_method(scaly_frame*, Planner&, String&, PlannedType&, Vector<PlannedType>&, bool) asm("_ZN7PlannerB6scalycB4v0_213mangle_methodEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2Eb");
 bool Planner_method_params_widen(Planner&, Function&, Vector<PlannedType>&, bool) asm("_ZN7PlannerB6scalycB4v0_219method_params_widenE8FunctionB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2Eb");
 bool Planner_integer_name_is_unsigned(String&) asm("_ZN7PlannerB6scalycB4v0_224integer_name_is_unsignedE6String");
@@ -17091,7 +17107,6 @@ uint64_t Planner_lazy_aside(Planner&) asm("_ZN7PlannerB6scalycB4v0_210lazy_aside
 PlannedFunction Planner_plan_function_planned(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_221plan_function_plannedEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 void Planner_lazy_back(Planner&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_29lazy_backEm");
 bool Planner_is_ref_or_pointer_type(Type&) asm("_ZN7PlannerB6scalycB4v0_222is_ref_or_pointer_typeE4TypeB6scalycB4v0_2");
-String Planner_mangle_function_in(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool, String&) asm("_ZN7PlannerB6scalycB4v0_218mangle_function_inEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb6String");
 bool Planner_init_block_checkable(Planner&, PlannedBlock&) asm("_ZN7PlannerB6scalycB4v0_220init_block_checkableE12PlannedBlockB6scalycB4v0_2");
 bool Planner_init_if_checkable(Planner&, PlannedIf&) asm("_ZN7PlannerB6scalycB4v0_217init_if_checkableE9PlannedIfB6scalycB4v0_2");
 bool Planner_init_choose_checkable(Planner&, PlannedChoose&) asm("_ZN7PlannerB6scalycB4v0_221init_choose_checkableE13PlannedChooseB6scalycB4v0_2");
@@ -17478,7 +17493,7 @@ void GpuKernel_k_members(GpuKernel&, PlannedOperand&, String&) asm("_ZN9GpuKerne
 int64_t GpuKernel_local_index(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_211local_indexE6String");
 int64_t GpuKernel_kind_at(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_27kind_atEi");
 void GpuKernel_k_field_write(GpuKernel&, PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_213k_field_writeE14PlannedOperandB6scalycB4v0_2");
-scaly_tuple<int64_t, int64_t> GpuKernel_init_place(scaly_frame*, GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_210init_placeEPN4scaly6memory4PageE6String");
+scaly_tuple<int64_t, int64_t> GpuKernel_init_place(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_210init_placeE6String");
 void GpuKernel_k_operand(GpuKernel&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_29k_operandE14PlannedOperandB6scalycB4v0_2b");
 PlannedInitializer* Option_unwrap14(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_drop_locals(GpuKernel&, uint64_t) asm("_ZN9GpuKernelB6scalycB4v0_211drop_localsEm");
@@ -41859,7 +41874,7 @@ __attribute__((weak)) bool Planner_use_vis_check(Planner& scaly_self, String& na
     {
         return true;
     }
-    if ((this_->instantiating_functions > 0ULL))
+    if ((this_->generic_work->depth > 0ULL))
     {
         return true;
     }
@@ -48180,6 +48195,117 @@ __attribute__((weak)) Vector<KeyValuePair<String, PlannedType>> Planner_infer_ty
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) String Planner_generic_instance_key(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, Vector<KeyValuePair<String, PlannedType>>& args)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    StringBuilder_append2((*sb), (f).name);
+    for (auto scaly_t2 = Vector_get_iterator<KeyValuePair<String, PlannedType>>(scaly_rp, args);;)
+    {
+        KeyValuePair<String, PlannedType>* scaly_t2_at = (KeyValuePair<String, PlannedType>*)VectorIterator_next<KeyValuePair<String, PlannedType>>(scaly_t2);
+        if (scaly_t2_at == nullptr)
+            break;
+        KeyValuePair<String, PlannedType>* kv = scaly_t2_at;
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\001|"}));
+        StringBuilder_append2((*sb), (kv->value).mangled_name);
+    }
+    String k = StringBuilder_to_string(scaly_rp, (*sb));
+    return (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), k); scaly_t4; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) MethodMatch* Planner_ensure_generic_instance(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, MethodMatch* m)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (((((m) == (nullptr)) ? true : (((f).parameters).length == 0ULL)) ? true : this_->planning_template))
+    {
+        return m;
+    }
+    MethodMatch* mm = ({ MethodMatch* scaly_t1 = (MethodMatch*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(MethodMatch), alignof(MethodMatch)); *scaly_t1 = ((*(m))); scaly_t1; });
+    Array<KeyValuePair<String, PlannedType>>* bind_arr = ({ Array<KeyValuePair<String, PlannedType>>* scaly_t2 = (Array<KeyValuePair<String, PlannedType>>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<KeyValuePair<String, PlannedType>>), alignof(Array<KeyValuePair<String, PlannedType>>)); *scaly_t2 = Array<KeyValuePair<String, PlannedType>>{}; (void)0; scaly_t2; });
+    for (auto scaly_t3 = Vector_get_iterator<GenericParameter>(scaly_rp, (f).parameters);;)
+    {
+        GenericParameter* scaly_t3_at = (GenericParameter*)VectorIterator_next<GenericParameter>(scaly_t3);
+        if (scaly_t3_at == nullptr)
+            break;
+        GenericParameter* gp = scaly_t3_at;
+        PlannedType* sub = Planner_lookup_type_substitution(*(this_), gp->name);
+        if (((sub) == (nullptr)))
+        {
+            return m;
+        }
+        PlannedType* st = ({ PlannedType* scaly_t4 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t4 = ((*(sub))); scaly_t4; });
+        if (((((*st)).variable) != (nullptr)))
+        {
+            return m;
+        }
+        Array_add<KeyValuePair<String, PlannedType>>((*bind_arr), scaly_lvalue((*({ KeyValuePair<String, PlannedType>* scaly_t5 = (KeyValuePair<String, PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(KeyValuePair<String, PlannedType>), alignof(KeyValuePair<String, PlannedType>)); *scaly_t5 = KeyValuePair<String, PlannedType>{gp->name, (*st)}; scaly_t5; }))));
+    }
+    Vector<KeyValuePair<String, PlannedType>>* bindings = ({ Vector<KeyValuePair<String, PlannedType>>* scaly_t6 = (Vector<KeyValuePair<String, PlannedType>>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<KeyValuePair<String, PlannedType>>), alignof(Vector<KeyValuePair<String, PlannedType>>)); *scaly_t6 = Vector<KeyValuePair<String, PlannedType>>{}; Vector_init7<KeyValuePair<String, PlannedType>>((*scaly_t6), (*bind_arr)); scaly_t6; });
+    String key = Planner_generic_instance_key(&scaly_local.f, *(this_), f, (*bindings));
+    bool under_way = false;
+    for (auto scaly_t7 = Array_get_iterator<String>(scaly_rp, this_->generic_work->keys);;)
+    {
+        String* scaly_t7_at = (String*)ArrayIterator_next<String>(scaly_t7);
+        if (scaly_t7_at == nullptr)
+            break;
+        String* w = scaly_t7_at;
+        if (String_equals(*(w), key))
+        {
+            under_way = true;
+        }
+    }
+    String* symbol = ({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init3((*scaly_t8)); scaly_t8; });
+    if (under_way)
+    {
+        (*symbol) = Planner_generic_instance_symbol(scaly_rp, *(this_), f);
+    }
+    else
+    {
+        PlannedFunction inst = Planner_instantiate_generic_function(scaly_rp, *(this_), f, (*bindings));
+        (*symbol) = (inst).mangled_name;
+    }
+    return (MethodMatch*)&((*({ MethodMatch* scaly_t13 = (MethodMatch*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(MethodMatch), alignof(MethodMatch)); *scaly_t13 = MethodMatch{((*mm)).method, (*({ String* scaly_t14 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t14 = String{}; String_init2((*scaly_t14), (*symbol)); scaly_t14; })), ((*mm)).return_type, ((*mm)).parameter_types, ((*mm)).requires_page_param, ((*mm)).can_throw, ((*mm)).throws_type, ((*mm)).is_intrinsic, ((*mm)).takes_this, ((*mm)).persists_args, ((*mm)).return_class, ((*mm)).return_arg}; scaly_t13; })));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) String Planner_generic_instance_symbol(scaly_frame* scaly_rp, Planner& scaly_self, Function& f)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* nb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    StringBuilder_append2((*nb), (f).name);
+    for (auto scaly_t2 = Vector_get_iterator<GenericParameter>(scaly_rp, (f).parameters);;)
+    {
+        GenericParameter* scaly_t2_at = (GenericParameter*)VectorIterator_next<GenericParameter>(scaly_t2);
+        if (scaly_t2_at == nullptr)
+            break;
+        GenericParameter* tp = scaly_t2_at;
+        PlannedType* sub = Planner_lookup_type_substitution(*(this_), tp->name);
+        if (((sub) != (nullptr)))
+        {
+            StringBuilder_append2((*nb), scaly_lvalue(Planner_encode_type(&scaly_local.f, scaly_lvalue(((*(sub)))))));
+        }
+    }
+    String mname = StringBuilder_to_string(scaly_rp, (*nb));
+    Vector<PlannedItem> planned_input = Planner_plan_items(scaly_rp, *(this_), (f).input);
+    Vector<PlannedItem>* input_holder = ({ Vector<PlannedItem>* scaly_t3 = (Vector<PlannedItem>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedItem>), alignof(Vector<PlannedItem>)); *scaly_t3 = Vector<PlannedItem>{}; Vector_init5<PlannedItem>((*scaly_t3), planned_input); scaly_t3; });
+    bool has_page = false;
+    if ((((f).page_parameter) != (nullptr)))
+    {
+        has_page = true;
+    }
+    if (Planner_function_needs_caller_page(*(this_), f))
+    {
+        has_page = true;
+    }
+    String symbol = Planner_mangle_function_in(scaly_rp, mname, (&((*input_holder))), (PlannedType*)(nullptr), has_page, scaly_lvalue(Planner_package_tag(scaly_rp, scaly_lvalue(Planner_function_package(scaly_rp, *(this_), f)))));
+    return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), symbol); scaly_t5; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) PlannedFunction Planner_instantiate_generic_function(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, Vector<KeyValuePair<String, PlannedType>>& args)
 {
     Planner* this_ = &scaly_self;
@@ -48201,9 +48327,12 @@ __attribute__((weak)) PlannedFunction Planner_instantiate_generic_function(scaly
     {
         this_->file = (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), ffile); scaly_t1; }));
     }
-    this_->instantiating_functions = (this_->instantiating_functions + 1ULL);
+    this_->generic_work->depth = (this_->generic_work->depth + 1ULL);
+    String key = Planner_generic_instance_key(&scaly_local.f, *(this_), f, args);
+    Array_add<String>(this_->generic_work->keys, key);
     PlannedFunction result = Planner_plan_function(scaly_rp, *(this_), f, (PlannedType*)(nullptr));
-    this_->instantiating_functions = (this_->instantiating_functions - 1ULL);
+    (this_->generic_work->keys).length = ((this_->generic_work->keys).length - 1ULL);
+    this_->generic_work->depth = (this_->generic_work->depth - 1ULL);
     this_->file = saved_ffile;
     (this_->type_substitutions).length = saved_len;
     return result;
@@ -49838,7 +49967,8 @@ __attribute__((weak)) MethodMatch* Planner_resolve_function_call_generic(scaly_f
             Function* f = ({ Function* scaly_t6 = (Function*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Function), alignof(Function)); *scaly_t6 = ((*(f_ptr))); scaly_t6; });
             if (Planner_candidate_matches(*(this_), (*f), arg_types, true))
             {
-                return Planner_check_function_match(scaly_rp, *(this_), (*f), arg_types, true, false, arg_ops);
+                MethodMatch* m = Planner_check_function_match(scaly_rp, *(this_), (*f), arg_types, true, false, arg_ops);
+                return Planner_ensure_generic_instance(scaly_rp, *(this_), (*f), m);
             }
         }
         i = (i + 1ULL);
@@ -96054,6 +96184,10 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
         Vector_put<String>((*mangled_holder), 0ULL, scaly_lvalue(Planner_mangle_function_in(scaly_rp, (*mname), (&((*input_holder))), parent, has_page, scaly_lvalue(Planner_package_tag(scaly_rp, scaly_lvalue(Planner_function_package(scaly_rp, *(this_), f)))))));
     }
     String* mangled = ({ String* scaly_t24 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t24 = ((*(Vector_get<String>((*mangled_holder), 0ULL)))); scaly_t24; });
+    if ((Planner_attributes_have((f).attributes, scaly_lvalue(Slice<uint8_t>{6ULL, ((uint8_t*)"inline")})) ? ((this_->planning_template) == (false)) : false))
+    {
+        Array_add<String>(this_->generic_work->inline_names, scaly_lvalue((*({ String* scaly_t25 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t25 = String{}; String_init2((*scaly_t25), (*mangled)); scaly_t25; }))));
+    }
     PlannedImplementation* tail_impl = (PlannedImplementation*)(nullptr);
     if (((return_type) != (nullptr)))
     {
@@ -96067,10 +96201,10 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     }
     bool needs_local_page = false;
     {
-        auto&& scaly_t25 = planned_impl;
-        if (scaly_t25.tag == 0)
+        auto&& scaly_t26 = planned_impl;
+        if (scaly_t26.tag == 0)
         {
-            PlannedAction ia = scaly_payload<PlannedAction>(scaly_t25);
+            PlannedAction ia = scaly_payload<PlannedAction>(scaly_t26);
             if ((((ia).source) != (nullptr)))
             {
                 Vector<PlannedOperand> src = ((*((ia).source)));
@@ -96098,25 +96232,25 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     String* page_param_ref = (String*)(nullptr);
     if ((((f).page_parameter) != (nullptr)))
     {
-        Vector<String>* pp_holder = ({ Vector<String>* scaly_t26 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t26 = Vector<String>{}; Vector_init3<String>((*scaly_t26), 1ULL); scaly_t26; });
-        Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t27 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t27 = String{}; String_init2((*scaly_t27), scaly_lvalue((*({ String* scaly_t28 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t28 = ((*((f).page_parameter))); scaly_t28; })))); scaly_t27; }))));
+        Vector<String>* pp_holder = ({ Vector<String>* scaly_t27 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t27 = Vector<String>{}; Vector_init3<String>((*scaly_t27), 1ULL); scaly_t27; });
+        Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t28 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t28 = String{}; String_init2((*scaly_t28), scaly_lvalue((*({ String* scaly_t29 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t29 = ((*((f).page_parameter))); scaly_t29; })))); scaly_t28; }))));
         page_param_ref = Vector_get<String>((*pp_holder), 0ULL);
     }
     if ((((f).page_parameter) == (nullptr)))
     {
         if (Planner_function_needs_caller_page(*(this_), f))
         {
-            Vector<String>* pp_holder = ({ Vector<String>* scaly_t29 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t29 = Vector<String>{}; Vector_init3<String>((*scaly_t29), 1ULL); scaly_t29; });
+            Vector<String>* pp_holder = ({ Vector<String>* scaly_t30 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t30 = Vector<String>{}; Vector_init3<String>((*scaly_t30), 1ULL); scaly_t30; });
             Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue(String{(uint8_t*)"\003_rp"}));
             page_param_ref = Vector_get<String>((*pp_holder), 0ULL);
         }
     }
-    PlannedFunction* result = ({ PlannedFunction* scaly_t30 = (PlannedFunction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedFunction), alignof(PlannedFunction)); *scaly_t30 = PlannedFunction{(f).span, (f).private_, (f).pure, (f).name, (*mangled), page_param_ref, (&((*input_holder))), return_type, throws_type, (f).lifetime, body_impl, (InstantiationInfo*)(nullptr), needs_local_page, can_throw, (TypeScheme*)(nullptr), this_->file, ({ Vector<String>* scaly_t31 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t31 = (f).writes; scaly_t31; }), false, 0ULL}; scaly_t30; });
+    PlannedFunction* result = ({ PlannedFunction* scaly_t31 = (PlannedFunction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedFunction), alignof(PlannedFunction)); *scaly_t31 = PlannedFunction{(f).span, (f).private_, (f).pure, (f).name, (*mangled), page_param_ref, (&((*input_holder))), return_type, throws_type, (f).lifetime, body_impl, (InstantiationInfo*)(nullptr), needs_local_page, can_throw, (TypeScheme*)(nullptr), this_->file, ({ Vector<String>* scaly_t32 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t32 = (f).writes; scaly_t32; }), false, 0ULL}; scaly_t31; });
     Planner_record_function(*(this_), (*result));
     uint64_t smask = Planner_store_mask_of(*(this_), scaly_lvalue(Planner_store_key(&scaly_local.f, f)));
     if ((smask != 0ULL))
     {
-        Array_add<String>(*(this_->store_mangled_recv), scaly_lvalue((*({ String* scaly_t32 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t32 = String{}; String_init2((*scaly_t32), (*mangled)); scaly_t32; }))));
+        Array_add<String>(*(this_->store_mangled_recv), scaly_lvalue((*({ String* scaly_t33 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t33 = String{}; String_init2((*scaly_t33), (*mangled)); scaly_t33; }))));
         Array_add88<uint64_t>(*(this_->store_mangled_masks), smask);
         bool takes_this = false;
         if ((((f).input).length > 0ULL))
@@ -96132,7 +96266,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     if (this_->host_report)
     {
         Array_add<Function>(this_->gate->deep_fns, f);
-        Array_add<String>(this_->gate->deep_mangled, scaly_lvalue((*({ String* scaly_t33 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t33 = String{}; String_init2((*scaly_t33), ((*result)).mangled_name); scaly_t33; }))));
+        Array_add<String>(this_->gate->deep_mangled, scaly_lvalue((*({ String* scaly_t34 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t34 = String{}; String_init2((*scaly_t34), ((*result)).mangled_name); scaly_t34; }))));
         Array_add88<uint64_t>(this_->gate->deep_state, 0ULL);
         Array_add88<uint64_t>(this_->gate->deep_state_this, 0ULL);
         Array_add88<uint64_t>(this_->gate->deep_state_beyond, 0ULL);
@@ -96177,7 +96311,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                 {
                     if (((Planner_persist_names_contain(this_->persistence->persist_deep_names, ((*result)).mangled_name)) == (false)))
                     {
-                        Array_add<String>(this_->persistence->persist_deep_names, scaly_lvalue((*({ String* scaly_t34 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t34 = String{}; String_init2((*scaly_t34), ((*result)).mangled_name); scaly_t34; }))));
+                        Array_add<String>(this_->persistence->persist_deep_names, scaly_lvalue((*({ String* scaly_t35 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t35 = String{}; String_init2((*scaly_t35), ((*result)).mangled_name); scaly_t35; }))));
                         Array_add88<uint64_t>(this_->persistence->persist_deep_vals, ((*(rgst))));
                     }
                 }
@@ -96189,7 +96323,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                 {
                     if (((Planner_persist_names_contain(this_->gate->deep_returns_mangled, ((*result)).mangled_name)) == (false)))
                     {
-                        Array_add<String>(this_->gate->deep_returns_mangled, scaly_lvalue((*({ String* scaly_t35 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t35 = String{}; String_init2((*scaly_t35), ((*result)).mangled_name); scaly_t35; }))));
+                        Array_add<String>(this_->gate->deep_returns_mangled, scaly_lvalue((*({ String* scaly_t36 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t36 = String{}; String_init2((*scaly_t36), ((*result)).mangled_name); scaly_t36; }))));
                     }
                 }
             }
@@ -96255,7 +96389,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                         gwhole = ((uint64_t)(((*(gws)))));
                     }
                     ConceptIndex_insert(this_->gate->deep_gate_index, ((*result)).mangled_name, (this_->gate->deep_gate_mangled).length);
-                    Array_add<String>(this_->gate->deep_gate_mangled, scaly_lvalue((*({ String* scaly_t36 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t36 = String{}; String_init2((*scaly_t36), ((*result)).mangled_name); scaly_t36; }))));
+                    Array_add<String>(this_->gate->deep_gate_mangled, scaly_lvalue((*({ String* scaly_t37 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t37 = String{}; String_init2((*scaly_t37), ((*result)).mangled_name); scaly_t37; }))));
                     Array_add88<uint64_t>(this_->gate->deep_gate_masks, ((uint64_t)(((*(gst))))));
                     Array_add88<uint64_t>(this_->gate->deep_gate_this, gthis);
                     Array_add88<uint64_t>(this_->gate->deep_gate_beyond, gbeyond);
@@ -99538,7 +99672,7 @@ __attribute__((weak)) Plan* Planner_plan_program(scaly_frame* scaly_rp, Planner&
     Vector<PlannedGlobal>* globals_holder = ({ Vector<PlannedGlobal>* scaly_t7 = (Vector<PlannedGlobal>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedGlobal>), alignof(Vector<PlannedGlobal>)); *scaly_t7 = Vector<PlannedGlobal>{}; Vector_init7<PlannedGlobal>((*scaly_t7), this_->instantiated_globals); scaly_t7; });
     Vector<String>* delegates_holder = ({ Vector<String>* scaly_t8 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t8 = Vector<String>{}; Vector_init7<String>((*scaly_t8), this_->delegate_names); scaly_t8; });
     Vector<TypeConstraint>* constraints_holder = ({ Vector<TypeConstraint>* scaly_t9 = (Vector<TypeConstraint>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<TypeConstraint>), alignof(Vector<TypeConstraint>)); *scaly_t9 = Vector<TypeConstraint>{}; Vector_init7<TypeConstraint>((*scaly_t9), this_->constraints); scaly_t9; });
-    return (Plan*)({ Plan* scaly_t10 = (Plan*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Plan), alignof(Plan)); *scaly_t10 = Plan{planned_main, (&((*stmts_holder))), (&((*structs_holder))), (&((*unions_holder))), (&((*funcs_holder))), (&((*globals_holder))), (&((*delegates_holder))), this_->next_type_var_id, (&((*constraints_holder)))}; scaly_t10; });
+    return (Plan*)({ Plan* scaly_t12 = (Plan*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Plan), alignof(Plan)); *scaly_t12 = Plan{planned_main, (&((*stmts_holder))), (&((*structs_holder))), (&((*unions_holder))), (&((*funcs_holder))), (&((*globals_holder))), (&((*delegates_holder))), this_->next_type_var_id, (&((*constraints_holder))), ({ Vector<String>* scaly_t13 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t13 = (*({ Vector<String>* scaly_t14 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t14 = Vector<String>{}; Vector_init7<String>((*scaly_t14), this_->generic_work->inline_names); scaly_t14; })); scaly_t13; })}; scaly_t12; });
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -101634,81 +101768,81 @@ __attribute__((weak)) void Planner_init(Planner& scaly_self, String& filename)
     this_->current_return_type = (PlannedType*)(nullptr);
     this_->planning_template = false;
     this_->char_fold_single = false;
-    this_->instantiating_functions = 0ULL;
-    this_->root_package = (*({ String* scaly_t39 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t39 = String{}; String_init2((*scaly_t39), scaly_lvalue(String{nullptr})); scaly_t39; }));
-    this_->local_closure_names = (*({ Array<String>* scaly_t40 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t40 = Array<String>{}; (void)0; scaly_t40; }));
-    this_->local_box_names = (*({ Array<String>* scaly_t41 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t41 = Array<String>{}; (void)0; scaly_t41; }));
-    this_->escaping_return_locals = (*({ Array<String>* scaly_t42 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t42 = Array<String>{}; (void)0; scaly_t42; }));
+    this_->generic_work = (&((*({ GenericWork* scaly_t39 = (GenericWork*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(GenericWork), alignof(GenericWork)); *scaly_t39 = GenericWork{0ULL, (*({ Array<String>* scaly_t40 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t40 = Array<String>{}; (void)0; scaly_t40; })), (*({ Array<String>* scaly_t41 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t41 = Array<String>{}; (void)0; scaly_t41; }))}; scaly_t39; }))));
+    this_->root_package = (*({ String* scaly_t42 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t42 = String{}; String_init2((*scaly_t42), scaly_lvalue(String{nullptr})); scaly_t42; }));
+    this_->local_closure_names = (*({ Array<String>* scaly_t43 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t43 = Array<String>{}; (void)0; scaly_t43; }));
+    this_->local_box_names = (*({ Array<String>* scaly_t44 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t44 = Array<String>{}; (void)0; scaly_t44; }));
+    this_->escaping_return_locals = (*({ Array<String>* scaly_t45 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t45 = Array<String>{}; (void)0; scaly_t45; }));
     this_->scan_returns_view = false;
-    this_->view_receiver_locals = (*({ Array<String>* scaly_t43 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t43 = Array<String>{}; (void)0; scaly_t43; }));
-    this_->view_alias_locals = (*({ Array<String>* scaly_t44 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t44 = Array<String>{}; (void)0; scaly_t44; }));
-    this_->promoted_binding_names = (*({ Array<String>* scaly_t45 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t45 = Array<String>{}; (void)0; scaly_t45; }));
-    this_->lambda_arg_models = (*({ Array<Lambda>* scaly_t46 = (Array<Lambda>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Lambda>), alignof(Array<Lambda>)); *scaly_t46 = Array<Lambda>{}; (void)0; scaly_t46; }));
-    this_->lambda_arg_starts = (*({ Array<uint64_t>* scaly_t47 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t47 = Array<uint64_t>{}; (void)0; scaly_t47; }));
-    this_->bare_methods = (*({ Array<Planner_BareMethod>* scaly_t48 = (Array<Planner_BareMethod>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Planner_BareMethod>), alignof(Array<Planner_BareMethod>)); *scaly_t48 = Array<Planner_BareMethod>{}; (void)0; scaly_t48; }));
+    this_->view_receiver_locals = (*({ Array<String>* scaly_t46 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t46 = Array<String>{}; (void)0; scaly_t46; }));
+    this_->view_alias_locals = (*({ Array<String>* scaly_t47 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t47 = Array<String>{}; (void)0; scaly_t47; }));
+    this_->promoted_binding_names = (*({ Array<String>* scaly_t48 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t48 = Array<String>{}; (void)0; scaly_t48; }));
+    this_->lambda_arg_models = (*({ Array<Lambda>* scaly_t49 = (Array<Lambda>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Lambda>), alignof(Array<Lambda>)); *scaly_t49 = Array<Lambda>{}; (void)0; scaly_t49; }));
+    this_->lambda_arg_starts = (*({ Array<uint64_t>* scaly_t50 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t50 = Array<uint64_t>{}; (void)0; scaly_t50; }));
+    this_->bare_methods = (*({ Array<Planner_BareMethod>* scaly_t51 = (Array<Planner_BareMethod>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Planner_BareMethod>), alignof(Array<Planner_BareMethod>)); *scaly_t51 = Array<Planner_BareMethod>{}; (void)0; scaly_t51; }));
     this_->statement_depth = 0ULL;
     this_->catch_depth = 0ULL;
     this_->has_lazy_functions = false;
-    this_->lazy_args = (*({ Array<Planner_LazyArg>* scaly_t49 = (Array<Planner_LazyArg>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Planner_LazyArg>), alignof(Array<Planner_LazyArg>)); *scaly_t49 = Array<Planner_LazyArg>{}; (void)0; scaly_t49; }));
+    this_->lazy_args = (*({ Array<Planner_LazyArg>* scaly_t52 = (Array<Planner_LazyArg>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Planner_LazyArg>), alignof(Array<Planner_LazyArg>)); *scaly_t52 = Array<Planner_LazyArg>{}; (void)0; scaly_t52; }));
     this_->lazy_frame = 0ULL;
-    this_->lazy_putins = (*({ Array<String>* scaly_t50 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t50 = Array<String>{}; (void)0; scaly_t50; }));
-    this_->lazy_shadows = (*({ Array<String>* scaly_t51 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t51 = Array<String>{}; (void)0; scaly_t51; }));
-    this_->lazy_method_names = (*({ Array<String>* scaly_t52 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t52 = Array<String>{}; (void)0; scaly_t52; }));
-    this_->local_tainted_struct_bindings = (*({ Array<String>* scaly_t53 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t53 = Array<String>{}; (void)0; scaly_t53; }));
-    this_->local_frame_ref_struct_bindings = (*({ Array<String>* scaly_t54 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t54 = Array<String>{}; (void)0; scaly_t54; }));
-    this_->escaping_targets = (*({ Array<String>* scaly_t55 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t55 = Array<String>{}; (void)0; scaly_t55; }));
-    this_->address_taken_locals = (*({ Array<String>* scaly_t56 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t56 = Array<String>{}; (void)0; scaly_t56; }));
-    this_->field_written_locals = (*({ Array<String>* scaly_t57 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t57 = Array<String>{}; (void)0; scaly_t57; }));
-    this_->operation_counts = (*({ Vector<uint64_t>* scaly_t58 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t58 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t58), 89ULL); scaly_t58; }));
+    this_->lazy_putins = (*({ Array<String>* scaly_t53 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t53 = Array<String>{}; (void)0; scaly_t53; }));
+    this_->lazy_shadows = (*({ Array<String>* scaly_t54 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t54 = Array<String>{}; (void)0; scaly_t54; }));
+    this_->lazy_method_names = (*({ Array<String>* scaly_t55 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t55 = Array<String>{}; (void)0; scaly_t55; }));
+    this_->local_tainted_struct_bindings = (*({ Array<String>* scaly_t56 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t56 = Array<String>{}; (void)0; scaly_t56; }));
+    this_->local_frame_ref_struct_bindings = (*({ Array<String>* scaly_t57 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t57 = Array<String>{}; (void)0; scaly_t57; }));
+    this_->escaping_targets = (*({ Array<String>* scaly_t58 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t58 = Array<String>{}; (void)0; scaly_t58; }));
+    this_->address_taken_locals = (*({ Array<String>* scaly_t59 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t59 = Array<String>{}; (void)0; scaly_t59; }));
+    this_->field_written_locals = (*({ Array<String>* scaly_t60 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t60 = Array<String>{}; (void)0; scaly_t60; }));
+    this_->operation_counts = (*({ Vector<uint64_t>* scaly_t61 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t61 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t61), 89ULL); scaly_t61; }));
     uint64_t oc_i = 0ULL;
     while ((oc_i < 85ULL))
     {
         Vector_put30<uint64_t>(this_->operation_counts, oc_i, 0ULL);
         oc_i = (oc_i + 1ULL);
     }
-    this_->getref_arg_locals = (*({ Array<String>* scaly_t59 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t59 = Array<String>{}; (void)0; scaly_t59; }));
-    this_->getref_alias_names = (*({ Array<String>* scaly_t60 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t60 = Array<String>{}; (void)0; scaly_t60; }));
-    this_->getref_alias_receivers = (*({ Array<String>* scaly_t61 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t61 = Array<String>{}; (void)0; scaly_t61; }));
-    this_->local_frame_holder_names = (*({ Array<String>* scaly_t62 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t62 = Array<String>{}; (void)0; scaly_t62; }));
+    this_->getref_arg_locals = (*({ Array<String>* scaly_t62 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t62 = Array<String>{}; (void)0; scaly_t62; }));
+    this_->getref_alias_names = (*({ Array<String>* scaly_t63 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t63 = Array<String>{}; (void)0; scaly_t63; }));
+    this_->getref_alias_receivers = (*({ Array<String>* scaly_t64 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t64 = Array<String>{}; (void)0; scaly_t64; }));
+    this_->local_frame_holder_names = (*({ Array<String>* scaly_t65 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t65 = Array<String>{}; (void)0; scaly_t65; }));
     this_->local_frame_holder_base = 0ULL;
     this_->getref_arg_base = 0ULL;
     this_->promote_tail_return = false;
     this_->check_tail_escape = false;
     this_->in_tail_value = false;
-    this_->instantiated_functions = (*({ Array<PlannedFunction>* scaly_t63 = (Array<PlannedFunction>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedFunction>), alignof(Array<PlannedFunction>)); *scaly_t63 = Array<PlannedFunction>{}; (void)0; scaly_t63; }));
+    this_->instantiated_functions = (*({ Array<PlannedFunction>* scaly_t66 = (Array<PlannedFunction>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedFunction>), alignof(Array<PlannedFunction>)); *scaly_t66 = Array<PlannedFunction>{}; (void)0; scaly_t66; }));
     this_->function_name_index = ConceptIndex_create(&scaly_local.f, 262144ULL);
-    this_->instantiated_globals = (*({ Array<PlannedGlobal>* scaly_t64 = (Array<PlannedGlobal>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedGlobal>), alignof(Array<PlannedGlobal>)); *scaly_t64 = Array<PlannedGlobal>{}; (void)0; scaly_t64; }));
-    this_->instantiating_structures = (*({ Array<String>* scaly_t65 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t65 = Array<String>{}; (void)0; scaly_t65; }));
-    this_->instantiating_methods = (*({ Array<String>* scaly_t66 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t66 = Array<String>{}; (void)0; scaly_t66; }));
-    this_->model_functions = (*({ Array<KeyValuePair<String, Function>>* scaly_t67 = (Array<KeyValuePair<String, Function>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Function>>), alignof(Array<KeyValuePair<String, Function>>)); *scaly_t67 = Array<KeyValuePair<String, Function>>{}; (void)0; scaly_t67; }));
-    this_->lambda_models = (*({ Array<KeyValuePair<String, Lambda>>* scaly_t68 = (Array<KeyValuePair<String, Lambda>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Lambda>>), alignof(Array<KeyValuePair<String, Lambda>>)); *scaly_t68 = Array<KeyValuePair<String, Lambda>>{}; (void)0; scaly_t68; }));
+    this_->instantiated_globals = (*({ Array<PlannedGlobal>* scaly_t67 = (Array<PlannedGlobal>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedGlobal>), alignof(Array<PlannedGlobal>)); *scaly_t67 = Array<PlannedGlobal>{}; (void)0; scaly_t67; }));
+    this_->instantiating_structures = (*({ Array<String>* scaly_t68 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t68 = Array<String>{}; (void)0; scaly_t68; }));
+    this_->instantiating_methods = (*({ Array<String>* scaly_t69 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t69 = Array<String>{}; (void)0; scaly_t69; }));
+    this_->model_functions = (*({ Array<KeyValuePair<String, Function>>* scaly_t70 = (Array<KeyValuePair<String, Function>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Function>>), alignof(Array<KeyValuePair<String, Function>>)); *scaly_t70 = Array<KeyValuePair<String, Function>>{}; (void)0; scaly_t70; }));
+    this_->lambda_models = (*({ Array<KeyValuePair<String, Lambda>>* scaly_t71 = (Array<KeyValuePair<String, Lambda>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Lambda>>), alignof(Array<KeyValuePair<String, Lambda>>)); *scaly_t71 = Array<KeyValuePair<String, Lambda>>{}; (void)0; scaly_t71; }));
     this_->model_function_index = FunctionIndex_create(&scaly_local.f, 65536ULL, 262144ULL);
-    this_->model_operators = (*({ Array<KeyValuePair<String, Operator>>* scaly_t69 = (Array<KeyValuePair<String, Operator>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Operator>>), alignof(Array<KeyValuePair<String, Operator>>)); *scaly_t69 = Array<KeyValuePair<String, Operator>>{}; (void)0; scaly_t69; }));
+    this_->model_operators = (*({ Array<KeyValuePair<String, Operator>>* scaly_t72 = (Array<KeyValuePair<String, Operator>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Operator>>), alignof(Array<KeyValuePair<String, Operator>>)); *scaly_t72 = Array<KeyValuePair<String, Operator>>{}; (void)0; scaly_t72; }));
     this_->model_operator_index = FunctionIndex_create(&scaly_local.f, 65536ULL, 262144ULL);
     this_->resolved_op_is_intrinsic = false;
     this_->stack_base = 0ULL;
     this_->stack_budget = 0ULL;
-    this_->loaded_packages = (*({ Array<KeyValuePair<String, Module>>* scaly_t70 = (Array<KeyValuePair<String, Module>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Module>>), alignof(Array<KeyValuePair<String, Module>>)); *scaly_t70 = Array<KeyValuePair<String, Module>>{}; (void)0; scaly_t70; }));
-    this_->loaded_module_paths = (*({ Array<KeyValuePair<String, Module>>* scaly_t71 = (Array<KeyValuePair<String, Module>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Module>>), alignof(Array<KeyValuePair<String, Module>>)); *scaly_t71 = Array<KeyValuePair<String, Module>>{}; (void)0; scaly_t71; }));
-    this_->errors = (*({ Array<String>* scaly_t72 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t72 = Array<String>{}; (void)0; scaly_t72; }));
-    this_->diagnostics = (*({ Array<PlannerDiagnostic>* scaly_t73 = (Array<PlannerDiagnostic>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannerDiagnostic>), alignof(Array<PlannerDiagnostic>)); *scaly_t73 = Array<PlannerDiagnostic>{}; (void)0; scaly_t73; }));
-    this_->sibling_programs = (*({ Array<Program>* scaly_t74 = (Array<Program>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Program>), alignof(Array<Program>)); *scaly_t74 = Array<Program>{}; (void)0; scaly_t74; }));
+    this_->loaded_packages = (*({ Array<KeyValuePair<String, Module>>* scaly_t73 = (Array<KeyValuePair<String, Module>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Module>>), alignof(Array<KeyValuePair<String, Module>>)); *scaly_t73 = Array<KeyValuePair<String, Module>>{}; (void)0; scaly_t73; }));
+    this_->loaded_module_paths = (*({ Array<KeyValuePair<String, Module>>* scaly_t74 = (Array<KeyValuePair<String, Module>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Module>>), alignof(Array<KeyValuePair<String, Module>>)); *scaly_t74 = Array<KeyValuePair<String, Module>>{}; (void)0; scaly_t74; }));
+    this_->errors = (*({ Array<String>* scaly_t75 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t75 = Array<String>{}; (void)0; scaly_t75; }));
+    this_->diagnostics = (*({ Array<PlannerDiagnostic>* scaly_t76 = (Array<PlannerDiagnostic>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannerDiagnostic>), alignof(Array<PlannerDiagnostic>)); *scaly_t76 = Array<PlannerDiagnostic>{}; (void)0; scaly_t76; }));
+    this_->sibling_programs = (*({ Array<Program>* scaly_t77 = (Array<Program>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Program>), alignof(Array<Program>)); *scaly_t77 = Array<Program>{}; (void)0; scaly_t77; }));
     this_->current_namespace = (Namespace*)(nullptr);
     this_->current_namespace_name = (String*)(nullptr);
     this_->current_structure_name = (String*)(nullptr);
-    this_->program_use_aliases = (*({ Array<String>* scaly_t75 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t75 = Array<String>{}; (void)0; scaly_t75; }));
-    this_->program_use_namespaces = (*({ Array<String>* scaly_t76 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t76 = Array<String>{}; (void)0; scaly_t76; }));
+    this_->program_use_aliases = (*({ Array<String>* scaly_t78 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t78 = Array<String>{}; (void)0; scaly_t78; }));
+    this_->program_use_namespaces = (*({ Array<String>* scaly_t79 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t79 = Array<String>{}; (void)0; scaly_t79; }));
     this_->next_lambda_id = 0ULL;
-    this_->escape_records = (*({ Array<EscapeRecord>* scaly_t77 = (Array<EscapeRecord>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<EscapeRecord>), alignof(Array<EscapeRecord>)); *scaly_t77 = Array<EscapeRecord>{}; (void)0; scaly_t77; }));
-    this_->esc_index = (&((*({ EscIndex* scaly_t78 = (EscIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(EscIndex), alignof(EscIndex)); *scaly_t78 = EscIndex{(*({ ConceptIndex* scaly_t79 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t79 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t79; })), (*({ Array<String>* scaly_t80 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t80 = Array<String>{}; (void)0; scaly_t80; })), (*({ Array<uint64_t>* scaly_t81 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t81 = Array<uint64_t>{}; (void)0; scaly_t81; })), (*({ Array<uint64_t>* scaly_t82 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t82 = Array<uint64_t>{}; (void)0; scaly_t82; })), (*({ Array<uint64_t>* scaly_t83 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t83 = Array<uint64_t>{}; (void)0; scaly_t83; })), (*({ Array<String>* scaly_t84 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t84 = Array<String>{}; (void)0; scaly_t84; })), (*({ Array<uint64_t>* scaly_t85 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t85 = Array<uint64_t>{}; (void)0; scaly_t85; })), (*({ Array<uint64_t>* scaly_t86 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t86 = Array<uint64_t>{}; (void)0; scaly_t86; })), false}; scaly_t78; }))));
-    this_->global_index = (&((*({ NameIndex* scaly_t87 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t87 = NameIndex{(*({ ConceptIndex* scaly_t88 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t88 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t88; })), (*({ Array<String>* scaly_t89 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t89 = Array<String>{}; (void)0; scaly_t89; })), (*({ Array<uint64_t>* scaly_t90 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t90 = Array<uint64_t>{}; (void)0; scaly_t90; }))}; scaly_t87; }))));
-    this_->namespace_index = (&((*({ NameIndex* scaly_t91 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t91 = NameIndex{(*({ ConceptIndex* scaly_t92 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t92 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t92; })), (*({ Array<String>* scaly_t93 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t93 = Array<String>{}; (void)0; scaly_t93; })), (*({ Array<uint64_t>* scaly_t94 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t94 = Array<uint64_t>{}; (void)0; scaly_t94; }))}; scaly_t91; }))));
-    this_->struct_by_mangled = (&((*({ NameIndex* scaly_t95 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t95 = NameIndex{(*({ ConceptIndex* scaly_t96 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t96 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t96; })), (*({ Array<String>* scaly_t97 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t97 = Array<String>{}; (void)0; scaly_t97; })), (*({ Array<uint64_t>* scaly_t98 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t98 = Array<uint64_t>{}; (void)0; scaly_t98; }))}; scaly_t95; }))));
-    this_->struct_by_name = (&((*({ NameIndex* scaly_t99 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t99 = NameIndex{(*({ ConceptIndex* scaly_t100 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t100 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t100; })), (*({ Array<String>* scaly_t101 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t101 = Array<String>{}; (void)0; scaly_t101; })), (*({ Array<uint64_t>* scaly_t102 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t102 = Array<uint64_t>{}; (void)0; scaly_t102; }))}; scaly_t99; }))));
-    this_->union_by_mangled = (&((*({ NameIndex* scaly_t103 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t103 = NameIndex{(*({ ConceptIndex* scaly_t104 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t104 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t104; })), (*({ Array<String>* scaly_t105 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t105 = Array<String>{}; (void)0; scaly_t105; })), (*({ Array<uint64_t>* scaly_t106 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t106 = Array<uint64_t>{}; (void)0; scaly_t106; }))}; scaly_t103; }))));
-    this_->union_by_name = (&((*({ NameIndex* scaly_t107 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t107 = NameIndex{(*({ ConceptIndex* scaly_t108 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t108 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t108; })), (*({ Array<String>* scaly_t109 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t109 = Array<String>{}; (void)0; scaly_t109; })), (*({ Array<uint64_t>* scaly_t110 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t110 = Array<uint64_t>{}; (void)0; scaly_t110; }))}; scaly_t107; }))));
-    this_->concept_param_index = (&((*({ NameIndex* scaly_t111 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t111 = NameIndex{(*({ ConceptIndex* scaly_t112 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t112 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t112; })), (*({ Array<String>* scaly_t113 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t113 = Array<String>{}; (void)0; scaly_t113; })), (*({ Array<uint64_t>* scaly_t114 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t114 = Array<uint64_t>{}; (void)0; scaly_t114; }))}; scaly_t111; }))));
-    this_->member_index = (&((*({ MemberIndex* scaly_t115 = (MemberIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(MemberIndex), alignof(MemberIndex)); *scaly_t115 = MemberIndex{0ULL, 0ULL, (*({ Array<uint64_t>* scaly_t116 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t116 = Array<uint64_t>{}; (void)0; scaly_t116; })), (*({ Array<uint64_t>* scaly_t117 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t117 = Array<uint64_t>{}; (void)0; scaly_t117; })), (*({ Array<ConceptIndex>* scaly_t118 = (Array<ConceptIndex>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<ConceptIndex>), alignof(Array<ConceptIndex>)); *scaly_t118 = Array<ConceptIndex>{}; (void)0; scaly_t118; })), (*({ Array<uint64_t>* scaly_t119 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t119 = Array<uint64_t>{}; (void)0; scaly_t119; })), (*({ Array<uint64_t>* scaly_t120 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t120 = Array<uint64_t>{}; (void)0; scaly_t120; }))}; scaly_t115; }))));
+    this_->escape_records = (*({ Array<EscapeRecord>* scaly_t80 = (Array<EscapeRecord>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<EscapeRecord>), alignof(Array<EscapeRecord>)); *scaly_t80 = Array<EscapeRecord>{}; (void)0; scaly_t80; }));
+    this_->esc_index = (&((*({ EscIndex* scaly_t81 = (EscIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(EscIndex), alignof(EscIndex)); *scaly_t81 = EscIndex{(*({ ConceptIndex* scaly_t82 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t82 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t82; })), (*({ Array<String>* scaly_t83 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t83 = Array<String>{}; (void)0; scaly_t83; })), (*({ Array<uint64_t>* scaly_t84 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t84 = Array<uint64_t>{}; (void)0; scaly_t84; })), (*({ Array<uint64_t>* scaly_t85 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t85 = Array<uint64_t>{}; (void)0; scaly_t85; })), (*({ Array<uint64_t>* scaly_t86 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t86 = Array<uint64_t>{}; (void)0; scaly_t86; })), (*({ Array<String>* scaly_t87 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t87 = Array<String>{}; (void)0; scaly_t87; })), (*({ Array<uint64_t>* scaly_t88 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t88 = Array<uint64_t>{}; (void)0; scaly_t88; })), (*({ Array<uint64_t>* scaly_t89 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t89 = Array<uint64_t>{}; (void)0; scaly_t89; })), false}; scaly_t81; }))));
+    this_->global_index = (&((*({ NameIndex* scaly_t90 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t90 = NameIndex{(*({ ConceptIndex* scaly_t91 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t91 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t91; })), (*({ Array<String>* scaly_t92 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t92 = Array<String>{}; (void)0; scaly_t92; })), (*({ Array<uint64_t>* scaly_t93 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t93 = Array<uint64_t>{}; (void)0; scaly_t93; }))}; scaly_t90; }))));
+    this_->namespace_index = (&((*({ NameIndex* scaly_t94 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t94 = NameIndex{(*({ ConceptIndex* scaly_t95 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t95 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t95; })), (*({ Array<String>* scaly_t96 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t96 = Array<String>{}; (void)0; scaly_t96; })), (*({ Array<uint64_t>* scaly_t97 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t97 = Array<uint64_t>{}; (void)0; scaly_t97; }))}; scaly_t94; }))));
+    this_->struct_by_mangled = (&((*({ NameIndex* scaly_t98 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t98 = NameIndex{(*({ ConceptIndex* scaly_t99 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t99 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t99; })), (*({ Array<String>* scaly_t100 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t100 = Array<String>{}; (void)0; scaly_t100; })), (*({ Array<uint64_t>* scaly_t101 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t101 = Array<uint64_t>{}; (void)0; scaly_t101; }))}; scaly_t98; }))));
+    this_->struct_by_name = (&((*({ NameIndex* scaly_t102 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t102 = NameIndex{(*({ ConceptIndex* scaly_t103 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t103 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t103; })), (*({ Array<String>* scaly_t104 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t104 = Array<String>{}; (void)0; scaly_t104; })), (*({ Array<uint64_t>* scaly_t105 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t105 = Array<uint64_t>{}; (void)0; scaly_t105; }))}; scaly_t102; }))));
+    this_->union_by_mangled = (&((*({ NameIndex* scaly_t106 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t106 = NameIndex{(*({ ConceptIndex* scaly_t107 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t107 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t107; })), (*({ Array<String>* scaly_t108 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t108 = Array<String>{}; (void)0; scaly_t108; })), (*({ Array<uint64_t>* scaly_t109 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t109 = Array<uint64_t>{}; (void)0; scaly_t109; }))}; scaly_t106; }))));
+    this_->union_by_name = (&((*({ NameIndex* scaly_t110 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t110 = NameIndex{(*({ ConceptIndex* scaly_t111 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t111 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t111; })), (*({ Array<String>* scaly_t112 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t112 = Array<String>{}; (void)0; scaly_t112; })), (*({ Array<uint64_t>* scaly_t113 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t113 = Array<uint64_t>{}; (void)0; scaly_t113; }))}; scaly_t110; }))));
+    this_->concept_param_index = (&((*({ NameIndex* scaly_t114 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t114 = NameIndex{(*({ ConceptIndex* scaly_t115 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t115 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t115; })), (*({ Array<String>* scaly_t116 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t116 = Array<String>{}; (void)0; scaly_t116; })), (*({ Array<uint64_t>* scaly_t117 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t117 = Array<uint64_t>{}; (void)0; scaly_t117; }))}; scaly_t114; }))));
+    this_->member_index = (&((*({ MemberIndex* scaly_t118 = (MemberIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(MemberIndex), alignof(MemberIndex)); *scaly_t118 = MemberIndex{0ULL, 0ULL, (*({ Array<uint64_t>* scaly_t119 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t119 = Array<uint64_t>{}; (void)0; scaly_t119; })), (*({ Array<uint64_t>* scaly_t120 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t120 = Array<uint64_t>{}; (void)0; scaly_t120; })), (*({ Array<ConceptIndex>* scaly_t121 = (Array<ConceptIndex>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<ConceptIndex>), alignof(Array<ConceptIndex>)); *scaly_t121 = Array<ConceptIndex>{}; (void)0; scaly_t121; })), (*({ Array<uint64_t>* scaly_t122 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t122 = Array<uint64_t>{}; (void)0; scaly_t122; })), (*({ Array<uint64_t>* scaly_t123 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t123 = Array<uint64_t>{}; (void)0; scaly_t123; }))}; scaly_t118; }))));
     this_->escape_checking = false;
     this_->escape_found = false;
     this_->gate_all = false;
@@ -101722,110 +101856,110 @@ __attribute__((weak)) void Planner_init(Planner& scaly_self, String& filename)
         Array_add88<uint64_t>(this_->gate->deep_into_masks, 0ULL);
         dik = (dik + 1ULL);
     }
-    this_->ret_res_names = (*({ Array<String>* scaly_t121 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t121 = Array<String>{}; (void)0; scaly_t121; }));
-    this_->ret_res_starts = (&((*({ Array<uint64_t>* scaly_t122 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t122 = Array<uint64_t>{}; (void)0; scaly_t122; }))));
-    this_->ret_res_ends = (&((*({ Array<uint64_t>* scaly_t123 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t123 = Array<uint64_t>{}; (void)0; scaly_t123; }))));
-    this_->ret_res_class = (*({ Array<uint64_t>* scaly_t124 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t124 = Array<uint64_t>{}; (void)0; scaly_t124; }));
-    this_->ret_res_arg = (*({ Array<uint64_t>* scaly_t125 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t125 = Array<uint64_t>{}; (void)0; scaly_t125; }));
-    this_->ret_res_owner = (*({ Array<String>* scaly_t126 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t126 = Array<String>{}; (void)0; scaly_t126; }));
+    this_->ret_res_names = (*({ Array<String>* scaly_t124 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t124 = Array<String>{}; (void)0; scaly_t124; }));
+    this_->ret_res_starts = (&((*({ Array<uint64_t>* scaly_t125 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t125 = Array<uint64_t>{}; (void)0; scaly_t125; }))));
+    this_->ret_res_ends = (&((*({ Array<uint64_t>* scaly_t126 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t126 = Array<uint64_t>{}; (void)0; scaly_t126; }))));
+    this_->ret_res_class = (*({ Array<uint64_t>* scaly_t127 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t127 = Array<uint64_t>{}; (void)0; scaly_t127; }));
+    this_->ret_res_arg = (*({ Array<uint64_t>* scaly_t128 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t128 = Array<uint64_t>{}; (void)0; scaly_t128; }));
+    this_->ret_res_owner = (*({ Array<String>* scaly_t129 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t129 = Array<String>{}; (void)0; scaly_t129; }));
     this_->census_trace = false;
-    this_->current_fn_bind_names = (*({ Array<String>* scaly_t127 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t127 = Array<String>{}; (void)0; scaly_t127; }));
-    this_->current_fn_local_filled = (&((*({ Array<String>* scaly_t128 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t128 = Array<String>{}; (void)0; scaly_t128; }))));
-    this_->current_fn_bind_local = (*({ Array<uint64_t>* scaly_t129 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t129 = Array<uint64_t>{}; (void)0; scaly_t129; }));
-    this_->current_fn_bind_refv = (&((*({ Array<int64_t>* scaly_t130 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t130 = Array<int64_t>{}; (void)0; scaly_t130; }))));
-    this_->current_fn_frame_objects = (&((*({ Array<String>* scaly_t131 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t131 = Array<String>{}; (void)0; scaly_t131; }))));
+    this_->current_fn_bind_names = (*({ Array<String>* scaly_t130 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t130 = Array<String>{}; (void)0; scaly_t130; }));
+    this_->current_fn_local_filled = (&((*({ Array<String>* scaly_t131 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t131 = Array<String>{}; (void)0; scaly_t131; }))));
+    this_->current_fn_bind_local = (*({ Array<uint64_t>* scaly_t132 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t132 = Array<uint64_t>{}; (void)0; scaly_t132; }));
+    this_->current_fn_bind_refv = (&((*({ Array<int64_t>* scaly_t133 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t133 = Array<int64_t>{}; (void)0; scaly_t133; }))));
+    this_->current_fn_frame_objects = (&((*({ Array<String>* scaly_t134 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t134 = Array<String>{}; (void)0; scaly_t134; }))));
     this_->escape_census = false;
     this_->host_report = false;
-    this_->census_names = (*({ Array<String>* scaly_t132 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t132 = Array<String>{}; (void)0; scaly_t132; }));
+    this_->census_names = (*({ Array<String>* scaly_t135 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t135 = Array<String>{}; (void)0; scaly_t135; }));
     this_->census_box_start = 0ULL;
     this_->census_escaped = false;
-    this_->census_files = (*({ Array<String>* scaly_t133 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t133 = Array<String>{}; (void)0; scaly_t133; }));
-    this_->census_offsets = (*({ Array<uint64_t>* scaly_t134 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t134 = Array<uint64_t>{}; (void)0; scaly_t134; }));
-    this_->census_texts = (*({ Array<String>* scaly_t135 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t135 = Array<String>{}; (void)0; scaly_t135; }));
+    this_->census_files = (*({ Array<String>* scaly_t136 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t136 = Array<String>{}; (void)0; scaly_t136; }));
+    this_->census_offsets = (*({ Array<uint64_t>* scaly_t137 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t137 = Array<uint64_t>{}; (void)0; scaly_t137; }));
+    this_->census_texts = (*({ Array<String>* scaly_t138 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t138 = Array<String>{}; (void)0; scaly_t138; }));
     this_->census_total = 0ULL;
     this_->census_local = 0ULL;
     this_->census_pinned = false;
     this_->census_pinned_count = 0ULL;
     this_->bv_trace = false;
-    this_->current_fn_closure_names = (*({ Array<String>* scaly_t136 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t136 = Array<String>{}; (void)0; scaly_t136; }));
-    this_->current_fn_alias_names = (*({ Array<String>* scaly_t137 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t137 = Array<String>{}; (void)0; scaly_t137; }));
-    this_->current_fn_alias_params = (*({ Array<uint64_t>* scaly_t138 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t138 = Array<uint64_t>{}; (void)0; scaly_t138; }));
-    this_->current_fn_fpt_names = (*({ Array<String>* scaly_t139 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t139 = Array<String>{}; (void)0; scaly_t139; }));
-    this_->current_fn_fpt_fields = (*({ Array<uint64_t>* scaly_t140 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t140 = Array<uint64_t>{}; (void)0; scaly_t140; }));
-    this_->current_fn_fpt_regions = (*({ Array<uint64_t>* scaly_t141 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t141 = Array<uint64_t>{}; (void)0; scaly_t141; }));
-    this_->current_fn_ctor_locals = (*({ Array<String>* scaly_t142 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t142 = Array<String>{}; (void)0; scaly_t142; }));
-    this_->move_moved_names = (*({ Array<String>* scaly_t143 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t143 = Array<String>{}; (void)0; scaly_t143; }));
-    this_->move_alias_names = (*({ Array<String>* scaly_t144 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t144 = Array<String>{}; (void)0; scaly_t144; }));
-    this_->move_alias_roots = (*({ Array<String>* scaly_t145 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t145 = Array<String>{}; (void)0; scaly_t145; }));
+    this_->current_fn_closure_names = (*({ Array<String>* scaly_t139 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t139 = Array<String>{}; (void)0; scaly_t139; }));
+    this_->current_fn_alias_names = (*({ Array<String>* scaly_t140 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t140 = Array<String>{}; (void)0; scaly_t140; }));
+    this_->current_fn_alias_params = (*({ Array<uint64_t>* scaly_t141 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t141 = Array<uint64_t>{}; (void)0; scaly_t141; }));
+    this_->current_fn_fpt_names = (*({ Array<String>* scaly_t142 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t142 = Array<String>{}; (void)0; scaly_t142; }));
+    this_->current_fn_fpt_fields = (*({ Array<uint64_t>* scaly_t143 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t143 = Array<uint64_t>{}; (void)0; scaly_t143; }));
+    this_->current_fn_fpt_regions = (*({ Array<uint64_t>* scaly_t144 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t144 = Array<uint64_t>{}; (void)0; scaly_t144; }));
+    this_->current_fn_ctor_locals = (*({ Array<String>* scaly_t145 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t145 = Array<String>{}; (void)0; scaly_t145; }));
+    this_->move_moved_names = (*({ Array<String>* scaly_t146 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t146 = Array<String>{}; (void)0; scaly_t146; }));
+    this_->move_alias_names = (*({ Array<String>* scaly_t147 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t147 = Array<String>{}; (void)0; scaly_t147; }));
+    this_->move_alias_roots = (*({ Array<String>* scaly_t148 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t148 = Array<String>{}; (void)0; scaly_t148; }));
     this_->move_found = false;
-    this_->transitive_page_names = (*({ Array<String>* scaly_t146 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t146 = Array<String>{}; (void)0; scaly_t146; }));
-    this_->store_page_names = (&((*({ Array<String>* scaly_t147 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t147 = Array<String>{}; (void)0; scaly_t147; }))));
-    this_->store_page_masks = (&((*({ Array<uint64_t>* scaly_t148 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t148 = Array<uint64_t>{}; (void)0; scaly_t148; }))));
+    this_->transitive_page_names = (*({ Array<String>* scaly_t149 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t149 = Array<String>{}; (void)0; scaly_t149; }));
+    this_->store_page_names = (&((*({ Array<String>* scaly_t150 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t150 = Array<String>{}; (void)0; scaly_t150; }))));
+    this_->store_page_masks = (&((*({ Array<uint64_t>* scaly_t151 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t151 = Array<uint64_t>{}; (void)0; scaly_t151; }))));
     this_->store_name_index = ConceptIndex_create(&scaly_local.f, 4096ULL);
-    this_->store_mangled_recv = (&((*({ Array<String>* scaly_t149 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t149 = Array<String>{}; (void)0; scaly_t149; }))));
-    this_->store_mangled_masks = (&((*({ Array<uint64_t>* scaly_t150 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t150 = Array<uint64_t>{}; (void)0; scaly_t150; }))));
-    this_->store_mangled_this = (&((*({ Array<bool>* scaly_t151 = (Array<bool>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<bool>), alignof(Array<bool>)); *scaly_t151 = Array<bool>{}; (void)0; scaly_t151; }))));
-    this_->store_scope = (&((*({ Array<Statement>* scaly_t152 = (Array<Statement>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Statement>), alignof(Array<Statement>)); *scaly_t152 = Array<Statement>{}; (void)0; scaly_t152; }))));
+    this_->store_mangled_recv = (&((*({ Array<String>* scaly_t152 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t152 = Array<String>{}; (void)0; scaly_t152; }))));
+    this_->store_mangled_masks = (&((*({ Array<uint64_t>* scaly_t153 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t153 = Array<uint64_t>{}; (void)0; scaly_t153; }))));
+    this_->store_mangled_this = (&((*({ Array<bool>* scaly_t154 = (Array<bool>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<bool>), alignof(Array<bool>)); *scaly_t154 = Array<bool>{}; (void)0; scaly_t154; }))));
+    this_->store_scope = (&((*({ Array<Statement>* scaly_t155 = (Array<Statement>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<Statement>), alignof(Array<Statement>)); *scaly_t155 = Array<Statement>{}; (void)0; scaly_t155; }))));
     this_->store_acc = 0ULL;
     this_->store_referent = false;
-    this_->return_page_names = (*({ Array<String>* scaly_t153 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t153 = Array<String>{}; (void)0; scaly_t153; }));
-    this_->return_page_starts = (*({ Array<uint64_t>* scaly_t154 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t154 = Array<uint64_t>{}; (void)0; scaly_t154; }));
-    this_->return_page_ends = (*({ Array<uint64_t>* scaly_t155 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t155 = Array<uint64_t>{}; (void)0; scaly_t155; }));
-    this_->return_page_index = (&((*({ ChainIndex* scaly_t156 = (ChainIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ChainIndex), alignof(ChainIndex)); *scaly_t156 = ChainIndex{(*({ ConceptIndex* scaly_t157 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t157 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t157; })), (*({ Array<String>* scaly_t158 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t158 = Array<String>{}; (void)0; scaly_t158; })), (*({ Array<uint64_t>* scaly_t159 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t159 = Array<uint64_t>{}; (void)0; scaly_t159; })), (*({ Array<uint64_t>* scaly_t160 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t160 = Array<uint64_t>{}; (void)0; scaly_t160; })), (*({ Array<uint64_t>* scaly_t161 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t161 = Array<uint64_t>{}; (void)0; scaly_t161; }))}; scaly_t156; }))));
-    this_->prepass_direct_names = (*({ Array<String>* scaly_t162 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t162 = Array<String>{}; (void)0; scaly_t162; }));
-    this_->prepass_veto_names = (*({ Array<String>* scaly_t163 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t163 = Array<String>{}; (void)0; scaly_t163; }));
+    this_->return_page_names = (*({ Array<String>* scaly_t156 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t156 = Array<String>{}; (void)0; scaly_t156; }));
+    this_->return_page_starts = (*({ Array<uint64_t>* scaly_t157 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t157 = Array<uint64_t>{}; (void)0; scaly_t157; }));
+    this_->return_page_ends = (*({ Array<uint64_t>* scaly_t158 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t158 = Array<uint64_t>{}; (void)0; scaly_t158; }));
+    this_->return_page_index = (&((*({ ChainIndex* scaly_t159 = (ChainIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ChainIndex), alignof(ChainIndex)); *scaly_t159 = ChainIndex{(*({ ConceptIndex* scaly_t160 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t160 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t160; })), (*({ Array<String>* scaly_t161 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t161 = Array<String>{}; (void)0; scaly_t161; })), (*({ Array<uint64_t>* scaly_t162 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t162 = Array<uint64_t>{}; (void)0; scaly_t162; })), (*({ Array<uint64_t>* scaly_t163 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t163 = Array<uint64_t>{}; (void)0; scaly_t163; })), (*({ Array<uint64_t>* scaly_t164 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t164 = Array<uint64_t>{}; (void)0; scaly_t164; }))}; scaly_t159; }))));
+    this_->prepass_direct_names = (*({ Array<String>* scaly_t165 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t165 = Array<String>{}; (void)0; scaly_t165; }));
+    this_->prepass_veto_names = (*({ Array<String>* scaly_t166 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t166 = Array<String>{}; (void)0; scaly_t166; }));
     this_->transitive_page_built = false;
-    this_->concept_origin_files = (*({ Array<String>* scaly_t164 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t164 = Array<String>{}; (void)0; scaly_t164; }));
-    this_->concept_origin_paths = (*({ Array<String>* scaly_t165 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t165 = Array<String>{}; (void)0; scaly_t165; }));
+    this_->concept_origin_files = (*({ Array<String>* scaly_t167 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t167 = Array<String>{}; (void)0; scaly_t167; }));
+    this_->concept_origin_paths = (*({ Array<String>* scaly_t168 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t168 = Array<String>{}; (void)0; scaly_t168; }));
     this_->ambiguous_index = ConceptIndex_create(&scaly_local.f, 4096ULL);
     this_->cross_package_index = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL};
     this_->member_checked = ConceptIndex_create(&scaly_local.f, 65536ULL);
-    this_->declared_lines = (&((*({ Array<String>* scaly_t166 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t166 = Array<String>{}; (void)0; scaly_t166; }))));
+    this_->declared_lines = (&((*({ Array<String>* scaly_t169 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t169 = Array<String>{}; (void)0; scaly_t169; }))));
     this_->lines_doubled = false;
-    this_->global_packages = (&((*({ Array<String>* scaly_t167 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t167 = Array<String>{}; (void)0; scaly_t167; }))));
+    this_->global_packages = (&((*({ Array<String>* scaly_t170 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t170 = Array<String>{}; (void)0; scaly_t170; }))));
     this_->global_dups = false;
     this_->planning_foreign_global = false;
-    this_->lookup_package = (*({ String* scaly_t168 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t168 = String{}; String_init2((*scaly_t168), scaly_lvalue(String{nullptr})); scaly_t168; }));
+    this_->lookup_package = (*({ String* scaly_t171 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t171 = String{}; String_init2((*scaly_t171), scaly_lvalue(String{nullptr})); scaly_t171; }));
     this_->lookup_directed = false;
     this_->value_access = false;
-    this_->file_explicit_names = (*({ Array<String>* scaly_t169 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t169 = Array<String>{}; (void)0; scaly_t169; }));
+    this_->file_explicit_names = (*({ Array<String>* scaly_t172 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t172 = Array<String>{}; (void)0; scaly_t172; }));
     this_->disambiguation_active = false;
     this_->scope_isolation_base = 0ULL;
-    this_->use_vis_starts = (*({ Array<uint64_t>* scaly_t170 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t170 = Array<uint64_t>{}; (void)0; scaly_t170; }));
-    this_->module_paths = (*({ Array<String>* scaly_t171 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t171 = Array<String>{}; (void)0; scaly_t171; }));
-    this_->function_origin_paths = (*({ Array<String>* scaly_t172 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t172 = Array<String>{}; (void)0; scaly_t172; }));
-    this_->function_namespaces = (&((*({ Array<String>* scaly_t173 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t173 = Array<String>{}; (void)0; scaly_t173; }))));
-    this_->function_origin_files = (&((*({ Array<String>* scaly_t174 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t174 = Array<String>{}; (void)0; scaly_t174; }))));
-    this_->function_ns_paths = (&((*({ Array<String>* scaly_t175 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t175 = Array<String>{}; (void)0; scaly_t175; }))));
-    this_->bare_variant_starts = (&((*({ Array<uint64_t>* scaly_t176 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t176 = Array<uint64_t>{}; (void)0; scaly_t176; }))));
-    this_->registering_namespace = (*({ String* scaly_t177 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t177 = String{}; String_init2((*scaly_t177), scaly_lvalue(String{nullptr})); scaly_t177; }));
-    this_->registering_ns_path = (*({ String* scaly_t178 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t178 = String{}; String_init2((*scaly_t178), scaly_lvalue(String{nullptr})); scaly_t178; }));
-    this_->ns_probe_lines = (&((*({ Array<String>* scaly_t179 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t179 = Array<String>{}; (void)0; scaly_t179; }))));
-    this_->concept_ns_paths = (&((*({ Array<String>* scaly_t180 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t180 = Array<String>{}; (void)0; scaly_t180; }))));
-    this_->ns_path_index = (&((*({ NameIndex* scaly_t181 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t181 = NameIndex{(*({ ConceptIndex* scaly_t182 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t182 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t182; })), (*({ Array<String>* scaly_t183 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t183 = Array<String>{}; (void)0; scaly_t183; })), (*({ Array<uint64_t>* scaly_t184 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t184 = Array<uint64_t>{}; (void)0; scaly_t184; }))}; scaly_t181; }))));
-    this_->ns_first_path = (&((*({ NameIndex* scaly_t185 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t185 = NameIndex{(*({ ConceptIndex* scaly_t186 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t186 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t186; })), (*({ Array<String>* scaly_t187 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t187 = Array<String>{}; (void)0; scaly_t187; })), (*({ Array<uint64_t>* scaly_t188 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t188 = Array<uint64_t>{}; (void)0; scaly_t188; }))}; scaly_t185; }))));
-    this_->ns_multi_names = (&((*({ NameIndex* scaly_t189 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t189 = NameIndex{(*({ ConceptIndex* scaly_t190 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t190 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t190; })), (*({ Array<String>* scaly_t191 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t191 = Array<String>{}; (void)0; scaly_t191; })), (*({ Array<uint64_t>* scaly_t192 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t192 = Array<uint64_t>{}; (void)0; scaly_t192; }))}; scaly_t189; }))));
-    this_->planning_ns_path = (*({ String* scaly_t193 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t193 = String{}; String_init2((*scaly_t193), scaly_lvalue(String{nullptr})); scaly_t193; }));
-    this_->body_ns_path = (*({ String* scaly_t194 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t194 = String{}; String_init2((*scaly_t194), scaly_lvalue(String{nullptr})); scaly_t194; }));
+    this_->use_vis_starts = (*({ Array<uint64_t>* scaly_t173 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t173 = Array<uint64_t>{}; (void)0; scaly_t173; }));
+    this_->module_paths = (*({ Array<String>* scaly_t174 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t174 = Array<String>{}; (void)0; scaly_t174; }));
+    this_->function_origin_paths = (*({ Array<String>* scaly_t175 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t175 = Array<String>{}; (void)0; scaly_t175; }));
+    this_->function_namespaces = (&((*({ Array<String>* scaly_t176 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t176 = Array<String>{}; (void)0; scaly_t176; }))));
+    this_->function_origin_files = (&((*({ Array<String>* scaly_t177 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t177 = Array<String>{}; (void)0; scaly_t177; }))));
+    this_->function_ns_paths = (&((*({ Array<String>* scaly_t178 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t178 = Array<String>{}; (void)0; scaly_t178; }))));
+    this_->bare_variant_starts = (&((*({ Array<uint64_t>* scaly_t179 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t179 = Array<uint64_t>{}; (void)0; scaly_t179; }))));
+    this_->registering_namespace = (*({ String* scaly_t180 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t180 = String{}; String_init2((*scaly_t180), scaly_lvalue(String{nullptr})); scaly_t180; }));
+    this_->registering_ns_path = (*({ String* scaly_t181 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t181 = String{}; String_init2((*scaly_t181), scaly_lvalue(String{nullptr})); scaly_t181; }));
+    this_->ns_probe_lines = (&((*({ Array<String>* scaly_t182 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t182 = Array<String>{}; (void)0; scaly_t182; }))));
+    this_->concept_ns_paths = (&((*({ Array<String>* scaly_t183 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t183 = Array<String>{}; (void)0; scaly_t183; }))));
+    this_->ns_path_index = (&((*({ NameIndex* scaly_t184 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t184 = NameIndex{(*({ ConceptIndex* scaly_t185 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t185 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t185; })), (*({ Array<String>* scaly_t186 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t186 = Array<String>{}; (void)0; scaly_t186; })), (*({ Array<uint64_t>* scaly_t187 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t187 = Array<uint64_t>{}; (void)0; scaly_t187; }))}; scaly_t184; }))));
+    this_->ns_first_path = (&((*({ NameIndex* scaly_t188 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t188 = NameIndex{(*({ ConceptIndex* scaly_t189 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t189 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t189; })), (*({ Array<String>* scaly_t190 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t190 = Array<String>{}; (void)0; scaly_t190; })), (*({ Array<uint64_t>* scaly_t191 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t191 = Array<uint64_t>{}; (void)0; scaly_t191; }))}; scaly_t188; }))));
+    this_->ns_multi_names = (&((*({ NameIndex* scaly_t192 = (NameIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(NameIndex), alignof(NameIndex)); *scaly_t192 = NameIndex{(*({ ConceptIndex* scaly_t193 = (ConceptIndex*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(ConceptIndex), alignof(ConceptIndex)); *scaly_t193 = ConceptIndex{(ConceptSlot*)(nullptr), 0ULL}; scaly_t193; })), (*({ Array<String>* scaly_t194 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t194 = Array<String>{}; (void)0; scaly_t194; })), (*({ Array<uint64_t>* scaly_t195 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t195 = Array<uint64_t>{}; (void)0; scaly_t195; }))}; scaly_t192; }))));
+    this_->planning_ns_path = (*({ String* scaly_t196 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t196 = String{}; String_init2((*scaly_t196), scaly_lvalue(String{nullptr})); scaly_t196; }));
+    this_->body_ns_path = (*({ String* scaly_t197 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t197 = String{}; String_init2((*scaly_t197), scaly_lvalue(String{nullptr})); scaly_t197; }));
     this_->ns_multi_any = false;
     this_->outer_generics_any = false;
     this_->ns_probe_on = false;
-    this_->registering_file = (*({ String* scaly_t195 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t195 = String{}; String_init2((*scaly_t195), scaly_lvalue(String{nullptr})); scaly_t195; }));
-    this_->registering_path = (*({ String* scaly_t196 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t196 = String{}; String_init2((*scaly_t196), scaly_lvalue(String{nullptr})); scaly_t196; }));
-    this_->use_vis_files = (*({ Array<String>* scaly_t197 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t197 = Array<String>{}; (void)0; scaly_t197; }));
-    this_->use_vis_names = (*({ Array<String>* scaly_t198 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t198 = Array<String>{}; (void)0; scaly_t198; }));
-    this_->use_vis_paths = (*({ Array<String>* scaly_t199 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t199 = Array<String>{}; (void)0; scaly_t199; }));
-    this_->use_vis_recorded_files = (*({ Array<String>* scaly_t200 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t200 = Array<String>{}; (void)0; scaly_t200; }));
+    this_->registering_file = (*({ String* scaly_t198 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t198 = String{}; String_init2((*scaly_t198), scaly_lvalue(String{nullptr})); scaly_t198; }));
+    this_->registering_path = (*({ String* scaly_t199 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t199 = String{}; String_init2((*scaly_t199), scaly_lvalue(String{nullptr})); scaly_t199; }));
+    this_->use_vis_files = (*({ Array<String>* scaly_t200 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t200 = Array<String>{}; (void)0; scaly_t200; }));
+    this_->use_vis_names = (*({ Array<String>* scaly_t201 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t201 = Array<String>{}; (void)0; scaly_t201; }));
+    this_->use_vis_paths = (*({ Array<String>* scaly_t202 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t202 = Array<String>{}; (void)0; scaly_t202; }));
+    this_->use_vis_recorded_files = (*({ Array<String>* scaly_t203 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t203 = Array<String>{}; (void)0; scaly_t203; }));
     this_->use_vis_measure = false;
     this_->use_vis_hits = 0ULL;
     this_->use_vis_misses = 0ULL;
-    this_->use_vis_miss_idx = (*({ Array<uint64_t>* scaly_t201 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t201 = Array<uint64_t>{}; (void)0; scaly_t201; }));
-    this_->use_vis_miss_files = (*({ Array<String>* scaly_t202 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t202 = Array<String>{}; (void)0; scaly_t202; }));
-    this_->use_vis_miss_lazy = (*({ Array<uint64_t>* scaly_t203 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t203 = Array<uint64_t>{}; (void)0; scaly_t203; }));
-    this_->use_vis_recorded_paths = (*({ Array<String>* scaly_t204 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t204 = Array<String>{}; (void)0; scaly_t204; }));
+    this_->use_vis_miss_idx = (*({ Array<uint64_t>* scaly_t204 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t204 = Array<uint64_t>{}; (void)0; scaly_t204; }));
+    this_->use_vis_miss_files = (*({ Array<String>* scaly_t205 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t205 = Array<String>{}; (void)0; scaly_t205; }));
+    this_->use_vis_miss_lazy = (*({ Array<uint64_t>* scaly_t206 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t206 = Array<uint64_t>{}; (void)0; scaly_t206; }));
+    this_->use_vis_recorded_paths = (*({ Array<String>* scaly_t207 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t207 = Array<String>{}; (void)0; scaly_t207; }));
     this_->use_vis_enforce = true;
-    this_->use_vis_verdict_file = (*({ Array<String>* scaly_t205 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t205 = Array<String>{}; (void)0; scaly_t205; }));
-    this_->use_vis_verdict_ok = (*({ Array<uint64_t>* scaly_t206 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t206 = Array<uint64_t>{}; (void)0; scaly_t206; }));
+    this_->use_vis_verdict_file = (*({ Array<String>* scaly_t208 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t208 = Array<String>{}; (void)0; scaly_t208; }));
+    this_->use_vis_verdict_ok = (*({ Array<uint64_t>* scaly_t209 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t209 = Array<uint64_t>{}; (void)0; scaly_t209; }));
     this_->jit_dep_bodies = false;
     Planner_register_runtime_functions(*(this_));
 }
@@ -106384,6 +106518,25 @@ __attribute__((weak)) bool Planner_needs_implicit_return_page(Function& func)
     if (Planner_is_generic_type_param_name(joined))
     {
         return false;
+    }
+    if ((((((ret_type).name).length > 0ULL) ? String_equals(scaly_lvalue(Vector3((ret_type).name, 0LL)), scaly_lvalue(String{(uint8_t*)"\002()"})) : false) ? (((ret_type).generics) != (nullptr)) : false))
+    {
+        bool plain = true;
+        for (auto scaly_t1 = Vector_get_iterator<Type>(&scaly_local.f, scaly_lvalue(((*((ret_type).generics)))));;)
+        {
+            Type* scaly_t1_at = (Type*)VectorIterator_next<Type>(scaly_t1);
+            if (scaly_t1_at == nullptr)
+                break;
+            Type* component = scaly_t1_at;
+            if ((((component->name).length != 1ULL) ? true : ((Planner_is_primitive_type_name(scaly_lvalue(Planner_join_dotted_name(&scaly_local.f, component->name)))) == (false))))
+            {
+                plain = false;
+            }
+        }
+        if (plain)
+        {
+            return false;
+        }
     }
     if (Planner_is_npo_option_type(ret_type))
     {
@@ -118975,7 +119128,7 @@ __attribute__((weak)) void GpuKernel_k_field_write(GpuKernel& scaly_self, Planne
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
-__attribute__((weak)) scaly_tuple<int64_t, int64_t> GpuKernel_init_place(scaly_frame* scaly_rp, GpuKernel& scaly_self, String& mangled)
+__attribute__((weak)) scaly_tuple<int64_t, int64_t> GpuKernel_init_place(GpuKernel& scaly_self, String& mangled)
 {
     GpuKernel* this_ = &scaly_self;
     Vector<PlannedStructure>* ss = this_->plan_structures;
@@ -119042,7 +119195,7 @@ __attribute__((weak)) void GpuKernel_k_init(GpuKernel& scaly_self, PlannedCall& 
     {
         return;
     }
-    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(&scaly_local.f, *(this_), (call).mangled_name);
+    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(*(this_), (call).mangled_name);
     if (((place)._0 < 0LL))
     {
         GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\063constructs through an init whose body is not here: "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (call).result_type)));
@@ -123382,12 +123535,11 @@ __attribute__((weak)) int64_t GpuMsl_function_index(GpuKernel* gk, String& mangl
 __attribute__((weak)) void GpuMsl_function_source(GpuMsl& scaly_self, StringBuilder* out, GpuKernel* gk, String& mangled, uint64_t fi)
 {
     GpuMsl* this_ = &scaly_self;
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (this_->m_refused)
     {
         return;
     }
-    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(&scaly_local.f, *(gk), mangled);
+    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(*(gk), mangled);
     if (((place)._0 >= 0LL))
     {
         GpuMsl_init_text(*(this_), out, gk, ((uint64_t)((place)._0)), ((uint64_t)((place)._1)), fi);
@@ -123751,7 +123903,7 @@ __attribute__((weak)) String GpuMsl_init_call(scaly_frame* scaly_rp, GpuMsl& sca
     GpuMsl* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     int64_t fi = GpuKernel_index_of((&(gk->k_functions)), (call).mangled_name);
-    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(&scaly_local.f, *(gk), (call).mangled_name);
+    scaly_tuple<int64_t, int64_t> place = GpuKernel_init_place(*(gk), (call).mangled_name);
     int64_t rk = GpuKernel_kind(*(gk), (call).result_type);
     if ((((fi < 0LL) ? true : ((place)._0 < 0LL)) ? true : (rk < 100LL)))
     {
@@ -146627,6 +146779,7 @@ __attribute__((weak)) void Emitter_emit_fj_entry(Emitter& scaly_self, LLVMOpaque
 __attribute__((weak)) bool Emitter_emit_function_body(Emitter& scaly_self, PlannedFunction& func)
 {
     Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     LLVMOpaqueValue* llvm_func = Emitter_lookup_function_cache(*(this_), (func).mangled_name);
     if (((llvm_func) == (nullptr)))
     {
@@ -146641,12 +146794,26 @@ __attribute__((weak)) bool Emitter_emit_function_body(Emitter& scaly_self, Plann
         this_->fj_name = (func).name;
         this_->fj_file = (func).file;
     }
+    if (((this_->current_plan->inline_functions) != (nullptr)))
+    {
+        for (auto scaly_t2 = Vector_get_iterator<String>(&scaly_local.f, scaly_lvalue(((*(this_->current_plan->inline_functions)))));;)
+        {
+            String* scaly_t2_at = (String*)VectorIterator_next<String>(scaly_t2);
+            if (scaly_t2_at == nullptr)
+                break;
+            String* nm = scaly_t2_at;
+            if (String_equals(*(nm), (func).mangled_name))
+            {
+                Emitter_add_function_attribute(*(this_), llvm_func, scaly_lvalue(String{(uint8_t*)"\014alwaysinline"}));
+            }
+        }
+    }
     bool ok = Emitter_emit_function_body_into(*(this_), func, llvm_func);
     if (this_->fj_seen)
     {
         Emitter_emit_fork_join_function(*(this_), func, llvm_func);
     }
-    this_->fj_self = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init3((*scaly_t2)); scaly_t2; }));
+    this_->fj_self = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init3((*scaly_t3)); scaly_t3; }));
     this_->fj_seen = false;
     this_->fj_mode = 0LL;
     return ok;

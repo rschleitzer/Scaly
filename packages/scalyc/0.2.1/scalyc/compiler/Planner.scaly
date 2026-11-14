@@ -268,6 +268,18 @@ define DeepIndexes
 ; (class 4, which decides nothing in the merge), `mode` 2 maps it through the
 ; candidate `cls`/`arg` — iterated from that bottom until the class stops
 ; moving, the least fixpoint. `takes_this` and `arity` recognise the call.
+; The generic free function instantiations under way (Planner.generic_work):
+; how deep, and each as its function's name and type arguments
+; (generic_instance_key#).
+define GenericWork
+(
+    var depth: size_t
+    var keys: Array[String]
+    ; beside them: the symbols of the routines declared `@inline true`
+    ; (Plan.inline_functions)
+    var inline_names: Array[String]
+)
+
 define RrSelf
 (
     var mode: int
@@ -859,11 +871,13 @@ define Planner
         ; literal folding to a char only where it IS one character
         ; (arg_folds_to_char#)
         var char_fold_single: bool
-        ; Depth of generic FREE function instantiations under way
-        ; (instantiate_generic_function#): their bodies see every concept, as
-        ; a generic concept's do (use_vis_check#) -- a type argument is a
-        ; concept of the CALLER's package the template's file never names.
-        var instantiating_functions: size_t
+        ; The generic FREE function instantiations under way
+        ; (instantiate_generic_function#): their depth -- their bodies see
+        ; every concept, as a generic concept's do (use_vis_check#), a type
+        ; argument being a concept of the CALLER's package the template's
+        ; file never names -- and which (ensure_generic_instance#). Behind a
+        ; reference: the Planner record is full.
+        generic_work: ref[GenericWork]
         ; The package directory of the root being compiled (package_dir_of#
         ; of its main module's file), "" outside packages/: a constant of
         ; another package is planned on demand (plan_foreign_constant#).
@@ -1658,7 +1672,7 @@ define Planner
             current_return_type := null
             planning_template := false
             char_fold_single := false
-            instantiating_functions := 0
+            generic_work := &GenericWork^this(0, Array[String]^this(), Array[String]^this())
             root_package := String^this("")
             local_closure_names := Array[String]^this()
             local_box_names := Array[String]^this()
@@ -4770,7 +4784,7 @@ define Planner
                 return true
             if instantiating_methods.length > 0 or idx >= concept_origin_files.length
                 return true
-            if instantiating_functions > 0
+            if generic_work.depth > 0
                 return true
             if idx < use_vis_verdict_file.length
             {
@@ -10459,6 +10473,96 @@ define Planner
             Vector[KeyValuePair[String, PlannedType]](result)
         }
 
+        ; A generic function and its type arguments, as one name: the
+        ; instantiations under way (ensure_generic_instance#).
+        procedure generic_instance_key(mutable this: Planner, f: Function, args: Vector[KeyValuePair[String, PlannedType]]) returns String
+        {
+            var sb StringBuilder()
+            sb.append f.name
+            for kv in args
+            {
+                sb.append "|"
+                sb.append kv.value.mangled_name
+            }
+            let k sb.to_string()
+            String^this(k)
+        }
+
+        ; ★A generic candidate that a pass before Pass 3 matched did so with
+        ; its type parameters bound already -- by the instance whose body is
+        ; being planned, binding the SAME names (`exp_finish[T]` called from
+        ; `exp[T]`). The match names that instance by its symbol; until
+        ; 2026-11-14 nothing planned it, and the link found it missing: a
+        ; generic function's instance calling another generic function. It
+        ; is planned here, unless it is planned already, or under way (a
+        ; generic function calling itself), or a type parameter is not bound
+        ; to a type (a template's own body).
+        procedure ensure_generic_instance(mutable this: Planner, mutable f: Function, m: ref[MethodMatch]?) returns ref[MethodMatch]?
+        {
+            if m = null or f.parameters.length = 0 or this.planning_template
+                return m
+            let mm (*m)
+            var bind_arr Array[KeyValuePair[String, PlannedType]]()
+            for gp in f.parameters
+            {
+                let sub this.lookup_type_substitution(gp.name)
+                if sub = null
+                    return m
+                let st (*sub)
+                if st.variable <> null
+                    return m
+                bind_arr.add(KeyValuePair[String, PlannedType](gp.name, st))
+            }
+            let bindings Vector[KeyValuePair[String, PlannedType]](bind_arr)
+            let key this.generic_instance_key(f, bindings)
+            ; under way (a generic function calling itself): its symbol made
+            ; as plan_function# makes it -- that is still planning the body
+            var under_way false
+            for w in generic_work.keys
+            {
+                if w = key
+                    under_way := true
+            }
+            var symbol String()
+            if under_way
+                symbol := this.generic_instance_symbol(f)
+            else
+            {
+                let inst this.instantiate_generic_function(f, bindings)
+                symbol := inst.mangled_name
+            }
+            ; the instance's symbol carries its type arguments in its name
+            ; (plan_function#), the match's was made without them
+            MethodMatch^this(mm.method, String^this(symbol), mm.return_type, mm.parameter_types, mm.requires_page_param,
+                             mm.can_throw, mm.throws_type, mm.is_intrinsic, mm.takes_this, mm.persists_args, mm.return_class, mm.return_arg)
+        }
+
+        ; The symbol of a generic free function's instance under the type
+        ; substitutions in force, made as plan_function# makes it: its own type
+        ; arguments appended to its name, its parameters planned, the caller
+        ; page where it takes one.
+        procedure generic_instance_symbol(mutable this: Planner, mutable f: Function) returns String
+        {
+            var nb StringBuilder()
+            nb.append f.name
+            for tp in f.parameters
+            {
+                let sub this.lookup_type_substitution(tp.name)
+                if sub <> null
+                    nb.append(Planner.encode_type((*sub)))
+            }
+            let mname nb.to_string()
+            let planned_input this.plan_items(f.input)
+            var input_holder Vector[PlannedItem](planned_input)
+            var has_page: bool false
+            if f.page_parameter <> null
+                has_page := true
+            if Planner.function_needs_caller_page(this, f)
+                has_page := true
+            let symbol Planner.mangle_function_in(mname, &input_holder, null, has_page, Planner.package_tag(this.function_package(f)))
+            String^this(symbol)
+        }
+
         ; instantiate_generic_function: monomorphise a generic function
         ; (one whose parameter types reference type-parameter names like
         ; T / K / V) against a substitution mapping those names to
@@ -10490,9 +10594,12 @@ define Planner
             let ffile this.function_origin_file(f)
             if ffile.get_length() > 0
                 this.file := String^this(ffile)
-            instantiating_functions := instantiating_functions + 1
+            generic_work.depth := generic_work.depth + 1
+            let key this.generic_instance_key(f, args)
+            generic_work.keys.add(key)
             let result this.plan_function(f, null)
-            instantiating_functions := instantiating_functions - 1
+            generic_work.keys.length := generic_work.keys.length - 1
+            generic_work.depth := generic_work.depth - 1
             this.file := saved_ffile
             type_substitutions.length := saved_len
             result
@@ -12321,9 +12428,12 @@ define Planner
                 let f_ptr candidates.get i
                 if f_ptr <> null
                 {
-                    let f (*f_ptr)
+                    var f (*f_ptr)
                     if this.candidate_matches(f, arg_types, true)
-                        return this.check_function_match(f, arg_types, true, false, arg_ops)
+                    {
+                        let m this.check_function_match(f, arg_types, true, false, arg_ops)
+                        return this.ensure_generic_instance(f, m)
+                    }
                 }
                 i := i + 1
             }
@@ -56851,6 +56961,8 @@ define Planner
             if Planner.is_extern_impl(f.implementation) = false
                 mangled_holder.put(0, Planner.mangle_function_in(mname, &input_holder, parent, has_page, Planner.package_tag(this.function_package(f))))
             let mangled (*mangled_holder.get(0))
+            if Planner.attributes_have(f.attributes, "inline") and this.planning_template = false
+                generic_work.inline_names.add(String^this(mangled))
 
             ; An IMPLICIT self tail call becomes an explicit `return`, so the
             ; emitter's tail loop (return_is_self_call#) takes it as it takes
@@ -60645,7 +60757,8 @@ define Planner
                 &globals_holder,
                 &delegates_holder,
                 next_type_var_id,
-                &constraints_holder
+                &constraints_holder,
+                &^this Vector[String]^this(generic_work.inline_names)
             )
         }
 
@@ -66540,6 +66653,24 @@ define Planner
 
         if Planner.is_generic_type_param_name(joined)
             return false
+
+        ; A tuple of plain values -- `(hi: f64, lo: f64)`, the type `()` with
+        ; its components as generic arguments and its labels as further
+        ; segments (Modeler.handle_tuple_type#) -- holds nothing a page could:
+        ; handed back by value, it needs no storage of the caller's. The page
+        ; it was granted cost every call of scaly/math.scaly's helpers a frame
+        ; (log1p four times the C library's time, 2026-11-14).
+        if ret_type.name.length > 0 and ret_type.name[0] = "()" and ret_type.generics <> null
+        {
+            var plain true
+            for component in (*ret_type.generics)
+            {
+                if component.name.length <> 1 or Planner.is_primitive_type_name(Planner.join_dotted_name(component.name)) = false
+                    plain := false
+            }
+            if plain
+                return false
+        }
 
         ; An NPO return -- `ref[T]?` / `pointer[T]?`, which s113 wraps into
         ; `Option[ref[T]]` at Model level -- hands back a REFERENCE, and the

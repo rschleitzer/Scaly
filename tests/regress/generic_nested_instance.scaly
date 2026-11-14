@@ -1,0 +1,44 @@
+; A generic function's instance calling another generic function: the
+; call resolves in the exact pass with the type parameter already bound by
+; the instance under way, and named an instance nobody planned -- the link
+; found `inner(f64, f64)` missing (2026-11-14, Planner.ensure_generic_instance#).
+; A generic function calling itself must not plan itself again for ever.
+; A tuple of plain values takes no caller page (needs_implicit_return_page#),
+; and `@inline true` is accepted after a parameter list.
+
+function inner[T](probe: T, v: f64) returns f64
+    v * 2.0
+
+function outer[T](x: T) returns T
+{
+    let v: f64 x as f64
+    inner(x, v) as T
+}
+
+function halve[T](x: T, n: int) returns T
+{
+    if n = 0
+        return x
+    let y: T x / (2.0 as T)
+    halve(y, n - 1)
+}
+
+function both[T](x: T) returns T
+    halve(x, 3) + halve(x, 1)
+
+function split[T](probe: T, v: f64) @inline true returns (hi: f64, lo: f64)
+    (hi: v * 2.0, lo: v / 2.0)
+
+function parts[T](x: T) returns T
+{
+    let p split(x, x as f64)
+    (p.hi + p.lo) as T
+}
+
+let a: f64 3.0
+let b: f32 16.0
+let c: f64 16.0
+if outer(a) = 6.0 and (both(b) as f64) = 10.0 and both(c) = 10.0 and parts(c) = 40.0
+    print "PASS"
+else
+    print "FAIL"
