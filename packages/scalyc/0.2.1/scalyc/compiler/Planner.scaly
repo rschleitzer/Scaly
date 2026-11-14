@@ -16237,7 +16237,11 @@ define Planner
                         let arg_ops Vector[PlannedOperand](arg_ops_arr_s90)
                         ; SIMD vectors: construction, statics, methods, select
                         ; -- intrinsics without a declaration (plan_simd_call#)
-                        let simd_kind this.simd_call_kind(result, fn_name, value_method_hop, arg_ops)
+                        var simd_kind this.simd_call_kind(result, fn_name, value_method_hop, arg_ops)
+                        ; a floating-point scalar's methods (mul_add, sqrt, ...):
+                        ; the same two shapes as a vector's (1, 3), kinds 11 and 13
+                        if simd_kind = 0
+                            simd_kind := this.float_call_kind(result, fn_name, value_method_hop)
                         if simd_kind <> 0
                         {
                             result := this.rebind_trailing_chain(this.plan_simd_call(simd_kind, result, second, fn_name, arg_ops))
@@ -22898,6 +22902,15 @@ define Planner
                             current := mrt
                         }
                     }
+                    ; a method of a floating-point scalar: an intrinsic too
+                    ; (plan_float_method#)
+                    if matched = false and Planner.float_method_result(lookup_type.name, m).get_length() > 0
+                    {
+                        matched := true
+                        let fmt Planner.float_method_type(lookup_type, m)
+                        result.add(PlannedMemberAccess(m, 0, true, false, lookup_type, fmt))
+                        current := fmt
+                    }
                     if matched = false
                     {
                         this.report_hidden_member(lookup_type.name, m, at)
@@ -22992,9 +23005,174 @@ define Planner
             0
         }
 
+        ; A method of a floating-point scalar (f64, f32) the compiler knows
+        ; -- the IEEE operations the hardware does, or its library would:
+        ;   mul_add(b, c)  a * b + c, fused (one rounding) where the build's
+        ;                  processor has FMA, else two roundings (relaxed)
+        ;   fma(b, c)      a * b + c with one rounding, everywhere
+        ;   sqrt() floor() ceil() trunc() round_even() abs() copy_sign(y)
+        ; 11 one through a member hop (`p.x.sqrt()`), 13 one on a local, 0 none.
+        function float_call_kind(this: Planner, result: PlannedOperand, fn_name: String, value_method_hop: bool) returns int
+        {
+            if value_method_hop and result.member_access <> null
+            {
+                let ma (*result.member_access)
+                if ma.length > 0
+                {
+                    let lh ma[ma.length - 1]
+                    if Planner.float_method_result(lh.parent_type.name, fn_name).get_length() > 0
+                        return 11
+                }
+            }
+            let dot fn_name.last_index_of(46)
+            if dot > 0
+            {
+                let dp dot as size_t
+                let prefix fn_name.substring(0, dp)
+                let suffix fn_name.substring(dp + 1, fn_name.get_length() - dp - 1)
+                let local_ref this.lookup_local_binding(prefix)
+                if local_ref <> null and Planner.float_method_result((*local_ref).binding_type.name, suffix).get_length() > 0
+                    return 13
+            }
+            0
+        }
+
+        ; the receiver of a method hop: the operand without its last member
+        ; access where that is the method `m` (a call result carries it)
+        procedure without_last_hop(mutable this: Planner, op: PlannedOperand, m: String) returns PlannedOperand
+        {
+            if op.member_access = null
+                return op
+            let ma (*op.member_access)
+            if ma.length = 0
+                return op
+            let last ma[ma.length - 1]
+            if last.name <> m
+                return op
+            var chain: ref[Vector[PlannedMemberAccess]]? null
+            if ma.length > 1
+            {
+                let hops Vector[PlannedMemberAccess]^this(ma.length - 1)
+                var k: size_t 0
+                while k + 1 < ma.length
+                {
+                    hops.put(k, ma[k])
+                    k := k + 1
+                }
+                chain := &hops
+            }
+            PlannedOperand(op.loc, op.expr, chain, last.parent_type)
+        }
+
+        function is_float_name(name: String) returns bool
+            name = "f64" or name = "f32" or name = "double" or name = "float"
+
+        ; the arguments a scalar's method takes, -1 where it has none of that name
+        function float_method_arity(m: String) returns int
+        {
+            match m
+                case "mul_add" case "fma": return 2
+                case "copy_sign": return 1
+                case "sqrt" case "floor" case "ceil" case "trunc" case "round_even" case "abs": return 0
+                case "to_bits" case "float_from_bits": return 0
+            0 - 1
+        }
+
+        ; The type a scalar's method answers, by name: the receiver's for the
+        ; arithmetic; to_bits the bits of an f64 (u64) or an f32 (u32) as they
+        ; are, float_from_bits a u64's or u32's bits as the floating-point
+        ; number they are; empty where the receiver has no such method.
+        function float_method_result(t: String, m: String) returns String
+        {
+            if Planner.is_float_name(t)
+            {
+                if m = "to_bits"
+                    return if t = "f64" or t = "double": String("u64") else String("u32")
+                if m = "float_from_bits"
+                    return String()
+                if Planner.float_method_arity(m) >= 0
+                    return t
+                return String()
+            }
+            if m = "float_from_bits"
+            {
+                if t = "u64"
+                    return String("f64")
+                if t = "u32"
+                    return String("f32")
+            }
+            String()
+        }
+
+        function float_method_type(t: PlannedType, m: String) returns PlannedType
+        {
+            let r Planner.float_method_result(t.name, m)
+            if r = t.name
+                return t
+            let mangled "3`r`"
+            Planner.make_primitive_type(r.as_slice(), mangled.as_slice())
+        }
+
+        ; a scalar's method, planned: `float.<m>` with the receiver first,
+        ; every argument of the receiver's type
+        procedure plan_float_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
+        {
+            let t recv.result_type
+            let want Planner.float_method_arity(m)
+            if Planner.float_method_result(t.name, m).get_length() = 0
+                this.add_diagnostic(second.loc, String^this("`t.name` has no method `m`"))
+            else if arg_ops.length <> (want as size_t)
+                this.add_diagnostic(second.loc, String^this("`t.name`.`m` takes `want` argument(s)"))
+            else
+            {
+                for a in arg_ops
+                {
+                    if a.result_type.name <> t.name and Planner.is_float_name(a.result_type.name)
+                        this.add_diagnostic(second.loc, String^this("`t.name`.`m` takes `t.name` arguments, not `a.result_type.name`"))
+                }
+            }
+            var all Vector[PlannedOperand](arg_ops.length + 1)
+            all.put(0, recv)
+            var i: size_t 0
+            while i < arg_ops.length
+            {
+                all.put(i + 1, arg_ops[i])
+                i := i + 1
+            }
+            this.simd_operand(second.loc, "float.`m`", all, Planner.float_method_type(t, m), second.member_access)
+        }
+
         ; the call simd_call_kind# recognized, planned
         procedure plan_simd_call(mutable this: Planner, kind: int, result: PlannedOperand, second: PlannedOperand, fn_name: String, arg_ops: Vector[PlannedOperand]) returns PlannedOperand
         {
+            if kind = 11 or kind = 13
+            {
+                if kind = 11
+                {
+                    let ma (*result.member_access)
+                    let last ma[ma.length - 1]
+                    var chain: ref[Vector[PlannedMemberAccess]]? null
+                    if ma.length > 1
+                    {
+                        let hops Vector[PlannedMemberAccess]^this(ma.length - 1)
+                        var k: size_t 0
+                        while k + 1 < ma.length
+                        {
+                            hops.put(k, ma[k])
+                            k := k + 1
+                        }
+                        chain := &hops
+                    }
+                    let recv PlannedOperand(result.loc, result.expr, chain, last.parent_type)
+                    return this.plan_float_method(recv, fn_name, arg_ops, second)
+                }
+                let dp fn_name.last_index_of(46) as size_t
+                let prefix fn_name.substring(0, dp)
+                let suffix fn_name.substring(dp + 1, fn_name.get_length() - dp - 1)
+                let local (*this.lookup_local_binding(prefix))
+                let recv PlannedOperand(result.loc, PlannedExpression.Variable(PlannedVariable(result.loc, String^this(prefix), local.binding_type, local.is_mutable)), null, local.binding_type)
+                return this.plan_float_method(recv, suffix, arg_ops, second)
+            }
             if kind = 1
             {
                 let ma (*result.member_access)
@@ -25808,6 +25986,12 @@ define Planner
             var arg_ops Vector[PlannedOperand](ops_arr)
             let arg_types Vector[PlannedType](types_arr)
             var recv_type result.result_type
+            ; a floating-point scalar's own methods (plan_float_method#)
+            if Planner.float_method_result(recv_type.name, method_name).get_length() > 0
+            {
+                found := true
+                return this.plan_float_method(this.without_last_hop(result, method_name), method_name, arg_ops, next_args)
+            }
             let match_ref this.lookup_method(recv_type, method_name, arg_types, arg_ops)
             if match_ref = null
             {

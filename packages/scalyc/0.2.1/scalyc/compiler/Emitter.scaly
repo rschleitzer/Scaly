@@ -335,6 +335,12 @@ define Emitter
         ; must run on any x86_64.
         var simd_ssse3: bool
         var simd_avx2: bool
+        ; The processor the build is for has FMA: arm64 always; x86_64 where
+        ; -mcpu names one from Haswell on (x86-64-v3) or `native` finds it;
+        ; never WebAssembly. A scalar's mul_add is fused there and two
+        ; roundings elsewhere (relaxed): the build decides, so the same
+        ; source computes the same bits on every node that has FMA.
+        var target_fma: bool
         var llvm_module: LLVMModuleRef
         var builder: LLVMBuilderRef
         ; Debug info (DWARF) — populated only when config.emit_debug_info.
@@ -629,6 +635,7 @@ define Emitter
             simd_neon := false
             simd_ssse3 := false
             simd_avx2 := false
+            target_fma := false
             llvm_module := null
             builder := null
             di_builder := null
@@ -840,6 +847,9 @@ define Emitter
             target_is_arm64 := triple_name.starts_with("aarch64") or triple_name.starts_with("arm64")
             target_is_wasm := this.triple_is_wasm(triple)
             simd_neon := config.portable_simd = false and target_is_arm64
+            target_fma := target_is_arm64
+            if triple_name.starts_with("x86_64")
+                target_fma := Emitter.x86_cpu_has_fma(config.target_cpu)
             if config.portable_simd = false and triple_name.starts_with("x86_64")
             {
                 let cpu config.target_cpu
@@ -15610,6 +15620,107 @@ define Emitter
             this.simd_splat(v, vt, Emitter.simd_unsigned(t) = false)
         }
 
+        ; Does an x86_64 processor -mcpu names have FMA? `native` asks this
+        ; machine; a name LLVM-C cannot list the features of is known by
+        ; its family: Haswell (2013) and later from Intel, Piledriver and
+        ; Zen from AMD, x86-64-v3 and -v4. The baseline does not.
+        procedure x86_cpu_has_fma(cpu: String) returns bool
+        {
+            if cpu = "native"
+            {
+                let host_features LLVMGetHostCPUFeatures()
+                if host_features = null
+                    return false
+                let has String(host_features as pointer[const_char]).contains(String("+fma"))
+                LLVMDisposeMessage host_features
+                return has
+            }
+            if cpu = "x86-64-v3" or cpu = "x86-64-v4"
+                return true
+            match cpu
+                case "haswell" case "broadwell" case "skylake" case "skylake-avx512" case "cascadelake": return true
+                case "cooperlake" case "cannonlake" case "icelake-client" case "icelake-server" case "tigerlake": return true
+                case "alderlake" case "raptorlake" case "meteorlake" case "arrowlake" case "sapphirerapids": return true
+                case "emeraldrapids" case "graniterapids" case "rocketlake" case "lunarlake" case "pantherlake": return true
+                case "bdver2" case "bdver3" case "bdver4": return true
+            cpu.starts_with(String("znver"))
+        }
+
+        ; the planned intrinsic calls `float.*` on a scalar (Planner.plan_float_method#)
+        procedure emit_float(mutable this, mutable call: PlannedCall) returns LLVMValueRef
+        {
+            let name call.name
+            var vals Array[LLVMValueRef]()
+            if call.args <> null
+            {
+                for a in call.args
+                    vals.add(emit_operand(a))
+            }
+            for v in vals
+            {
+                if v = null
+                    return null
+            }
+            let ft LLVMTypeOf(vals[0])
+            ; the bits as they are, the other way or this
+            if name = "float.to_bits"
+            {
+                let it if LLVMGetTypeKind(ft) = LLVMTypeKind.Float(): LLVMInt32TypeInContext(context) else LLVMInt64TypeInContext(context)
+                return LLVMBuildBitCast(builder, vals[0], it, "float.bits")
+            }
+            if name = "float.float_from_bits"
+            {
+                let fty if LLVMGetIntTypeWidth(ft) = 32: LLVMFloatTypeInContext(context) else LLVMDoubleTypeInContext(context)
+                return LLVMBuildBitCast(builder, vals[0], fty, "float.from_bits")
+            }
+            let sfx if LLVMGetTypeKind(ft) = LLVMTypeKind.Float(): "f32" else "f64"
+            ; the arguments in the receiver's type (a literal may come wider)
+            var args Vector[LLVMValueRef](vals.length)
+            var i: size_t 0
+            while i < vals.length
+            {
+                var v vals[i]
+                if LLVMTypeOf(v) <> ft
+                {
+                    if LLVMGetTypeKind(ft) = LLVMTypeKind.Float()
+                        v := LLVMBuildFPTrunc(builder, v, ft, "float.arg")
+                    else
+                        v := LLVMBuildFPExt(builder, v, ft, "float.arg")
+                }
+                args.put(i, v)
+                i := i + 1
+            }
+            var op String()
+            match name
+                case "float.fma": op := String("fma")
+                case "float.sqrt": op := String("sqrt")
+                case "float.floor": op := String("floor")
+                case "float.ceil": op := String("ceil")
+                case "float.trunc": op := String("trunc")
+                case "float.round_even": op := String("roundeven")
+                case "float.abs": op := String("fabs")
+                case "float.copy_sign": op := String("copysign")
+            if name = "float.mul_add"
+            {
+                if target_fma
+                    op := String("fma")
+                else
+                {
+                    ; two roundings: the build's processor has no FMA (relaxed)
+                    let p LLVMBuildFMul(builder, args[0], args[1], "float.mul")
+                    return LLVMBuildFAdd(builder, p, args[2], "float.add")
+                }
+            }
+            if op.get_length() = 0
+            {
+                scaly_eputs "Emitter: unknown floating-point method "
+                scaly_eputs(name.to_c_string())
+                scaly_eputs "\n"
+                exit 14
+            }
+            this.simd_call("llvm.`op`.`sfx`", ft, args)
+        }
+
         ; the planned intrinsic calls `simd.*` (Planner.plan_simd_call#)
         procedure emit_simd(mutable this, mutable call: PlannedCall) returns LLVMValueRef
         {
@@ -15859,6 +15970,8 @@ define Emitter
             let name call.name
             if name.starts_with(String("simd."))
                 return this.emit_simd(call)
+            if name.starts_with(String("float."))
+                return this.emit_float(call)
 
             ; Handle Option::unwrap - extract payload from union
             if name = "unwrap"
@@ -23580,6 +23693,20 @@ define Emitter
                     return LLVMBuildFPTrunc(builder, src_value, dst_type, "as.fptrunc")
                 if dst_kind = double_kind
                     return src_value
+            }
+
+            ; A generic function's own body, its type parameter unbound (the
+            ; module emits it beside its instances, the parameter lowered as a
+            ; pointer): `x as f64` with x an F is no cast a pointer has, and the
+            ; body runs only as an instance, where F is the type it names
+            ; (scaly/math.scaly). Nothing to compute: undef.
+            if Planner.is_generic_type_param_name(as_expr.target_type.name)
+                return LLVMGetUndef(dst_type)
+            if as_expr.value <> null
+            {
+                let source_operand (*as_expr.value)
+                if Planner.is_generic_type_param_name(source_operand.result_type.name)
+                    return LLVMGetUndef(dst_type)
             }
 
             ; No cast rule matched. The old fallback returned the source value
