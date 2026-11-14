@@ -13,9 +13,9 @@
 ; on: -mcpu=x86-64-v3, native on such a machine) and two where it has not
 ; (an older or generic x86_64 build, WebAssembly). Builds with FMA compute
 ; the same bits; the others are `relaxed`: as fast, as accurate to within
-; a unit in the last place (tan, atan2, asin, acos, hypot: two -- the rest
-; of a division, the error of a square is not exact without FMA), not the
-; same bits. Where relaxed
+; a unit in the last place (tan, atan2, hypot: two -- the rest of a
+; division, the error of a square is not exact without FMA), not the same
+; bits. Where relaxed
 ; would not do -- pow's y log x, whose error e^ makes a relative one --
 ; mul_error gives a product's rounding error exactly on every target (FMA,
 ; else Dekker's product: slower only there).
@@ -626,8 +626,8 @@ function cos[T](x: T) @inline true returns T
 ; (its row's A is 0). (1/c once, in parallel with sin, and q = sh (1/c)
 ; were no faster.) Without FMA the rest is not exact: relaxed, 1.41 units
 ; at most over 275 000 numbers; exact by Dekker's product on every target
-; it cost two fifths more time with FMA. (The same holds for the
-; quotients of atan2, asin and acos: relaxed up to 1.52 units.)
+; it cost two fifths more time with FMA. (The same holds for atan2's
+; quotient: relaxed up to 1.28 units.)
 function tan[T](x: T) @inline true returns T
 {
     let v: f64 x as f64
@@ -646,10 +646,11 @@ function tan[T](x: T) @inline true returns T
 
 ; --- atan, atan2, asin, acos ---------------------------------------------------
 ;
-; Each is k + s atan t for a t in [0, 1] given as hi + lo, k one of 0,
-; pi/2, pi and s one of 1, -1 (atan_core): t = c + ..., c = j/64 the
-; nearest, atan t = atan c + atan u with u = (t - c)/(1 + t c), |u| <=
-; 1/128, atan c from the table as hi + lo.
+; atan and atan2 are k + s atan t for a t in [0, 1] given as hi + lo, k
+; one of 0, pi/2, pi and s one of 1, -1 (atan_core): t = c + ..., c = j/64
+; the nearest, atan t = atan c + atan u with u = (t - c)/(1 + t c), |u| <=
+; 1/128, atan c from the table as hi + lo. asin and acos are a series (to
+; 1/2) or pi/2 -+ 2 asin(sqrt((1 - |x|)/2)): no division but the root's.
 
 ; a / b as hi + lo for a = ah + al, b = bh + bl, inv = 1/bh: q = ah inv
 ; to a unit or so, the rest of the division (by FMA, its error below 2^-53
@@ -661,29 +662,6 @@ function quotient[T](probe: T, ah: f64, al: f64, bh: f64, bl: f64, inv: f64) @in
     let nq 0.0 - q
     let rest nq.mul_add(bh, ah)
     (hi: q, lo: nq.mul_add(bl, rest + al) * inv)
-}
-
-; sqrt(1 - a^2) as hi + lo, 0 <= a <= 1, and 1/hi: 1 - a^2 = (1 - a)(1 +
-; a), each factor with its error (2Sum, Fast2Sum: 1 - a is exact from a
-; half on), their product with its error (exact by FMA) -- near 1 the
-; difference then keeps its digits without FMA too; the root of the
-; rounded product, the rest over 2 hi
-function cosine_of_sine[T](probe: T, a: f64) @inline true returns (hi: f64, lo: f64, inv: f64)
-{
-    let one: f64 1.0
-    let dh one - a
-    let bb dh - one
-    let de (one - (dh - bb)) - (a + bb)
-    let sh one + a
-    let se (one - sh) + a
-    let wh dh * sh
-    let wl dh.mul_add(sh, 0.0 - wh) + dh.mul_add(se, de * sh)
-    let r wh.sqrt()
-    if r = 0.0
-        return (hi: 0.0, lo: 0.0, inv: 0.0)
-    let inv 1.0 / r
-    let nr 0.0 - r
-    (hi: r, lo: (nr.mul_add(r, wh) + wl) * (0.5 * inv), inv: inv)
 }
 
 ; k + s atan t, t = th + tl in [0, 1]
@@ -740,8 +718,86 @@ function atan[T](x: T) @inline true returns T
     (atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), 0.0 - 1.0) * sign) as T
 }
 
-; asin x = atan(x / sqrt(1 - x^2)): for |x| up to 1/sqrt 2 that ratio,
-; above it pi/2 - atan(sqrt(1 - x^2) / |x|) -- no ratio beyond 1
+; asin a for 0 <= a <= 1/2 as hi + lo: a + a^3/6 + 3a^5/40 + a^7 p(a^2),
+; p near the best of degree 14 (2^-66 of the result; tools/math/tables.py)
+; by Estrin's scheme -- four steps deep, not fourteen. The first two terms
+; exact: a^3 and a^5 as hi + lo (the errors by FMA), 1/6 and 3/40 as hi +
+; lo, each product's error by FMA, each added with its error (Fast2Sum) --
+; a^5 p in double alone left 2^-60, which pi/2 - 2 asin(...) doubles (and
+; only the first exact, 3/40 + z p in double, still reached 0.51 units).
+function asin_small[T](probe: T, a: f64) @inline true returns (hi: f64, lo: f64)
+{
+    let zero: f64 0.0
+    let z a * a
+    let zl a.mul_add(a, zero - z)
+    let z2 z * z
+    let z4 z2 * z2
+    let z8 z4 * z4
+    let c0: u64 0x3fa6db6db6db6db7
+    let c1: u64 0x3f9f1c71c71c71b1
+    let c2: u64 0x3f96e8ba2e8bbc47
+    let c3: u64 0x3f91c4ec4eb94cfd
+    let c4: u64 0x3f8c99999f29bba0
+    let c5: u64 0x3f87a877abd50aad
+    let c6: u64 0x3f83fdf82cf46bb7
+    let c7: u64 0x3f812dbb8af8c1fb
+    let c8: u64 0x3f7e0fb8bb891a4d
+    let c9: u64 0x3f7983c71593955c
+    let c10: u64 0x3f7cb5fc6b3d26f0
+    let c11: u64 0xbf0446cacbf648d9
+    let c12: u64 0x3f937f3f3ff0edf2
+    let c13: u64 0xbf952dfee3531256
+    let c14: u64 0x3f9ab90a80fb596c
+    let q0 z.mul_add(c1.float_from_bits(), c0.float_from_bits())
+    let q1 z.mul_add(c3.float_from_bits(), c2.float_from_bits())
+    let q2 z.mul_add(c5.float_from_bits(), c4.float_from_bits())
+    let q3 z.mul_add(c7.float_from_bits(), c6.float_from_bits())
+    let q4 z.mul_add(c9.float_from_bits(), c8.float_from_bits())
+    let q5 z.mul_add(c11.float_from_bits(), c10.float_from_bits())
+    let q6 z.mul_add(c13.float_from_bits(), c12.float_from_bits())
+    let r0 z2.mul_add(q1, q0)
+    let r1 z2.mul_add(q3, q2)
+    let r2 z2.mul_add(q5, q4)
+    let r3 z2.mul_add(c14.float_from_bits(), q6)
+    let s0 z4.mul_add(r1, r0)
+    let s1 z4.mul_add(r3, r2)
+    let p z8.mul_add(s1, s0)
+    let sixth_lo: u64 0x3c65555555555555
+    let a3 a * z
+    let a3l a.mul_add(z, zero - a3) + a * zl
+    let a5 a3 * z
+    let a5l a3.mul_add(z, zero - a5) + a3.mul_add(zl, a3l * z)
+    let c40_lo: u64 0x3c4999999999999a
+    let m0 a3 * 0.16666666666666666
+    let me0 a3.mul_add(0.16666666666666666, zero - m0)
+    let m1 a5 * 0.075
+    let me1 a5.mul_add(0.075, zero - m1)
+    let h0 a + m0
+    let e0 m0 - (h0 - a)
+    let h1 h0 + m1
+    let e1 m1 - (h1 - h0)
+    let small (me0 + me1) + (a3.mul_add(sixth_lo.float_from_bits(), a3l * 0.16666666666666666) + a5.mul_add(c40_lo.float_from_bits(), a5l * 0.075))
+    (hi: h1, lo: (e0 + e1) + (small + (a5 * z) * p))
+}
+
+; asin(sqrt w) for 0 <= w <= 1/4 as hi + lo: the root's rest (exact by
+; FMA) over 2 sqrt w, times asin's slope 1/sqrt(1 - w) (to a few bits:
+; the rest is below a unit of the root)
+function asin_root[T](probe: T, w: f64) @inline true returns (hi: f64, lo: f64)
+{
+    let zero: f64 0.0
+    let sh w.sqrt()
+    if sh = 0.0
+        return (hi: zero, lo: zero)
+    let nsh zero - sh
+    let sl nsh.mul_add(sh, w) / (sh + sh)
+    let u asin_small(probe, sh)
+    (hi: u.hi, lo: u.lo + sl * w.mul_add(w.mul_add(0.375, 0.5), 1.0))
+}
+
+; asin x: up to 1/2 its series (asin_small); above, pi/2 - 2 asin(sqrt((1
+; - |x|)/2)) -- 1 - |x| exact there, the half too, the root at most 1/2;
+; the sign of x
 function asin[T](x: T) @inline true returns T
 {
     let v: f64 x as f64
@@ -753,20 +809,24 @@ function asin[T](x: T) @inline true returns T
         let quiet: u64 0x7ff8000000000000
         return quiet.float_from_bits() as T
     }
-    let sign: f64 if (v.to_bits() >> 63) = 1: 0.0 - 1.0 else 1.0
-    let r cosine_of_sine(x, a)
-    if a <= 0.7071067811865476
+    if a <= 0.5
     {
-        let t quotient(x, a, 0.0, r.hi, r.lo, r.inv)
-        return (atan_core(x, t.hi, t.lo, 0.0, 0.0, 1.0) * sign) as T
+        let s asin_small(x, a)
+        return (s.hi + s.lo).copy_sign(v) as T
     }
+    let one: f64 1.0
+    let u asin_root(x, (one - a) * 0.5)
+    ; pi/2 - 2 u (2Sum: 2u may be below pi/4)
+    let t u.hi + u.hi
+    let h 1.5707963267948966 - t
+    let bb h - 1.5707963267948966
+    let err (1.5707963267948966 - (h - bb)) - (t + bb)
     let pio2_lo: u64 0x3c91a62633145c07
-    let t quotient(x, r.hi, r.lo, a, 0.0, 1.0 / a)
-    (atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), 0.0 - 1.0) * sign) as T
+    (h + (err + (pio2_lo.float_from_bits() - (u.lo + u.lo)))).copy_sign(v) as T
 }
 
-; acos x = atan(sqrt(1 - x^2) / x) for x >= 1/sqrt 2, pi/2 - atan(x /
-; sqrt(1 - x^2)) for |x| below; a negative x is pi less that of |x|
+; acos x: up to 1/2 pi/2 - asin x (Fast2Sum: pi/2 is the larger); above,
+; 2 asin(sqrt((1 - x)/2)); below -1/2, pi - 2 asin(sqrt((1 + x)/2))
 function acos[T](x: T) @inline true returns T
 {
     let v: f64 x as f64
@@ -778,20 +838,25 @@ function acos[T](x: T) @inline true returns T
         let quiet: u64 0x7ff8000000000000
         return quiet.float_from_bits() as T
     }
-    let negative (v.to_bits() >> 63) = 1
-    let r cosine_of_sine(x, a)
     let pio2_lo: u64 0x3c91a62633145c07
     let pi_lo: u64 0x3ca1a62633145c07
-    if a >= 0.7071067811865476
+    if a <= 0.5
     {
-        let t quotient(x, r.hi, r.lo, a, 0.0, 1.0 / a)
-        if negative
-            return atan_core(x, t.hi, t.lo, 3.141592653589793, pi_lo.float_from_bits(), 0.0 - 1.0) as T
-        return atan_core(x, t.hi, t.lo, 0.0, 0.0, 1.0) as T
+        let s asin_small(x, a)
+        let sh s.hi.copy_sign(v)
+        let slo if (v.to_bits() >> 63) = 1: 0.0 - s.lo else s.lo
+        let h 1.5707963267948966 - sh
+        let err (1.5707963267948966 - h) - sh
+        return (h + (err + (pio2_lo.float_from_bits() - slo))) as T
     }
-    let t quotient(x, a, 0.0, r.hi, r.lo, r.inv)
-    let s: f64 if negative: 1.0 else 0.0 - 1.0
-    atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), s) as T
+    let one: f64 1.0
+    let u asin_root(x, (one - a) * 0.5)
+    if v > 0.0
+        return ((u.hi + u.hi) + (u.lo + u.lo)) as T
+    let t u.hi + u.hi
+    let h 3.141592653589793 - t
+    let err (3.141592653589793 - h) - t
+    (h + (err + (pi_lo.float_from_bits() - (u.lo + u.lo)))) as T
 }
 
 ; atan2(y, x), the angle of the point (x, y): the smaller of |y|/|x| and
@@ -1023,12 +1088,14 @@ function hypot[T](x: T, y: T) @inline true returns T
 ; --- cbrt ----------------------------------------------------------------------
 
 ; The cube root: of |x| (the sign goes back on, cbrt is odd), below
-; 2^-968 scaled by 2^54 first (its root by 2^18), beyond 2^1020 by 2^-54.
-; A start from the bits (the exponent divided by 3, about five bits
-; right), two of Halley's steps (three times the bits each: 45; Newton's
-; steps for x^(-1/3), multiplications only, took longer), then y + (x -
-; y^3)/(3 y^2) with x - y^3 exact by FMA (y^2 and y^3 as hi + lo; x -
-; y^3's high part exact, they are close): the root rounded once.
+; 2^-968 scaled by 2^54 first (its root by 2^18), beyond 2^1020 by 2^-54
+; (y^3's error would be subnormal, or y^3 itself infinite). |x| = 2^(3q +
+; r) m with m in [1, 2): y = 2^q cbrt(2^r) cbrt(m), cbrt m by a polynomial
+; in m - 3/2 near the best of degree 10 (2^-33; tools/math/tables.py), by
+; Estrin's scheme; then y + (x - y^3)/(3 y^2) with x - y^3 exact by FMA
+; (y^2 and y^3 as hi + lo; x - y^3's high part exact, they are close):
+; the root rounded once, after ONE division (a start from the bits and two
+; of Halley's steps took three, and twice the time).
 function cbrt[T](x: T) @inline true returns T
 {
     let v: f64 x as f64
@@ -1039,7 +1106,6 @@ function cbrt[T](x: T) @inline true returns T
     let zero: f64 0.0
     var a v.abs()
     var unscale: f64 1.0
-    ; near the ends y^3's error would be subnormal, or y^3 itself infinite
     let low: u64 0x0370000000000000
     let high: u64 0x7fb0000000000000
     if a < low.float_from_bits()
@@ -1053,20 +1119,47 @@ function cbrt[T](x: T) @inline true returns T
         a := a * down.float_from_bits()
         unscale := 262144.0
     }
-    let start_bits: u64 a.to_bits() / 3 + 0x2a9f7893782da1ce
-    var y start_bits.float_from_bits()
-    ; y times a ratio near 1 (y times the sum would leave the range)
-    var y3 y * y * y
-    y := y * ((y3 + a + a) / (y3 + y3 + a))
-    y3 := y * y * y
-    y := y * ((y3 + a + a) / (y3 + y3 + a))
+    let ab a.to_bits()
+    let e ((ab >> 52) as i64) - 1023
+    ; q = floor(e / 3) by a division of a positive number
+    let q (e + 3069) / 3 - 1023
+    let r e - 3 * q
+    let mb (ab & 0x000fffffffffffff) | 0x3ff0000000000000
+    let t mb.float_from_bits() - 1.5
+    let c0: u64 0x3ff250bfe1b082f5
+    let c1: u64 0x3fd047c70379b38f
+    let c2: u64 0xbfacf161d32dfee8
+    let c3: u64 0x3f95706489a2b699
+    let c4: u64 0xbf830e8f4b07e4ab
+    let c5: u64 0x3f72a5974707351b
+    let c6: u64 0xbf6356e948d38eea
+    let c7: u64 0x3f5462056b48babd
+    let c8: u64 0xbf469c3fe6bb9733
+    let c9: u64 0x3f40c4f750916c63
+    let c10: u64 0xbf337f6738788c41
+    let t2 t * t
+    let t4 t2 * t2
+    let t8 t4 * t4
+    let q0 t.mul_add(c1.float_from_bits(), c0.float_from_bits())
+    let q1 t.mul_add(c3.float_from_bits(), c2.float_from_bits())
+    let q2 t.mul_add(c5.float_from_bits(), c4.float_from_bits())
+    let q3 t.mul_add(c7.float_from_bits(), c6.float_from_bits())
+    let q4 t.mul_add(c9.float_from_bits(), c8.float_from_bits())
+    let r0 t2.mul_add(q1, q0)
+    let r1 t2.mul_add(q3, q2)
+    let r2 t2.mul_add(c10.float_from_bits(), q4)
+    let s0 t4.mul_add(r1, r0)
+    let pm t8.mul_add(r2, s0)
+    let root_r if r = 0: 1.0 else if r = 1: 1.2599210498948732 else 1.5874010519681996
+    let qb: u64 ((q + 1023) as u64) << 52
+    let y (pm * root_r) * qb.float_from_bits()
     let s2 y * y
     let s2l y.mul_add(y, zero - s2)
     let c3 s2 * y
     let c3l s2.mul_add(y, zero - c3) + s2l * y
     let rest (a - c3) - c3l
-    let r y + rest / (3.0 * s2)
-    (r * unscale).copy_sign(v) as T
+    let root y + rest / (3.0 * s2)
+    (root * unscale).copy_sign(v) as T
 }
 
 ; --- sinh, cosh, tanh ----------------------------------------------------------
@@ -1091,11 +1184,12 @@ function exp_parts[T](probe: T, v: f64, halves: i64) @inline true returns (hi: f
     (hi: th * s, lo: th.mul_add(q, tl.mul_add(q, tl)) * s)
 }
 
-; a + c a^3 + a^5 p for an odd series below 1/2 (sinh, tanh), c = c_hi +
+; a + c a^3 + a^5 p as hi + lo for an odd series below 1/2 (sinh, tanh,
+; asin), c = c_hi +
 ; c_lo (1/6, -1/3): a^3 as hi + lo (a^2's and a z's errors exact by FMA),
 ; c a^3's error exact by FMA, a + that with its error (Fast2Sum); the
 ; rest's roundings far below the result's
-function odd_series[T](probe: T, a: f64, c_hi: f64, c_lo: f64, p: f64) @inline true returns f64
+function odd_series[T](probe: T, a: f64, c_hi: f64, c_lo: f64, p: f64) @inline true returns (hi: f64, lo: f64)
 {
     let zero: f64 0.0
     let z a * a
@@ -1106,7 +1200,7 @@ function odd_series[T](probe: T, a: f64, c_hi: f64, c_lo: f64, p: f64) @inline t
     let me a3.mul_add(c_hi, zero - m)
     let h a + m
     let err m - (h - a)
-    h + (err + (me + a3.mul_add(c_lo, a3l * c_hi) + (a3 * z) * p))
+    (hi: h, lo: err + (me + a3.mul_add(c_lo, a3l * c_hi) + (a3 * z) * p))
 }
 
 ; e^a/2 for 22 < a <= 710.476, rounded once as exp: the halving in k (e^a
@@ -1145,7 +1239,8 @@ function sinh[T](x: T) @inline true returns T
         p := z.mul_add(p, c1.float_from_bits())
         p := z.mul_add(p, c0.float_from_bits())
         let lo: u64 0x3c65555555555555
-        r := odd_series(x, a, 0.16666666666666666, lo.float_from_bits(), p)
+        let series odd_series(x, a, 0.16666666666666666, lo.float_from_bits(), p)
+        r := series.hi + series.lo
     }
     else if a > 710.4758600739439
         r := infinity_f64(x)
@@ -1243,7 +1338,8 @@ function tanh[T](x: T) @inline true returns T
         p := z.mul_add(p, c1.float_from_bits())
         p := z.mul_add(p, 0.13333333333333333)
         let lo: u64 0xbc75555555555555
-        r := odd_series(x, a, zero - 0.3333333333333333, lo.float_from_bits(), p)
+        let series odd_series(x, a, zero - 0.3333333333333333, lo.float_from_bits(), p)
+        r := series.hi + series.lo
     }
     else if a <= 22.0
     {

@@ -66792,12 +66792,6 @@ stub.entry:
 }
 
 ; Function Attrs: alwaysinline
-define linkonce_odr { double, double, double } @_Z14cosine_of_sine1T3f64(ptr %0, double %1) #2 {
-stub.entry:
-  ret { double, double, double } zeroinitializer
-}
-
-; Function Attrs: alwaysinline
 define linkonce_odr double @_Z9atan_core1T3f643f643f643f643f64(ptr %0, double %1, double %2, double %3, double %4, double %5) #2 {
 stub.entry:
   ret double 0.000000e+00
@@ -66807,6 +66801,18 @@ stub.entry:
 define linkonce_odr ptr @_Z4atan1T(ptr %0) #2 {
 stub.entry:
   ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double } @_Z10asin_small1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { double, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double } @_Z9asin_root1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret { double, double } zeroinitializer
 }
 
 ; Function Attrs: alwaysinline
@@ -66885,9 +66891,9 @@ stub.entry:
 }
 
 ; Function Attrs: alwaysinline
-define linkonce_odr double @_Z10odd_series1T3f643f643f643f64(ptr %0, double %1, double %2, double %3, double %4) #2 {
+define linkonce_odr { double, double } @_Z10odd_series1T3f643f643f643f64(ptr %0, double %1, double %2, double %3, double %4) #2 {
 stub.entry:
-  ret double 0.000000e+00
+  ret { double, double } zeroinitializer
 }
 
 ; Function Attrs: alwaysinline

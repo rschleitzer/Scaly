@@ -291,3 +291,48 @@ with localcontext() as ctx:
 for name, v in [('1/6', Decimal(1) / 6), ('-1/3', Decimal(-1) / 3)]:
     h = float(v)
     print('; %s: hi %s, lo bits %s' % (name, hexbits(h), hexbits(v - Decimal(h))))
+
+# asin below 1/2 without atan: asin a = a + a^3/6 + 3a^5/40 + a^7 p(a^2),
+# the first two terms exact (1/6 and 3/40 as hi + lo: a^5 p in double
+# alone left 2^-60, which pi/2 - 2 asin(...) above 1/2 doubles), p near
+# the best of degree 12; above 1/2 asin a = pi/2 - 2 asin(sqrt((1 - a)/2)),
+# the same series
+def asin_series(z):
+    a = z.sqrt()
+    if a == 0:
+        return Decimal(5) / 112
+    s = atan_decimal(a / (1 - z).sqrt())
+    return (s - a - a * z / 6 - 3 * a * z * z / 40) / (a * z * z * z)
+with localcontext() as ctx:
+    ctx.prec = 90
+    Za = Decimal('0.25') * Decimal('1.0001')
+    for deg in range(8, 16):
+        nodes = [(Decimal(_m.cos(_m.pi * (2 * i + 1) / (2 * (deg + 1)))) + 1) / 2 * Za for i in range(deg + 1)]
+        c = solve([[z ** k for k in range(deg + 1)] for z in nodes], [asin_series(z) for z in nodes])
+        cf = [float(v) for v in c]
+        worst = max(abs(sum(Decimal(ck) * (Za * i / 300) ** k for k, ck in enumerate(cf)) - asin_series(Za * i / 300)) * (Za * i / 300) ** 3 for i in range(1, 301))
+        if worst < Decimal(2) ** -66:
+            break
+    print('; asin series (degree %d, 2^%.1f): %s' % (deg, float(worst.ln() / Decimal(2).ln()), ', '.join(hexbits(v) for v in cf)))
+    v = Decimal(3) / 40
+    print('; 3/40: hi %s, lo bits %s' % (hexbits(float(v)), hexbits(v - Decimal(float(v)))))
+
+# cbrt: x = 2^(3q + r) m, m in [1, 2): cbrt x = 2^q cbrt(2^r) cbrt(m), cbrt m
+# by a polynomial in m - 3/2 near the best of degree 10 (2^-33), then one
+# Newton step with the rest exact
+def horner_d(cf, t):
+    r = Decimal(0)
+    for ck in reversed(cf):
+        r = r * t + Decimal(ck)
+    return r
+with localcontext() as ctx:
+    ctx.prec = 60
+    third = Decimal(1) / 3
+    f = lambda m: (m.ln() * third).exp()
+    deg = 10
+    nodes = [1 + (Decimal(_m.cos(_m.pi * (2 * i + 1) / (2 * (deg + 1)))) + 1) / 2 for i in range(deg + 1)]
+    A = [[Decimal(1)] + [(z - Decimal('1.5')) ** k for k in range(1, deg + 1)] for z in nodes]
+    cf = [float(v) for v in solve(A, [f(z) for z in nodes])]
+    worst = max(abs(horner_d(cf, (1 + Decimal(i) / 500) - Decimal('1.5')) / f(1 + Decimal(i) / 500) - 1) for i in range(0, 501))
+    print('; cbrt polynomial (degree %d, 2^%.1f): %s' % (deg, float(worst.ln() / Decimal(2).ln()), ', '.join(hexbits(v) for v in cf)))
+    print('; cbrt 2, cbrt 4: %s %s' % (literal(f(Decimal(2))), literal(f(Decimal(4)))))

@@ -10,8 +10,7 @@
 #      built for x86_64 with -mcpu=haswell (FMA) prints the same bits as the
 #      one built here -- the condition for a cluster of both -- and built
 #      for the generic x86_64 (no FMA: relaxed -- as fast, not as exact)
-#      stays within a unit in the last place (tan, atan2, asin, acos,
-#      hypot: two).
+#      stays within a unit in the last place (tan, atan2, hypot: two).
 #      SKIPPED by name elsewhere.
 set -u
 cd "$(dirname "$0")/../.."
@@ -55,10 +54,10 @@ cross() {
       echo "$fn: x86_64 haswell differs from here in $(diff "$WORK/$fn.here" "$WORK/$fn.haswell" | grep -c '^<') results"; verdict 1 "$fn haswell bits"
     fi
     printf '%s (x86_64 generic, relaxed) ' "$fn"
-    # tan, atan2, asin, acos: the rest of a division is not exact without
-    # FMA, hypot: the squares' errors (math.scaly)
+    # tan, atan2: the rest of a division is not exact without FMA, hypot:
+    # the squares' errors (math.scaly)
     local lim=1.0
-    case "$fn" in tan|atan2|asin|acos|hypot) lim=2.0 ;; esac
+    case "$fn" in tan|atan2|hypot) lim=2.0 ;; esac
     python3 tests/math/check.py $fn 20000 3 "$X/bits_generic" $lim; verdict $? "$fn generic"
   done
 }
