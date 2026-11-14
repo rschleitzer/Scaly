@@ -15715,6 +15715,34 @@ define Emitter
                 case "float.round_even": op := String("rint")
                 case "float.abs": op := String("fabs")
                 case "float.copy_sign": op := String("copysign")
+            ; a b - (a b rounded), exactly, on every target: by FMA where
+            ; the processor has it, else Dekker's product (each factor split
+            ; into halves whose products are exact) -- what a library needs
+            ; where relaxed would not do (scaly/math.scaly's pow)
+            if name = "float.mul_error"
+            {
+                let p LLVMBuildFMul(builder, args[0], args[1], "float.product")
+                if target_fma
+                {
+                    var fargs Vector[LLVMValueRef](3)
+                    fargs.put(0, args[0])
+                    fargs.put(1, args[1])
+                    fargs.put(2, LLVMBuildFNeg(builder, p, "float.negated"))
+                    return this.simd_call("llvm.fma.`sfx`", ft, fargs)
+                }
+                ; 2^27 + 1 splits a double into 26 + 27 bits, 2^12 + 1 a float
+                let splitter LLVMConstReal(ft, if sfx = "f32": 4097.0 else 134217729.0)
+                let ca LLVMBuildFMul(builder, args[0], splitter, "dekker.ca")
+                let ah LLVMBuildFSub(builder, ca, LLVMBuildFSub(builder, ca, args[0], "dekker.t"), "dekker.ah")
+                let al LLVMBuildFSub(builder, args[0], ah, "dekker.al")
+                let cb LLVMBuildFMul(builder, args[1], splitter, "dekker.cb")
+                let bh LLVMBuildFSub(builder, cb, LLVMBuildFSub(builder, cb, args[1], "dekker.u"), "dekker.bh")
+                let bl LLVMBuildFSub(builder, args[1], bh, "dekker.bl")
+                let e1 LLVMBuildFSub(builder, LLVMBuildFMul(builder, ah, bh, "dekker.hh"), p, "dekker.e1")
+                let e2 LLVMBuildFAdd(builder, e1, LLVMBuildFMul(builder, ah, bl, "dekker.hl"), "dekker.e2")
+                let e3 LLVMBuildFAdd(builder, e2, LLVMBuildFMul(builder, al, bh, "dekker.lh"), "dekker.e3")
+                return LLVMBuildFAdd(builder, e3, LLVMBuildFMul(builder, al, bl, "dekker.ll"), "dekker.error")
+            }
             if name = "float.mul_add"
             {
                 if target_fma

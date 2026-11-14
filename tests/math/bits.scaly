@@ -1,6 +1,6 @@
 ; tests/math/bits.scaly <function> <file> -- the function of scaly/math.scaly
 ; (exp, exp2, expm1, log, log2, log10, log1p, sin, cos, tan, atan,
-; asin, acos, and atan2 of each pair: y x on a line) of each number in the file, one bit pattern a line (a decimal
+; asin, acos, and atan2 and pow of each pair: y x or x y on a line) of each number in the file, one bit pattern a line (a decimal
 ; u64), as bit patterns: what tests/math/check.py compares with the exact
 ; values and, across builds, with each other.
 let args os.arguments()
@@ -21,7 +21,7 @@ while i < n
         v := v * 10 + ((c as u64) - 48)
         any := true
     }
-    else if any and which = "atan2" and have_first = false
+    else if any and (which = "atan2" or which = "pow") and have_first = false
     {
         first := v.float_from_bits()
         have_first := true
@@ -34,7 +34,10 @@ while i < n
         var y x
         if have_first
         {
-            y := atan2(first, x)
+            if which = "pow"
+                y := pow(first, x)
+            else
+                y := atan2(first, x)
             have_first := false
         }
         match which

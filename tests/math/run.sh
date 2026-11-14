@@ -27,7 +27,7 @@ verdict() { if [ "$1" = 0 ]; then pass=$((pass+1)); else fail=$((fail+1)); failu
 if ! SCALY_POISON=1 "$BIN" -O2 -o "$WORK/bits" tests/math/bits.scaly > "$WORK/build.log" 2>&1; then
   echo "math: FAIL — tests/math/bits.scaly does not build ($(grep -m1 error "$WORK/build.log" | cut -c1-120))"; exit 1
 fi
-for fn in exp exp2 expm1 log log2 log10 log1p sin cos tan atan asin acos atan2; do
+for fn in exp exp2 expm1 log log2 log10 log1p sin cos tan atan asin acos atan2 pow; do
   python3 tests/math/check.py $fn 20000 1 "$WORK/bits"; verdict $? "$fn"
 done
 
@@ -45,7 +45,7 @@ cross() {
     "$BIN" --target $T -mcpu=$cpu -O2 -c -o "$X/bits_$cpu.o" tests/math/bits.scaly > /dev/null 2>&1 &&
       clang -arch x86_64 "$X/bits_$cpu.o" "$X/libscaly.a" -lm -o "$X/bits_$cpu" 2>/dev/null || { verdict 1 "x86_64 $cpu build"; return 0; }
   done
-  for fn in exp exp2 expm1 log log2 log10 log1p sin cos tan atan asin acos atan2; do
+  for fn in exp exp2 expm1 log log2 log10 log1p sin cos tan atan asin acos atan2 pow; do
     python3 tests/math/check.py $fn 20000 2 "$WORK/bits" > /dev/null
     "$WORK/bits" $fn "$MATH_INPUTS" > "$WORK/$fn.here"
     "$X/bits_haswell" $fn "$MATH_INPUTS" > "$WORK/$fn.haswell"
@@ -58,7 +58,7 @@ cross() {
     # tan, atan2, asin, acos: the rest of a division is not exact without
     # FMA (math.scaly)
     local lim=1.0
-    case "$fn" in tan|atan2|asin|acos) lim=2.0 ;; esac
+    case "$fn" in tan|atan2|asin|acos) lim=2.0 ;; pow) lim=3.0 ;; esac
     python3 tests/math/check.py $fn 20000 3 "$X/bits_generic" $lim; verdict $? "$fn generic"
   done
 }

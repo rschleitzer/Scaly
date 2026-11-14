@@ -66833,6 +66833,34 @@ stub.entry:
   ret ptr null
 }
 
+; Function Attrs: alwaysinline
+define linkonce_odr i64 @_Z10whole_kind1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret i64 0
+}
+
+define linkonce_odr ptr @_Z12exp_finish1T1T3i643f64(ptr %0, i64 %1, double %2) {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z8pow_core1T3f643f643f64(ptr %0, double %1, double %2, double %3) #2 {
+stub.entry:
+  ret ptr null
+}
+
+define linkonce_odr ptr @_Z11pow_special1T1T(ptr %0, ptr %1) {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z3pow1T1T(ptr %0, ptr %1) #2 {
+stub.entry:
+  ret ptr null
+}
+
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 

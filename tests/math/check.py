@@ -158,6 +158,30 @@ elif fn in ('asin', 'acos'):
     xs += [(1 - 2.0 ** -random.uniform(1, 53)) * random.choice([1, -1]) for _ in range(count // 4)]
     xs += [2.0 ** random.uniform(-60, -1) * random.choice([1, -1]) for _ in range(count // 4)]
     xs += [0.7071067811865476, 0.7071067811865475, 5e-324]
+elif fn == 'pow':
+    special = [((2.0, 0.0), 1.0), ((nan, 0.0), 1.0), ((1.0, nan), 1.0), ((nan, 1.0), nan), ((2.0, nan), nan),
+               ((-2.0, 3.0), -8.0), ((-2.0, 0.5), nan), ((0.0, -1.0), inf), ((-0.0, -1.0), -inf), ((0.0, 2.0), 0.0),
+               ((-0.0, 3.0), -0.0), ((inf, -1.0), 0.0), ((-inf, 3.0), -inf), ((-inf, 2.0), inf), ((0.5, inf), 0.0),
+               ((0.5, -inf), inf), ((2.0, inf), inf), ((-1.0, inf), 1.0), ((2.0, 1024.0), inf), ((2.0, -1075.0), 0.0),
+               ((2.0, -1074.0), 5e-324), ((10.0, 2.0), 100.0), ((4.0, 0.5), 2.0)]
+    xs = [(random.uniform(0.0, 10.0), random.uniform(-50.0, 50.0)) for _ in range(count)]
+    def ranged():
+        x = 2.0 ** random.uniform(-1074, 1023)
+        return (x, random.uniform(-1.0, 1.0) * 700.0 / abs(math.log(x)))
+    xs += [ranged() for _ in range(count // 4)]
+    xs += [(1.0 + random.uniform(-1.0, 1.0) * 2.0 ** -random.uniform(5, 50), random.uniform(-1.0, 1.0) * 2.0 ** random.uniform(1, 40)) for _ in range(count // 4)]
+    xs += [(-random.uniform(0.0, 10.0), float(random.randint(-200, 200))) for _ in range(count // 8)]
+    def exact_pow(p):
+        x, y = p
+        from decimal import localcontext
+        from decimal import Overflow, Underflow, Inexact, Rounded, Subnormal, Clamped
+        with localcontext() as ctx:
+            ctx.prec = 70
+            for t in (Overflow, Underflow, Inexact, Rounded, Subnormal, Clamped):
+                ctx.traps[t] = False
+            r = Decimal(x) ** Decimal(y)
+        return +r
+    exact = exact_pow
 elif fn == 'atan2':
     pio2 = math.pi / 2
     special = [((0.0, 1.0), 0.0), ((0.0, -1.0), math.pi), ((-0.0, -1.0), -math.pi), ((1.0, 0.0), pio2), ((-1.0, 0.0), -pio2),

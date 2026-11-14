@@ -1,5 +1,5 @@
 ; math.scaly - exp, exp2, expm1, log, log2, log10, log1p, sin, cos, tan,
-; atan, atan2, asin, acos, written in Scaly
+; atan, atan2, asin, acos, pow, written in Scaly
 ;
 ; The C library's functions differ from system to system in the last bit:
 ; each approximates in its own way. These are the same code on every
@@ -848,4 +848,102 @@ function atan2[T](y: T, x: T) @inline true returns T
     let t quotient(y, ax, 0.0, ay, 0.0, 1.0 / ay)
     let s: f64 if x_negative: 1.0 else 0.0 - 1.0
     (atan_core(y, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), s) * sign) as T
+}
+
+; --- pow -------------------------------------------------------------------------
+
+; Is w (finite) a whole number, and an odd one? 0 not whole, 1 even, 2
+; odd. From 2^53 on every double is whole and even.
+function whole_kind[T](probe: T, w: f64) @inline true returns int
+{
+    if w.trunc() <> w
+        return 0
+    if w.abs() >= 9007199254740992.0
+        return 1
+    let half w * 0.5
+    if half.trunc() <> half
+        return 2
+    1
+}
+
+; |x|^y for a positive finite x and a finite y, times sign: log x as hi
+; + lo (log_parts), y times it as hi + lo, and e to that: k and r of its high part (exp_reduce), the low part
+; added to r, then as exp.
+function pow_core[T](probe: T, ax: f64, vy: f64, sign: f64) @inline true returns T
+{
+    let zero: f64 0.0
+    ; log x as hi + lo, normalized: near 1 log_parts' lo is a term of the
+    ; series, not a rounding error, and y times it no small correction
+    let l log_parts(probe, ax)
+    let lh l.hi + l.lo
+    let ll (l.hi - lh) + l.lo
+    ; y log x reaches 745: the product's error matters at 2^-44, so it is
+    ; exact on every target (Dekker's product), not only with FMA
+    let ph vy * lh
+    let pl product_error(probe, vy, lh, ph) + vy * ll
+    if ph > 709.782712893384
+        return (infinity_f64(probe) * sign) as T
+    if ph < zero - 745.1332191019412
+        return (zero * sign) as T
+    let red exp_reduce(probe, ph)
+    let q expm1_small(probe, red.r + pl)
+    let m: f64 exp_finish(zero, red.k, q)
+    (m * sign) as T
+}
+
+; pow for what is not a positive finite x to a finite y other than 0, as
+; C's pow: x^0 = 1 and 1^y = 1 even for a NaN; a negative x only to a
+; whole y (its sign by y's parity); zeros and infinities by y's sign and
+; parity
+function pow_special[T](x: T, y: T) returns T
+{
+    let vx: f64 x as f64
+    let vy: f64 y as f64
+    let one: f64 1.0
+    let zero: f64 0.0
+    let inf infinity_f64(x)
+    if vy = 0.0 or vx = 1.0
+        return one as T
+    if is_nan_bits(x, vx.to_bits()) or is_nan_bits(x, vy.to_bits())
+        return (vx + vy) as T
+    let ax vx.abs()
+    let x_negative (vx.to_bits() >> 63) = 1
+    ; y infinite: by |x| against 1
+    if vy.abs() = inf
+    {
+        if ax = 1.0
+            return one as T
+        if (ax < 1.0) = (vy < 0.0)
+            return inf as T
+        return zero as T
+    }
+    let kind whole_kind(x, vy)
+    ; the sign of the result: negative only for a negative x to an odd y
+    let sign: f64 if x_negative and kind = 2: 0.0 - 1.0 else 1.0
+    ; a zero or an infinite x: 0 or infinity by y's sign, signed as above
+    if ax = 0.0 or ax = inf
+    {
+        if (ax = 0.0) = (vy < 0.0)
+            return (inf * sign) as T
+        return (zero * sign) as T
+    }
+    if x_negative and kind = 0
+    {
+        let quiet: u64 0x7ff8000000000000
+        return quiet.float_from_bits() as T
+    }
+    pow_core(x, ax, vy, sign)
+}
+
+; x^y = e^(y log x) (pow_core); a positive finite x to a finite y other
+; than 0 at once -- two comparisons of bits --, the rest by pow_special
+function pow[T](x: T, y: T) @inline true returns T
+{
+    let vx: f64 x as f64
+    let vy: f64 y as f64
+    let bx vx.to_bits()
+    let by vy.to_bits() & 0x7fffffffffffffff
+    if bx - 1 < 0x7fefffffffffffff and by - 1 < 0x7fefffffffffffff
+        return pow_core(x, vx, vy, 1.0)
+    pow_special(x, y)
 }

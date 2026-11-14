@@ -58593,7 +58593,7 @@ __attribute__((weak)) int64_t Planner_float_method_arity(String& m)
         {
             return 2LL;
         }
-        else if (scaly_t1 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\011copy_sign"})))
+        else if (scaly_t1 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\011copy_sign"})) || scaly_t1 == String_equals(m, scaly_lvalue(String{(uint8_t*)"\011mul_error"})))
         {
             return 1LL;
         }
@@ -154388,11 +154388,43 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_float(Emitter& scaly_self, P
             op = ({ String* scaly_t14 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t14 = String{}; String_init2((*scaly_t14), scaly_lvalue(String{(uint8_t*)"\010copysign"})); scaly_t14; });
         }
     }
+    if (String_equals(name, scaly_lvalue(String{(uint8_t*)"\017float.mul_error"})))
+    {
+        LLVMOpaqueValue* p = LLVMBuildFMul(this_->builder, Vector26<LLVMOpaqueValue*>((*args), 0LL), Vector26<LLVMOpaqueValue*>((*args), 1LL), ((const char*)"float.product"));
+        if (this_->target_fma)
+        {
+            Vector<LLVMOpaqueValue*>* fargs = ({ Vector<LLVMOpaqueValue*>* scaly_t15 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t15 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t15), 3ULL); scaly_t15; });
+            Vector_put62<LLVMOpaqueValue*>((*fargs), 0ULL, Vector26<LLVMOpaqueValue*>((*args), 0LL));
+            Vector_put62<LLVMOpaqueValue*>((*fargs), 1ULL, Vector26<LLVMOpaqueValue*>((*args), 1LL));
+            Vector_put62<LLVMOpaqueValue*>((*fargs), 2ULL, LLVMBuildFNeg(this_->builder, p, ((const char*)"float.negated")));
+            return Emitter_simd_call(*(this_), scaly_lvalue(({
+        String scaly_t16{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t17 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t17 = StringBuilder{}; StringBuilder_init((*scaly_t17)); scaly_t17; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011llvm.fma."}));
+            StringBuilder_append2((*isb$), scaly_lvalue((sfx)));
+            scaly_t16 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t16;
+    })), ft, (*fargs));
+        }
+        LLVMOpaqueValue* splitter = LLVMConstReal(ft, (String_equals(sfx, scaly_lvalue(String{(uint8_t*)"\003f32"})) ? ((double)4097) : ((double)134217729)));
+        LLVMOpaqueValue* ca = LLVMBuildFMul(this_->builder, Vector26<LLVMOpaqueValue*>((*args), 0LL), splitter, ((const char*)"dekker.ca"));
+        LLVMOpaqueValue* ah = LLVMBuildFSub(this_->builder, ca, LLVMBuildFSub(this_->builder, ca, Vector26<LLVMOpaqueValue*>((*args), 0LL), ((const char*)"dekker.t")), ((const char*)"dekker.ah"));
+        LLVMOpaqueValue* al = LLVMBuildFSub(this_->builder, Vector26<LLVMOpaqueValue*>((*args), 0LL), ah, ((const char*)"dekker.al"));
+        LLVMOpaqueValue* cb = LLVMBuildFMul(this_->builder, Vector26<LLVMOpaqueValue*>((*args), 1LL), splitter, ((const char*)"dekker.cb"));
+        LLVMOpaqueValue* bh = LLVMBuildFSub(this_->builder, cb, LLVMBuildFSub(this_->builder, cb, Vector26<LLVMOpaqueValue*>((*args), 1LL), ((const char*)"dekker.u")), ((const char*)"dekker.bh"));
+        LLVMOpaqueValue* bl = LLVMBuildFSub(this_->builder, Vector26<LLVMOpaqueValue*>((*args), 1LL), bh, ((const char*)"dekker.bl"));
+        LLVMOpaqueValue* e1 = LLVMBuildFSub(this_->builder, LLVMBuildFMul(this_->builder, ah, bh, ((const char*)"dekker.hh")), p, ((const char*)"dekker.e1"));
+        LLVMOpaqueValue* e2 = LLVMBuildFAdd(this_->builder, e1, LLVMBuildFMul(this_->builder, ah, bl, ((const char*)"dekker.hl")), ((const char*)"dekker.e2"));
+        LLVMOpaqueValue* e3 = LLVMBuildFAdd(this_->builder, e2, LLVMBuildFMul(this_->builder, al, bh, ((const char*)"dekker.lh")), ((const char*)"dekker.e3"));
+        return LLVMBuildFAdd(this_->builder, e3, LLVMBuildFMul(this_->builder, al, bl, ((const char*)"dekker.ll")), ((const char*)"dekker.error"));
+    }
     if (String_equals(name, scaly_lvalue(String{(uint8_t*)"\015float.mul_add"})))
     {
         if (this_->target_fma)
         {
-            op = ({ String* scaly_t15 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t15 = String{}; String_init2((*scaly_t15), scaly_lvalue(String{(uint8_t*)"\003fma"})); scaly_t15; });
+            op = ({ String* scaly_t18 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t18 = String{}; String_init2((*scaly_t18), scaly_lvalue(String{(uint8_t*)"\003fma"})); scaly_t18; });
         }
         else
         {
@@ -154408,16 +154440,16 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_float(Emitter& scaly_self, P
         exit((int32_t)14ULL);
     }
     return Emitter_simd_call(*(this_), scaly_lvalue(({
-        String scaly_t18{};
+        String scaly_t21{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t19 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t19 = StringBuilder{}; StringBuilder_init((*scaly_t19)); scaly_t19; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t22 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t22 = StringBuilder{}; StringBuilder_init((*scaly_t22)); scaly_t22; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005llvm."}));
             StringBuilder_append2((*isb$), scaly_lvalue(((*op))));
             StringBuilder_append((*isb$), ((uint8_t)'.'));
             StringBuilder_append2((*isb$), scaly_lvalue((sfx)));
-            scaly_t18 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t21 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t18;
+        scaly_t21;
     })), ft, (*args));
 }
 

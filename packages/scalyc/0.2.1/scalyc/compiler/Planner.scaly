@@ -23182,7 +23182,7 @@ define Planner
         {
             match m
                 case "mul_add" case "fma": return 2
-                case "copy_sign": return 1
+                case "copy_sign" case "mul_error": return 1
                 case "sqrt" case "floor" case "ceil" case "trunc" case "round_even" case "abs": return 0
                 case "to_bits" case "float_from_bits": return 0
             0 - 1

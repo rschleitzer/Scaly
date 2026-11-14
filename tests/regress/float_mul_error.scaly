@@ -1,0 +1,25 @@
+; x.mul_error(y) is x y - (x y rounded), exactly, on every target: by FMA
+; where the build's processor has it, else by Dekker's product
+; (Emitter.emit_float#). (1 + 2^-30)^2 = 1 + 2^-29 + 2^-60 rounds to
+; 1 + 2^-29, the error is 2^-60; for f32, (1 + 2^-13)^2 loses 2^-26.
+; Through functions: with constant operands the builder folds it all.
+
+function error64(x: f64, y: f64) returns f64
+    x.mul_error(y)
+
+function error32(x: f32, y: f32) returns f32
+    x.mul_error(y)
+
+let a: f64 1.000000000931322574615478515625
+let e error64(a, a)
+let want: u64 0x3c30000000000000
+let b: f32 1.0001220703125
+let f error32(b, b)
+let want32: u32 0x32800000
+let big: f64 123456789.123
+let g error64(big, 0.1)
+let exact big.fma(0.1, 0.0 - big * 0.1)
+if e.to_bits() = want and f.to_bits() = want32 and g = exact
+    print "PASS"
+else
+    print "FAIL `e` `f as f64` `g` `exact`"
