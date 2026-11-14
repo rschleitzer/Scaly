@@ -258,6 +258,7 @@ elif fn == 'atan2':
     xs = [(random.uniform(-10.0, 10.0), random.uniform(-10.0, 10.0)) for _ in range(count)]
     xs += [(2.0 ** random.uniform(-200, 200) * random.choice([1, -1]), 2.0 ** random.uniform(-200, 200) * random.choice([1, -1])) for _ in range(count // 4)]
     xs += [(1.0, 1.0), (-1.0, -1.0), (1e-300, 1e300), (1e300, 1e-300)]
+    xs += [(1e308, 1.7e308), (-1.7e308, 1.1e308), (1e-310, 3e-310), (5e-324, 1.5e-323), (3e-320, -7e-321), (1e-300, 1e-290)]
     exact = lambda p: atan2_exact(*p)
 elif fn == 'tan':
     special = [(0.0, 0.0), (inf, nan), (-inf, nan), (nan, nan)]
@@ -304,6 +305,9 @@ worst, worst_x, wrong = 0.0, None, 0
 for x, y in zip(xs, ys[len(special):]):
     e = exact(x)
     r = float(e)
+    if (math.isnan(y) or math.isinf(y)) and not math.isinf(r):
+        fails.append('%s(%r) = %r, not %r' % (fn, x, y, r))
+        continue
     if r == 0.0 or math.isinf(r):
         if y != r:
             fails.append('%s(%r) = %r, not %r' % (fn, x, y, r))

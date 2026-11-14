@@ -66999,6 +66999,16 @@ stub.entry:
   ret ptr null
 }
 
+define linkonce_odr ptr @_Z7atan21T1T1T(ptr %0, ptr %1) {
+stub.entry:
+  ret ptr null
+}
+
+define linkonce_odr ptr @_Z9atan2_far1T1T(ptr %0, ptr %1) {
+stub.entry:
+  ret ptr null
+}
+
 ; Function Attrs: alwaysinline
 define linkonce_odr ptr @_Z5atan21T1T(ptr %0, ptr %1) #2 {
 stub.entry:

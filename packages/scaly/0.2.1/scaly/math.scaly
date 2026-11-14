@@ -859,6 +859,22 @@ function acos[T](x: T) @inline true returns T
     (h + (err + (pi_lo.float_from_bits() - (u.lo + u.lo)))) as T
 }
 
+; atan2 of numbers near the ends of the range: both scaled by one power of
+; two (the angle stays), so that the reciprocal in atan2 is a normal number
+; -- 1/ax of a subnormal ax was infinite, and the result a NaN
+function atan2_far[T](y: T, x: T) returns T
+{
+    let vy: f64 y as f64
+    let vx: f64 x as f64
+    let big: u64 0x7e70000000000000
+    let up: u64 0x7e70000000000000
+    let down: u64 0x37f0000000000000
+    let f if vx.abs() > big.float_from_bits() or vy.abs() > big.float_from_bits(): down.float_from_bits() else up.float_from_bits()
+    let sy vy * f
+    let sx vx * f
+    atan2(sy, sx) as T
+}
+
 ; atan2(y, x), the angle of the point (x, y): the smaller of |y|/|x| and
 ; |x|/|y| as t, and by the octant k + s atan t: |y| <= |x| is atan t (x >
 ; 0) or pi - atan t, |y| > |x| is pi/2 -+ atan t; the sign of y. The zeros
@@ -895,6 +911,11 @@ function atan2[T](y: T, x: T) @inline true returns T
             return (2.356194490192345 * sign) as T
         return (0.7853981633974483 * sign) as T
     }
+    ; both below 2^-1000 or one beyond 2^1000: 1/ax would leave the range
+    let far ax.to_bits() >> 52
+    let far_y ay.to_bits() >> 52
+    if (far < 23 and far_y < 23) or far > 2023 or far_y > 2023
+        return atan2_far(y, x)
     if ay <= ax
     {
         let t quotient(y, ay, 0.0, ax, 0.0, 1.0 / ax)
