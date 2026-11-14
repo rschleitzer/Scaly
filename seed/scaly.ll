@@ -217,6 +217,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorImE = type { ptr }
 %_Z13ArrayIteratorImE = type { ptr, i64 }
 %_Z9TcpServer = type { ptr }
+%_Z10CardVector = type { i64, ptr, i32 }
 %_Z7Drawing = type { i64, i64, %_Z13StringBuilder }
 %_Z5ArrayI3f64E = type { i64, i64, ptr }
 %_Z6VectorI3f64E = type { i64, ptr }
@@ -39561,6 +39562,122 @@ while.exit:                                       ; preds = %while.cond
   %deref.recv13 = load ptr, ptr %field.inplace12, align 8
   %call14 = call ptr @_ZN4Page3getEPv(ptr %deref.recv13)
   call void @_ZN4Page12release_pageER4Page(ptr %call14)
+  ret void
+}
+
+declare i32 @scaly_card_available()
+
+declare i32 @scaly_card_create(i64)
+
+declare void @scaly_card_write(i32, i64, ptr, i64)
+
+declare void @scaly_card_read(i32, i64, ptr, i64)
+
+declare i32 @scaly_card_load(i32, i64, ptr, i64, i64)
+
+declare void @scaly_panic_card(ptr)
+
+define linkonce_odr void @_ZN10CardVectorI1TE3putEm1T(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVectorI1TE8write_atEm5SliceI1TE(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVectorI1TE5writeE5SliceI1TE(ptr %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVectorI1TE7read_atEm5SliceI1TE(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVectorI1TE4readE5SliceI1TE(ptr %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr i1 @_ZN10CardVectorI1TE9from_fileE6Stringm(ptr noalias %0, ptr noalias %1, i64 %2) {
+stub.entry:
+  ret i1 false
+}
+
+define linkonce_odr void @_ZN10CardVectorI1TEC1Em(ptr noalias %0, i64 %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVector3putEm1T(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVector8write_atEm5SliceI1TE(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVector5writeE5SliceI1TE(ptr %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVector7read_atEm5SliceI1TE(ptr %0, i64 %1, ptr %2) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN10CardVector4readE5SliceI1TE(ptr %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr i1 @_ZN10CardVector9from_fileE6Stringm(ptr noalias %0, ptr noalias %1, i64 %2) {
+stub.entry:
+  ret i1 false
+}
+
+define linkonce_odr void @_ZN10CardVectorC1Em(ptr %0, i64 %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 0
+  store i64 %1, ptr %length, align 8
+  %data = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  %id = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 2
+  store i32 0, ptr %id, align 4
+  %call1 = call i32 @scaly_card_available()
+  %ne = icmp ne i32 %call1, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %1, 8
+  %call2 = call i32 @scaly_card_create(i64 %mul)
+  %id3 = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 2
+  store i32 %call2, ptr %id3, align 4
+  ret void
+
+if.end:                                           ; preds = %entry
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end
+  %mul6 = mul i64 %1, 8
+  %call7 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul6, i64 8)
+  %data8 = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 1
+  store ptr %call7, ptr %data8, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z10CardVector, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul9 = mul i64 %1, 8
+  %call10 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul9)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.end
   ret void
 }
 
