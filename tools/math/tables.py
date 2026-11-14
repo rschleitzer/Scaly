@@ -110,3 +110,107 @@ for name, v in [('INV_LN2', 1 / LN2), ('INV_LN10', 1 / Decimal(10).ln())]:
     h = float(v)
     l = float(v - Decimal(h))
     print('; %s: hi %s, lo bits %s' % (name, literal(h), hexbits(l)))
+
+# --- sin, cos ---------------------------------------------------------------
+def pi_decimal(digits):
+    """pi to `digits` digits: Machin, 16 atan(1/5) - 4 atan(1/239)"""
+    from decimal import localcontext
+    with localcontext() as ctx:
+        ctx.prec = digits + 10
+        def atan_inv(n):
+            x = Decimal(1) / n
+            x2 = x * x
+            s, t, k = Decimal(0), x, 1
+            while t != 0:
+                s += t / k
+                t = -t * x2
+                k += 2
+                if abs(t) < Decimal(10) ** -(digits + 8):
+                    break
+            return s
+        return 16 * atan_inv(5) - 4 * atan_inv(239)
+
+def sin_cos_decimal(x):
+    """sin x and cos x for a small Decimal x, by their series"""
+    x2 = x * x
+    s, t, k = Decimal(0), x, 1
+    while abs(t) > Decimal(10) ** -(getcontext().prec + 2):
+        s += t
+        t = -t * x2 / ((k + 1) * (k + 2))
+        k += 2
+    c, t, k = Decimal(0), Decimal(1), 0
+    while abs(t) > Decimal(10) ** -(getcontext().prec + 2):
+        c += t
+        t = -t * x2 / ((k + 1) * (k + 2))
+        k += 2
+    return s, c
+
+PI = pi_decimal(60)
+PIO2 = PI / 2
+print('; sin, cos: x = N pi/64 + r, pi/64 in four parts (33, 33, 33 bits, the rest)')
+constant('TRIG_64_OVER_PI', 64 / PI)
+rest = PIO2
+parts = []
+for k in range(3):
+    h, _ = split(rest, 33)
+    parts.append(h)
+    rest = rest - Decimal(h)
+parts.append(float(rest))
+ph = float(PIO2)
+# pi/64 is pi/2 times 2^-5: the same bits, the parts as exact
+for k, p in enumerate(parts + [ph, float(PIO2 - Decimal(ph))]):
+    print(';   %s: %s bits %s' % (['P1', 'P2', 'P3', 'P4', 'hi', 'lo'][k], literal(p / 32), hexbits(p / 32)))
+# the series of the kernel, (sin d - d)/d^3 and (cos d - 1)/d^2 in z = d^2,
+# near the best of degree 2 on |d| <= pi/128: interpolated at Chebyshev nodes
+def solve(A, b):
+    n = len(b)
+    M = [row[:] + [b[i]] for i, row in enumerate(A)]
+    for c in range(n):
+        p = max(range(c, n), key=lambda r: abs(M[r][c]))
+        M[c], M[p] = M[p], M[c]
+        for r in range(n):
+            if r != c:
+                f = M[r][c] / M[c][c]
+                M[r] = [x - f * y for x, y in zip(M[r], M[c])]
+    return [M[i][n] / M[i][i] for i in range(n)]
+def kernel_series(z, cosine):
+    s, t, k = Decimal(0), Decimal(-1) / (2 if cosine else 6), (2 if cosine else 3)
+    while abs(t) > Decimal(10) ** -48:
+        s += t
+        t = -t * z / ((k + 1) * (k + 2))
+        k += 2
+    return s
+import math as _m
+Z = (PI / 128 * Decimal('1.0001')) ** 2
+nodes = [(Decimal(_m.cos(_m.pi * (2 * i + 1) / 6)) + 1) / 2 * Z for i in range(3)]
+for cosine in (False, True):
+    c = solve([[z ** k for k in range(3)] for z in nodes], [kernel_series(z, cosine) for z in nodes])
+    print('; %s series: %s' % ('cos' if cosine else 'sin', ', '.join('%s (%s)' % (literal(v), hexbits(v)) for v in c)))
+# the table: sin and cos of j pi/64, j < 128 (the whole circle), each as
+# hi + lo; from the first quadrant (s_0 = 0, c_0 = 1 exactly) by symmetry,
+# so that the zeros are zeros
+quarter = [sin_cos_decimal(Decimal(i) * PI / 64) for i in range(32)]
+tt = []
+for j in range(128):
+    q, i = divmod(j, 32)
+    si, ci = quarter[i]
+    sv, cv = [(si, ci), (ci, -si), (-si, -ci), (-ci, si)][q]
+    for v in (sv, cv):
+        h = float(v) + 0.0
+        tt += [hexbits(h), hexbits(v - Decimal(h))]
+print('define TRIG_TABLE: u64[] [%s]' % ', '.join(tt))
+# 2/pi in bits for the reduction of large arguments: 64 zero bits (the
+# integer part and room for a window that begins before the point), then
+# 1216 bits of the fraction, 32 bits a word
+from decimal import localcontext
+with localcontext() as ctx:
+    ctx.prec = 420
+    big = pi_decimal(410)
+    frac = 2 / big
+    words = [0, 0]
+    for k in range(38):
+        frac *= 2 ** 32
+        w = int(frac)
+        words.append(w)
+        frac -= w
+print('define TRIG_TWO_OVER_PI: u64[] [%s]' % ', '.join('0x%08x' % w for w in words))
