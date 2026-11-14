@@ -8732,12 +8732,14 @@ define Emitter
             ; carries `scaly_build_stamp()`. The name goes in as a raw cstring
             ; cast (the s-main func_cstr pattern): a String constant's c_data()
             ; has no NUL terminator, and this lookup DEPENDS on matching.
+            this.pin_alignments()
             let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
             var ctors Array[LLVMValueRef]()
             if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
             {
                 this.hand_over_arguments(stamp_main)
                 emit_build_stamp()
+                this.emit_build_traits()
                 if target_is_coff
                     ctors.add(this.emit_stdio_binary_ctor())
             }
@@ -8746,6 +8748,8 @@ define Emitter
                 ctors.add cluster_ctor
             if ctors.length > 0
                 this.emit_global_ctors(ctors)
+            ; after the stamp: what differs by processor
+            this.define_float_helpers()
             ; the compiler's own global, under the name its package gives it
             ; (Planner.plan_global#)
             let pkg_stamp this.package_stamp_global()
@@ -9057,6 +9061,163 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, block)
             let cval LLVMConstInt(i64_type, hash as size_t, 0)
             LLVMBuildRet(builder, cval)
+            if saved_block <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+        }
+
+        ; The bodies of the float helpers emit_float# calls, for this target:
+        ; mul_add is a b + c with ONE rounding where the processor has FMA
+        ; and two where it has not (relaxed); mul_error is a b - (a b
+        ; rounded), exactly on every target -- by FMA, else Dekker's product
+        ; (each factor split into halves whose products are exact; 2^27 + 1
+        ; splits a double into 26 + 27 bits, 2^12 + 1 a float). Defined
+        ; AFTER the build stamp, internal and put in line: the stamp sees
+        ; the same declarations and calls whatever the processor.
+        procedure define_float_helpers(mutable this)
+        {
+            this.define_float_helper("scaly_mul_add_f64", true, false)
+            this.define_float_helper("scaly_mul_add_f32", true, true)
+            this.define_float_helper("scaly_mul_error_f64", false, false)
+            this.define_float_helper("scaly_mul_error_f32", false, true)
+        }
+
+        procedure define_float_helper(mutable this, mutable name: String, mul_add: bool, single: bool)
+        {
+            let fn LLVMGetNamedFunction(llvm_module, name.to_c_string())
+            if fn = null or LLVMIsDeclaration(fn) = 0
+                return
+            clear_debug_location()
+            let saved_block LLVMGetInsertBlock(builder)
+            let block LLVMAppendBasicBlockInContext(context, fn, "entry" as pointer[const_char])
+            LLVMPositionBuilderAtEnd(builder, block)
+            let ft if single: LLVMFloatTypeInContext(context) else LLVMDoubleTypeInContext(context)
+            let sfx if single: "f32" else "f64"
+            let a LLVMGetParam(fn, 0)
+            let b LLVMGetParam(fn, 1)
+            var result: LLVMValueRef? null
+            if mul_add
+            {
+                let c LLVMGetParam(fn, 2)
+                if target_fma
+                {
+                    var fargs Vector[LLVMValueRef](3)
+                    fargs.put(0, a)
+                    fargs.put(1, b)
+                    fargs.put(2, c)
+                    result := this.simd_call("llvm.fma.`sfx`", ft, fargs)
+                }
+                else
+                    result := LLVMBuildFAdd(builder, LLVMBuildFMul(builder, a, b, "float.mul"), c, "float.add")
+            }
+            else
+            {
+                let p LLVMBuildFMul(builder, a, b, "float.product")
+                if target_fma
+                {
+                    var fargs Vector[LLVMValueRef](3)
+                    fargs.put(0, a)
+                    fargs.put(1, b)
+                    fargs.put(2, LLVMBuildFNeg(builder, p, "float.negated"))
+                    result := this.simd_call("llvm.fma.`sfx`", ft, fargs)
+                }
+                else
+                {
+                    let splitter LLVMConstReal(ft, if single: 4097.0 else 134217729.0)
+                    let ca LLVMBuildFMul(builder, a, splitter, "dekker.ca")
+                    let ah LLVMBuildFSub(builder, ca, LLVMBuildFSub(builder, ca, a, "dekker.t"), "dekker.ah")
+                    let al LLVMBuildFSub(builder, a, ah, "dekker.al")
+                    let cb LLVMBuildFMul(builder, b, splitter, "dekker.cb")
+                    let bh LLVMBuildFSub(builder, cb, LLVMBuildFSub(builder, cb, b, "dekker.u"), "dekker.bh")
+                    let bl LLVMBuildFSub(builder, b, bh, "dekker.bl")
+                    let e1 LLVMBuildFSub(builder, LLVMBuildFMul(builder, ah, bh, "dekker.hh"), p, "dekker.e1")
+                    let e2 LLVMBuildFAdd(builder, e1, LLVMBuildFMul(builder, ah, bl, "dekker.hl"), "dekker.e2")
+                    let e3 LLVMBuildFAdd(builder, e2, LLVMBuildFMul(builder, al, bh, "dekker.lh"), "dekker.e3")
+                    result := LLVMBuildFAdd(builder, e3, LLVMBuildFMul(builder, al, bl, "dekker.ll"), "dekker.error")
+                }
+            }
+            LLVMBuildRet(builder, result as LLVMValueRef)
+            LLVMSetLinkage(fn, LLVMLinkage.Internal())
+            add_function_attribute(fn, "alwaysinline")
+            if saved_block <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+        }
+
+        ; A global's and a stack slot's alignment follows ONE datalayout's
+        ; preference on every 64-bit target, macOS arm64's: where LLVM gave
+        ; it this target's PREFERRED alignment and that differs from the
+        ; reference's, it takes the reference's (never below this target's
+        ; ABI alignment). aarch64-linux prefers 4 for an i8, a string, where
+        ; the others prefer 1: the program's IR -- and its build stamp --
+        ; differed there. The reference's own targets do not change, and an
+        ; alignment set on purpose (a vector's, a page's) is no preference.
+        procedure pin_alignments(mutable this)
+        {
+            if pointer_bytes <> 8
+                return
+            let td LLVMGetModuleDataLayout(llvm_module)
+            let reference LLVMCreateTargetData("e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32" as pointer[const_char])
+            var g LLVMGetFirstGlobal(llvm_module)
+            while g <> null
+            {
+                if LLVMIsDeclaration(g) = 0
+                    this.pin_alignment(td, reference, g, LLVMGlobalGetValueType(g))
+                g := LLVMGetNextGlobal(g)
+            }
+            var f LLVMGetFirstFunction(llvm_module)
+            while f <> null
+            {
+                var bb LLVMGetFirstBasicBlock(f)
+                while bb <> null
+                {
+                    var inst LLVMGetFirstInstruction(bb)
+                    while inst <> null
+                    {
+                        if LLVMIsAAllocaInst(inst) <> null
+                            this.pin_alignment(td, reference, inst, LLVMGetAllocatedType(inst))
+                        inst := LLVMGetNextInstruction(inst)
+                    }
+                    bb := LLVMGetNextBasicBlock(bb)
+                }
+                f := LLVMGetNextFunction(f)
+            }
+            LLVMDisposeTargetData(reference)
+        }
+
+        procedure pin_alignment(mutable this, mutable td: LLVMTargetDataRef, mutable reference: LLVMTargetDataRef, mutable v: LLVMValueRef, mutable ty: LLVMTypeRef)
+        {
+            let preferred LLVMPreferredAlignmentOfType(td, ty)
+            let wanted LLVMPreferredAlignmentOfType(reference, ty)
+            if preferred = wanted or LLVMGetAlignment(v) <> preferred
+                return
+            let abi LLVMABIAlignmentOfType(td, ty)
+            LLVMSetAlignment(v, if wanted > abi: wanted else abi)
+        }
+
+        ; `u64 scaly_build_traits()` in a program module, beside its stamp
+        ; and AFTER it (the stamp is the same across them): bit 0 the
+        ; build's processor has FMA (mul_add rounds once), bit 1 the program
+        ; calls mul_add (its results then depend on bit 0), bits 8 to 15 the
+        ; pointer's bytes, bit 16 little-endian (every target Scaly has).
+        ; The cluster runtime announces them: a helper of another layout is
+        ; not taken, nor one of another FMA class for a program that calls
+        ; mul_add.
+        procedure emit_build_traits(mutable this)
+        {
+            if LLVMGetNamedFunction(llvm_module, "scaly_build_traits" as pointer[const_char]) <> null
+                return
+            var traits: u64 0x10000 | ((pointer_bytes as u64) << 8)
+            if target_fma
+                traits := traits | 1
+            if LLVMGetNamedFunction(llvm_module, "scaly_mul_add_f64" as pointer[const_char]) <> null or LLVMGetNamedFunction(llvm_module, "scaly_mul_add_f32" as pointer[const_char]) <> null
+                traits := traits | 2
+            clear_debug_location()
+            let saved_block LLVMGetInsertBlock(builder)
+            let i64_type LLVMInt64TypeInContext(context)
+            let traits_type LLVMFunctionType(i64_type, null as pointer[LLVMTypeRef], 0, 0)
+            let traits_fn LLVMAddFunction(llvm_module, "scaly_build_traits" as pointer[const_char], traits_type)
+            let block LLVMAppendBasicBlockInContext(context, traits_fn, "entry" as pointer[const_char])
+            LLVMPositionBuilderAtEnd(builder, block)
+            LLVMBuildRet(builder, LLVMConstInt(i64_type, traits as size_t, 0))
             if saved_block <> null
                 LLVMPositionBuilderAtEnd(builder, saved_block)
         }
@@ -15715,44 +15876,14 @@ define Emitter
                 case "float.round_even": op := String("rint")
                 case "float.abs": op := String("fabs")
                 case "float.copy_sign": op := String("copysign")
-            ; a b - (a b rounded), exactly, on every target: by FMA where
-            ; the processor has it, else Dekker's product (each factor split
-            ; into halves whose products are exact) -- what a library needs
-            ; where relaxed would not do (scaly/math.scaly's pow)
-            if name = "float.mul_error"
+            ; mul_add and mul_error are calls of helpers whose bodies differ
+            ; by target (define_float_helpers#): defined after the build
+            ; stamp, so that the stamp is the same for a build with FMA and
+            ; one without (a cluster of both); put in line where called
+            if name = "float.mul_add" or name = "float.mul_error"
             {
-                let p LLVMBuildFMul(builder, args[0], args[1], "float.product")
-                if target_fma
-                {
-                    var fargs Vector[LLVMValueRef](3)
-                    fargs.put(0, args[0])
-                    fargs.put(1, args[1])
-                    fargs.put(2, LLVMBuildFNeg(builder, p, "float.negated"))
-                    return this.simd_call("llvm.fma.`sfx`", ft, fargs)
-                }
-                ; 2^27 + 1 splits a double into 26 + 27 bits, 2^12 + 1 a float
-                let splitter LLVMConstReal(ft, if sfx = "f32": 4097.0 else 134217729.0)
-                let ca LLVMBuildFMul(builder, args[0], splitter, "dekker.ca")
-                let ah LLVMBuildFSub(builder, ca, LLVMBuildFSub(builder, ca, args[0], "dekker.t"), "dekker.ah")
-                let al LLVMBuildFSub(builder, args[0], ah, "dekker.al")
-                let cb LLVMBuildFMul(builder, args[1], splitter, "dekker.cb")
-                let bh LLVMBuildFSub(builder, cb, LLVMBuildFSub(builder, cb, args[1], "dekker.u"), "dekker.bh")
-                let bl LLVMBuildFSub(builder, args[1], bh, "dekker.bl")
-                let e1 LLVMBuildFSub(builder, LLVMBuildFMul(builder, ah, bh, "dekker.hh"), p, "dekker.e1")
-                let e2 LLVMBuildFAdd(builder, e1, LLVMBuildFMul(builder, ah, bl, "dekker.hl"), "dekker.e2")
-                let e3 LLVMBuildFAdd(builder, e2, LLVMBuildFMul(builder, al, bh, "dekker.lh"), "dekker.e3")
-                return LLVMBuildFAdd(builder, e3, LLVMBuildFMul(builder, al, bl, "dekker.ll"), "dekker.error")
-            }
-            if name = "float.mul_add"
-            {
-                if target_fma
-                    op := String("fma")
-                else
-                {
-                    ; two roundings: the build's processor has no FMA (relaxed)
-                    let p LLVMBuildFMul(builder, args[0], args[1], "float.mul")
-                    return LLVMBuildFAdd(builder, p, args[2], "float.add")
-                }
+                let helper if name = "float.mul_add": "scaly_mul_add_`sfx`" else "scaly_mul_error_`sfx`"
+                return this.simd_call(helper, ft, args)
             }
             if op.get_length() = 0
             {

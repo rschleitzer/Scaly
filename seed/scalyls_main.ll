@@ -57,3 +57,8 @@ define i64 @scaly_build_stamp() {
 entry:
   ret i64 -6823559120487125598
 }
+
+define i64 @scaly_build_traits() {
+entry:
+  ret i64 67585
+}

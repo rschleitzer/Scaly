@@ -249,6 +249,9 @@ function LLVMIsPackedStruct(struct_type: LLVMTypeRef) returns i32 extern
 
 ; Data layout / size queries — s149 Result wrapper sizing
 function LLVMGetModuleDataLayout(mod: LLVMModuleRef) returns LLVMTargetDataRef extern
+function LLVMABIAlignmentOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u32 extern
+function LLVMPreferredAlignmentOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u32 extern
+function LLVMGetAlignment(v: LLVMValueRef) returns u32 extern
 function LLVMABISizeOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u64 extern
 
 ; Function type
@@ -693,6 +696,7 @@ function LLVMPointerSize(td: LLVMTargetDataRef) returns u32 extern
 
 ; Dispose target data
 procedure LLVMDisposeTargetData(td: LLVMTargetDataRef) extern
+function LLVMCreateTargetData(string_rep: pointer[const_char]) returns LLVMTargetDataRef extern
 
 ; Emit to file
 function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: i32, error_message: pointer[pointer[char]]) returns i32 extern

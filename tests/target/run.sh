@@ -150,5 +150,33 @@ else
   echo "target: SKIP CodeView check (no llvm-objdump)"
 fi
 
+# A cluster may mix processors and systems: the build stamp, a hash of the
+# program's IR without its target lines, is the same on every 64-bit target
+# but Windows (its comdats), for a program that calls mul_add too -- what
+# differs by processor (the alignment the datalayout prefers, the bodies of
+# mul_add and mul_error) is pinned or defined after the stamp. The traits
+# beside it say what does differ: bit 0 FMA, bit 1 mul_add called, bits 8 to
+# 15 the pointer's bytes, bit 16 little-endian.
+stamp_of() { grep -A3 "define i64 @$2" "$1" | grep -o 'ret i64 -*[0-9]*' | cut -d' ' -f3; }
+check_stamps() {
+  local src=$1 want_calls=$2 first="" same=1 traits_ok=1
+  for spec in "aarch64-apple-darwin:1" "x86_64-apple-darwin -mcpu=haswell:1" "x86_64-apple-darwin:0" \
+              "x86_64-unknown-linux-gnu -mcpu=x86-64-v3:1" "x86_64-unknown-linux-gnu:0" "aarch64-unknown-linux-gnu:1"; do
+    local tg=${spec%:*} fma=${spec##*:} ll=/tmp/target_stamp.ll
+    rm -f "$ll"
+    # shellcheck disable=SC2086
+    "$STAGE" --target $tg -S -o "$ll" "$src" >/dev/null 2>&1
+    local stamp; stamp=$(stamp_of "$ll" scaly_build_stamp)
+    local traits; traits=$(stamp_of "$ll" scaly_build_traits)
+    [ -n "$first" ] || first=$stamp
+    [ -n "$stamp" ] && [ "$stamp" = "$first" ] || { same=0; failures+=("$src: stamp for $tg is $stamp, not $first"); }
+    [ "$traits" = "$((0x10800 + fma + 2 * want_calls))" ] || { traits_ok=0; failures+=("$src: traits for $tg are $traits"); }
+  done
+  rm -f /tmp/target_stamp.ll
+  if [ $same = 1 ] && [ $traits_ok = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); fi
+}
+check_stamps tests/math/bits.scaly 1
+check_stamps tests/cluster/weigh.scaly 0
+
 echo "target: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]
