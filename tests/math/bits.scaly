@@ -1,5 +1,6 @@
 ; tests/math/bits.scaly <function> <file> -- the function of scaly/math.scaly
-; (exp, exp2, expm1, log, log2, log10, log1p, sin, cos) of each number in the file, one bit pattern a line (a decimal
+; (exp, exp2, expm1, log, log2, log10, log1p, sin, cos, tan, atan,
+; asin, acos, and atan2 of each pair: y x on a line) of each number in the file, one bit pattern a line (a decimal
 ; u64), as bit patterns: what tests/math/check.py compares with the exact
 ; values and, across builds, with each other.
 let args os.arguments()
@@ -10,6 +11,8 @@ var any false
 var i: size_t 0
 let n text.get_length()
 var out StringBuilder()
+var first: f64 0.0
+var have_first false
 while i < n
 {
     let c text.get(i)
@@ -18,10 +21,22 @@ while i < n
         v := v * 10 + ((c as u64) - 48)
         any := true
     }
+    else if any and which = "atan2" and have_first = false
+    {
+        first := v.float_from_bits()
+        have_first := true
+        v := 0
+        any := false
+    }
     else if any
     {
         let x v.float_from_bits()
         var y x
+        if have_first
+        {
+            y := atan2(first, x)
+            have_first := false
+        }
         match which
             case "exp": y := exp(x)
             case "exp2": y := exp2(x)
@@ -32,6 +47,10 @@ while i < n
             case "log1p": y := log1p(x)
             case "sin": y := sin(x)
             case "cos": y := cos(x)
+            case "tan": y := tan(x)
+            case "atan": y := atan(x)
+            case "asin": y := asin(x)
+            case "acos": y := acos(x)
         out.append "`y.to_bits()`\n"
         v := 0
         any := false

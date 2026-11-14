@@ -74,6 +74,56 @@ def near_multiples(count):
         xs.append(x * random.choice([1, -1]))
     return xs
 
+def atan_exact(d):
+    """atan of a Decimal: beyond 1 by pi/2 - atan(1/d), then halved
+    (atan x = 2 atan(x / (1 + sqrt(1 + x^2)))) below 0.15, then the series"""
+    from decimal import localcontext
+    global PI400
+    if PI400 is None:
+        PI400 = pi_decimal(400)
+    if d < 0:
+        return -atan_exact(-d)
+    if d > 1:
+        return PI400 / 2 - atan_exact(1 / d)
+    with localcontext() as ctx:
+        ctx.prec = 70
+        k = 0
+        while d > Decimal('0.15'):
+            d = d / (1 + (1 + d * d).sqrt())
+            k += 1
+        s, t, n, d2 = Decimal(0), d, 1, d * d
+        while t != 0 and abs(t) > Decimal(10) ** -72 * abs(s + d):
+            s += t / n
+            t = -t * d2
+            n += 2
+        r = s * 2 ** k
+    return +r
+
+def asin_exact(x):
+    d = Decimal(x)
+    if abs(d) == 1:
+        return d * PI400 / 2 if PI400 is not None else d * pi_decimal(70) / 2
+    from decimal import localcontext
+    with localcontext() as ctx:
+        ctx.prec = 80
+        r = d / (1 - d * d).sqrt()
+    return atan_exact(r)
+
+def atan2_exact(y, x):
+    global PI400
+    if PI400 is None:
+        PI400 = pi_decimal(400)
+    dy, dx = Decimal(y), Decimal(x)
+    from decimal import localcontext
+    with localcontext() as ctx:
+        ctx.prec = 80
+        if dx == 0:
+            return (PI400 / 2) * (1 if dy > 0 else -1)
+        a = atan_exact(dy / dx)
+        if dx > 0:
+            return +a
+        return +(a + PI400) if dy >= 0 else +(a - PI400)
+
 log_xs = lambda: [2.0 ** random.uniform(-1074, 1024) for _ in range(count)] + [random.uniform(0.95, 1.05) for _ in range(count // 4)]
 if fn == 'exp':
     special = [(0.0, 1.0), (-0.0, 1.0), (inf, inf), (-inf, 0.0), (nan, nan), (710.0, inf), (-746.0, 0.0)]
@@ -91,6 +141,39 @@ elif fn == 'log1p':
     special = [(0.0, 0.0), (-1.0, -inf), (-2.0, nan), (inf, inf), (-inf, nan), (nan, nan)]
     xs = [random.uniform(-0.999, 4.0) for _ in range(count)] + [2.0 ** random.uniform(-60, 1000) for _ in range(count // 4)] + [2.0 ** random.uniform(-60, -1) * random.choice([1, -1]) for _ in range(count // 4)]
     exact = series_log_1p
+elif fn == 'atan':
+    special = [(0.0, 0.0), (inf, math.pi / 2), (-inf, -math.pi / 2), (nan, nan), (1.0, math.pi / 4), (-1.0, -math.pi / 4)]
+    xs = [random.uniform(-5.0, 5.0) for _ in range(count)]
+    xs += [2.0 ** random.uniform(-40, 1023) * random.choice([1, -1]) for _ in range(count // 4)]
+    xs += [5e-324, 1e-300, 1.7976931348623157e308]
+    exact = lambda x: atan_exact(Decimal(x))
+elif fn in ('asin', 'acos'):
+    if fn == 'asin':
+        special = [(0.0, 0.0), (1.0, math.pi / 2), (-1.0, -math.pi / 2), (2.0, nan), (-inf, nan), (nan, nan)]
+        exact = asin_exact
+    else:
+        special = [(1.0, 0.0), (-1.0, math.pi), (0.0, math.pi / 2), (2.0, nan), (inf, nan), (nan, nan)]
+        exact = lambda x: pi_decimal(70) / 2 - asin_exact(x)
+    xs = [random.uniform(-1.0, 1.0) for _ in range(count)]
+    xs += [(1 - 2.0 ** -random.uniform(1, 53)) * random.choice([1, -1]) for _ in range(count // 4)]
+    xs += [2.0 ** random.uniform(-60, -1) * random.choice([1, -1]) for _ in range(count // 4)]
+    xs += [0.7071067811865476, 0.7071067811865475, 5e-324]
+elif fn == 'atan2':
+    pio2 = math.pi / 2
+    special = [((0.0, 1.0), 0.0), ((0.0, -1.0), math.pi), ((-0.0, -1.0), -math.pi), ((1.0, 0.0), pio2), ((-1.0, 0.0), -pio2),
+               ((1.0, inf), 0.0), ((1.0, -inf), math.pi), ((inf, 1.0), pio2), ((inf, inf), math.pi / 4), ((inf, -inf), 3 * math.pi / 4),
+               ((nan, 1.0), nan), ((1.0, nan), nan), ((0.0, 0.0), 0.0), ((0.0, -0.0), math.pi)]
+    xs = [(random.uniform(-10.0, 10.0), random.uniform(-10.0, 10.0)) for _ in range(count)]
+    xs += [(2.0 ** random.uniform(-200, 200) * random.choice([1, -1]), 2.0 ** random.uniform(-200, 200) * random.choice([1, -1])) for _ in range(count // 4)]
+    xs += [(1.0, 1.0), (-1.0, -1.0), (1e-300, 1e300), (1e300, 1e-300)]
+    exact = lambda p: atan2_exact(*p)
+elif fn == 'tan':
+    special = [(0.0, 0.0), (inf, nan), (-inf, nan), (nan, nan)]
+    xs = [random.uniform(-10.0, 10.0) for _ in range(count)]
+    xs += [2.0 ** random.uniform(-40, 1023) * random.choice([1, -1]) for _ in range(count // 4)]
+    xs += near_multiples(count // 8)
+    xs += [6381956970095103.0 * 2.0 ** 797, 5e-324, -5e-324, 1e-300, 1.5707963267948966, -1.5707963267948966]
+    exact = lambda x: trig_exact(x, False) / trig_exact(x, True)
 elif fn in ('sin', 'cos'):
     if fn == 'sin':
         special = [(0.0, 0.0), (inf, nan), (-inf, nan), (nan, nan)]
@@ -114,7 +197,8 @@ else:
     xs = [x for x in log_xs() if 0 < x < inf]
 allx = [s[0] for s in special] + xs
 path = os.environ.get('MATH_INPUTS', '/tmp/math_inputs.txt')
-open(path, 'w').write('\n'.join(str(f2b(x)) for x in allx) + '\n')
+line = lambda x: ('%d %d' % (f2b(x[0]), f2b(x[1]))) if isinstance(x, tuple) else str(f2b(x))
+open(path, 'w').write('\n'.join(line(x) for x in allx) + '\n')
 out = subprocess.run([binary, fn, path], capture_output=True, text=True).stdout.split()
 fails = []
 if len(out) != len(allx):

@@ -1,4 +1,5 @@
-; math.scaly - exp, exp2, expm1, log, log2, log10, log1p, sin, cos, written in Scaly
+; math.scaly - exp, exp2, expm1, log, log2, log10, log1p, sin, cos, tan,
+; atan, atan2, asin, acos, written in Scaly
 ;
 ; The C library's functions differ from system to system in the last bit:
 ; each approximates in its own way. These are the same code on every
@@ -11,7 +12,8 @@
 ; on: -mcpu=x86-64-v3, native on such a machine) and two where it has not
 ; (an older or generic x86_64 build, WebAssembly). Builds with FMA compute
 ; the same bits; the others are `relaxed`: as fast, as accurate to within
-; a unit in the last place, not the same bits.
+; a unit in the last place (tan, atan2, asin, acos: two -- the rest of a
+; division is not exact without FMA), not the same bits.
 ;
 ; Every function is generic (exp[T] for T f64 or f32): it is made in the
 ; module of the program that calls it, for that program's processor, where
@@ -44,6 +46,9 @@ define TRIG_TABLE: u64[] [0x0000000000000000, 0x0000000000000000, 0x3ff000000000
 ; 2/pi in bits, 32 a word: two words of zeros (the bits from 2^-63 to 2^0,
 ; room for a window that begins before the point), then the fraction
 define TRIG_TWO_OVER_PI: u64[] [0x00000000, 0x00000000, 0xa2f9836e, 0x4e441529, 0xfc2757d1, 0xf534ddc0, 0xdb629599, 0x3c439041, 0xfe5163ab, 0xdebbc561, 0xb7246e3a, 0x424dd2e0, 0x06492eea, 0x09d1921c, 0xfe1deb1c, 0xb129a73e, 0xe88235f5, 0x2ebb4484, 0xe99c7026, 0xb45f7e41, 0x3991d639, 0x835339f4, 0x9c845f8b, 0xbdf9283b, 0x1ff897ff, 0xde05980f, 0xef2f118b, 0x5a0a6d1f, 0x6d367ecf, 0x27cb09b7, 0x4f463f66, 0x9e5fea2d, 0x7527bac7, 0xebe5f17b, 0x3d0739f7, 0x8a5292ea, 0x6bfb5fb1, 0x1f8d5d08, 0x56033046, 0xfc7b6bab]
+
+; atan(j/64), j <= 64, as hi and lo, the bits of each
+define ATAN_TABLE: u64[] [0x0000000000000000, 0x0000000000000000, 0x3f8fff555bbb729b, 0xbc2220c39d4dff50, 0x3f9ffd55bba97625, 0xbc35ec431444912c, 0x3fa7fb818430da2a, 0xbc086ef8f794f105, 0x3faff55bb72cfdea, 0xbc3c934d86d23f1d, 0x3fb3f59f0e7c559d, 0x3c5ac4ce285df847, 0x3fb7ee182602f10f, 0xbc5cfb654c0c3d98, 0x3fbbe39ebe6f07c3, 0x3c5f7b8f29a05987, 0x3fbfd5ba9aac2f6e, 0xbc4cd37686760c17, 0x3fc1e1fafb043727, 0xbc4b485914dacf8c, 0x3fc3d6eee8c6626c, 0x3c661a3b0ce9281b, 0x3fc5c9811e3ec26a, 0xbc5054ab2c010f3d, 0x3fc7b97b4bce5b02, 0x3c5347b0b4f881ca, 0x3fc9a6a8e96c8626, 0x3c4cf601e7b4348e, 0x3fcb90d7529260a2, 0x3c217b10d2e0e5ab, 0x3fcd77d5df205736, 0x3c6c648d1534597e, 0x3fcf5b75f92c80dd, 0x3c68ab6e3cf7afbd, 0x3fd09dc597d86362, 0x3c762e47390cb865, 0x3fd18bf5a30bf178, 0x3c630ca4748b1bf9, 0x3fd278372057ef46, 0xbc7077cdd36dfc81, 0x3fd362773707ebcc, 0xbc6963a544b672d8, 0x3fd44aa436c2af0a, 0xbc75d5e43c55b3ba, 0x3fd530ad9951cd4a, 0xbc62566480884082, 0x3fd614840309cfe2, 0xbc7a725715711f00, 0x3fd6f61941e4def1, 0xbc7c63aae6f6e918, 0x3fd7d5604b63b3f7, 0x3c769c885c2b249a, 0x3fd8b24d394a1b25, 0x3c7b6d0ba3748fa8, 0x3fd98cd5454d6b18, 0x3c79e6c988fd0a77, 0x3fda64eec3cc23fd, 0xbc724dec1b50b7ff, 0x3fdb3a911da65c6c, 0x3c7ae187b1ca5040, 0x3fdc0db4c94ec9f0, 0xbc7cc1ce70934c34, 0x3fdcde53432c1351, 0xbc7a2cfa4418f1ad, 0x3fddac670561bb4f, 0x3c7a2b7f222f65e2, 0x3fde77eb7f175a34, 0x3c70e53dc1bf3435, 0x3fdf40dd0b541418, 0xbc6a3992dc382a23, 0x3fe0039c73c1a40c, 0xbc8b32c949c9d593, 0x3fe0657e94db30d0, 0xbc7d5b495f6349e6, 0x3fe0c6145b5b43da, 0x3c5974fa13b5404f, 0x3fe1255d9bfbd2a9, 0xbc52bdaee1c0ee35, 0x3fe1835a88be7c13, 0x3c8c621cec00c301, 0x3fe1e00babdefeb4, 0xbc5928df287a668f, 0x3fe23b71e2cc9e6a, 0x3c6c421c9f38224e, 0x3fe2958e59308e31, 0xbc709e73b0c6c087, 0x3fe2ee628406cbca, 0x3c8c5d5e9ff0cf8d, 0x3fe345f01cce37bb, 0x3c81021137c71102, 0x3fe39c391cd4171a, 0xbc82304331d8bf46, 0x3fe3f13fb89e96f4, 0x3c7ecf8b492644f0, 0x3fe445065b795b56, 0xbc7f76d0163f79c8, 0x3fe4978fa3269ee1, 0x3c72419a87f2a458, 0x3fe4e8de5bb6ec04, 0x3c84a33dbeb3796c, 0x3fe538f57b89061f, 0xbc81bb74abda520c, 0x3fe587d81f732fbb, 0xbc75e5c9d8c5a950, 0x3fe5d58987169b18, 0x3c60028e4bc5e7ca, 0x3fe6220d115d7b8e, 0xbc62b785350ee8c1, 0x3fe66d663923e087, 0xbc76ea6febe8bbba, 0x3fe6b798920b3d99, 0xbc8a80386188c50e, 0x3fe700a7c5784634, 0xbc78c34d25aadef6, 0x3fe748978fba8e0f, 0x3c47b2a6165884a1, 0x3fe78f6bbd5d315e, 0x3c8406a089803740, 0x3fe7d528289fa093, 0x3c8560821e2f3aa9, 0x3fe819d0b7158a4d, 0xbc7bf76229d3b917, 0x3fe85d69576cc2c5, 0x3c66b66e7fc8b8c3, 0x3fe89ff5ff57f1f8, 0xbc855b9a5e177a1b, 0x3fe8e17aa99cc05e, 0xbc7ec182ab042f61, 0x3fe921fb54442d18, 0x3c81a62633145c07]
 
 ; --- the helpers ---------------------------------------------------------------
 
@@ -566,7 +571,7 @@ function trig_reduce_large[T](probe: T, x: f64) returns (n: i64, hi: f64, lo: f6
 ; B d's error is lost: up to half a unit more where A and B d nearly
 ; cancel (relaxed; 0.99 units at most over 275 000 numbers) -- splitting d
 ; to make B d exact on every target cost a tenth of the time with FMA.
-function trig_kernel[T](probe: T, row: size_t, dh: f64, dl: f64) @inline true returns f64
+function trig_parts[T](probe: T, row: size_t, dh: f64, dl: f64) @inline true returns (hi: f64, lo: f64)
 {
     let d2 dh * dh
     ; sp and cp near the best of their degree on |d| <= pi/128 (Chebyshev
@@ -587,7 +592,14 @@ function trig_kernel[T](probe: T, row: size_t, dh: f64, dl: f64) @inline true re
     ; what does not wait for the series first, the series last:
     ; A (cos d - 1) + B (sin d - d) = d^2 (A cp + B d sp)
     let fixed (e + pl) + (al + b.mul_add(dl, bl * dh))
-    h + d2.mul_add(a.mul_add(cp, ph * sp), fixed)
+    (hi: h, lo: d2.mul_add(a.mul_add(cp, ph * sp), fixed))
+}
+
+; the same, rounded
+function trig_kernel[T](probe: T, row: size_t, dh: f64, dl: f64) @inline true returns f64
+{
+    let parts trig_parts(probe, row, dh, dl)
+    parts.hi + parts.lo
 }
 
 ; x = N pi/64 + (hi + lo); for a NaN or an infinity hi is a NaN
@@ -614,4 +626,226 @@ function cos[T](x: T) @inline true returns T
     let v: f64 x as f64
     let red trig_reduce(x, v)
     trig_kernel(x, ((red.n + 32) & 127) as size_t, red.hi, red.lo) as T
+}
+
+; tan x = sin x / cos x, both from the one reduction (rows N and N + 32) as
+; hi + lo: q = sh / ch, then the rest of the division, sh - q ch (exact by
+; FMA) + sl - q cl, over c. Near a pole c is small but as exact as sin
+; (its row's A is 0). (1/c once, in parallel with sin, and q = sh (1/c)
+; were no faster.) Without FMA the rest is not exact: relaxed, 1.41 units
+; at most over 275 000 numbers; exact by Dekker's product on every target
+; it cost two fifths more time with FMA. (The same holds for the
+; quotients of atan2, asin and acos: relaxed up to 1.52 units.)
+function tan[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    if v = 0.0
+        return x
+    let red trig_reduce(x, v)
+    let s trig_parts(x, (red.n & 127) as size_t, red.hi, red.lo)
+    let c trig_parts(x, ((red.n + 32) & 127) as size_t, red.hi, red.lo)
+    let ch c.hi + c.lo
+    let cl (c.hi - ch) + c.lo
+    let q s.hi / ch
+    let nq 0.0 - q
+    let rest nq.mul_add(ch, s.hi)
+    (q + nq.mul_add(cl, rest + s.lo) / ch) as T
+}
+
+; --- atan, atan2, asin, acos ---------------------------------------------------
+;
+; Each is k + s atan t for a t in [0, 1] given as hi + lo, k one of 0,
+; pi/2, pi and s one of 1, -1 (atan_core): t = c + ..., c = j/64 the
+; nearest, atan t = atan c + atan u with u = (t - c)/(1 + t c), |u| <=
+; 1/128, atan c from the table as hi + lo.
+
+; a / b as hi + lo for a = ah + al, b = bh + bl, inv = 1/bh: q = ah inv
+; to a unit or so, the rest of the division (by FMA, its error below 2^-53
+; of a unit) times inv corrects it, lo up to a unit of hi -- one
+; division, which can begin before a is known
+function quotient[T](probe: T, ah: f64, al: f64, bh: f64, bl: f64, inv: f64) @inline true returns (hi: f64, lo: f64)
+{
+    let q ah * inv
+    let nq 0.0 - q
+    let rest nq.mul_add(bh, ah)
+    (hi: q, lo: nq.mul_add(bl, rest + al) * inv)
+}
+
+; sqrt(1 - a^2) as hi + lo, 0 <= a <= 1, and 1/hi: 1 - a^2 = (1 - a)(1 +
+; a), each factor with its error (2Sum, Fast2Sum: 1 - a is exact from a
+; half on), their product with its error (exact by FMA) -- near 1 the
+; difference then keeps its digits without FMA too; the root of the
+; rounded product, the rest over 2 hi
+function cosine_of_sine[T](probe: T, a: f64) @inline true returns (hi: f64, lo: f64, inv: f64)
+{
+    let one: f64 1.0
+    let dh one - a
+    let bb dh - one
+    let de (one - (dh - bb)) - (a + bb)
+    let sh one + a
+    let se (one - sh) + a
+    let wh dh * sh
+    let wl dh.mul_add(sh, 0.0 - wh) + dh.mul_add(se, de * sh)
+    let r wh.sqrt()
+    if r = 0.0
+        return (hi: 0.0, lo: 0.0, inv: 0.0)
+    let inv 1.0 / r
+    let nr 0.0 - r
+    (hi: r, lo: (nr.mul_add(r, wh) + wl) * (0.5 * inv), inv: inv)
+}
+
+; k + s atan t, t = th + tl in [0, 1]
+function atan_core[T](probe: T, th: f64, tl: f64, kh: f64, kl: f64, s: f64) @inline true returns f64
+{
+    ; th 64 + 1.5 2^52: its last bits are j
+    let jt th.mul_add(64.0, 6755399441055744.0)
+    let j (jt.to_bits() & 127) as size_t
+    let c (jt - 6755399441055744.0) * 0.015625
+    ; t - c exact (the two within a factor of two, or c 0), with tl
+    let nd th - c
+    let nh nd + tl
+    let nl (nd - nh) + tl
+    ; 1 + t c as hi + lo
+    let dh th.mul_add(c, 1.0)
+    let dl th.mul_add(c, 1.0 - dh) + tl * c
+    let u quotient(probe, nh, nl, dh, dl, 1.0 / dh)
+    ; atan u - u = u^3 (near the best of degree 2 in u^2 on |u| <= 1/128)
+    let z u.hi * u.hi
+    let a2_bits: u64 0xbfc248cf1278d48c
+    let a0_bits: u64 0xbfd5555555555547
+    let pu (z * u.hi) * z.mul_add(z.mul_add(a2_bits.float_from_bits(), 0.19999999976625352), a0_bits.float_from_bits())
+    let ah ATAN_TABLE[2 * j].float_from_bits()
+    let al ATAN_TABLE[2 * j + 1].float_from_bits()
+    ; k + s atan c (2Sum), then + s u (Fast2Sum: the sum is at least pi/4,
+    ; or atan c >= 2 |u|, or 0)
+    let sa s * ah
+    let v1 kh + sa
+    let b1 v1 - kh
+    let e1 (kh - (v1 - b1)) + (sa - b1)
+    let su s * u.hi
+    let v2 v1 + su
+    let e2 su - (v2 - v1)
+    v2 + ((e1 + e2) + s.mul_add(al + (u.lo + pu), kl))
+}
+
+; atan x: |x| <= 1 directly, above that pi/2 - atan(1/|x|); the sign of x
+; (times -1: atan -0 is -0)
+function atan[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    if is_nan_bits(x, v.to_bits())
+        return x
+    let sign: f64 if (v.to_bits() >> 63) = 1: 0.0 - 1.0 else 1.0
+    let pio2_lo: u64 0x3c91a62633145c07
+    if a <= 1.0
+        return (atan_core(x, a, 0.0, 0.0, 0.0, 1.0) * sign) as T
+    if a = infinity_f64(x)
+        return (1.5707963267948966 * sign) as T
+    let one: f64 1.0
+    let inv one / a
+    let t quotient(x, one, 0.0, a, 0.0, inv)
+    (atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), 0.0 - 1.0) * sign) as T
+}
+
+; asin x = atan(x / sqrt(1 - x^2)): for |x| up to 1/sqrt 2 that ratio,
+; above it pi/2 - atan(sqrt(1 - x^2) / |x|) -- no ratio beyond 1
+function asin[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    if is_nan_bits(x, v.to_bits())
+        return x
+    if a > 1.0
+    {
+        let quiet: u64 0x7ff8000000000000
+        return quiet.float_from_bits() as T
+    }
+    let sign: f64 if (v.to_bits() >> 63) = 1: 0.0 - 1.0 else 1.0
+    let r cosine_of_sine(x, a)
+    if a <= 0.7071067811865476
+    {
+        let t quotient(x, a, 0.0, r.hi, r.lo, r.inv)
+        return (atan_core(x, t.hi, t.lo, 0.0, 0.0, 1.0) * sign) as T
+    }
+    let pio2_lo: u64 0x3c91a62633145c07
+    let t quotient(x, r.hi, r.lo, a, 0.0, 1.0 / a)
+    (atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), 0.0 - 1.0) * sign) as T
+}
+
+; acos x = atan(sqrt(1 - x^2) / x) for x >= 1/sqrt 2, pi/2 - atan(x /
+; sqrt(1 - x^2)) for |x| below; a negative x is pi less that of |x|
+function acos[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    if is_nan_bits(x, v.to_bits())
+        return x
+    if a > 1.0
+    {
+        let quiet: u64 0x7ff8000000000000
+        return quiet.float_from_bits() as T
+    }
+    let negative (v.to_bits() >> 63) = 1
+    let r cosine_of_sine(x, a)
+    let pio2_lo: u64 0x3c91a62633145c07
+    let pi_lo: u64 0x3ca1a62633145c07
+    if a >= 0.7071067811865476
+    {
+        let t quotient(x, r.hi, r.lo, a, 0.0, 1.0 / a)
+        if negative
+            return atan_core(x, t.hi, t.lo, 3.141592653589793, pi_lo.float_from_bits(), 0.0 - 1.0) as T
+        return atan_core(x, t.hi, t.lo, 0.0, 0.0, 1.0) as T
+    }
+    let t quotient(x, a, 0.0, r.hi, r.lo, r.inv)
+    let s: f64 if negative: 1.0 else 0.0 - 1.0
+    atan_core(x, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), s) as T
+}
+
+; atan2(y, x), the angle of the point (x, y): the smaller of |y|/|x| and
+; |x|/|y| as t, and by the octant k + s atan t: |y| <= |x| is atan t (x >
+; 0) or pi - atan t, |y| > |x| is pi/2 -+ atan t; the sign of y. The zeros
+; and infinities as C's atan2.
+function atan2[T](y: T, x: T) @inline true returns T
+{
+    let vy: f64 y as f64
+    let vx: f64 x as f64
+    if is_nan_bits(y, vy.to_bits())
+        return y
+    if is_nan_bits(y, vx.to_bits())
+        return x
+    let ay vy.abs()
+    let ax vx.abs()
+    let sign: f64 if (vy.to_bits() >> 63) = 1: 0.0 - 1.0 else 1.0
+    let x_negative (vx.to_bits() >> 63) = 1
+    let pio2_lo: u64 0x3c91a62633145c07
+    let pi_lo: u64 0x3ca1a62633145c07
+    let inf infinity_f64(y)
+    ; a zero y, or an x that wins outright: 0 or pi
+    if ay = 0.0 or (ax = inf and ay < inf)
+    {
+        if x_negative
+            return (3.141592653589793 * sign) as T
+        return (0.0 * sign) as T
+    }
+    ; a zero x, or a y that wins outright: pi/2
+    if ax = 0.0 or (ay = inf and ax < inf)
+        return (1.5707963267948966 * sign) as T
+    ; both infinite: pi/4 or 3 pi/4
+    if ax = inf
+    {
+        if x_negative
+            return (2.356194490192345 * sign) as T
+        return (0.7853981633974483 * sign) as T
+    }
+    if ay <= ax
+    {
+        let t quotient(y, ay, 0.0, ax, 0.0, 1.0 / ax)
+        if x_negative
+            return (atan_core(y, t.hi, t.lo, 3.141592653589793, pi_lo.float_from_bits(), 0.0 - 1.0) * sign) as T
+        return (atan_core(y, t.hi, t.lo, 0.0, 0.0, 1.0) * sign) as T
+    }
+    let t quotient(y, ax, 0.0, ay, 0.0, 1.0 / ay)
+    let s: f64 if x_negative: 1.0 else 0.0 - 1.0
+    (atan_core(y, t.hi, t.lo, 1.5707963267948966, pio2_lo.float_from_bits(), s) * sign) as T
 }

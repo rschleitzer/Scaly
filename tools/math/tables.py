@@ -214,3 +214,43 @@ with localcontext() as ctx:
         words.append(w)
         frac -= w
 print('define TRIG_TWO_OVER_PI: u64[] [%s]' % ', '.join('0x%08x' % w for w in words))
+
+# --- atan, atan2, asin, acos --------------------------------------------------
+def atan_decimal(x):
+    """atan x for 0 <= x <= 1: halved twice (atan x = 2 atan(x / (1 +
+    sqrt(1 + x^2)))), then the series"""
+    k = 0
+    while x > Decimal('0.15'):
+        x = x / (1 + (1 + x * x).sqrt())
+        k += 1
+    s, t, n, x2 = Decimal(0), x, 1, x * x
+    while abs(t) > Decimal(10) ** -(getcontext().prec + 2):
+        s += t / n
+        t = -t * x2
+        n += 2
+    return s * 2 ** k
+
+print('; atan: t = c + ..., c = j/64, atan t = atan c + atan u, u = (t - c)/(1 + t c)')
+at = []
+for j in range(65):
+    v = atan_decimal(Decimal(j) / 64)
+    h = float(v) + 0.0
+    at += [hexbits(h), hexbits(v - Decimal(h))]
+print('define ATAN_TABLE: u64[] [%s]' % ', '.join(at))
+for name, v in [('pi/2', PIO2), ('pi', PI)]:
+    h = float(v)
+    print('; %s: hi %s, lo bits %s' % (name, literal(h), hexbits(v - Decimal(h))))
+def atan_series(z):
+    # (atan u - u)/u^3 as a series in z = u^2
+    s, t, n = Decimal(0), Decimal(-1) / 3, 3
+    k = 0
+    while abs(t) > Decimal(10) ** -48:
+        s += t
+        k += 1
+        t = Decimal((-1) ** (k + 1)) * z ** k / (3 + 2 * k)
+    return s
+Z = (Decimal(1) / 128 * Decimal('1.001')) ** 2
+nodes = [(Decimal(_m.cos(_m.pi * (2 * i + 1) / 6)) + 1) / 2 * Z for i in range(3)]
+c = solve([[z ** k for k in range(3)] for z in nodes], [atan_series(z) for z in nodes])
+worst = max(abs(sum(Decimal(float(ck)) * (Z * i / 400) ** k for k, ck in enumerate(c)) - atan_series(Z * i / 400)) * (Z * i / 400) for i in range(1, 401))
+print('; atan series: %s; relative error 2^%.1f' % (', '.join('%s (%s)' % (literal(v), hexbits(v)) for v in c), float(worst.ln() / Decimal(2).ln())))
