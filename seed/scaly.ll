@@ -66855,6 +66855,65 @@ stub.entry:
   ret ptr null
 }
 
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z10hypot_core1T3f643f643f64(ptr %0, double %1, double %2, double %3) #2 {
+stub.entry:
+  ret ptr null
+}
+
+define linkonce_odr ptr @_Z13hypot_special1T1T(ptr %0, ptr %1) {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z5hypot1T1T(ptr %0, ptr %1) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4cbrt1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr { double, double } @_Z9exp_parts1T3f643i64(ptr %0, double %1, i64 %2) #2 {
+stub.entry:
+  ret { double, double } zeroinitializer
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z10odd_series1T3f643f643f643f64(ptr %0, double %1, double %2, double %3, double %4) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr double @_Z8exp_half1T3f64(ptr %0, double %1) #2 {
+stub.entry:
+  ret double 0.000000e+00
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4sinh1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4cosh1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
+; Function Attrs: alwaysinline
+define linkonce_odr ptr @_Z4tanh1T(ptr %0) #2 {
+stub.entry:
+  ret ptr null
+}
+
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #3
 

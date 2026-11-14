@@ -1,5 +1,6 @@
 ; math.scaly - exp, exp2, expm1, log, log2, log10, log1p, sin, cos, tan,
-; atan, atan2, asin, acos, pow, written in Scaly
+; atan, atan2, asin, acos, pow, hypot, cbrt, sinh, cosh, tanh, written in
+; Scaly
 ;
 ; The C library's functions differ from system to system in the last bit:
 ; each approximates in its own way. These are the same code on every
@@ -12,8 +13,9 @@
 ; on: -mcpu=x86-64-v3, native on such a machine) and two where it has not
 ; (an older or generic x86_64 build, WebAssembly). Builds with FMA compute
 ; the same bits; the others are `relaxed`: as fast, as accurate to within
-; a unit in the last place (tan, atan2, asin, acos: two -- the rest of a
-; division is not exact without FMA), not the same bits. Where relaxed
+; a unit in the last place (tan, atan2, asin, acos, hypot: two -- the rest
+; of a division, the error of a square is not exact without FMA), not the
+; same bits. Where relaxed
 ; would not do -- pow's y log x, whose error e^ makes a relative one --
 ; mul_error gives a product's rounding error exactly on every target (FMA,
 ; else Dekker's product: slower only there).
@@ -936,4 +938,330 @@ function pow[T](x: T, y: T) @inline true returns T
     if bx - 1 < 0x7fefffffffffffff and by - 1 < 0x7fefffffffffffff
         return pow_core(x, vx, vy, 1.0)
     pow_special(x, y)
+}
+
+; --- hypot -------------------------------------------------------------------
+
+; sqrt(a^2 + b^2) times unscale, a and b scaled so that their squares are
+; normal: the sum of the squares as hi + lo (2Sum; each square's error
+; exact by FMA), its root r, then r + (s - r^2)/(2r) with s - r^2 exact by
+; FMA. A result below 2^-1022 (unscale < 1) has fewer bits: rounding r +
+; c, then the scaling into the subnormals, would round twice. Added to
+; 2^-422, whose last place is the subnormal's (scaled by 2^600), the sum
+; is rounded once; its error kept, and 2^-422 taken off again exactly.
+function hypot_core[T](probe: T, a: f64, b: f64, unscale: f64) @inline true returns T
+{
+    let zero: f64 0.0
+    let a2 a * a
+    let b2 b * b
+    let sh a2 + b2
+    let bb sh - a2
+    let se (a2 - (sh - bb)) + (b2 - bb)
+    let sl (se + a.mul_add(a, zero - a2)) + b.mul_add(b, zero - b2)
+    let r sh.sqrt()
+    let nr zero - r
+    let rest nr.mul_add(r, sh) + sl
+    let c rest * (0.5 / r)
+    let tiny_bits: u64 0x2590000000000000
+    let tiny tiny_bits.float_from_bits()
+    if r < tiny and unscale < 1.0
+    {
+        let s tiny + r
+        let err (tiny - s) + r
+        let t s + (err + c)
+        return ((t - tiny) * unscale) as T
+    }
+    ((r + c) * unscale) as T
+}
+
+; hypot for what is not two numbers between 2^-500 and 2^500: an
+; infinity wins over a NaN (as in C); a zero, or a b below 2^-54 of a,
+; leaves a; else both scaled by 2^-600 (a beyond 2^500) or 2^600 (b below
+; 2^-500)
+function hypot_special[T](x: T, y: T) returns T
+{
+    let vx: f64 x as f64
+    let vy: f64 y as f64
+    let ax vx.abs()
+    let ay vy.abs()
+    let inf infinity_f64(x)
+    if ax = inf or ay = inf
+        return inf as T
+    if is_nan_bits(x, vx.to_bits()) or is_nan_bits(x, vy.to_bits())
+        return (vx + vy) as T
+    let a if ax >= ay: ax else ay
+    let b if ax >= ay: ay else ax
+    if b = 0.0 or a > b * 18014398509481984.0
+        return a as T
+    let down_bits: u64 0x1a70000000000000
+    let up_bits: u64 0x6570000000000000
+    let down down_bits.float_from_bits()
+    let up up_bits.float_from_bits()
+    let big: u64 0x5f30000000000000
+    if a > big.float_from_bits()
+        return hypot_core(x, a * down, b * down, up)
+    let small: u64 0x20b0000000000000
+    if b < small.float_from_bits()
+        return hypot_core(x, a * up, b * up, down)
+    hypot_core(x, a, b, 1.0)
+}
+
+; sqrt(x^2 + y^2) without overflow or underflow on the way (hypot_core):
+; two numbers between 2^-500 and 2^500 at once (their exponents), the
+; rest by hypot_special
+function hypot[T](x: T, y: T) @inline true returns T
+{
+    let vx: f64 x as f64
+    let vy: f64 y as f64
+    let ex (vx.to_bits() >> 52) & 0x7ff
+    let ey (vy.to_bits() >> 52) & 0x7ff
+    if ex - 523 < 1000 and ey - 523 < 1000
+        return hypot_core(x, vx.abs(), vy.abs(), 1.0)
+    hypot_special(x, y)
+}
+
+; --- cbrt ----------------------------------------------------------------------
+
+; The cube root: of |x| (the sign goes back on, cbrt is odd), below
+; 2^-968 scaled by 2^54 first (its root by 2^18), beyond 2^1020 by 2^-54.
+; A start from the bits (the exponent divided by 3, about five bits
+; right), two of Halley's steps (three times the bits each: 45; Newton's
+; steps for x^(-1/3), multiplications only, took longer), then y + (x -
+; y^3)/(3 y^2) with x - y^3 exact by FMA (y^2 and y^3 as hi + lo; x -
+; y^3's high part exact, they are close): the root rounded once.
+function cbrt[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let b v.to_bits()
+    ; zeros, infinities and NaNs are their own roots
+    if v = 0.0 or (b & 0x7ff0000000000000) = 0x7ff0000000000000
+        return x
+    let zero: f64 0.0
+    var a v.abs()
+    var unscale: f64 1.0
+    ; near the ends y^3's error would be subnormal, or y^3 itself infinite
+    let low: u64 0x0370000000000000
+    let high: u64 0x7fb0000000000000
+    if a < low.float_from_bits()
+    {
+        a := a * 18014398509481984.0
+        unscale := 0.000003814697265625
+    }
+    else if a > high.float_from_bits()
+    {
+        let down: u64 0x3c90000000000000
+        a := a * down.float_from_bits()
+        unscale := 262144.0
+    }
+    let start_bits: u64 a.to_bits() / 3 + 0x2a9f7893782da1ce
+    var y start_bits.float_from_bits()
+    ; y times a ratio near 1 (y times the sum would leave the range)
+    var y3 y * y * y
+    y := y * ((y3 + a + a) / (y3 + y3 + a))
+    y3 := y * y * y
+    y := y * ((y3 + a + a) / (y3 + y3 + a))
+    let s2 y * y
+    let s2l y.mul_add(y, zero - s2)
+    let c3 s2 * y
+    let c3l s2.mul_add(y, zero - c3) + s2l * y
+    let rest (a - c3) - c3l
+    let r y + rest / (3.0 * s2)
+    (r * unscale).copy_sign(v) as T
+}
+
+; --- sinh, cosh, tanh ----------------------------------------------------------
+
+; e^v times 2^-halves as hi + lo, |v| <= 22 (the scale 2^e normal): 2^(k
+; /128) (1 + q) as exp (exp_reduce), k less 128 halves -- the halving in
+; the exponent, so that e^710.4/2 stays finite; th scaled is exact, the
+; rest th q + tl (1 + q) scaled (up to 2^-9 of hi: not normalized).
+function exp_parts[T](probe: T, v: f64, halves: i64) @inline true returns (hi: f64, lo: f64)
+{
+    let red exp_reduce(probe, v)
+    let q expm1_small(probe, red.r)
+    let k red.k - 128 * halves
+    let i (k & 127) as size_t
+    let e (k - (i as i64)) / 128
+    let th_bits EXP_TABLE[2 * i]
+    let tl_bits EXP_TABLE[2 * i + 1]
+    let th th_bits.float_from_bits()
+    let sb: u64 ((e + 1023) as u64) << 52
+    let s sb.float_from_bits()
+    let tl tl_bits.float_from_bits()
+    (hi: th * s, lo: th.mul_add(q, tl.mul_add(q, tl)) * s)
+}
+
+; a + c a^3 + a^5 p for an odd series below 1/2 (sinh, tanh), c = c_hi +
+; c_lo (1/6, -1/3): a^3 as hi + lo (a^2's and a z's errors exact by FMA),
+; c a^3's error exact by FMA, a + that with its error (Fast2Sum); the
+; rest's roundings far below the result's
+function odd_series[T](probe: T, a: f64, c_hi: f64, c_lo: f64, p: f64) @inline true returns f64
+{
+    let zero: f64 0.0
+    let z a * a
+    let zl a.mul_add(a, zero - z)
+    let a3 a * z
+    let a3l a.mul_add(z, zero - a3) + a * zl
+    let m a3 * c_hi
+    let me a3.mul_add(c_hi, zero - m)
+    let h a + m
+    let err m - (h - a)
+    h + (err + (me + a3.mul_add(c_lo, a3l * c_hi) + (a3 * z) * p))
+}
+
+; e^a/2 for 22 < a <= 710.476, rounded once as exp: the halving in k (e^a
+; alone would overflow from 709.78 on, and exp_parts' scale 2^(e) itself
+; at the very top)
+function exp_half[T](probe: T, a: f64) @inline true returns f64
+{
+    let red exp_reduce(probe, a)
+    let zero: f64 0.0
+    exp_finish(zero, red.k - 128, expm1_small(probe, red.r))
+}
+
+; sinh x: below 1/2 a + a^3/6 + a^5 p(a^2) (odd_series, p near the best of
+; degree 4: from 1/2 on e^-a/2 takes at most 3/8 of e^a/2 off, and its
+; errors do not grow much); up to 22 e^a/2 - e^-a/2, each as hi + lo, their difference
+; with its error (2Sum); beyond 22 e^a/2 alone (e^-a/2 is below 2^-63 of
+; it); beyond 710.476 an infinity. Odd: of |x|, the sign back on.
+function sinh[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    let zero: f64 0.0
+    if is_nan_bits(x, v.to_bits())
+        return x
+    var r: f64 0.0
+    if a < 0.5
+    {
+        let z a * a
+        let c4: u64 0x3de623261f964926
+        let c3: u64 0x3e5ae63e0140aabb
+        let c2: u64 0x3ec71de3a6a9de2d
+        let c1: u64 0x3f2a01a01a0175a0
+        let c0: u64 0x3f81111111111112
+        var p z.mul_add(c4.float_from_bits(), c3.float_from_bits())
+        p := z.mul_add(p, c2.float_from_bits())
+        p := z.mul_add(p, c1.float_from_bits())
+        p := z.mul_add(p, c0.float_from_bits())
+        let lo: u64 0x3c65555555555555
+        r := odd_series(x, a, 0.16666666666666666, lo.float_from_bits(), p)
+    }
+    else if a > 710.4758600739439
+        r := infinity_f64(x)
+    else if a > 22.0
+        r := exp_half(x, a)
+    else
+    {
+        let e1 exp_parts(x, a, 1)
+        let e2 exp_parts(x, zero - a, 1)
+        let h e1.hi - e2.hi
+        let bb h - e1.hi
+        let err (e1.hi - (h - bb)) - (e2.hi + bb)
+        r := h + (err + (e1.lo - e2.lo))
+    }
+    (r.copy_sign(v)) as T
+}
+
+; cosh x: below 1/2 1 + a^2/2 + a^4 p(a^2) (near the best of degree 5); up to 22
+; e^a/2 + e^-a/2, each as hi + lo (Fast2Sum: the first is the larger);
+; beyond 22 e^a/2 alone; beyond 710.476 an infinity. Even.
+function cosh[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    let zero: f64 0.0
+    let one: f64 1.0
+    if is_nan_bits(x, v.to_bits())
+        return x
+    if a < 0.5
+    {
+        let z a * a
+        let c5: u64 0x3da94db4e9fcbef7
+        let c4: u64 0x3e21eed33a41e99a
+        let c3: u64 0x3e927e4fb8f46ea1
+        let c2: u64 0x3efa01a01a0146e5
+        let c1: u64 0x3f56c16c16c16c1e
+        var p z.mul_add(c5.float_from_bits(), c4.float_from_bits())
+        p := z.mul_add(p, c3.float_from_bits())
+        p := z.mul_add(p, c2.float_from_bits())
+        p := z.mul_add(p, c1.float_from_bits())
+        p := z.mul_add(p, 0.041666666666666664)
+        ; 1 + z/2 with its error (Fast2Sum; z/2 exact), a^2's error (exact
+        ; by FMA), the rest z^2 p: their roundings far below the result's
+        let half z * 0.5
+        let h one + half
+        let err half - (h - one)
+        let zl a.mul_add(a, zero - z)
+        return (h + (err + (zl * 0.5 + (z * z) * p))) as T
+    }
+    if a > 710.4758600739439
+        return infinity_f64(x) as T
+    if a > 22.0
+        return exp_half(x, a) as T
+    let e1 exp_parts(x, a, 1)
+    let e2 exp_parts(x, zero - a, 1)
+    let h e1.hi + e2.hi
+    let err e2.hi - (h - e1.hi)
+    (h + (err + (e1.lo + e2.lo))) as T
+}
+
+; tanh x: below 1/2 a - a^3/3 + a^5 p(a^2) (odd_series, p near the best of
+; degree 10); up to 22 (1 - w)/(1 + w) with w = e^-2a as hi + lo, the
+; difference and the sum with their errors, the quotient's rest exact by
+; FMA; beyond 22 1 (1 - 2e^-44 rounds to it). Odd.
+function tanh[T](x: T) @inline true returns T
+{
+    let v: f64 x as f64
+    let a v.abs()
+    let zero: f64 0.0
+    let one: f64 1.0
+    if is_nan_bits(x, v.to_bits())
+        return x
+    var r: f64 1.0
+    if a < 0.5
+    {
+        let z a * a
+        let c10: u64 0x3ee37d21edbacfe5
+        let c9: u64 0xbf02bbfe6b812211
+        let c8: u64 0x3f191c013633f562
+        let c7: u64 0xbf2f50299a0e8739
+        let c6: u64 0x3f435541aaace632
+        let c5: u64 0xbf57da33865cea0a
+        let c4: u64 0x3f6d6d3cfb645a12
+        let c3: u64 0xbf8226e355c187f9
+        let c2: u64 0x3f9664f4882bc4c3
+        let c1: u64 0xbfaba1ba1ba1b9df
+        var p z.mul_add(c10.float_from_bits(), c9.float_from_bits())
+        p := z.mul_add(p, c8.float_from_bits())
+        p := z.mul_add(p, c7.float_from_bits())
+        p := z.mul_add(p, c6.float_from_bits())
+        p := z.mul_add(p, c5.float_from_bits())
+        p := z.mul_add(p, c4.float_from_bits())
+        p := z.mul_add(p, c3.float_from_bits())
+        p := z.mul_add(p, c2.float_from_bits())
+        p := z.mul_add(p, c1.float_from_bits())
+        p := z.mul_add(p, 0.13333333333333333)
+        let lo: u64 0xbc75555555555555
+        r := odd_series(x, a, zero - 0.3333333333333333, lo.float_from_bits(), p)
+    }
+    else if a <= 22.0
+    {
+        ; w normalized: exp_parts' lo is th q + tl, up to 2^-9 of hi, and
+        ; the quotient's correction below is of the first order only
+        let we exp_parts(x, zero - (a + a), 0)
+        let wh we.hi + we.lo
+        let wl (we.hi - wh) + we.lo
+        ; 1 - w (2Sum) and 1 + w (Fast2Sum), each with w's low part
+        let nh one - wh
+        let nb nh - one
+        let nl ((one - (nh - nb)) - (wh + nb)) - wl
+        let dh one + wh
+        let dl (wh - (dh - one)) + wl
+        let q nh / dh
+        let nq zero - q
+        let rest nq.mul_add(dh, nh)
+        r := q + nq.mul_add(dl, rest + nl) / dh
+    }
+    (r.copy_sign(v)) as T
 }

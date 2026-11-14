@@ -158,6 +158,74 @@ elif fn in ('asin', 'acos'):
     xs += [(1 - 2.0 ** -random.uniform(1, 53)) * random.choice([1, -1]) for _ in range(count // 4)]
     xs += [2.0 ** random.uniform(-60, -1) * random.choice([1, -1]) for _ in range(count // 4)]
     xs += [0.7071067811865476, 0.7071067811865475, 5e-324]
+elif fn in ('sinh', 'cosh', 'tanh'):
+    special = {'sinh': [(0.0, 0.0), (-0.0, -0.0), (inf, inf), (-inf, -inf), (nan, nan), (711.0, inf), (-711.0, -inf)],
+               'cosh': [(0.0, 1.0), (inf, inf), (-inf, inf), (nan, nan), (711.0, inf), (-711.0, inf)],
+               'tanh': [(0.0, 0.0), (-0.0, -0.0), (inf, 1.0), (-inf, -1.0), (nan, nan), (30.0, 1.0)]}[fn]
+    xs = [random.uniform(-30.0, 30.0) for _ in range(count)]
+    xs += [2.0 ** random.uniform(-60, -1) * random.choice([1, -1]) for _ in range(count // 4)]
+    xs += [random.uniform(0.1, 1.0) * random.choice([1, -1]) for _ in range(count // 8)]
+    xs += [random.uniform(21.0, 23.0) * random.choice([1, -1]) for _ in range(count // 8)]
+    if fn != 'tanh':
+        xs += [random.uniform(700.0, 710.47) * random.choice([1, -1]) for _ in range(count // 8)]
+    xs += [5e-324, 0.25, 0.5, 22.0, 710.4758600739439]
+    def exact_hyp(x):
+        from decimal import localcontext
+        d = Decimal(x)
+        with localcontext() as ctx:
+            ctx.prec = 80
+            if abs(d) < Decimal('0.001'):
+                # the series, without the cancellation of the exponentials
+                s, t, n = Decimal(0), (d if fn != 'cosh' else Decimal(1)), (1 if fn != 'cosh' else 0)
+                if fn == 'tanh':
+                    # 1 - z/3 + 2z^2/15 - 17z^3/315 + 62z^4/2835, z = d^2
+                    z = d * d
+                    return +(d * (1 - z / 3 + 2 * z * z / 15 - 17 * z ** 3 / 315 + 62 * z ** 4 / 2835))
+                while t != 0 and abs(t) > Decimal(10) ** -90 * abs(s + t):
+                    s += t
+                    t = t * d * d / ((n + 1) * (n + 2))
+                    n += 2
+                return +s
+            e = d.exp()
+            if fn == 'sinh':
+                r = (e - 1 / e) / 2
+            elif fn == 'cosh':
+                r = (e + 1 / e) / 2
+            else:
+                r = (e - 1 / e) / (e + 1 / e)
+        return +r
+    exact = exact_hyp
+elif fn == 'cbrt':
+    special = [(0.0, 0.0), (-0.0, -0.0), (inf, inf), (-inf, -inf), (nan, nan), (8.0, 2.0), (-27.0, -3.0), (1.0, 1.0)]
+    xs = [random.uniform(-10.0, 10.0) for _ in range(count)]
+    xs += [2.0 ** random.uniform(-1074, 1024) * random.choice([1, -1]) for _ in range(count // 2)]
+    xs += [5e-324, 1e-310, 1.7976931348623157e308, float(3 ** 30), float(7 ** 18)]
+    def exact_cbrt(x):
+        from decimal import localcontext
+        d = Decimal(x)
+        with localcontext() as ctx:
+            ctx.prec = 70
+            r = abs(d) ** (Decimal(1) / 3)
+            # Newton in decimal to be sure of the last digits
+            for _ in range(2):
+                r = r - (r ** 3 - abs(d)) / (3 * r * r)
+            r = r if d > 0 else -r
+        return +r
+    exact = exact_cbrt
+elif fn == 'hypot':
+    special = [((inf, nan), inf), ((nan, -inf), inf), ((nan, 1.0), nan), ((0.0, 0.0), 0.0), ((3.0, 4.0), 5.0), ((-3.0, -4.0), 5.0),
+               ((1.7976931348623157e308, 1.7976931348623157e308), inf), ((5e-324, 0.0), 5e-324), ((0.0, -2.0), 2.0)]
+    xs = [(random.uniform(-10.0, 10.0), random.uniform(-10.0, 10.0)) for _ in range(count)]
+    xs += [(2.0 ** random.uniform(-1074, 1023) * random.choice([1, -1]), 2.0 ** random.uniform(-1074, 1023) * random.choice([1, -1])) for _ in range(count // 4)]
+    xs += [(x, x * 2.0 ** random.uniform(-30, 0)) for x in [2.0 ** random.uniform(-1074, 1023) for _ in range(count // 4)]]
+    xs += [(1e308, 1e308), (5e-324, 5e-324), (1e-310, 3e-310), (8.98846567431158e307, 8.98846567431158e307)]
+    def exact_hypot(p):
+        from decimal import localcontext
+        with localcontext() as ctx:
+            ctx.prec = 70
+            r = (Decimal(p[0]) ** 2 + Decimal(p[1]) ** 2).sqrt()
+        return +r
+    exact = exact_hypot
 elif fn == 'pow':
     special = [((2.0, 0.0), 1.0), ((nan, 0.0), 1.0), ((1.0, nan), 1.0), ((nan, 1.0), nan), ((2.0, nan), nan),
                ((-2.0, 3.0), -8.0), ((-2.0, 0.5), nan), ((0.0, -1.0), inf), ((-0.0, -1.0), -inf), ((0.0, 2.0), 0.0),

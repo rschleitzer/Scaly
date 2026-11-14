@@ -254,3 +254,40 @@ nodes = [(Decimal(_m.cos(_m.pi * (2 * i + 1) / 6)) + 1) / 2 * Z for i in range(3
 c = solve([[z ** k for k in range(3)] for z in nodes], [atan_series(z) for z in nodes])
 worst = max(abs(sum(Decimal(float(ck)) * (Z * i / 400) ** k for k, ck in enumerate(c)) - atan_series(Z * i / 400)) * (Z * i / 400) for i in range(1, 401))
 print('; atan series: %s; relative error 2^%.1f' % (', '.join('%s (%s)' % (literal(v), hexbits(v)) for v in c), float(worst.ln() / Decimal(2).ln())))
+
+# --- sinh, cosh, tanh ---------------------------------------------------------
+# below 1/2: sinh a = a + a^3/6 + a^5 p(a^2), cosh a = 1 + a^2/2 + a^4
+# p(a^2), tanh a = a - a^3/3 + a^5 p(a^2) -- the first term exact (1/6 and
+# -1/3 as hi + lo), p near the best (Chebyshev nodes), the degree the
+# smallest below 2^-62 of the result
+def hyp_series(z, which):
+    a = z.sqrt()
+    c0 = {'sinh': Decimal(1) / 6, 'cosh': Decimal(1) / 2, 'tanh': Decimal(-1) / 3}[which]
+    if a == 0:
+        return {'sinh': Decimal(1) / 120, 'cosh': Decimal(1) / 24, 'tanh': Decimal(2) / 15}[which]
+    e = a.exp()
+    if which == 'sinh':
+        f = ((e - 1 / e) / 2 - a) / (a * z)
+    elif which == 'cosh':
+        f = ((e + 1 / e) / 2 - 1) / z
+    else:
+        e2 = e * e
+        f = ((e2 - 1) / (e2 + 1) - a) / (a * z)
+    return (f - c0) / z
+from decimal import localcontext
+with localcontext() as ctx:
+    ctx.prec = 80
+    Zh = (Decimal(1) / 2 * Decimal("1.001")) ** 2
+    for which in ('sinh', 'cosh', 'tanh'):
+        for deg in range(1, 12):
+            nodes = [(Decimal(_m.cos(_m.pi * (2 * i + 1) / (2 * (deg + 1)))) + 1) / 2 * Zh for i in range(deg + 1)]
+            c = solve([[z ** k for k in range(deg + 1)] for z in nodes], [hyp_series(z, which) for z in nodes])
+            cf = [float(v) for v in c]
+            # relative to the result: z^2 times the error of p
+            worst = max(abs(sum(Decimal(ck) * (Zh * i / 300) ** k for k, ck in enumerate(cf)) - hyp_series(Zh * i / 300, which)) * (Zh * i / 300) ** 2 for i in range(1, 301))
+            if worst < Decimal(2) ** -62:
+                break
+        print('; %s series (degree %d, 2^%.1f): %s' % (which, deg, float(worst.ln() / Decimal(2).ln()), ', '.join(hexbits(v) for v in cf)))
+for name, v in [('1/6', Decimal(1) / 6), ('-1/3', Decimal(-1) / 3)]:
+    h = float(v)
+    print('; %s: hi %s, lo bits %s' % (name, hexbits(h), hexbits(v - Decimal(h))))
