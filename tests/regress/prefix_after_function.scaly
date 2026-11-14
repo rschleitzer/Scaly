@@ -1,5 +1,5 @@
 ; After a function a value is expected, so an operator there is a prefix and
-; its term the argument (ROADMAP-operation.md, *Prefix operators*): `twice -5`
+; its term the argument: `twice -5`
 ; is `twice(-5)`. Until 2026-10-21 the driver read a binary `twice - 5`, the
 ; result had no type, and the binding and every statement using it were
 ; dropped at rc 0 -- this program printed an empty line.

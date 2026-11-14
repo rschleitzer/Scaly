@@ -2352,7 +2352,7 @@ define tool
     ; itself and the declaration stays behind until its author raises it. A
     ; note, never a refusal: not everyone can follow at once. (A newer version
     ; WITHIN the line needs no word -- a build takes the highest one asked
-    ; for.) The cure for dependencies nobody raises; see ROADMAP-public.md.
+    ; for.) The cure for dependencies nobody raises.
     procedure publish_notes(name: String, version: String, mutable log: String, mutable out: String)
     {
         var root "packages/`name`/`version`/`name`.scaly"

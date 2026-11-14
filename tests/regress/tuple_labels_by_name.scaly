@@ -1,4 +1,4 @@
-; A labelled tuple is applied BY NAME (2026-10-19, ROADMAP-operation.md,
+; A labelled tuple is applied BY NAME (2026-10-19,
 ; Tuples: names are labels, they match parameters by name at an application;
 ; Planner.lone_tuple_labels#, label_order#): `let r (y: 2, x: 1)`, then
 ; `Point(r)` is `Point(1, 2)` and `span(r)` is `span(1, 2)` -- before, the

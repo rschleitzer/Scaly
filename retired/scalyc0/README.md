@@ -13,8 +13,8 @@ sigils, `repeat`, lambdas, labeled loops) and had no remaining build wiring:
 no C++ fallback, and `codegen/rules.scm` no longer emits `Parser.cpp` /
 `Syntax.h` / `SyntaxDump.h` (the generated copies here are the last ones).
 
-The sources remain frozen as a **porting reference**: CLAUDE.md's
-load-bearing notes cite `Planner.cpp` / `Emitter.cpp` line numbers, and
+The sources remain frozen as a **porting reference**: load-bearing
+notes cite `Planner.cpp` / `Emitter.cpp` line numbers, and
 mirroring stage-0 behavior is still the proven method when closing planner
 or emitter gaps in the self-hosted compiler.
 

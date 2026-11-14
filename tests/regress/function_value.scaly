@@ -1,4 +1,4 @@
-; A function is a value known at plan time (2026-10-19, ROADMAP-operation.md,
+; A function is a value known at plan time (2026-10-19,
 ; Functions): `let g twice` costs nothing and `g(5)` is a direct call of
 ; `twice` (Planner.function_alias_target#); an overloaded name binds the set
 ; and the call chooses; the name ends with its block, so after `inner` the

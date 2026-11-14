@@ -1,4 +1,4 @@
-; Helpers (ROADMAP-cluster.md, stage C1): ONE program. Started with
+; Helpers: ONE program. Started with
 ; --scaly-helper it is a helper -- its main below never runs, it announces
 ; itself and serves coordinators. Started normally it is a coordinator: it
 ; finds the helpers of its own build within a second and a half, connects to

@@ -1,5 +1,5 @@
 ; A bound tuple applied to a function is its argument list (2026-10-18,
-; ROADMAP-operation.md, Tuples; Planner.spread_tuple_argument#): `let args
+; Planner.spread_tuple_argument#): `let args
 ; (3, 4)`, then `add(args)` and `add args` are `add(3, 4)`; a labelled tuple
 ; and a field holding one alike, and a method (`c.add(args)`, the receiver no
 ; part of the tuple). A function declared over the tuple itself takes it whole.

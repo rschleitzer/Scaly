@@ -275,7 +275,7 @@ define Modeler
     }
 
     ; handle_tuple_type: `(int, String)` is the type `()` with the component
-    ; types as its generic arguments (ROADMAP-operation.md, Tuples). A label
+    ; types as its generic arguments. A label
     ; (`(x: int, y: int)`) is no part of the type: the labels follow the
     ; name `()` as further path segments, "" for a component without one,
     ; and only where one has a label (Planner.plan_type# reads them).
@@ -321,8 +321,8 @@ define Modeler
             path_length := 1 + count
         var path Vector[String](path_length)
         path.put(0, "()")
-        ; `()`, the empty tuple's type, is what "no value" means
-        ; (ROADMAP-operation.md, Tuples): the type `void`, so every reader of
+        ; `()`, the empty tuple's type, is what "no value" means:
+        ; the type `void`, so every reader of
         ; the model -- the page rules among them -- takes `returns ()` for a
         ; routine that answers nothing
         if count = 0
@@ -1640,8 +1640,7 @@ define Modeler
     ; checks it, Planner.report_decomposition#), and then each name to its component by
     ; POSITION -- the member `$0`, `$1`, ..., which only a tuple answers
     ; (Planner.tuple_label_index#) and no source can spell either: a
-    ; component without a label is reached by decomposition alone
-    ; (ROADMAP-operation.md, Tuples).
+    ; component without a label is reached by decomposition alone.
     procedure decomposition_statements(mutable d: DecompositionSyntax, kind: String) returns Vector[Statement] mutable modeler_error_count
     {
         let span Span(d.start, d.end)
@@ -1910,7 +1909,7 @@ define Modeler
         var item_type: ref[Type]? null
         ; `lazy` before a parameter's type (`right: lazy bool`): the caller's
         ; argument is handed over unevaluated and runs where the body names
-        ; it (ROADMAP-operation.md, delayed operands)
+        ; it (delayed operands)
         var lazy_at: ref[LazySyntax]? null
         if syntax.annotation <> null
         {
@@ -3130,7 +3129,7 @@ define Modeler
         }
         ; `pending` in the head (`define Sum[O, L, R] pending (...)`): the
         ; type of a value that waits for what follows in an operation
-        ; (ROADMAP-operation.md); carried as an attribute, as `mutable` on
+        ; carried as an attribute, as `mutable` on
         ; a parameter is
         if syntax.pending_ <> null
         {
@@ -4967,7 +4966,7 @@ define Modeler
         ; the library: a root compiled without the standard library
         ; (--no-prelude) gets them too, unless it declares the library or IS it
         ; (its own modules hold them). Without them it would have no operators
-        ; at all: the compiler has no table (ROADMAP-operation.md, step 5).
+        ; at all: the compiler has no table.
         if enable_prelude = false
         {
             var has_library: bool false

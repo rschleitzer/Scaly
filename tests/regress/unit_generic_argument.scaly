@@ -1,5 +1,5 @@
-; `()`, the type "no value", as a generic argument (2026-10-19,
-; ROADMAP-operation.md, Tuples): `Result[(), Failure]` answers success without
+; `()`, the type "no value", as a generic argument (2026-10-19):
+; `Result[(), Failure]` answers success without
 ; a payload, `Option[()]` a bare presence. Written in
 ; expression position (`Option[()].Some(())`) the empty tuple in the brackets
 ; was refused by the generic merge (Planner.extract_row_to_type#), and as a

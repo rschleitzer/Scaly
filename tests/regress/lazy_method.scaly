@@ -1,5 +1,5 @@
 ; A method with a lazy parameter is put in where it is called, as a free
-; function is (2026-10-19, ROADMAP-operation.md, Short circuit:
+; function is (2026-10-19:
 ; `value.or_else(costly())`; Planner.lazy_method_call#, put_in_lazy_call#):
 ; the receiver -- a local or a parameter and its fields, or `this` of a
 ; sibling call -- is bound as the body's `this`, the ordinary arguments

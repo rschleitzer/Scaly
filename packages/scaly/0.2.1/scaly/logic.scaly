@@ -1,6 +1,6 @@
 ; logic.scaly - the short-circuit operators of bool
 ;
-; `and` and `or` are no part of the compiler (ROADMAP-operation.md, delayed
+; `and` and `or` are no part of the compiler (delayed
 ; operands): their right operand is `lazy`, handed over unevaluated, and the
 ; planner puts the body in where the operator stands. `p <> null and p.x = 7`
 ; is `if p <> null: p.x = 7 else false`, so the right side runs only where the

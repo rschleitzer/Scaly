@@ -98,7 +98,7 @@ define Options
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
     gpu: bool                       ; --gpu: a parallel loop that is a kernel may run on the graphics card
     cluster: bool                   ; --cluster: a parallel loop whose rounds can travel may run on helpers
-    emit_cpp: bool                  ; --emit-cpp: the plan written as C++ (compiler/CppEmitter.scaly, ROADMAP-trust)
+    emit_cpp: bool                  ; --emit-cpp: the plan written as C++ (compiler/CppEmitter.scaly)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2

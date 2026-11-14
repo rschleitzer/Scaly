@@ -257,7 +257,7 @@ if [ -x "$OUT/cluster_train$SCALY_EXE" ]; then
   fi
 fi
 
-# ---- helpers (ROADMAP-cluster.md, C1): one program, started with
+# ---- helpers: one program, started with
 # --scaly-helper or normally; a coordinator finds the helpers of its own
 # build in the group and connects. Without a key the group is the
 # loopback's; with one the helpers must hold it, and a helper of another
@@ -299,7 +299,7 @@ else
   if [ "$got" = "found 1, connected 1" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("helpers, another build and a late one: '$got'"); fi
 fi
 
-# ---- rounds on other machines (ROADMAP-cluster.md, C2): a program built
+# ---- rounds on other machines: a program built
 # with --cluster offers a fit loop's rounds to the helpers of its build
 # (SCALY_CLUSTER=on); each runs its stretches on its cores and sends back
 # what they put. The output is the program's own: with two helpers, with
@@ -345,7 +345,7 @@ else
   rounds_check "no helper" "$OUT/cluster_${t}_none.log" "^string"
 fi
 
-# ---- the cost model (ROADMAP-cluster.md, C3): left alone (no
+# ---- the cost model: left alone (no
 # SCALY_CLUSTER), a fit loop is offered at the driver's gates with what its
 # rounds cost, and goes to the helpers only where they would end it a
 # quarter sooner. Each loop runs in passes; the first begins the search for

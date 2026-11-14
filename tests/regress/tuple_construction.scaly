@@ -1,5 +1,5 @@
 ; A bound tuple applied to a record builds it from its components
-; (2026-10-19, ROADMAP-operation.md, Tuples; Planner.spread_construction_tuple#):
+; (2026-10-19; Planner.spread_construction_tuple#):
 ; `let args (3, 4)`, then `Point(args)` and `Point args` are `Point(3, 4)`,
 ; through the field list or through an init of that arity; a labelled tuple
 ; and a field holding one alike. A record of one field takes the tuple whole.

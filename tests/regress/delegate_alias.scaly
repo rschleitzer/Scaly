@@ -1,5 +1,5 @@
 ; A name bound to a function or to a method stands for what it is bound to
-; where a delegate is declared (2026-10-19, ROADMAP-operation.md, Functions):
+; where a delegate is declared (2026-10-19):
 ; `let g twice` and then `let f: IntFn g` killed the compiler (SIGSEGV, rc 139),
 ; and `let k c.add` and then `let m: IntFn k` said the method stood without its
 ; tuple -- the delegate-typed binding read the NAME, not the alias

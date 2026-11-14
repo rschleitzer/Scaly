@@ -1,5 +1,5 @@
-; A tuple's unlabelled components are reached by DECOMPOSITION (2026-10-18,
-; ROADMAP-operation.md, Tuples): `let (a, b) t` binds the tuple once and each
+; A tuple's unlabelled components are reached by DECOMPOSITION (2026-10-18):
+; `let (a, b) t` binds the tuple once and each
 ; name to its component by position (Modeler.decomposition_statements), `var`
 ; alike; a function hands back several results as one tuple.
 ; Expected: PASS

@@ -1505,8 +1505,7 @@ define Planner
         ; the package lookups are directed to (lookup_package, set while a
         ; routine's signature, a record's fields or a type's members are
         ; resolved -- they were written in THAT package), else the package
-        ; of the file being planned. Rule 1 of ROADMAP-public.md *Type
-        ; identity*: a bare name means the declaring package's own concept
+        ; of the file being planned. The rule of type identity: a bare name means the declaring package's own concept
         ; before anything a `use` brings in.
         var cross_package_index: ConceptIndex
         ; the concept DECLARATIONS whose members were judged, `<file>@<start>`
@@ -4862,7 +4861,7 @@ define Planner
             found
         }
 
-        ; ---- the package of a definition (ROADMAP: package and line in the mangling) ----
+        ; ---- the package of a definition (package and line in the mangling) ----
         ; package_of_file#: the package a source file belongs to -- the <name>
         ; of its `.../packages/<name>/` -- or "" for a file of no package: a
         ; program's own modules. And "" for the STANDARD LIBRARY, whose names
@@ -5226,8 +5225,7 @@ define Planner
 
         ; function_lambda#: `\a$0 a$1: f(a$0, a$1)`, the lambda that calls the
         ; named function -- its parameters take the delegate's types, so the
-        ; call inside chooses f's overload by the delegate's signature
-        ; (ROADMAP-operation.md, Functions)
+        ; call inside chooses f's overload by the delegate's signature.
         procedure function_lambda(mutable this: Planner, path: Vector[String], n: size_t, span: Span) returns Lambda
         {
             ; on the Planner's page: the closure keeps this model
@@ -6139,7 +6137,7 @@ define Planner
         }
 
         ; constant_integer#: the exact value of an UNTYPED integer constant
-        ; (ROADMAP-operation.md, the literal rules) -- an integer or hex
+        ; -- an integer or hex
         ; literal, a grouping of one, or an operator over such: `0 - 1`,
         ; `1 << 4`, `(3 * 4) + 1` -- as a sign and a magnitude, so every value
         ; from -(2^64 - 1) to 2^64 - 1 is exact. False where op is none, or
@@ -6399,7 +6397,7 @@ define Planner
         ; settle_constant#: an untyped integer constant meeting the integer
         ; type `target` -- at an argument, an assignment, a typed binding, a
         ; return, a `case`, beside a typed operand -- is a constant of that
-        ; type (ROADMAP-operation.md, the literal rules, way 1): its exact
+        ; type: its exact
         ; value must fit, or it is rc 4; where it fits, a literal is retyped
         ; as it always was, and an expression becomes the one constant of the
         ; target's width -- unless the target has `int`'s width and sign, where
@@ -19564,8 +19562,7 @@ define Planner
             ; Which operator takes which operands is the protocol's answer
             ; (operation_by_protocol#, lazy_fold#): a binary operator meets
             ; this routine with its two operands alone, so there is nothing
-            ; to climb -- the compiler has no precedence table
-            ; (ROADMAP-operation.md, step 5).
+            ; to climb -- the compiler has no precedence table.
 
             ; Double-quoted char literals: when one side of a binary
             ; operator is char/u8-typed and the other side is a bare
@@ -29334,7 +29331,7 @@ define Planner
         }
 
         ; tuple_value#: a tuple that is a whole operation by itself is a VALUE
-        ; (ROADMAP-operation.md, Tuples) -- `let t (1, 2)`, `return (x: 1,
+        ; -- `let t (1, 2)`, `return (x: 1,
         ; y: 2)`, a tuple handed on as one argument. Its components are
         ; collapsed one by one, as a call's arguments are (s90), and the
         ; operand carries the tuple's type, `()` over the component types with
@@ -29401,7 +29398,7 @@ define Planner
 
         ; spread_tuple_argument#: a function applied to ONE bound tuple takes
         ; its components as its arguments -- `let args (3, 4)`, then
-        ; `f(args)` is `f(3, 4)` (ROADMAP-operation.md, Tuples: a function
+        ; `f(args)` is `f(3, 4)` (a function
         ; with one tuple parameter and the function with those parameters are
         ; the same function). Only where no routine of that name takes one
         ; parameter and one takes as many as the tuple has components, so a
@@ -29481,7 +29478,7 @@ define Planner
 
         ; spread_construction_tuple#: a record applied to ONE bound tuple is
         ; built from its components -- `let args (3, 4)`, then `Point(args)`
-        ; and `Point args` are `Point(3, 4)` (ROADMAP-operation.md, Tuples),
+        ; and `Point args` are `Point(3, 4)`,
         ; the twin of spread_tuple_argument#. Only where the record has no
         ; init of one parameter and is no record of one field, so a record
         ; holding the tuple (`Holder(pair)`) gets it whole; and only where an
@@ -29567,7 +29564,7 @@ define Planner
         ; lone_tuple_labels#: the labels of the one tuple of `second` where
         ; EVERY component carries one -- `(n: 5, s: "five")` --, empty
         ; otherwise: a labelled tuple is spread by name, any other by
-        ; position (ROADMAP-operation.md, Tuples: names are labels, they
+        ; position (names are labels, they
         ; match parameters by name at an application)
         function lone_tuple_labels(second: PlannedOperand) returns Vector[String]
         {
@@ -30962,7 +30959,7 @@ define Planner
         procedure report_unread_operation(mutable this: Planner, at: Span, reason: size_t, ops: Vector[PlannedOperand])
         {
             ; the operation ends in an operator, which waits for its operand
-            ; (ROADMAP-operation.md: "an operand is missing after `+`", at
+            ; ("an operand is missing after `+`", at
             ; that place, never by the pending type's name)
             if reason = 33 and ops.length > 0
             {
@@ -31520,8 +31517,8 @@ define Planner
                 {
                     ; After a function a value is expected, so an operator
                     ; there is a prefix and its term the argument of the call
-                    ; without parentheses: `twice -5` is `twice(-5)`
-                    ; (ROADMAP-operation.md, *Prefix operators*). Until
+                    ; without parentheses: `twice -5` is `twice(-5)`.
+                    ; Until
                     ; 2026-10-21 the function was the left side of a binary
                     ; `-`, the result had no type, and `let r twice -5` and
                     ; every statement using r were dropped at rc 0.
@@ -31586,7 +31583,7 @@ define Planner
         ; the term, which runs from first up to limit. After a prefix there is
         ; still no value, so a second one is a prefix too and the chain reads
         ; as written, the innermost first: `not not a`, `- -2`, `abs -5`
-        ; (ROADMAP-operation.md, *Prefix operators*; refused, loudly, until
+        ; (refused, loudly, until
         ; 2026-10-21).
         procedure operation_prefixes(mutable this: Planner, mutable ops: Vector[PlannedOperand], signs: size_t, first: size_t, limit: size_t) returns PlannedOperand
         {
@@ -31643,7 +31640,7 @@ define Planner
         }
 
         ; ================================================================
-        ; The protocol of an operation (ROADMAP-operation.md, step 2): what
+        ; The protocol of an operation: what
         ; a sequence of terms and operator names means is written in the
         ; standard library as pending types (scaly/operation.scaly,
         ; generated from scaly.sgm's levels); the compiler has no table.
@@ -32189,7 +32186,7 @@ define Planner
         }
 
         ; ================================================================
-        ; Delayed operands (ROADMAP-operation.md, step 3): an operation that
+        ; Delayed operands: an operation that
         ; holds an operator whose right operand is lazy (`and`, `or`:
         ; scaly/logic.scaly) is read here, on the MODEL, before its terms
         ; are planned. The protocol answers the tree from the operator names;
@@ -33049,7 +33046,7 @@ define Planner
         }
 
         ; put_in_lazy_call#: a call of a function with a lazy parameter
-        ; (ROADMAP-operation.md, Short circuit: it holds for every routine):
+        ; (it holds for every routine):
         ; the function's body, put in where the call stands, as a block --
         ; each ordinary argument evaluated once, in the order written, and
         ; bound to its parameter; a lazy one planned wherever the body names
@@ -33584,7 +33581,7 @@ define Planner
                 }
             }
 
-            ; A function bound to a name (ROADMAP-operation.md, Functions):
+            ; A function bound to a name:
             ; `let g twice` costs nothing and `g(21)` is a direct call of
             ; `twice` -- a value known at plan time, recorded as a binding of
             ; the scope under a key no identifier can spell (`fn$g`), so it
@@ -36479,7 +36476,7 @@ define Planner
         }
 
         ; report_unit_call_value#: a call of a routine that answers no value
-        ; -- `()`, ROADMAP-operation.md, Tuples -- where a declared type wants
+        ; -- `()` -- where a declared type wants
         ; one (a typed binding, an assignment, a return). The conformance
         ; judge accepts every `()` source, for a body whose last action is a
         ; statement; a resolved CALL is a value position, and before
@@ -36525,7 +36522,7 @@ define Planner
         ; targets, 32 on wasm32 --, so such a conversion would change a
         ; value's width on one target and not on another, without a word: it
         ; is never implicit, a constant that fits 32 bits excepted
-        ; (2026-10-19, ROADMAP-wasm.md W1 slice 3).
+        ; (2026-10-19).
         function c_size_mixes(to: PlannedType, from: PlannedType) returns bool
         {
             let tn Planner.normalize_type_name(to.name)
@@ -60237,7 +60234,7 @@ define Planner
                         skip := true
                     ; a `pending` type is never laid out and its members are
                     ; never routines: a value of it lives inside one operation
-                    ; and is folded away (ROADMAP-operation.md)
+                    ; and is folded away
                     if Planner.attributes_have(c.attributes, "pending")
                         skip := true
                     if skip
@@ -64677,7 +64674,7 @@ define Planner
 
     ; is_unit_type#: whether `t` is `()`, the type of the empty tuple, which is
     ; what "no value" means and what the word `void` names
-    ; (ROADMAP-operation.md, Tuples) -- a routine that answers nothing answers
+    ; -- a routine that answers nothing answers
     ; it, `pointer[void]` points at it. The planner's own name is `()` since
     ; 2026-10-19; `void` is the model's word for it and is accepted beside.
     function is_unit_type(t: PlannedType) returns bool
@@ -64687,7 +64684,7 @@ define Planner
         t.name = "void"
     }
 
-    ; tuple_type#: the type of a tuple (ROADMAP-operation.md, Tuples) -- a
+    ; tuple_type#: the type of a tuple -- a
     ; structural type, named `(,)` with the component types as its generic
     ; arguments (a tuple has two components or more: `(a)` IS `a`, and `()`
     ; is the type "no value", is_unit_type#), and mangled as C++ mangles `std::tuple<...>`

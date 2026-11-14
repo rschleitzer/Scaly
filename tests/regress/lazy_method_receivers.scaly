@@ -1,5 +1,5 @@
 ; A method with a lazy parameter on a COMPUTED receiver and on a GENERIC
-; concept (2026-10-19, ROADMAP-operation.md, Short circuit). A computed
+; concept (2026-10-19). A computed
 ; receiver -- a construction, a call's result, a field of one -- is bound
 ; once under a name no source can write and the method is put in on that
 ; name (Planner.plan_lazy_computed_receiver#): before, the call resolved as a

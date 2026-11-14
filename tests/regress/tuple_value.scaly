@@ -1,4 +1,4 @@
-; A tuple is a value (2026-10-18, ROADMAP-operation.md, Tuples): `(1, 2)` and
+; A tuple is a value (2026-10-18): `(1, 2)` and
 ; `(x: 1, y: 2)` are anonymous records of the structural type `(int, int)`,
 ; written so in a result, a parameter and an annotation. A tuple that is a
 ; whole operation by itself is typed (Planner.tuple_value#), and a label

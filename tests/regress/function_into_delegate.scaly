@@ -1,5 +1,5 @@
 ; A named function where a delegate type is declared is a run-time value
-; (2026-10-19, ROADMAP-operation.md, Functions): the closure of the lambda
+; (2026-10-19): the closure of the lambda
 ; that calls it (Planner.function_lambda#), so an overloaded name is chosen
 ; by the delegate's signature -- `measure` is `measure(int)` for an IntFn and
 ; `measure(String)` for a TextFn. Before, `apply(twice, 3)` was "function not

@@ -137,14 +137,14 @@ define NodeDown
 ; lock guards the tables + alive/down_reason; wlock serializes frame
 ; writes (Cluster.send from app threads vs the reader's heartbeats);
 ; last_rx is written only by the reader.
-; the helpers (ROADMAP-cluster.md, C1; their code at the end of this file)
+; the helpers (their code at the end of this file)
 define HELPER_GROUP_PORT i32 47790
 define HELPER_ANNOUNCE u64 0x4552504c45484c53
 define HELPER_ASK u64 0x4b5341594c414353
 define HELPER_DATAGRAM size_t 96
 define HELPER_CHANNEL u64 900
 
-; Rounds on other machines (ROADMAP-cluster.md, C2). A parallel `for` the
+; Rounds on other machines. A parallel `for` the
 ; compiler (--cluster) found fit has a DESCRIPTOR: its task function -- the
 ; outlined body the cores run -- and the layout of its cell, words of i64:
 ;   [hash, cell bytes, offset of lo, of hi, of the cancel word, captures,
@@ -159,7 +159,7 @@ define CLUSTER_RESULT u64 901
 define CLUSTER_TABLE_MOST size_t 4096
 define CLUSTER_PEERS_MOST size_t 256
 
-; The cost model (ROADMAP-cluster.md, C3). A loop whose remaining rounds
+; The cost model. A loop whose remaining rounds
 ; take this machine less than CLUSTER_FLOOR_NS is never offered -- not even
 ; a search for helpers is started for it. Helpers must finish the loop a
 ; quarter sooner than this machine alone (as the card must); a stretch
@@ -350,7 +350,7 @@ define Cluster
         Io.listen_any(port)
     }
 
-    ; The cluster's key (ROADMAP-cluster.md): SCALY_CLUSTER_KEY, else the
+    ; The cluster's key: SCALY_CLUSTER_KEY, else the
     ; file ~/.scaly/cluster.key, a line break at its end left out; "" where
     ; there is none -- and then every peer must be on this machine.
     ; The key, read once and kept: a thread of a program in a page may not
@@ -1733,7 +1733,7 @@ define Remote[T]
     }
 }
 
-; --- helpers (ROADMAP-cluster.md, stage C1) ---------------------------------
+; --- helpers ---------------------------------
 ;
 ; A program started with `--scaly-helper` does not run its main: it is a
 ; HELPER, which announces itself and serves the coordinators that connect
@@ -1881,7 +1881,7 @@ define Helpers
     }
 }
 
-; --- rounds on other machines (stage C2) -------------------------------------
+; --- rounds on other machines -------------------------------------
 
 ; A loop of this program, made known before main runs: the compiler's
 ; constructor calls this once for every descriptor of the module.

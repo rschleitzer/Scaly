@@ -2211,7 +2211,7 @@ llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Versi
     }
     LoadingPackages.insert(Key);
 
-    // Build list of search paths per CLAUDE.md:
+    // Build list of search paths:
     // 1. ./packages/ relative to current working directory
     // 2. ./packages/ relative to source file directory
     // 3. Walk up from source file looking for packages/ directory

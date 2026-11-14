@@ -415,7 +415,7 @@ procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) return
 procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
 procedure scaly_eio_tcp_served(fd: i32) extern
 
-; A cluster's helpers (ROADMAP-cluster.md, C1): whether a peer is on this
+; A cluster's helpers: whether a peer is on this
 ; machine, random bytes for a challenge, and the group helpers announce
 ; themselves in (rule a: sockaddr layouts, the system's generator, the
 ; multicast options).

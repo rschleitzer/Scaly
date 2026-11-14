@@ -1,5 +1,5 @@
 ; A method named without its tuple where a delegate is declared is a BOUND
-; method (2026-10-19, ROADMAP-operation.md, Functions: `x.m` without a tuple
+; method (2026-10-19: `x.m` without a tuple
 ; is receiver and method; as a delegate it is a closure): `apply(c.add, 3)`
 ; and `let f: IntFn c.scaled` are the closure of the lambda that calls the
 ; method on the receiver it captures (Planner.BareMethod,

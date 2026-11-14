@@ -1,5 +1,5 @@
 ; `()` held as a VALUE -- an element, a field, a parameter, a binding
-; (2026-10-19, ROADMAP-operation.md, Tuples): it has no bytes, the empty struct
+; (2026-10-19): it has no bytes, the empty struct
 ; (Emitter.map_type#); only a routine answering it is LLVM `void`
 ; (map_return_type#), and where a value of it is needed one is made
 ; (unit_fill#). Before, a `Vector[()]` died in LLVM on a `load void` (SIGTRAP,

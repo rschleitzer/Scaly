@@ -1,4 +1,4 @@
-; A lambda without parameters (2026-10-19, ROADMAP-operation.md, Functions):
+; A lambda without parameters (2026-10-19):
 ; `\: f()` -- before, the lambda's input list was required and the backslash
 ; with a colon after it did not parse (rc 2). Bound and called, through a
 ; delegate `delegate() returns int`, handed to a routine as a literal, and

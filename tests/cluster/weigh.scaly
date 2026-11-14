@@ -1,4 +1,4 @@
-; The cost model (ROADMAP-cluster.md, stage C3). Built with --cluster and
+; The cost model. Built with --cluster and
 ; left alone (no SCALY_CLUSTER), a fit loop is offered at the driver's
 ; gates with what its rounds cost: it goes to the helpers where they would
 ; end it a quarter sooner than this machine alone.

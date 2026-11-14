@@ -1,5 +1,5 @@
 ; A method named on its receiver without a tuple and BOUND to a name is a
-; bound method at plan time (2026-10-19, ROADMAP-operation.md, Functions):
+; bound method at plan time (2026-10-19):
 ; `let g c.add`, then `g(5)` and `g 5` are `c.add(5)`, the receiver read at the
 ; application, as `let g twice` makes `g(5)` a direct call of `twice`.
 ; Expected: PASS

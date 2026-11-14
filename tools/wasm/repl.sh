@@ -1,6 +1,6 @@
 #!/bin/bash
 # tools/wasm/repl.sh [build] -- the REPL of the compiler built for
-# WebAssembly, under node (ROADMAP-wasm.md W2): `build` builds it first --
+# WebAssembly, under node: `build` builds it first --
 # the compiler's C++ bridge for wasm32 and the tool with `scaly build --target
 # wasm32-wasip1` and tools/wasm/cc.sh --, then it runs under
 # tools/wasm/repl-node.mjs, which loads every entry's side module into the

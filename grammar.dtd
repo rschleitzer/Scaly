@@ -34,7 +34,7 @@
 <!-- The operation: the binding strength of the binary operators, a level
      per element, the strongest first. Generated into the standard library
      as the protocol of pending types the planner reads an operation by
-     (codegen/operation.scm, ROADMAP-operation.md); the compiler has no
+     (codegen/operation.scm); the compiler has no
      table. The level marked `others` takes every operator a type declares
      that no level names. -->
 <!ELEMENT level - O (operator*)>

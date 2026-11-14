@@ -1167,7 +1167,7 @@ int scaly_eio_tcp_listen_any(int port)
 }
 
 /* ---- a cluster's helpers: who is on this machine, random bytes, and
- * finding each other (ROADMAP: a pure for across machines, stage C1) ---- */
+ * finding each other (a pure for across machines) ---- */
 
 /* Is the peer of a connected socket on this machine -- 127.0.0.0/8, ::1, or
  * an IPv4 loopback address mapped into IPv6? 1 yes, 0 no, -1 where the

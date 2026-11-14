@@ -3857,8 +3857,7 @@ define Emitter
         ; that answers `()`, map_type# otherwise -- and so the type of what a
         ; variant's arm binds, where `void` says there is nothing to bind. A VALUE of `()` held anywhere
         ; (a field, a slot, an element, a parameter) is the empty struct
-        ; (map_type#); only the answer of a routine is `void`
-        ; (ROADMAP-operation.md, Tuples).
+        ; (map_type#); only the answer of a routine is `void`.
         procedure map_return_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
         {
             if Planner.is_unit_type(planned_type)
@@ -8864,7 +8863,7 @@ define Emitter
             LLVMBuildCall2(builder, fty, callee, args.data, 2, "" as pointer[const_char])
             ; ... and then its helper through the gate: started with
             ; --scaly-helper, the program serves the coordinators of its build
-            ; instead of running (ROADMAP-cluster.md, C1; eio.c,
+            ; instead of running (eio.c,
             ; scaly_helper_gate). Handed over from HERE so the reference stands
             ; in the program's IR, where a whole-program opt keeps it. Only
             ; with the standard library (page_size is its PAGE_SIZE): a program
@@ -10018,7 +10017,7 @@ define Emitter
         }
 
         ; jit_run where there is no JIT -- the compiler built for WebAssembly,
-        ; in a page (ROADMAP-wasm.md W2): the program written as an object of
+        ; in a page: the program written as an object of
         ; a SIDE MODULE (position-independent, `wasm_shared`), linked by lld's
         ; wasm linker (wasm_eh.cpp: a library of the program there) with
         ; nothing -- what it does not define it imports, the standard library

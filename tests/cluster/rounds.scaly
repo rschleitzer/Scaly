@@ -1,4 +1,4 @@
-; Rounds on other machines (ROADMAP-cluster.md, stage C2). Built with
+; Rounds on other machines. Built with
 ; --cluster, a parallel `for` whose captures can travel is offered to the
 ; helpers of this build first (SCALY_CLUSTER=on sends it): each takes a
 ; stretch of rounds, runs it on its cores and sends back what the rounds

@@ -1,5 +1,5 @@
 ; A constant's initializer folds exactly, any shape (2026-10-19,
-; ROADMAP-operation.md, the literal rules, way 1; Planner.fold_initializer#):
+; Planner.fold_initializer#):
 ; mixed precedence (`1 + 2 * 3` is 7 -- the old fold refused it), groupings,
 ; other defines read as their types say (`define WORD: size_t PAGE * 2`), the
 ; complement in an unsigned type's width, and the elements of a constant array

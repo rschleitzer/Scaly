@@ -1,5 +1,5 @@
 ; A free function with a lazy parameter is put in where it is called
-; (2026-10-19, ROADMAP-operation.md, Short circuit: "it holds for every
+; (2026-10-19: "it holds for every
 ; routine"; Planner.put_in_lazy_call#): its body stands at the call, an
 ; ordinary argument is evaluated once, in the order written, a lazy one where
 ; the body names it -- never where the body does not, twice where it names it

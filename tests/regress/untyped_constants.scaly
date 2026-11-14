@@ -1,5 +1,5 @@
 ; An integer constant has no width until it meets one (2026-10-19,
-; ROADMAP-operation.md, the literal rules, way 1; Planner.settle_constant#):
+; Planner.settle_constant#):
 ; a literal, a `define` of type `int` and an operator over such take the type
 ; of their target -- a parameter, a binding, an assignment, a return, the
 ; other side of an operator -- with their EXACT value; a complement takes an
