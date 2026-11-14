@@ -3197,6 +3197,8 @@ void Sha256_digest(Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN6Sha2566digestE5Sli
 void Hmac_sha256(Slice<uint8_t>&, Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN4Hmac6sha256E5SliceI2u8E5SliceI2u8E5SliceI2u8E");
 bool Hmac_same(Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN4Hmac4sameE5SliceI2u8E5SliceI2u8E");
 extern "C" uint64_t scaly_build_stamp();
+extern "C" uint64_t scaly_build_traits();
+bool cluster_traits_fit(uint64_t, uint64_t) asm("_Z18cluster_traits_fit3u643u64");
 void Cluster_search() asm("_ZN7Cluster6searchEv");
 void* cluster_search_entry(void*) asm("_Z20cluster_search_entryPv");
 void Cluster_reader_loop(NodePeer*) asm("_ZN7Cluster11reader_loopEP8NodePeer");
@@ -3428,7 +3430,7 @@ thread_local int64_t* tcp_current_serve asm("tcp_current_serve") = (int64_t*)(nu
 thread_local int64_t drawings_shown asm("drawings_shown") = 0LL;
 static const uint32_t SHA256_K[] = { (uint32_t)(1116352408ULL), (uint32_t)(1899447441ULL), (uint32_t)(3049323471ULL), (uint32_t)(3921009573ULL), (uint32_t)(961987163ULL), (uint32_t)(1508970993ULL), (uint32_t)(2453635748ULL), (uint32_t)(2870763221ULL), (uint32_t)(3624381080ULL), (uint32_t)(310598401ULL), (uint32_t)(607225278ULL), (uint32_t)(1426881987ULL), (uint32_t)(1925078388ULL), (uint32_t)(2162078206ULL), (uint32_t)(2614888103ULL), (uint32_t)(3248222580ULL), (uint32_t)(3835390401ULL), (uint32_t)(4022224774ULL), (uint32_t)(264347078ULL), (uint32_t)(604807628ULL), (uint32_t)(770255983ULL), (uint32_t)(1249150122ULL), (uint32_t)(1555081692ULL), (uint32_t)(1996064986ULL), (uint32_t)(2554220882ULL), (uint32_t)(2821834349ULL), (uint32_t)(2952996808ULL), (uint32_t)(3210313671ULL), (uint32_t)(3336571891ULL), (uint32_t)(3584528711ULL), (uint32_t)(113926993ULL), (uint32_t)(338241895ULL), (uint32_t)(666307205ULL), (uint32_t)(773529912ULL), (uint32_t)(1294757372ULL), (uint32_t)(1396182291ULL), (uint32_t)(1695183700ULL), (uint32_t)(1986661051ULL), (uint32_t)(2177026350ULL), (uint32_t)(2456956037ULL), (uint32_t)(2730485921ULL), (uint32_t)(2820302411ULL), (uint32_t)(3259730800ULL), (uint32_t)(3345764771ULL), (uint32_t)(3516065817ULL), (uint32_t)(3600352804ULL), (uint32_t)(4094571909ULL), (uint32_t)(275423344ULL), (uint32_t)(430227734ULL), (uint32_t)(506948616ULL), (uint32_t)(659060556ULL), (uint32_t)(883997877ULL), (uint32_t)(958139571ULL), (uint32_t)(1322822218ULL), (uint32_t)(1537002063ULL), (uint32_t)(1747873779ULL), (uint32_t)(1955562222ULL), (uint32_t)(2024104815ULL), (uint32_t)(2227730452ULL), (uint32_t)(2361852424ULL), (uint32_t)(2428436474ULL), (uint32_t)(2756734187ULL), (uint32_t)(3204031479ULL), (uint32_t)(3329325298ULL) };
 static const uint64_t NODE_WIRE_MAGIC = 4922239063177642835ULL;
-static const uint64_t NODE_PROTO_VERSION = (uint64_t)(2LL);
+static const uint64_t NODE_PROTO_VERSION = (uint64_t)(3LL);
 static const uint64_t NODE_FRAME_DATA = (uint64_t)(1LL);
 static const uint64_t NODE_FRAME_HEARTBEAT = (uint64_t)(2LL);
 static const uint64_t NODE_FRAME_BYE = (uint64_t)(3LL);
@@ -13598,6 +13600,23 @@ __attribute__((weak)) bool Hmac_same(Slice<uint8_t>& a, Slice<uint8_t>& b)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) bool cluster_traits_fit(uint64_t mine, uint64_t theirs)
+{
+    if (((((((uint64_t)((uint64_t)(mine) >> (uint64_t)(8LL)))) & 511ULL)) != (((((uint64_t)((uint64_t)(theirs) >> (uint64_t)(8LL)))) & 511ULL))))
+    {
+        return false;
+    }
+    if ((((mine & 2ULL)) == 0ULL))
+    {
+        return true;
+    }
+    else
+    {
+        return (((mine & 1ULL)) == ((theirs & 1ULL)));
+    }
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void* cluster_search_entry(void* arg)
 {
     Cluster_search();
@@ -13792,17 +13811,18 @@ __attribute__((weak)) void Cluster_disconnect(NodePeer* p)
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd, bool accepting)
 {
-    uint8_t pre[24] {};
+    uint8_t pre[32] {};
     uint64_t* pw = ((uint64_t*)(pre));
     (*(((pw) + (int64_t)(0LL)))) = 4922239063177642835ULL;
-    (*(((pw) + (int64_t)(1LL)))) = 2ULL;
+    (*(((pw) + (int64_t)(1LL)))) = 3ULL;
     (*(((pw) + (int64_t)(2LL)))) = scaly_build_stamp();
-    if (((Io_tcp_write_all(fd, ((void*)(pre)), 24ULL)) == (false)))
+    (*(((pw) + (int64_t)(3LL)))) = scaly_build_traits();
+    if (((Io_tcp_write_all(fd, ((void*)(pre)), 32ULL)) == (false)))
     {
         close(fd);
         return (NodePeer*)(nullptr);
     }
-    uint8_t inb[24] {};
+    uint8_t inb[32] {};
     uint64_t got = 0ULL;
     while ((got < 24ULL))
     {
@@ -13824,10 +13844,10 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
         return (NodePeer*)(nullptr);
     }
     uint64_t proto = (*(((iw) + (int64_t)(1LL))));
-    if ((proto != 2ULL))
+    if ((proto != 3ULL))
     {
         scaly_eputs(((const char*)"node: connect refused - protocol version mismatch: local "));
-        scaly_eputi(((int64_t)(2ULL)));
+        scaly_eputi(((int64_t)(3ULL)));
         scaly_eputs(((const char*)" peer "));
         scaly_eputi(((int64_t)(proto)));
         scaly_eputnl();
@@ -13842,6 +13862,35 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
         scaly_eputp(((void*)((((uint64_t)(mine))))));
         scaly_eputs(((const char*)" peer "));
         scaly_eputp(((void*)((((uint64_t)(theirs))))));
+        scaly_eputnl();
+        close(fd);
+        return (NodePeer*)(nullptr);
+    }
+    while ((got < 32ULL))
+    {
+        int64_t r = Io_read(fd, ((void*)((((((uint64_t)(inb))) + got)))), (32ULL - got));
+        if ((r <= 0LL))
+        {
+            close(fd);
+            return (NodePeer*)(nullptr);
+        }
+        got = (got + (((uint64_t)(r))));
+    }
+    uint64_t my_traits = scaly_build_traits();
+    uint64_t their_traits = (*(((iw) + (int64_t)(3LL))));
+    if (((cluster_traits_fit(my_traits, their_traits)) == (false)))
+    {
+        if (((((((uint64_t)((uint64_t)(my_traits) >> (uint64_t)(8LL)))) & 511ULL)) != (((((uint64_t)((uint64_t)(their_traits) >> (uint64_t)(8LL)))) & 511ULL))))
+        {
+            scaly_eputs(((const char*)"node: connect refused - another layout (pointer width or byte order): local "));
+        }
+        else
+        {
+            scaly_eputs(((const char*)"node: connect refused - another FMA class, and the program calls mul_add (its rounds would compute other bits): local "));
+        }
+        scaly_eputp(((void*)((((uint64_t)(my_traits))))));
+        scaly_eputs(((const char*)" peer "));
+        scaly_eputp(((void*)((((uint64_t)(their_traits))))));
         scaly_eputnl();
         close(fd);
         return (NodePeer*)(nullptr);
@@ -13953,12 +14002,12 @@ __attribute__((weak)) void Cluster_fill_datagram(Slice<uint8_t>& out, uint64_t k
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     Cluster_put_word(out, 0ULL, kind);
-    Cluster_put_word(out, 1ULL, 2ULL);
+    Cluster_put_word(out, 1ULL, 3ULL);
     Cluster_put_word(out, 2ULL, scaly_build_stamp());
     Cluster_put_word(out, 3ULL, id);
     Cluster_put_word(out, 4ULL, ((uint64_t)(port)));
     Cluster_put_word(out, 5ULL, ((uint64_t)(cores)));
-    Cluster_put_word(out, 6ULL, 0ULL);
+    Cluster_put_word(out, 6ULL, scaly_build_traits());
     Cluster_put_word(out, 7ULL, 0ULL);
     Vector<uint8_t>* mac = ({ Vector<uint8_t>* scaly_t1 = (Vector<uint8_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t1 = Vector<uint8_t>{}; Vector_init52((*scaly_t1), 32ULL); scaly_t1; });
     if ((String_get_length(key) > 0ULL))
@@ -13981,7 +14030,11 @@ __attribute__((weak)) bool Cluster_datagram_ok(Slice<uint8_t>& d, uint64_t kind,
     {
         return false;
     }
-    if ((((Cluster_word_at(d, 0ULL) != kind) ? true : (Cluster_word_at(d, 1ULL) != 2ULL)) ? true : (Cluster_word_at(d, 2ULL) != scaly_build_stamp())))
+    if ((((Cluster_word_at(d, 0ULL) != kind) ? true : (Cluster_word_at(d, 1ULL) != 3ULL)) ? true : (Cluster_word_at(d, 2ULL) != scaly_build_stamp())))
+    {
+        return false;
+    }
+    if (((cluster_traits_fit(scaly_build_traits(), Cluster_word_at(d, 6ULL))) == (false)))
     {
         return false;
     }

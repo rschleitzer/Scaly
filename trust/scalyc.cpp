@@ -165147,6 +165147,7 @@ __attribute__((weak)) bool CppEmitter_emit(scaly_frame* scaly_rp, CppEmitter& sc
         }
         scaly_t49;
     })));
+        StringBuilder_append2((*whole), scaly_lvalue(String{(uint8_t*)"\146\012extern \042C\042 uint64_t scaly_build_traits()\012{\012    return 0x10000ULL | ((uint64_t)sizeof(void*) << 8);\012}\012"}));
     }
     if (((File_write_from_string(path, scaly_lvalue(StringBuilder_to_string(&scaly_local.f, (*whole))))) == (false)))
     {

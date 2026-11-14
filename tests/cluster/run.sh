@@ -386,5 +386,50 @@ else
   kill $W1 $W2 2>/dev/null; wait $W1 $W2 2>/dev/null
 fi
 
+# ---- mixed processors: the same program built for arm64 and for x86_64 has
+# the same build stamp; an arm64 coordinator takes x86_64 helpers (under
+# Rosetta) -- one built for Haswell (FMA) for a program that calls mul_add,
+# and one built for the generic x86_64 (no FMA) only for a program that
+# does not: a round there would compute other bits. The output is the
+# program's own, bit for bit, in every case. SKIPPED by name where this is
+# no arm64 Mac with Rosetta 2. ----
+mixed() {
+  [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] || { echo "cluster: mixed processors SKIPPED (not an arm64 Mac)"; return 0; }
+  local X="$OUT/cluster_x86"
+  mkdir -p "$X"
+  echo 'int main(void){return 42;}' > "$X/probe.c"
+  clang -arch x86_64 "$X/probe.c" -o "$X/probe" 2>/dev/null && "$X/probe"; [ $? = 42 ] || { echo "cluster: mixed processors SKIPPED (no Rosetta 2)"; return 0; }
+  local T=x86_64-apple-darwin
+  "$STAGE" --target $T -c --no-prelude --no-tests -o "$X/libscaly.o" packages/scaly/$(tools/version.sh scaly)/scaly.scaly > "$X/rt.log" 2>&1 || { fail=$((fail+1)); failures+=("mixed: x86_64 runtime"); return 0; }
+  for s in fcontext eio ctime panic; do SCALY_ARCH=x86_64 "tools/$s.sh" "$X/$s.o" > /dev/null 2>&1 || { fail=$((fail+1)); failures+=("mixed: x86_64 $s.o"); return 0; }; done
+  rm -f "$X/libscaly.a"; ar rcs "$X/libscaly.a" "$X/libscaly.o" "$X/fcontext.o" "$X/eio.o" "$X/ctime.o" "$X/panic.o"
+  local p cpu
+  for p in mixed_math mixed_plain; do
+    "$STAGE" --cluster -O2 -o "$X/$p" tests/cluster/$p.scaly > "$X/$p.log" 2>&1 || { fail=$((fail+1)); failures+=("mixed: $p(compile)"); return 0; }
+    for cpu in haswell generic; do
+      "$STAGE" --cluster --target $T -mcpu=$cpu -O2 -c -o "$X/${p}_$cpu.o" tests/cluster/$p.scaly > "$X/${p}_$cpu.log" 2>&1 &&
+        clang -arch x86_64 "$X/${p}_$cpu.o" "$X/libscaly.a" -lm -o "$X/${p}_$cpu" 2>>"$X/${p}_$cpu.log" || { fail=$((fail+1)); failures+=("mixed: $p for x86_64 $cpu"); return 0; }
+    done
+  done
+  # mixed_case <program> <helper cpu> <trace that must be there, or ! and one that must not>
+  mixed_case() {
+    local p=$1 cpu=$2 want; want=$(SCALY_CLUSTER=off "$X/$p")
+    : > "$X/${p}_${cpu}_helper.log"
+    SCALY_CLUSTER_TRACE=1 "$X/${p}_$cpu" --scaly-helper > "$X/${p}_${cpu}_helper.log" 2>&1 & local hp=$!
+    wait_marker "$X/${p}_${cpu}_helper.log" "^helper: ready" 400
+    SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$X/$p" > "$X/${p}_${cpu}_run.log" 2>&1
+    kill $hp 2>/dev/null; wait $hp 2>/dev/null
+    local got; got=$(scaly_lf < "$X/${p}_${cpu}_run.log" | grep -v '^cluster: ')
+    local ok=1
+    [ -n "$want" ] && [ "$got" = "$want" ] || ok=0
+    if [ "${3:0:1}" = "!" ]; then grep -q "${3:1}" "$X/${p}_${cpu}_run.log" && ok=0; else grep -q "$3" "$X/${p}_${cpu}_run.log" || ok=0; fi
+    if [ $ok = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("mixed, $p with an x86_64 $cpu helper: '$(tr '\n' '|' < "$X/${p}_${cpu}_run.log")' (alone: '$want')"); fi
+  }
+  mixed_case mixed_math haswell "on 1 helpers, all there"
+  mixed_case mixed_math generic "!on 1 helpers"
+  mixed_case mixed_plain generic "on 1 helpers, all there"
+}
+mixed
+
 echo "cluster: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

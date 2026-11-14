@@ -483,7 +483,12 @@ define CppEmitter
         var whole StringBuilder()
         whole.append text
         if CppEmitter.has_main(text)
+        {
             whole.append "\nextern \"C\" int64_t scaly_build_stamp()\n{\n    return (int64_t)`CppEmitter.text_hash(text)`ULL;\n}\n"
+            ; and its traits (Emitter.emit_build_traits#): the layout; no FMA
+            ; class -- C++ calls no mul_add of Scaly's
+            whole.append "\nextern \"C\" uint64_t scaly_build_traits()\n{\n    return 0x10000ULL | ((uint64_t)sizeof(void*) << 8);\n}\n"
+        }
         if File.write_from_string(path, whole.to_string()) = false
         {
             Console.println "error: cannot write `path`"

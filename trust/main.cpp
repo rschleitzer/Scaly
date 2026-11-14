@@ -79,3 +79,8 @@ extern "C" int64_t scaly_build_stamp()
 {
     return (int64_t)13830032674624677943ULL;
 }
+
+extern "C" uint64_t scaly_build_traits()
+{
+    return 0x10000ULL | ((uint64_t)sizeof(void*) << 8);
+}

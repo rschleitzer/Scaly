@@ -53,8 +53,11 @@
 ; across arbitrarily different builds so mismatched binaries cleanly
 ; refuse instead of misparsing each other (rule 10). The stamp is the
 ; program's scaly_build_stamp() (the Emitter's FNV-1a-64 of the
-; pre-stamp module IR); a mismatch refuses the connection loudly with
-; both stamps in the error.
+; pre-stamp module IR, without its target lines -- the same program has
+; the same stamp on every 64-bit target but Windows); a mismatch refuses
+; the connection loudly with both stamps in the error. From protocol 3 a
+; fourth word follows, read only after the frozen three: the build's
+; traits (scaly_build_traits#), which must fit (cluster_traits_fit#).
 ;
 ; One reader THREAD per connection owns the fd: it reads frames
 ; [kind, id, length] + body, delivers each DATA body — deserialized
@@ -82,10 +85,27 @@ use scaly.fiber.Scheduler
 ; module (rule 10); a library archive only declares it.
 function scaly_build_stamp() returns u64 extern
 
+; The program's build traits, beside its stamp (the Emitter's, after the
+; stamp: the same program on another processor has the same stamp): bit 0
+; the build's processor has FMA, bit 1 the program calls mul_add, bits 8
+; to 15 the pointer's bytes, bit 16 little-endian.
+function scaly_build_traits() returns u64 extern
+
+; Can a node of these traits compute for one of mine? The same layout
+; (pointer, byte order: regions go over the wire as pages), and where the
+; program calls mul_add the same FMA class -- with one rounding or two, a
+; round would not compute the bits this machine does.
+function cluster_traits_fit(mine: u64, theirs: u64) returns bool
+{
+    if ((mine >> 8) & 0x1ff) <> ((theirs >> 8) & 0x1ff)
+        return false
+    (mine & 2) = 0 or (mine & 1) = (theirs & 1)
+}
+
 ; "SCALYNOD", little-endian.
 define NODE_WIRE_MAGIC u64 0x444f4e594c414353
 ; 2 (2026-11-13): after the preamble, the key's handshake (Cluster.prove#)
-define NODE_PROTO_VERSION u64 2
+define NODE_PROTO_VERSION u64 3
 
 define NODE_FRAME_DATA u64 1
 define NODE_FRAME_HEARTBEAT u64 2
@@ -435,17 +455,20 @@ define Cluster
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
     procedure setup(fd: i32, accepting: bool) returns ref[NodePeer]?
     {
-        var pre u8[24]
+        var pre u8[32]
         let pw pre as pointer[u64]
         pw[0] := NODE_WIRE_MAGIC
         pw[1] := NODE_PROTO_VERSION
         pw[2] := scaly_build_stamp()
-        if Io.tcp_write_all(fd, pre as pointer[void], 24) = false
+        pw[3] := scaly_build_traits()
+        if Io.tcp_write_all(fd, pre as pointer[void], 32) = false
         {
             close(fd)
             return null
         }
-        var inb u8[24]
+        ; the frozen 24 bytes first: a peer of another protocol is refused
+        ; loudly on them, before the traits it may never send
+        var inb u8[32]
         var got: size_t 0
         while got < 24
         {
@@ -485,6 +508,31 @@ define Cluster
             scaly_eputp((mine as size_t) as pointer[void])
             scaly_eputs " peer "
             scaly_eputp((theirs as size_t) as pointer[void])
+            scaly_eputnl()
+            close(fd)
+            return null
+        }
+        while got < 32
+        {
+            let r Io.read(fd, ((inb as size_t) + got) as pointer[void], 32 - got)
+            if r <= 0
+            {
+                close(fd)
+                return null
+            }
+            got := got + (r as size_t)
+        }
+        let my_traits scaly_build_traits()
+        let their_traits iw[3]
+        if cluster_traits_fit(my_traits, their_traits) = false
+        {
+            if ((my_traits >> 8) & 0x1ff) <> ((their_traits >> 8) & 0x1ff)
+                scaly_eputs "node: connect refused - another layout (pointer width or byte order): local "
+            else
+                scaly_eputs "node: connect refused - another FMA class, and the program calls mul_add (its rounds would compute other bits): local "
+            scaly_eputp((my_traits as size_t) as pointer[void])
+            scaly_eputs " peer "
+            scaly_eputp((their_traits as size_t) as pointer[void])
             scaly_eputnl()
             close(fd)
             return null
@@ -588,8 +636,8 @@ define Cluster
         scaly_eio_mcast_send(d.data as pointer[void], HELPER_DATAGRAM, HELPER_GROUP_PORT, st.local_only)
     }
 
-    ; A datagram: [kind, protocol, stamp, id, port, cores, 0, 0], then the
-    ; HMAC over those 64 bytes under the key (32 zeros without one).
+    ; A datagram: [kind, protocol, stamp, id, port, cores, traits, 0], then
+    ; the HMAC over those 64 bytes under the key (32 zeros without one).
     procedure fill_datagram(mutable out: Slice[u8], kind: u64, id: u64, port: i32, cores: i64, key: String)
     {
         Cluster.put_word(out, 0, kind)
@@ -598,7 +646,7 @@ define Cluster
         Cluster.put_word(out, 3, id)
         Cluster.put_word(out, 4, port as u64)
         Cluster.put_word(out, 5, cores as u64)
-        Cluster.put_word(out, 6, 0)
+        Cluster.put_word(out, 6, scaly_build_traits())
         Cluster.put_word(out, 7, 0)
         var mac Vector[u8](32)
         if key.get_length() > 0
@@ -611,13 +659,17 @@ define Cluster
         }
     }
 
-    ; Is it a datagram of this kind, this protocol and this build, and does
-    ; its HMAC hold under the key?
+    ; Is it a datagram of this kind, this protocol and this build, of a node
+    ; whose traits fit (cluster_traits_fit#), and does its HMAC hold under
+    ; the key? One that does not fit is passed over quietly, as one of
+    ; another build: an explicit address meets the loud refusal of setup#.
     procedure datagram_ok(d: Slice[u8], kind: u64, key: String) returns bool
     {
         if d.length <> HELPER_DATAGRAM
             return false
         if Cluster.word_at(d, 0) <> kind or Cluster.word_at(d, 1) <> NODE_PROTO_VERSION or Cluster.word_at(d, 2) <> scaly_build_stamp()
+            return false
+        if cluster_traits_fit(scaly_build_traits(), Cluster.word_at(d, 6)) = false
             return false
         var mac Vector[u8](32)
         if key.get_length() > 0
@@ -1688,9 +1740,9 @@ define Remote[T]
 ; (scaly_set_arguments, eio.c, calls scaly_helper_main before anything
 ; else). A coordinator finds the helpers of its own program with
 ; Cluster.find_helpers: they answer in one multicast group, one datagram
-; each -- [kind, protocol, stamp, id, port, cores, 0, 0] as eight words and
+; each -- [kind, protocol, stamp, id, port, cores, traits, 0] as eight words and
 ; an HMAC-SHA256 over them under the cluster's key (zeros without one).
-; Only a helper of the same build (stamp) and the same key is found; without
+; Only a helper of the same build (stamp), whose traits fit, and of the same key is found; without
 ; a key the group is the loopback's alone and every helper is on this
 ; machine. What a helper is asked to do comes with stage C2; here it holds a
 ; coordinator's connection until the coordinator lets it go.
