@@ -162,6 +162,7 @@ lane_compiler() {
   step task-plan tests/task-plan/run.sh "$BIN" || rc=1
   step gpu-plan tests/gpu-plan/run.sh "$BIN" || rc=1
   step gpu tests/gpu/run.sh "$BIN" || rc=1
+  step math tests/math/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
   step published tools/published.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1

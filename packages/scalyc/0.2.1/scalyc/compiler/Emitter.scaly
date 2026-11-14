@@ -15697,7 +15697,11 @@ define Emitter
                 case "float.floor": op := String("floor")
                 case "float.ceil": op := String("ceil")
                 case "float.trunc": op := String("trunc")
-                case "float.round_even": op := String("roundeven")
+                ; rint: to the nearest, ties to even, in the rounding mode
+                ; a Scaly program never changes; a library call where the
+                ; processor has no instruction for it is one every C library
+                ; has (roundeven, C23, is not in macOS's)
+                case "float.round_even": op := String("rint")
                 case "float.abs": op := String("fabs")
                 case "float.copy_sign": op := String("copysign")
             if name = "float.mul_add"
@@ -23693,20 +23697,6 @@ define Emitter
                     return LLVMBuildFPTrunc(builder, src_value, dst_type, "as.fptrunc")
                 if dst_kind = double_kind
                     return src_value
-            }
-
-            ; A generic function's own body, its type parameter unbound (the
-            ; module emits it beside its instances, the parameter lowered as a
-            ; pointer): `x as f64` with x an F is no cast a pointer has, and the
-            ; body runs only as an instance, where F is the type it names
-            ; (scaly/math.scaly). Nothing to compute: undef.
-            if Planner.is_generic_type_param_name(as_expr.target_type.name)
-                return LLVMGetUndef(dst_type)
-            if as_expr.value <> null
-            {
-                let source_operand (*as_expr.value)
-                if Planner.is_generic_type_param_name(source_operand.result_type.name)
-                    return LLVMGetUndef(dst_type)
             }
 
             ; No cast rule matched. The old fallback returned the source value

@@ -22904,10 +22904,10 @@ define Planner
                     }
                     ; a method of a floating-point scalar: an intrinsic too
                     ; (plan_float_method#)
-                    if matched = false and Planner.float_method_result(lookup_type.name, m).get_length() > 0
+                    if matched = false and Planner.float_method_result(lookup_type.name, m) > 0
                     {
                         matched := true
-                        let fmt Planner.float_method_type(lookup_type, m)
+                        let fmt this.float_method_type(lookup_type, m)
                         result.add(PlannedMemberAccess(m, 0, true, false, lookup_type, fmt))
                         current := fmt
                     }
@@ -23020,7 +23020,7 @@ define Planner
                 if ma.length > 0
                 {
                     let lh ma[ma.length - 1]
-                    if Planner.float_method_result(lh.parent_type.name, fn_name).get_length() > 0
+                    if Planner.float_method_result(lh.parent_type.name, fn_name) > 0
                         return 11
                 }
             }
@@ -23031,7 +23031,7 @@ define Planner
                 let prefix fn_name.substring(0, dp)
                 let suffix fn_name.substring(dp + 1, fn_name.get_length() - dp - 1)
                 let local_ref this.lookup_local_binding(prefix)
-                if local_ref <> null and Planner.float_method_result((*local_ref).binding_type.name, suffix).get_length() > 0
+                if local_ref <> null and Planner.float_method_result((*local_ref).binding_type.name, suffix) > 0
                     return 13
             }
             0
@@ -23078,48 +23078,55 @@ define Planner
             0 - 1
         }
 
-        ; The type a scalar's method answers, by name: the receiver's for the
-        ; arithmetic; to_bits the bits of an f64 (u64) or an f32 (u32) as they
-        ; are, float_from_bits a u64's or u32's bits as the floating-point
-        ; number they are; empty where the receiver has no such method.
-        function float_method_result(t: String, m: String) returns String
+        ; The type a scalar's method answers: 1 the receiver's (the
+        ; arithmetic), 2 u64 and 3 u32 (to_bits of an f64, an f32: the bits as
+        ; they are), 4 f64 and 5 f32 (float_from_bits of a u64, a u32: the
+        ; bits as the number they are), 0 where the receiver has no such
+        ; method. A number, not a name: a String made here and handed back
+        ; was read from a released page (SCALY_POISON).
+        function float_method_result(t: String, m: String) returns int
         {
             if Planner.is_float_name(t)
             {
                 if m = "to_bits"
-                    return if t = "f64" or t = "double": String("u64") else String("u32")
+                {
+                    if t = "f64" or t = "double"
+                        return 2
+                    return 3
+                }
                 if m = "float_from_bits"
-                    return String()
+                    return 0
                 if Planner.float_method_arity(m) >= 0
-                    return t
-                return String()
+                    return 1
+                return 0
             }
             if m = "float_from_bits"
             {
                 if t = "u64"
-                    return String("f64")
+                    return 4
                 if t = "u32"
-                    return String("f32")
+                    return 5
             }
-            String()
+            0
         }
 
-        function float_method_type(t: PlannedType, m: String) returns PlannedType
+        ; ★The names on the Planner's page: the type lives in the plan.
+        procedure float_method_type(mutable this: Planner, t: PlannedType, m: String) returns PlannedType
         {
-            let r Planner.float_method_result(t.name, m)
-            if r = t.name
-                return t
-            let mangled "3`r`"
-            Planner.make_primitive_type(r.as_slice(), mangled.as_slice())
+            match Planner.float_method_result(t.name, m)
+                case 2: return PlannedType(Span(0, 0), String^this("u64"), String^this("3u64"), null, Lifetime.Unspecified(Unspecified()), null, "", null)
+                case 3: return PlannedType(Span(0, 0), String^this("u32"), String^this("3u32"), null, Lifetime.Unspecified(Unspecified()), null, "", null)
+                case 4: return PlannedType(Span(0, 0), String^this("f64"), String^this("3f64"), null, Lifetime.Unspecified(Unspecified()), null, "", null)
+                case 5: return PlannedType(Span(0, 0), String^this("f32"), String^this("3f32"), null, Lifetime.Unspecified(Unspecified()), null, "", null)
+            t
         }
 
-        ; a scalar's method, planned: `float.<m>` with the receiver first,
         ; every argument of the receiver's type
         procedure plan_float_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
         {
             let t recv.result_type
             let want Planner.float_method_arity(m)
-            if Planner.float_method_result(t.name, m).get_length() = 0
+            if Planner.float_method_result(t.name, m) = 0
                 this.add_diagnostic(second.loc, String^this("`t.name` has no method `m`"))
             else if arg_ops.length <> (want as size_t)
                 this.add_diagnostic(second.loc, String^this("`t.name`.`m` takes `want` argument(s)"))
@@ -23139,7 +23146,7 @@ define Planner
                 all.put(i + 1, arg_ops[i])
                 i := i + 1
             }
-            this.simd_operand(second.loc, "float.`m`", all, Planner.float_method_type(t, m), second.member_access)
+            this.simd_operand(second.loc, "float.`m`", all, this.float_method_type(t, m), second.member_access)
         }
 
         ; the call simd_call_kind# recognized, planned
@@ -25987,7 +25994,7 @@ define Planner
             let arg_types Vector[PlannedType](types_arr)
             var recv_type result.result_type
             ; a floating-point scalar's own methods (plan_float_method#)
-            if Planner.float_method_result(recv_type.name, method_name).get_length() > 0
+            if Planner.float_method_result(recv_type.name, method_name) > 0
             {
                 found := true
                 return this.plan_float_method(this.without_last_hop(result, method_name), method_name, arg_ops, next_args)

@@ -16464,15 +16464,14 @@ PlannedType Planner_tuple_component_type(scaly_frame*, PlannedType&, uint64_t) a
 void Planner_ensure_member_layout(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_220ensure_member_layoutE6String");
 String Planner_simd_method_result(scaly_frame*, String&, String&) asm("_ZN7PlannerB6scalycB4v0_218simd_method_resultEPN4scaly6memory4PageE6String6String");
 PlannedType Planner_simd_result_type(scaly_frame*, String&) asm("_ZN7PlannerB6scalycB4v0_216simd_result_typeEPN4scaly6memory4PageE6String");
-String Planner_float_method_result(scaly_frame*, String&, String&) asm("_ZN7PlannerB6scalycB4v0_219float_method_resultEPN4scaly6memory4PageE6String6String");
-PlannedType Planner_float_method_type(scaly_frame*, PlannedType&, String&) asm("_ZN7PlannerB6scalycB4v0_217float_method_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String");
+int64_t Planner_float_method_result(String&, String&) asm("_ZN7PlannerB6scalycB4v0_219float_method_resultE6String6String");
+PlannedType Planner_float_method_type(scaly_frame*, Planner&, PlannedType&, String&) asm("_ZN7PlannerB6scalycB4v0_217float_method_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String");
 void Planner_report_hidden_member(Planner&, String&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_220report_hidden_memberE6String6String4SpanB6scalycB4v0_2");
 uint64_t Planner_simd_lanes(String&) asm("_ZN7PlannerB6scalycB4v0_210simd_lanesE6String");
 PlannedType Planner_simd_mask_type(scaly_frame*, uint64_t) asm("_ZN7PlannerB6scalycB4v0_214simd_mask_typeEPN4scaly6memory4PageEm");
 PlannedOperand Planner_without_last_hop(scaly_frame*, Planner&, PlannedOperand&, String&) asm("_ZN7PlannerB6scalycB4v0_216without_last_hopEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String");
 bool Planner_is_float_name(String&) asm("_ZN7PlannerB6scalycB4v0_213is_float_nameE6String");
 int64_t Planner_float_method_arity(String&) asm("_ZN7PlannerB6scalycB4v0_218float_method_arityE6String");
-PlannedType Planner_make_primitive_type(scaly_frame*, Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN7PlannerB6scalycB4v0_219make_primitive_typeEPN4scaly6memory4PageE5SliceIcE5SliceIcE");
 void StringBuilder_append5(StringBuilder&, int64_t) asm("_ZN13StringBuilder6appendEi");
 PlannedOperand Planner_plan_float_method(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedOperand>&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_217plan_float_methodEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_2");
 PlannedOperand Planner_plan_simd_method(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedOperand>&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_216plan_simd_methodEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_2");
@@ -16690,6 +16689,7 @@ void Planner_report_remote_message_name(Planner&, Tuple&, Span&) asm("_ZN7Planne
 Vector<PlannedOperand> Planner_strip_leading_eq(scaly_frame*, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_216strip_leading_eqEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E");
 void Planner_report_decomposition(Planner&, String&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_220report_decompositionE6String11PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
 PlannedBinding Planner_delegate_binding(scaly_frame*, Planner&, Binding&, String&, Lambda&) asm("_ZN7PlannerB6scalycB4v0_216delegate_bindingEPN4scaly6memory4PageE7BindingB6scalycB4v0_26String6LambdaB6scalycB4v0_2");
+PlannedType Planner_make_primitive_type(scaly_frame*, Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN7PlannerB6scalycB4v0_219make_primitive_typeEPN4scaly6memory4PageE5SliceIcE5SliceIcE");
 bool Planner_is_namespace_sibling_function(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_229is_namespace_sibling_functionE6String");
 bool Planner_has_this_method(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_215has_this_methodE6String");
 bool Planner_operand_life_is_defaulted_construction(PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_238operand_life_is_defaulted_constructionE14PlannedOperandB6scalycB4v0_2");
@@ -58250,10 +58250,10 @@ __attribute__((weak)) Vector<PlannedMemberAccess> Planner_resolve_member_access_
                     current = mrt;
                 }
             }
-            if ((((matched) == (false)) ? (String_get_length(scaly_lvalue(Planner_float_method_result(&scaly_local.f, (lookup_type).name, (*m)))) > 0ULL) : false))
+            if ((((matched) == (false)) ? (Planner_float_method_result((lookup_type).name, (*m)) > 0LL) : false))
             {
                 matched = true;
-                PlannedType fmt = Planner_float_method_type(scaly_rp, lookup_type, (*m));
+                PlannedType fmt = Planner_float_method_type(scaly_rp, *(this_), lookup_type, (*m));
                 Array_add<PlannedMemberAccess>((*result), scaly_lvalue((*({ PlannedMemberAccess* scaly_t35 = (PlannedMemberAccess*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedMemberAccess), alignof(PlannedMemberAccess)); *scaly_t35 = PlannedMemberAccess{(*m), 0ULL, true, false, lookup_type, fmt}; scaly_t35; }))));
                 current = fmt;
             }
@@ -58387,7 +58387,7 @@ __attribute__((weak)) int64_t Planner_float_call_kind(Planner& scaly_self, Plann
         if (((ma).length > 0ULL))
         {
             PlannedMemberAccess lh = Vector11<PlannedMemberAccess>(ma, ((ma).length - 1ULL));
-            if ((String_get_length(scaly_lvalue(Planner_float_method_result(&scaly_local.f, ((lh).parent_type).name, fn_name))) > 0ULL))
+            if ((Planner_float_method_result(((lh).parent_type).name, fn_name) > 0LL))
             {
                 return 11LL;
             }
@@ -58400,7 +58400,7 @@ __attribute__((weak)) int64_t Planner_float_call_kind(Planner& scaly_self, Plann
         String prefix = String_substring(&scaly_local.f, fn_name, 0ULL, dp);
         String suffix = String_substring(&scaly_local.f, fn_name, (dp + 1ULL), ((String_get_length(fn_name) - dp) - 1ULL));
         LocalBinding* local_ref = Planner_lookup_local_binding(*(this_), prefix);
-        if ((((local_ref) != (nullptr)) ? (String_get_length(scaly_lvalue(Planner_float_method_result(&scaly_local.f, scaly_lvalue(((((*(local_ref)))).binding_type).name), suffix))) > 0ULL) : false))
+        if ((((local_ref) != (nullptr)) ? (Planner_float_method_result(scaly_lvalue(((((*(local_ref)))).binding_type).name), suffix) > 0LL) : false))
         {
             return 13LL;
         }
@@ -58480,59 +58480,66 @@ __attribute__((weak)) int64_t Planner_float_method_arity(String& m)
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
-__attribute__((weak)) String Planner_float_method_result(scaly_frame* scaly_rp, String& t, String& m)
+__attribute__((weak)) int64_t Planner_float_method_result(String& t, String& m)
 {
-    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     if (Planner_is_float_name(t))
     {
         if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\007to_bits"})))
         {
-            return ((String_equals(t, scaly_lvalue(String{(uint8_t*)"\003f64"})) ? true : String_equals(t, scaly_lvalue(String{(uint8_t*)"\006double"}))) ? (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\003u64"})); scaly_t1; })) : (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\003u32"})); scaly_t2; })));
+            if ((String_equals(t, scaly_lvalue(String{(uint8_t*)"\003f64"})) ? true : String_equals(t, scaly_lvalue(String{(uint8_t*)"\006double"}))))
+            {
+                return 2LL;
+            }
+            return 3LL;
         }
         if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\017float_from_bits"})))
         {
-            return (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init3((*scaly_t3)); scaly_t3; }));
+            return 0LL;
         }
         if ((Planner_float_method_arity(m) >= 0LL))
         {
-            return t;
+            return 1LL;
         }
-        return (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init3((*scaly_t4)); scaly_t4; }));
+        return 0LL;
     }
     if (String_equals(m, scaly_lvalue(String{(uint8_t*)"\017float_from_bits"})))
     {
         if (String_equals(t, scaly_lvalue(String{(uint8_t*)"\003u64"})))
         {
-            return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\003f64"})); scaly_t5; }));
+            return 4LL;
         }
         if (String_equals(t, scaly_lvalue(String{(uint8_t*)"\003u32"})))
         {
-            return (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue(String{(uint8_t*)"\003f32"})); scaly_t6; }));
+            return 5LL;
         }
     }
-    return (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init3((*scaly_t8)); scaly_t8; }));
+    return 0LL;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
-__attribute__((weak)) PlannedType Planner_float_method_type(scaly_frame* scaly_rp, PlannedType& t, String& m)
+__attribute__((weak)) PlannedType Planner_float_method_type(scaly_frame* scaly_rp, Planner& scaly_self, PlannedType& t, String& m)
 {
-    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    String r = Planner_float_method_result(&scaly_local.f, (t).name, m);
-    if (String_equals(r, (t).name))
+    Planner* this_ = &scaly_self;
     {
-        return t;
-    }
-    String mangled = ({
-        String scaly_t1{};
+        auto&& scaly_t1 = Planner_float_method_result((t).name, m);
+        if (scaly_t1 == 2LL)
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
-            StringBuilder_append((*isb$), ((uint8_t)'3'));
-            StringBuilder_append2((*isb$), scaly_lvalue((r)));
-            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            return PlannedType{Span{0ULL, 0ULL}, (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\003u64"})); scaly_t2; })), (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\0043u64"})); scaly_t3; })), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)};
         }
-        scaly_t1;
-    });
-    return Planner_make_primitive_type(scaly_rp, scaly_lvalue(String_as_slice(r)), scaly_lvalue(String_as_slice(mangled)));
+        else if (scaly_t1 == 3LL)
+        {
+            return PlannedType{Span{0ULL, 0ULL}, (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{(uint8_t*)"\003u32"})); scaly_t4; })), (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\0043u32"})); scaly_t5; })), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)};
+        }
+        else if (scaly_t1 == 4LL)
+        {
+            return PlannedType{Span{0ULL, 0ULL}, (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue(String{(uint8_t*)"\003f64"})); scaly_t6; })), (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue(String{(uint8_t*)"\0043f64"})); scaly_t7; })), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)};
+        }
+        else if (scaly_t1 == 5LL)
+        {
+            return PlannedType{Span{0ULL, 0ULL}, (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(String{(uint8_t*)"\003f32"})); scaly_t8; })), (*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), scaly_lvalue(String{(uint8_t*)"\0043f32"})); scaly_t9; })), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)};
+        }
+    }
+    return t;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -58542,7 +58549,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_float_method(scaly_frame* scal
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     PlannedType t = (recv).result_type;
     int64_t want = Planner_float_method_arity(m);
-    if ((String_get_length(scaly_lvalue(Planner_float_method_result(&scaly_local.f, (t).name, m))) == 0ULL))
+    if ((Planner_float_method_result((t).name, m) == 0LL))
     {
         Planner_add_diagnostic(*(this_), (second).loc, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(({
         String scaly_t2{};
@@ -58621,7 +58628,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_float_method(scaly_frame* scal
             scaly_t14 = StringBuilder_to_string(scaly_rp, (*isb$));
         }
         scaly_t14;
-    })), (*all), scaly_lvalue(Planner_float_method_type(scaly_rp, t, m)), (second).member_access);
+    })), (*all), scaly_lvalue(Planner_float_method_type(scaly_rp, *(this_), t, m)), (second).member_access);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -61205,7 +61212,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_chained_method_call(scaly_fram
     Vector<PlannedOperand>* arg_ops = ({ Vector<PlannedOperand>* scaly_t6 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t6 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t6), (*ops_arr)); scaly_t6; });
     Vector<PlannedType>* arg_types = ({ Vector<PlannedType>* scaly_t7 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t7 = Vector<PlannedType>{}; Vector_init7<PlannedType>((*scaly_t7), (*types_arr)); scaly_t7; });
     PlannedType recv_type = (result).result_type;
-    if ((String_get_length(scaly_lvalue(Planner_float_method_result(&scaly_local.f, (recv_type).name, method_name))) > 0ULL))
+    if ((Planner_float_method_result((recv_type).name, method_name) > 0LL))
     {
         (*(found)) = true;
         return Planner_plan_float_method(scaly_rp, *(this_), scaly_lvalue(Planner_without_last_hop(scaly_rp, *(this_), result, method_name)), method_name, (*arg_ops), next_args);
@@ -154203,7 +154210,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_float(Emitter& scaly_self, P
         }
         else if (scaly_t6 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\020float.round_even"})))
         {
-            op = ({ String* scaly_t12 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t12 = String{}; String_init2((*scaly_t12), scaly_lvalue(String{(uint8_t*)"\011roundeven"})); scaly_t12; });
+            op = ({ String* scaly_t12 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t12 = String{}; String_init2((*scaly_t12), scaly_lvalue(String{(uint8_t*)"\004rint"})); scaly_t12; });
         }
         else if (scaly_t6 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\011float.abs"})))
         {
@@ -161713,18 +161720,6 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_as(Emitter& scaly_self, Plan
         if (((int64_t)dst_kind == double_kind))
         {
             return src_value;
-        }
-    }
-    if (Planner_is_generic_type_param_name(((as_expr).target_type).name))
-    {
-        return LLVMGetUndef(dst_type);
-    }
-    if ((((as_expr).value) != (nullptr)))
-    {
-        PlannedOperand source_operand = ((*((as_expr).value)));
-        if (Planner_is_generic_type_param_name(((source_operand).result_type).name))
-        {
-            return LLVMGetUndef(dst_type);
         }
     }
     scaly_eputs(((const char*)"Emitter: cannot cast this value to "));

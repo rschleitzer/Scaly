@@ -1,0 +1,36 @@
+; tests/math/bits.scaly <function> <file> -- the function of scaly/math.scaly
+; (exp, log) of each number in the file, one bit pattern a line (a decimal
+; u64), as bit patterns: what tests/math/check.py compares with the exact
+; values and, across builds, with each other.
+let args os.arguments()
+let which String(args[0])
+let text File.read_to_string(String(args[1]))
+var v: u64 0
+var any false
+var i: size_t 0
+let n text.get_length()
+var out StringBuilder()
+while i < n
+{
+    let c text.get(i)
+    if c >= ("0" as char) and c <= ("9" as char)
+    {
+        v := v * 10 + ((c as u64) - 48)
+        any := true
+    }
+    else if any
+    {
+        let x v.float_from_bits()
+        var y x
+        if which = "exp"
+            y := exp(x)
+        if which = "log"
+            y := log(x)
+        out.append "`y.to_bits()`\n"
+        v := 0
+        any := false
+    }
+    i := i + 1
+}
+let text_out out.to_string()
+print text_out

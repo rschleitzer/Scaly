@@ -11,6 +11,7 @@ define scaly
     module crypto
     module cluster
     module tensor
+    module math
     module operation
     module logic
 
