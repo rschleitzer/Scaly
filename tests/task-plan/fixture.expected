@@ -1,4 +1,4 @@
-task-plan: 29 for-loops, 16 parallelizable
+task-plan: 31 for-loops, 18 parallelizable
 task-plan: tests/task-plan/fixture.scaly:20:9: parallel
 task-plan: tests/task-plan/fixture.scaly:47:5: parallel
 task-plan: tests/task-plan/fixture.scaly:50:5: blocked: put into an external vector: its index is not one slot per round
@@ -28,3 +28,5 @@ task-plan: tests/task-plan/fixture.scaly:179:5: parallel
 task-plan: tests/task-plan/fixture.scaly:185:5: blocked: put into an external vector: through the alias alias
 task-plan: tests/task-plan/fixture.scaly:191:5: parallel
 task-plan: tests/task-plan/fixture.scaly:200:5: blocked: mutating call on loop-external state: put
+task-plan: tests/task-plan/fixture.scaly:204:5: parallel
+task-plan: tests/task-plan/fixture.scaly:208:5: parallel

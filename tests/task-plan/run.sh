@@ -25,7 +25,7 @@ out=$("$STAGE" --task-plan "$FIX" 2>&1); rc=$?
 check "report rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^task-plan:')
 check "report matches fixture.expected" 'diff <(printf "%s\n" "$got") tests/task-plan/fixture.expected >/dev/null'
-check "head counts the loops" 'printf "%s\n" "$got" | head -1 | grep -q "^task-plan: 29 for-loops, 16 parallelizable$"'
+check "head counts the loops" 'printf "%s\n" "$got" | head -1 | grep -q "^task-plan: 31 for-loops, 18 parallelizable$"'
 
 # One slot per round, shown.
 check "the counter"                                   'par 47'
@@ -40,6 +40,8 @@ check "the counter as the column of its own bound"    'par 169'
 check "two vectors, a form each"                      'par 179'
 check "a vector the round made"                       'par 191'
 check "a field of the receiver"                       'par 20'
+check "a CardVector at the counter"                   'par 204'
+check "a CardVector at an offset plus the counter"    'par 208'
 
 # Not shown: the loop keeps its order.
 check "half the counter"                              'blk 50 "put into an external vector: its index is not one slot"'
@@ -63,7 +65,7 @@ if "$STAGE" -o "$T/fixture$SCALY_EXE" "$FIX" >"$T/build" 2>&1; then
   all=$("$T/fixture$SCALY_EXE" 2>&1); r2=$?
   check "runs (rc $r1, $r2)" '[ $r1 -eq 0 ] && [ $r2 -eq 0 ]'
   check "one worker and all print the same" '[ "$one" = "$all" ]'
-  check "the line it prints" '[ "$one" = "0 4 17 1 6 64" ]'
+  check "the line it prints" '[ "$one" = "0 4 17 1 6 64 10 3" ]'
 else
   check "the fixture builds" 'false'
 fi

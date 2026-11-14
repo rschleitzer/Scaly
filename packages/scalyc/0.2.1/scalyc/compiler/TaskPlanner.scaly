@@ -3006,9 +3006,9 @@ define TaskPlanner
         ; every buffer a round earlier, and the put has trapped.
         ; ================================================================
 
-        ; `put` of a Vector, a Slice or an Array: the store into exactly the
-        ; slot its index names. Any other routine called `put` is a callee
-        ; like every other one.
+        ; `put` of a Vector, a Slice, an Array or a CardVector: the store into
+        ; exactly the slot its index names. Any other routine called `put` is
+        ; a callee like every other one.
         function is_slot_store(call: PlannedCall) returns bool
         {
             if call.name <> "put"
@@ -3018,10 +3018,12 @@ define TaskPlanner
             TaskPlanner.is_buffer_symbol(call.mangled_name)
         }
 
-        ; a member of the standard library's Vector, Slice or Array
+        ; a member of the standard library's Vector, Slice, Array or CardVector
         function is_buffer_symbol(m: String) returns bool
         {
             if m.starts_with(String("_ZN6VectorI"))
+                return true
+            if m.starts_with(String("_ZN10CardVectorI"))
                 return true
             if m.starts_with(String("_ZN5SliceI"))
                 return true

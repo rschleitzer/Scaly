@@ -1,0 +1,93 @@
+; A vector whose home may be the graphics card (ROADMAP-card.md).
+;
+; A loop over a CardVector is a loop like any other: it runs on the cores,
+; and -- once the compiler sends such loops to the card (slice C2) -- on the
+; card where the vectors live there. What crosses between the program and
+; the vector in bulk is visible: write, read and from_file. A vector lives
+; in the program's memory until a card host exists (slice C3); the surface
+; does not change when it moves.
+;
+; T is a 32-bit number (u32, i32, float): what a kernel binds.
+
+use scaly.memory.Page
+use scaly.memory.runtime
+use scaly.containers.Slice
+
+define CardVector[T]
+(
+    length: size_t
+    data: pointer[T]
+)
+{
+    ; n elements, zero
+    init (len: size_t)
+    {
+        let own_page Page.get(this)
+        length := len
+        if len > 0
+        {
+            data := own_page.allocate(len * sizeof T, alignof T) as pointer[T]
+            memset(data, 0, len * sizeof T as c_size)
+        }
+        else
+            data := null
+    }
+
+    operator [](i: size_t) returns T
+    {
+        if i >= length
+            scaly_panic_oob("CardVector[]", i, length)
+        *(data + i)
+    }
+
+    procedure put(mutable this: CardVector[T], i: size_t, item: T)
+    {
+        if i >= length
+            scaly_panic_oob("CardVector.put", i, length)
+        *(data + i) := item
+    }
+
+    ; `from` into the elements from `at` on.
+    procedure write_at(mutable this: CardVector[T], at: size_t, from: Slice[T])
+    {
+        if at > length or from.length > length - at
+            scaly_panic_oob("CardVector.write", at + from.length, length)
+        if from.length > 0
+            memcpy((data + at) as pointer[void], from.data as pointer[void], from.length * sizeof T as c_size)
+    }
+
+    procedure write(mutable this: CardVector[T], from: Slice[T])
+    {
+        this.write_at(0, from)
+    }
+
+    ; The elements from `at` on into `into` -- as many as it holds.
+    procedure read_at(this: CardVector[T], at: size_t, mutable into: Slice[T])
+    {
+        if at > length or into.length > length - at
+            scaly_panic_oob("CardVector.read", at + into.length, length)
+        if into.length > 0
+            memcpy(into.data as pointer[void], (data + at) as pointer[void], into.length * sizeof T as c_size)
+    }
+
+    procedure read(this: CardVector[T], mutable into: Slice[T])
+    {
+        this.read_at(0, into)
+    }
+
+    ; The elements filled from a file: as many bytes as they take, from
+    ; `offset` in the file on. False where the file cannot be read so far.
+    procedure from_file(mutable this: CardVector[T], path: String, offset: size_t) returns bool
+    {
+        let file fopen(path.to_c_string(), "rb")
+        if file = null
+            return false
+        scaly_eio_seek(file, offset as int, 0)
+        let bytes length * sizeof T
+        var got: c_size 0
+        if bytes > 0
+            got := fread(data as pointer[void], 1, bytes as c_size, file)
+        fclose(file)
+        got as size_t = bytes
+    }
+}

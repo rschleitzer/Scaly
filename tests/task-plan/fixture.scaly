@@ -199,9 +199,17 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var slots Slots(0)
     for i in n
         slots.put(i, 1)
+    ; a CardVector: the counter, and an offset the loop does not compute
+    var c CardVector[i32](n)
+    for i in n
+        c.put(i, (i * 2) as i32)
+    var cache CardVector[i32](n * 2)
+    let at n
+    for i in n
+        cache.put(at + i, i as i32)
 
     var grid Grid(3, Vector[int](n))
     grid.fill(n)
-    print "`v[0]` `w[1]` `g[5]` `h[2]` `grid.cells[2]` `slots.seen`"
+    print "`v[0]` `w[1]` `g[5]` `h[2]` `grid.cells[2]` `slots.seen` `c[5]` `cache[n + 3]`"
     0
 }
