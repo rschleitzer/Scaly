@@ -2452,15 +2452,16 @@ static int scaly_wants_helper(int argc, char** argv)
 {
     int i;
     for (i = 1; argv && i < argc; i++)
-        if (argv[i] && strcmp(argv[i], "--scaly-helper") == 0)
+        if (argv[i] && (strcmp(argv[i], "--scaly-helper") == 0 || strcmp(argv[i], "--scaly-helper=once") == 0))
             return 1;
     return 0;
 }
 
 /* The gate a program's main passes its helper through: the compiler emits
  * the call right after scaly_set_arguments (Emitter.hand_over_arguments#).
- * A program started with --scaly-helper does not run its main but the
- * helper (cluster.scaly, scaly_helper_main), and ends with it. The helper
+ * A program started with --scaly-helper (or --scaly-helper=once: for one
+ * coordinator) does not run its main but the helper (cluster.scaly,
+ * scaly_helper_main), and ends with it. The helper
  * comes as an argument so that the reference stands in the program's own IR,
  * where every optimisation sees it -- a reference from C alone was dropped
  * by the whole-program `opt` of a tool built from its roots. Only the

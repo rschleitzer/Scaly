@@ -642,6 +642,7 @@ export const NO_CARD = { forced: () => 0, run: () => 0, kept: () => { } };
 export const NO_NET = {
   listen: () => -1, port: () => -1, connect: () => -1, accept: () => -1,
   read: () => -1, write: () => -1, ready: () => 1, close: () => -1,
+  mcast_listen: () => -1, mcast_send: () => -1, mcast_recv: () => -1,
 };
 
 // write a chunk at an open file's position (its end when appending), growing it

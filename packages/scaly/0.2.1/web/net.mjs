@@ -13,7 +13,10 @@
 //   net.kill(1);                                    // node 1 is gone: its ends close
 //
 // One port space for all nodes: a node listens on a port, any node connects
-// to it by number, whatever host it names. A call that would wait waits on
+// to it by number, whatever host it names. The page is the LAN, and its
+// group (multicast) reaches every node: a datagram sent to a port comes to
+// every descriptor that joined the group on that port -- the sender's own
+// too, as a multicast loops back. A call that would wait waits on
 // one word of the buffer that changes with every change of the network --
 // in a worker; a page's main thread never calls here. A node that is ended
 // leaves its connections as a killed process leaves its sockets: the host
@@ -29,6 +32,10 @@ const FIRST_PORT = 49152;       // where a listener on port 0 is put
 
 const NODES = 256;              // node numbers below this
 const STEAL_MS = 50;            // how long a node that is gone may hold the lock
+const DATAGRAMS = 64;           // the group's last datagrams, kept for its readers
+const DATAGRAM = 128;           // the bytes a datagram holds at most
+const MEMBERS = 64;             // descriptors in the group
+const MCAST_FD = FD + 0x200000; // the first of them (beyond the listeners')
 
 // the words of the buffer
 const LOCK = 0, CHANGE = 1, NEXT_PORT = 2;      // LOCK: 0, or the node + 1 that holds it
@@ -36,7 +43,9 @@ const LB = 4, LW = 4 + QUEUE;                    // a listener: port, owner + 1,
 const CB = LB + LISTENERS * LW, CW = 9;          // a connection: state, owner + 1 of each side, closed of each side, read and written of each ring
 const C_STATE = 0, C_OWNER = 1, C_CLOSED = 3, C_RING = 5;
 const GONE = CB + CONNECTIONS * CW;              // a word a node: 1 once it is gone
-const DATA = (GONE + NODES) * 4;
+const GB = GONE + NODES, GW = 2 + DATAGRAM / 4;  // the group: how many were sent, then each: length, port, bytes
+const MB = GB + 1 + DATAGRAMS * GW, MW = 3;      // a member: port, owner + 1, the next it reads
+const DATA = (MB + MEMBERS * MW) * 4;
 const BYTES = DATA + CONNECTIONS * 2 * RING;
 
 export class Net {
@@ -234,9 +243,77 @@ export class Net {
     } finally { this.unlock(); }
   }
 
+  // --- the group -------------------------------------------------------------
+
+  member(fd) {
+    const m = fd - MCAST_FD;
+    return m >= 0 && m < MEMBERS && this.i[MB + m * MW] ? m : null;
+  }
+
+  mcast_listen(port) {
+    this.lock();
+    try {
+      let m = 0;
+      while (m < MEMBERS && this.i[MB + m * MW]) m++;
+      if (m === MEMBERS || port <= 0) return -1;
+      const w = MB + m * MW;
+      this.i[w] = port;
+      this.i[w + 1] = this.node + 1;
+      this.i[w + 2] = this.i[GB];
+      return MCAST_FD + m;
+    } finally { this.unlock(); }
+  }
+
+  mcast_send(memory, ptr, n, port) {
+    if (n > DATAGRAM) return -1;
+    this.lock();
+    try {
+      const sent = this.i[GB];
+      const w = GB + 1 + (sent % DATAGRAMS) * GW;
+      this.i[w] = n;
+      this.i[w + 1] = port;
+      const mem = new Uint8Array(memory().buffer);
+      const at = (w + 2) * 4;
+      const bytes = new Uint8Array(this.buffer, 0, DATA);
+      for (let k = 0; k < n; k++) bytes[at + k] = mem[ptr + k];
+      this.i[GB] = sent + 1;
+      this.changed();
+      return n;
+    } finally { this.unlock(); }
+  }
+
+  // the next datagram for this member's port, at most cap bytes of it; 0
+  // where none came within ms milliseconds
+  mcast_recv(memory, fd, ptr, cap, ms) {
+    const m = this.member(fd);
+    if (m === null) return -1;
+    const mw = MB + m * MW;
+    return this.wait(ms, () => {
+      if (!this.i[mw]) return -1;
+      const sent = this.i[GB];
+      if (sent - this.i[mw + 2] > DATAGRAMS) this.i[mw + 2] = sent - DATAGRAMS;    // too slow: the oldest kept
+      while (this.i[mw + 2] < sent) {
+        const w = GB + 1 + (this.i[mw + 2] % DATAGRAMS) * GW;
+        this.i[mw + 2]++;
+        if (this.i[w + 1] !== this.i[mw]) continue;
+        const k = Math.min(cap, this.i[w]);
+        const mem = new Uint8Array(memory().buffer);
+        const bytes = new Uint8Array(this.buffer, 0, DATA);
+        for (let j = 0; j < k; j++) mem[ptr + j] = bytes[(w + 2) * 4 + j];
+        return k;
+      }
+      return undefined;
+    }, 0);
+  }
+
   close(fd) {
     this.lock();
     try {
+      const m = this.member(fd);
+      if (m !== null) {
+        this.i.fill(0, MB + m * MW, MB + m * MW + MW);
+        return 0;
+      }
       const l = this.listener(fd);
       if (l !== null) {
         this.drop_listener(l);
@@ -275,6 +352,8 @@ export class Net {
     try {
       for (let l = 0; l < LISTENERS; l++)
         if (this.i[LB + l * LW] && this.i[LB + l * LW + 1] === node + 1) this.drop_listener(l);
+      for (let m = 0; m < MEMBERS; m++)
+        if (this.i[MB + m * MW + 1] === node + 1) this.i.fill(0, MB + m * MW, MB + m * MW + MW);
       for (let c = 0; c < CONNECTIONS; c++) {
         const cw = CB + c * CW;
         if (!this.i[cw + C_STATE]) continue;
@@ -306,6 +385,9 @@ export class Net {
       write: (fd, ptr, n, ms) => this.write(memory, fd, ptr >>> 0, n >>> 0, ms),
       ready: (fd, for_write) => this.ready(fd, for_write),
       close: fd => this.close(fd),
+      mcast_listen: port => this.mcast_listen(port),
+      mcast_send: (ptr, n, port) => this.mcast_send(memory, ptr >>> 0, n >>> 0, port),
+      mcast_recv: (fd, ptr, cap, ms) => this.mcast_recv(memory, fd, ptr >>> 0, cap >>> 0, ms),
     };
   }
 }

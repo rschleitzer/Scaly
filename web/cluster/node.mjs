@@ -1,10 +1,11 @@
 // One node of the render farm (web/cluster/index.html): render.wasm, built
-// for wasm32-wasip1-threads with --gpu, as one machine of a cluster runs it --
+// for wasm32-wasip1-threads with --gpu and --cluster, as one machine of a
+// cluster runs it -- the program, or a helper (`args`: --scaly-helper) --
 // a memory of its own, its threads in workers of their own (the page is their
 // coordinator: threads.mjs), its sockets on the page's network (net.mjs),
 // which every node shares, and, where it has one, the page's graphics card.
 //
-//   { bytes, module, env, net: { buffer, node }, kept, most, card }
+//   { bytes, module, args, env, net: { buffer, node }, kept, most, card, cardMode }
 //       -> { type: 'memory', kept }       where it made a new memory
 //          { type: 'scaly-gpu', run, transfer }   a run for the card
 //          { type: 'out', fd, text }      what it writes, as it comes
@@ -18,15 +19,16 @@
 // pages of its own. `card`, where the node has one, is the first answer of
 // the page's card worker (gpu-worker.mjs, { card, why }): the node's card
 // runs go to the page, which passes them on to that worker -- one card for
-// every node that has one, its kernels compiled once. The card is FORCED
-// (gpu-host.mjs, mode 'on'): such a node renders its tiles there. The page
-// ends this worker to end the node -- as a machine is switched off.
+// every node that has one, its kernels compiled once. The card is asked at
+// the driver's gates (gpu-host.mjs, `cardMode`, 'auto' unless the page says
+// 'on'): a pass goes there where it pays, before the helpers are asked. The page ends this worker to end the
+// node -- as a machine is switched off.
 import { Wasi } from './wasi.mjs';
 import { Net } from './net.mjs';
 import { ThreadHost, runMemory } from './threads.mjs';
 import { GpuHost } from './gpu-host.mjs';
 
-self.onmessage = async ({ data: { bytes, module, env, net, kept, most, card } }) => {
+self.onmessage = async ({ data: { bytes, module, args = [], env, net, kept, most, card, cardMode = 'auto' } }) => {
   const decoder = new TextDecoder();
   const out = fd => bytes => self.postMessage({ type: 'out', fd, text: decoder.decode(bytes) });
   let status, gpu = null;
@@ -36,12 +38,12 @@ self.onmessage = async ({ data: { bytes, module, env, net, kept, most, card } })
         hello: card,
         postMessage: (run, transfer = []) => self.postMessage({ type: 'scaly-gpu', run, transfer }, transfer),
       };
-      gpu = await GpuHost.open(relay, { mode: 'on' }).catch(() => null);
+      gpu = await GpuHost.open(relay, { mode: cardMode }).catch(() => null);
     }
     const got = runMemory(bytes, kept, { most });
     if (got !== kept) self.postMessage({ type: 'memory', kept: got });
     const wasi = new Wasi({
-      args: ['render'], env, net: new Net(net.buffer, net.node), gpu,
+      args: ['render', ...args], env, net: new Net(net.buffer, net.node), gpu,
       stdout: out(1), stderr: out(2),
       threads: new ThreadHost({ memory: got.memory, post: m => self.postMessage(m) }),
     });

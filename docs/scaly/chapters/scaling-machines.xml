@@ -8,9 +8,11 @@
       on its own. Past the machine's edge memory is no longer shared, a
       message takes a fraction of a millisecond instead of a few
       nanoseconds, and the other side may stop answering. Scaly does not
-      hide that edge. Within a machine a <code>for</code> decides by itself
-      where its rounds run; across machines the program says what goes
-      where, and what it sends is a message.</para>
+      hide that edge. A <code>for</code> whose rounds are pure may still
+      cross it: the runtime hands its rounds to copies of the program on
+      other machines where that pays, as it hands them to the cores and to
+      the graphics card. Everything else the program says itself — what
+      goes where — and what it sends is a message.</para>
     <para>A message is a region (<xref linkend="scaling-why-regions"/>):
       a value built on pages of its own, with everything it points to. A
       send ships those pages as they are, and the receiving side fixes
@@ -19,10 +21,97 @@
       code to write and no schema to keep in step with the program.</para>
   </section>
 
+  <section xml:id="scaling-machines-for">
+    <title>A for over Machines</title>
+    <para>The program below counts the primes below three million in
+      blocks: a plain <code>for</code> over the blocks, each round counting
+      the primes of its block and putting the count in its place. Nothing
+      in it says where its rounds run:</para>
+    <programlisting>function is_prime(n: int) returns bool
+{
+    if n &lt; 2
+        return false
+    var d 2
+    while d * d &lt;= n
+    {
+        if n % d = 0
+            return false
+        d := d + 1
+    }
+    true
+}
+
+function count_primes(from: int, to: int) returns int
+{
+    var count 0
+    for k in to - from
+        if is_prime(from + k)
+            count := count + 1
+    count
+}
+
+let limit 3000000
+let blocks 300
+var counts Vector[int](blocks as size_t)
+for b in blocks
+    counts.put(b as size_t, count_primes(limit * b / blocks, limit * (b + 1) / blocks))
+var total 0
+for c in counts
+    total := total + c
+print "`total` primes below `limit`"</programlisting>
+    <screen>$ scaly build --cluster primes.scaly -o primes
+$ ./primes --scaly-helper=once &amp;
+$ ./primes --scaly-helper=once &amp;
+$ SCALY_CLUSTER=on ./primes
+216816 primes below 3000000</screen>
+    <para>Built with <code>--cluster</code>, every <code>for</code> whose
+      rounds can travel is described to the runtime — which part of the
+      program runs a round, and what it reads and writes. Started with
+      <code>--scaly-helper</code>, the same program does not run its main:
+      it announces itself on the local network and waits for rounds.
+      Started as it is, it is the coordinator, and where one of its loops
+      is heavy enough it looks for helpers of its own build, hands each a
+      stretch of rounds, runs stretches itself, and gives a helper that
+      sends one back the next. What the rounds put comes back into the
+      coordinator's vector; inside a stretch a helper uses its own cores,
+      so the inner <code>for</code> of <code>count_primes</code> runs
+      there as it would here.</para>
+    <para>Rounds travel where what they read and write can: numbers and
+      records of numbers, vectors, slices and arrays of them read whole,
+      and those they <code>put</code> into at the counter. A reduction, a
+      value a round keeps, a string or a reference keeps the loop on this
+      machine — nothing is said, it runs as before. The count of this
+      program is such a reduction, and so it is added up here, after the
+      loop that went out.</para>
+    <para>Whether a loop goes out is measured as the driver measures the
+      cores and the card (<xref linkend="scaling-loops-when"/>,
+      <xref linkend="scaling-gpu-where"/>): a loop that would take this
+      machine less than 20 milliseconds is never offered; the helpers take
+      part where, with what their stretches cost there and back, they end
+      it a quarter sooner, and what their stretches took teaches the next
+      offer. Here the helpers share the cores of one machine and gain
+      nothing — the runtime would find that out and keep the loop at home —,
+      so the transcript sends it anyway: <code>SCALY_CLUSTER=on</code>
+      sends every loop that can travel, <code>off</code> none, and
+      <code>SCALY_CLUSTER_TRACE=1</code> shows each stretch and each
+      decision. <code>--scaly-helper=once</code> ends a helper when its
+      coordinator lets go; without it a helper serves one coordinator after
+      the other until it is stopped.</para>
+    <para>A helper that goes — its connection closed, or silent past the
+      heartbeat — gives its stretch back, and another runs it; with none
+      left, the coordinator runs the rest. The rounds are pure, so the
+      result does not depend on who ran what. Across machines the helpers
+      hold the cluster's key and run the same build as the coordinator,
+      as every node of this chapter does
+      (<xref linkend="scaling-machines-build"/>,
+      <xref linkend="scaling-machines-failure"/>). What is not a pure loop
+      stays explicit, and the rest of this chapter is about that.</para>
+  </section>
+
   <section xml:id="scaling-machines-nodes">
     <title>Nodes and Channels</title>
-    <para>The program of this chapter counts the primes below three
-      million on three worker nodes. One program plays both roles: started
+    <para>The same count, said explicitly, on three worker nodes. One
+      program plays both roles: started
       without an argument it coordinates, with one it works. The
       coordinator listens on a port, hands each worker that connects a
       share of the range, and prints what comes back:</para>

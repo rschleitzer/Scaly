@@ -159256,7 +159256,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* cluster_desc = (LLVMOpaqueValue*)(nullptr);
     LLVMOpaqueValue* cluster_cell = (LLVMOpaqueValue*)(nullptr);
     LLVMOpaqueValue* cluster_count = (LLVMOpaqueValue*)(nullptr);
-    if ((((((this_->config).cluster ? (((for_expr).is_iterator_loop) == (false)) : false) ? ((keeps) == (false)) : false) ? (n_red == 0ULL) : false) ? (this_->pointer_bytes == 8ULL) : false))
+    if (((((this_->config).cluster ? (((for_expr).is_iterator_loop) == (false)) : false) ? ((keeps) == (false)) : false) ? (n_red == 0ULL) : false))
     {
         LLVMOpaqueValue* desc = Emitter_cluster_descriptor(*(this_), for_expr, task_fn, cell_ty, base_fields, (*cap_names), (*cap_types), (*cap_uses), (*cap_slot_tys));
         if (((desc) != (nullptr)))
@@ -160135,6 +160135,13 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMPositionBuilderAtEnd(this_->builder, done_block);
     if (((cluster_after) != (nullptr)))
     {
+        Vector<LLVMOpaqueType*>* kp_tys = ({ Vector<LLVMOpaqueType*>* scaly_t44 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t44 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t44), 1ULL); scaly_t44; });
+        Vector_put62<LLVMOpaqueType*>((*kp_tys), 0ULL, ptr_ty);
+        LLVMOpaqueType* kp_ty = LLVMFunctionType(void_ty, ((*kp_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+        LLVMOpaqueValue* kp_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\030_Z18scaly_cluster_keptPv"}), kp_ty);
+        Vector<LLVMOpaqueValue*>* kp_args = ({ Vector<LLVMOpaqueValue*>* scaly_t45 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t45 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t45), 1ULL); scaly_t45; });
+        Vector_put62<LLVMOpaqueValue*>((*kp_args), 0ULL, cluster_desc);
+        LLVMBuildCall2(this_->builder, kp_ty, kp_fn, ((*kp_args)).data, (uint32_t)1ULL, ((const char*)""));
         LLVMBuildBr(this_->builder, cluster_after);
         LLVMPositionBuilderAtEnd(this_->builder, cluster_after);
     }

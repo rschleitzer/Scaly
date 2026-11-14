@@ -21208,7 +21208,7 @@ define Emitter
             var cluster_desc: LLVMValueRef null
             var cluster_cell: LLVMValueRef null
             var cluster_count: LLVMValueRef null
-            if config.cluster and for_expr.is_iterator_loop = false and keeps = false and n_red = 0 and pointer_bytes = 8
+            if config.cluster and for_expr.is_iterator_loop = false and keeps = false and n_red = 0
             {
                 let desc this.cluster_descriptor(for_expr, task_fn, cell_ty, base_fields, cap_names, cap_types, cap_uses, cap_slot_tys)
                 if desc <> null
@@ -22356,6 +22356,15 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, done_block)
             if cluster_after <> null
             {
+                ; the processor ran it: where an offer left it here, what
+                ; it took is the next offer's measure
+                var kp_tys Vector[LLVMTypeRef](1)
+                kp_tys.put(0, ptr_ty)
+                let kp_ty LLVMFunctionType(void_ty, kp_tys.data, 1, 0)
+                let kp_fn get_parfor_runtime_fn("_Z18scaly_cluster_keptPv", kp_ty)
+                var kp_args Vector[LLVMValueRef](1)
+                kp_args.put(0, cluster_desc)
+                LLVMBuildCall2(builder, kp_ty, kp_fn, kp_args.data, 1, "")
                 LLVMBuildBr(builder, cluster_after)
                 LLVMPositionBuilderAtEnd(builder, cluster_after)
             }

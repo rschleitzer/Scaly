@@ -67,13 +67,14 @@
 #    fractal is made of places where a last digit decides).
 #
 # 6. THE CLUSTER SHOWCASE (web/cluster): built by its build.sh, its page's
-#    self-test (index.html?selftest) renders a small picture on three nodes,
-#    kills one once it has rendered a tile and silences another, then
-#    renders it alone. Both pictures must be the native program's, bit for
-#    bit, and what happened must say each node gone and its tile handed on.
-#    Then three nodes with the page's card: the card must take tiles, and
-#    the page must call the picture the program's alone or near it (the
-#    card rounds less strictly than the processor).
+#    self-test (index.html?selftest) renders a small picture with three
+#    helpers, every pass sent to them, kills one once it has a stretch in
+#    its hands and silences another, then renders it alone. Both pictures
+#    must be the native program's, bit for bit, and what happened must say
+#    both helpers gone. Then the program with the page's card (every pass
+#    there): the card must take passes, and the page must call the picture
+#    the program's alone or near it (the card rounds less strictly than the
+#    processor).
 #
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
@@ -366,7 +367,7 @@ if ! web/cluster/build.sh "$T/farm" "$STAGE" > "$T/farm.build" 2>&1; then
 fi
 "$STAGE" -o "$T/bin/farm" web/cluster/render.scaly > "$T/bin/farm.build" 2>&1 ||
   { echo "gpu-web: FAIL — the render farm does not build natively"; exit 1; }
-native=$(RENDER_ROLE=s RENDER_WIDTH=128 RENDER_HEIGHT=96 RENDER_TILE=16 RENDER_PASSES=6 RENDER_SAMPLES=2 "$T/bin/farm" | sed -n 's/^C: image //p')
+native=$(RENDER_WIDTH=128 RENDER_HEIGHT=96 RENDER_PASSES=6 RENDER_SAMPLES=2 "$T/bin/farm" | sed -n 's/^C: image //p')
 page "$T/farm" "index.html?selftest" 300
 python3 - "$T/result" "$native" <<'PY' || failed=1
 import json, os, sys
@@ -387,10 +388,10 @@ if a['status'] != 0 or a['hash'] != native:
 if r['verdict'] != 'same':
     fails.append('the page did not say the pictures are the same (%s)' % r['verdict'])
 said = ' / '.join(c['events'])
-for want in ('Node 2 killed', 'finds node 2 gone', 'Node 3 falls silent', 'suspects node 3', 'goes back to the queue'):
+for want in ('Helper 2 killed', 'Helper 3 falls silent'):
     if want not in said:
         fails.append('no "%s" among what happened: %s' % (want, said))
-# with the card for every node: the card took tiles, and the picture is the
+# with the card for the program: the card took passes, and the picture is the
 # program's alone -- bit for bit, or near it, the card rounding less strictly
 k = r.get('card') or {}
 if 'missing' in k:
@@ -399,7 +400,7 @@ else:
     if k.get('status') != 0 or not k.get('hash'):
         fails.append('the cluster with the card did not finish (status %s)' % k.get('status'))
     if sum(k.get('cards') or [0]) < 1:
-        fails.append('no node ran a tile on the card (%s)' % k.get('cards'))
+        fails.append('the program ran no pass on the card (%s)' % k.get('cards'))
     if k.get('alone') != native:
         fails.append('the program alone after the card run rendered another picture (%s)' % k.get('alone'))
     if k.get('verdict') not in ('same', 'near'):
@@ -407,8 +408,8 @@ else:
     card_said = 'the card %s times, %s' % (sum(k.get('cards') or [0]), k.get('verdict'))
 for f in fails:
     print('  FAIL ' + f)
-print('gpu-web: cluster %s — three nodes, one killed and one silenced, %.0f ms; alone %.0f ms; tiles %s; %s' %
-      ('FAIL' if fails else 'PASS', c['ms'] or 0, a['ms'] or 0, c['tiles'], card_said))
+print('gpu-web: cluster %s — three helpers, one killed and one silenced, %.0f ms; alone %.0f ms; points %s; %s' %
+      ('FAIL' if fails else 'PASS', c['ms'] or 0, a['ms'] or 0, c['points'], card_said))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

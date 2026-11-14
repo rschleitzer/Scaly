@@ -23,7 +23,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // One node: a program on the network as node `id`, with its environment.
 // `out` holds what it wrote; `ended` resolves with its exit status.
-let node = async function (net, id, wasm, env) {
+let node = async function (net, id, wasm, env, args = []) {
   const self = { out: '', ended: null, gone: false };
   let finish;
   self.ended = new Promise(r => { finish = r; });
@@ -39,7 +39,7 @@ let node = async function (net, id, wasm, env) {
     finish(status);
   };
   const threads = await Threads.create({ out: take, err: take, exit: end, env: { ...process.env, SCALY_CPUS: '4', ...env }, net: share });
-  const program = new Worker(new URL('run.mjs', web), { workerData: { args: [`${built}/${wasm}`], env, net: share, relay: true } });
+  const program = new Worker(new URL('run.mjs', web), { workerData: { args: [`${built}/${wasm}`, ...args], env, net: share, relay: true } });
   program.on('message', data => {
     if (threads.handle(data)) return;
     if (data && data.type === 'out') take(data.bytes);
@@ -166,36 +166,38 @@ const scenarios = {
     const ok = rrc === 0 && w1rc === 0 && /^R: down 2$/m.test(r.out) && /^R: PASS/m.test(r.out);
     return ok || `rrc=${rrc} w1=${w1rc} ${lines(r.out, /down|PASS/).replace(/\n/g, ' ')}`;
   },
-  // the render farm (web/cluster/render.scaly): its picture is the solo
-  // program's, bit for bit, rendered by three nodes -- and again where one
-  // of them is killed, where one falls silent and where all are killed
-  // halfway (the coordinator renders the rest), its job handed on each time
+  // the render farm (web/cluster/render.scaly), a plain `for` built with
+  // --cluster: its picture is the program's alone, bit for bit, where three
+  // helpers render its passes (SCALY_CLUSTER=on: every pass goes out) --
+  // and again where one of them is killed, where one falls silent and
+  // where all are killed halfway (the program renders the rest itself).
+  // The helpers are found on the page's group, the network's multicast.
   async render(net) {
-    const size = { RENDER_WIDTH: '96', RENDER_HEIGHT: '72', RENDER_TILE: '16', RENDER_PASSES: '5', RENDER_SAMPLES: '2' };
+    const size = { RENDER_WIDTH: '96', RENDER_HEIGHT: '72', RENDER_PASSES: '5', RENDER_SAMPLES: '2' };
     const image = s => (s.match(/^C: image (\d+)$/m) || [])[1];
-    const solo = await node(net, 1, 'render.wasm', { ...size, RENDER_ROLE: 's' });
+    const solo = await node(net, 1, 'render.wasm', { ...size, SCALY_CLUSTER: 'off' });
     await solo.ended;
     const want = image(solo.out);
-    if (!want) return `solo: ${last(solo.out)}`;
+    if (!want) return `alone: ${last(solo.out)}`;
     const ways = { whole: [], kill: [2], silence: [2], all: [1, 2, 3] };
     let id = 10;
     for (const [way, victims] of Object.entries(ways)) {
-      const env = { ...size, RENDER_NODES: '3', RENDER_PORT: String(47750 + id) };
-      const c = await node(net, id++, 'render.wasm', { ...env, RENDER_ROLE: 'c' });
-      await c.marker(/^C: ready$/m);
-      const ws = [];
-      for (let k = 1; k <= 3; k++) ws.push(await node(net, id++, 'render.wasm', { ...env, RENDER_ROLE: 'w', RENDER_RANK: String(k) }));
+      const hs = [];
+      for (let k = 1; k <= 3; k++) hs.push(await node(net, id++, 'render.wasm', { SCALY_CLUSTER_TRACE: '1' }, ['--scaly-helper']));
+      for (const h of hs) if (!await h.marker(/^helper: ready/m)) return `${way}: a helper did not start: ${last(h.out)}`;
+      const c = await node(net, id++, 'render.wasm', { ...size, SCALY_CLUSTER: 'on', SCALY_CLUSTER_TRACE: '1' });
       if (victims.length) {
-        // once every victim has rendered a job: one is in its hands now
-        for (const v of victims) await c.marker(new RegExp(`^P \\d+ \\d+ ${v} `, 'm'), 30000);
-        for (const v of victims) way === 'silence' ? ws[v - 1].silence() : ws[v - 1].kill();
+        // once every victim has a stretch in its hands
+        for (const v of victims) await hs[v - 1].marker(/^helper: rounds/m, 30000);
+        for (const v of victims) way === 'silence' ? hs[v - 1].silence() : hs[v - 1].kill();
       }
       const crc = await c.ended;
       const got = image(c.out);
-      const downs = victims.every(v => new RegExp(`^C: down ${v}$`, 'm').test(c.out)) && /^C: again /m.test(c.out) === victims.length > 0;
-      if (crc !== 0 || got !== want || !downs) return `${way}: rc=${crc} image ${got} (solo ${want}) ${lines(c.out, /^C:/).replace(/\n/g, ' ')}`;
-      if (way === 'all' && !/^P \d+ \d+ 0 /m.test(c.out)) return 'all: the coordinator rendered nothing itself';
-      await Promise.all(ws.filter((w, k) => !victims.includes(k + 1)).map(w => w.ended));
+      hs.forEach(h => h.kill());
+      if (crc !== 0 || got !== want) return `${way}: rc=${crc} image ${got} (alone ${want}) ${lines(c.out, /^(C:|cluster: \d)/).replace(/\n/g, ' ')}`;
+      if (way === 'whole' && !hs.every(h => /^helper: rounds/m.test(h.out))) return 'whole: a helper rendered nothing';
+      if (way === 'whole' && !/on 3 helpers, all there$/m.test(c.out)) return `whole: ${lines(c.out, /^cluster: \d/).replace(/\n/g, ' ')}`;
+      if (way === 'all' && !/none left: this machine runs them$/m.test(c.out)) return `all: ${lines(c.out, /^cluster: \d/).replace(/\n/g, ' ')}`;
     }
     return true;
   },

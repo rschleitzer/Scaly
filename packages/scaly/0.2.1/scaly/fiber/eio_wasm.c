@@ -195,7 +195,8 @@ int scaly_eio_sockname(int fd, void* addr, unsigned long long addrcap, unsigned 
  * the end.) */
 /* (both profiles) */
 /* a cluster's helpers: every peer of the page's network is on this
- * machine; finding each other goes through the page (not yet: -1) */
+ * machine; finding each other goes through the page (its group, below:
+ * with threads only -- without, there is no network) */
 int scaly_eio_peer_is_local(int fd) { (void)fd; return 1; }
 int scaly_eio_random(void* buf, unsigned long long len)
 {
@@ -209,9 +210,11 @@ int scaly_eio_random(void* buf, unsigned long long len)
     }
     return 0;
 }
+#ifndef __wasm_atomics__
 int scaly_eio_mcast_listen(int port, int local_only) { (void)port; (void)local_only; return -1; }
 long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port, int local_only) { (void)buf; (void)len; (void)port; (void)local_only; return -1; }
 long long scaly_eio_mcast_recv(int fd, void* buf, unsigned long long cap, int ms, char* from, unsigned long long from_cap) { (void)fd; (void)buf; (void)cap; (void)ms; (void)from; (void)from_cap; return -1; }
+#endif
 #ifndef __wasm_atomics__
 int scaly_eio_tcp_listen(int port) { (void)port; return -1; }
 int scaly_eio_tcp_listen_host(const char* host, int port) { (void)host; (void)port; return -1; }
@@ -466,8 +469,19 @@ int scaly_eio_self_path(char* buffer, unsigned long long capacity)
 static int scaly_argc_;
 static char** scaly_argv_;
 
-/* the gate of a helper (eio.c): in a page there are no helpers yet */
-void scaly_helper_gate(void (*helper)(void)) { (void)helper; }
+/* The gate of a helper (eio.c): a node of a page started with
+ * --scaly-helper (or --scaly-helper=once) runs the helper instead of its
+ * program. */
+void scaly_helper_gate(void (*helper)(void))
+{
+    int i;
+    for (i = 1; helper && scaly_argv_ && i < scaly_argc_; i++)
+        if (scaly_argv_[i] && (strcmp(scaly_argv_[i], "--scaly-helper") == 0 || strcmp(scaly_argv_[i], "--scaly-helper=once") == 0))
+        {
+            helper();
+            exit(0);
+        }
+}
 
 void scaly_set_arguments(long long argc, char** argv)
 {
@@ -701,6 +715,9 @@ SCALY_NET_IMPORT("read") int scaly_net_read(int fd, void* buf, unsigned n, int m
 SCALY_NET_IMPORT("write") int scaly_net_write(int fd, const void* buf, unsigned n, int ms);
 SCALY_NET_IMPORT("ready") int scaly_net_ready(int fd, int for_write);
 SCALY_NET_IMPORT("close") int scaly_net_close(int fd);
+SCALY_NET_IMPORT("mcast_listen") int scaly_net_mcast_listen(int port);
+SCALY_NET_IMPORT("mcast_send") int scaly_net_mcast_send(const void* buf, unsigned n, int port);
+SCALY_NET_IMPORT("mcast_recv") int scaly_net_mcast_recv(int fd, void* buf, unsigned cap, int ms);
 
 /* which descriptors were made non-blocking: the connections' and the
  * listeners' (their numbers as net.mjs makes them) */
@@ -794,6 +811,28 @@ long long scaly_eio_tcp_write(int fd, const void* buf, unsigned long long count)
 int scaly_eio_tcp_nodelay(int fd, int on) { (void)on; return scaly_wasm_is_net(fd) ? 0 : -1; }
 int scaly_eio_accept(int fd) { return scaly_wasm_is_net(fd) ? scaly_wasm_net_accept(fd) : -1; }
 int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
+
+/* A group of the page's network (net.mjs): every node of the page is in
+ * it, the page is the LAN. A datagram comes from this machine; recv
+ * answers 0 where none came within ms, as eio.c's does. The descriptor
+ * closes through scaly_net_close like the network's others. */
+int scaly_eio_mcast_listen(int port, int local_only)
+{
+    (void)local_only;
+    return scaly_net_mcast_listen(port);
+}
+long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port, int local_only)
+{
+    (void)local_only;
+    return len > 0x10000ULL ? -1 : scaly_net_mcast_send(buf, (unsigned)len, port);
+}
+long long scaly_eio_mcast_recv(int fd, void* buf, unsigned long long cap, int ms, char* from, unsigned long long from_cap)
+{
+    int n = scaly_net_mcast_recv(fd, buf, cap > 0x10000ULL ? 0x10000U : (unsigned)cap, ms);
+    if (n > 0 && from && from_cap > 9)
+        memcpy(from, "127.0.0.1", 10);
+    return n;
+}
 
 /* ---- the evented-I/O queue: wakes and readiness, in this program's memory -- */
 

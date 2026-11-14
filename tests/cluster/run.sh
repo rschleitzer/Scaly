@@ -274,8 +274,8 @@ else
   # helpers <env of the helpers> <env of the coordinator> <expected line> <what>
   helpers_case() {
     local hpids=()
-    env $1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & hpids+=($!)
-    env $1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & hpids+=($!)
+    env $1 SCALY_CLUSTER_TRACE=1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & hpids+=($!)
+    env $1 SCALY_CLUSTER_TRACE=1 "$HB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & hpids+=($!)
     wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
     local got
     got=$(env $2 "$HB" 2>&1 | tail -1)
@@ -288,11 +288,11 @@ else
   helpers_case "SCALY_CLUSTER_KEY=k1" "X=1" "found 0, connected 0" "a key on the helpers only"
   # a helper of another build is passed over; one started after the
   # coordinator began to look is found (it announces itself at once)
-  "$OUT/cluster_${t}_other$SCALY_EXE" --scaly-helper > "$OUT/cluster_${t}_o.log" 2>&1 & OPID=$!
+  SCALY_CLUSTER_TRACE=1 "$OUT/cluster_${t}_other$SCALY_EXE" --scaly-helper > "$OUT/cluster_${t}_o.log" 2>&1 & OPID=$!
   wait_marker "$OUT/cluster_${t}_o.log" "^helper: ready"
   "$HB" > "$OUT/cluster_${t}_c.log" 2>&1 & CPID=$!
   sleep 0.3
-  "$HB" --scaly-helper > "$OUT/cluster_${t}_late.log" 2>&1 & LPID=$!
+  SCALY_CLUSTER_TRACE=1 "$HB" --scaly-helper > "$OUT/cluster_${t}_late.log" 2>&1 & LPID=$!
   wait $CPID
   got=$(tail -1 "$OUT/cluster_${t}_c.log")
   kill $OPID $LPID 2>/dev/null; wait $OPID $LPID 2>/dev/null
