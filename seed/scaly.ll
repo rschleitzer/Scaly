@@ -66744,12 +66744,6 @@ stub.entry:
   ret { i64, double, double } zeroinitializer
 }
 
-; Function Attrs: alwaysinline
-define linkonce_odr double @_Z13product_error1T3f643f643f64(ptr %0, double %1, double %2, double %3) #2 {
-stub.entry:
-  ret double 0.000000e+00
-}
-
 define linkonce_odr { i64, double, double } @_Z17trig_reduce_large1T3f64(ptr %0, double %1) {
 stub.entry:
   ret { i64, double, double } zeroinitializer

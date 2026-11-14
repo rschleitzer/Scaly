@@ -13,7 +13,10 @@
 ; (an older or generic x86_64 build, WebAssembly). Builds with FMA compute
 ; the same bits; the others are `relaxed`: as fast, as accurate to within
 ; a unit in the last place (tan, atan2, asin, acos: two -- the rest of a
-; division is not exact without FMA), not the same bits.
+; division is not exact without FMA), not the same bits. Where relaxed
+; would not do -- pow's y log x, whose error e^ makes a relative one --
+; mul_error gives a product's rounding error exactly on every target (FMA,
+; else Dekker's product: slower only there).
 ;
 ; Every function is generic (exp[T] for T f64 or f32): it is made in the
 ; module of the program that calls it, for that program's processor, where
@@ -121,8 +124,8 @@ function expm1_small[T](probe: T, r: f64) @inline true returns f64
 
 ; e^x - 1 for |x| < 1/4 as hi + lo, the series to x^13/13! (the next
 ; term is below a 20th of the last place): x + x^2/2 with its rounding
-; error kept (x^2 as hi + lo, lo exact by FMA, nothing without), the rest
-; x^3 q.
+; error kept (x^2 as hi + lo, lo exact on every target: mul_error), the
+; rest x^3 q.
 function expm1_series[T](probe: T, x: f64) @inline true returns f64
 {
     let c13_bits: u64 0x3de6124613a86d09
@@ -142,7 +145,7 @@ function expm1_series[T](probe: T, x: f64) @inline true returns f64
     q := x.mul_add(q, 0.041666666666666664)
     q := x.mul_add(q, 0.16666666666666666)
     let sh x * x
-    let sl x.mul_add(x, 0.0 - sh)
+    let sl x.mul_error(x)
     let half 0.5 * sh
     let hi x + half
     let err (x - hi) + half
@@ -162,7 +165,7 @@ function exp_reduce[T](probe: T, v: f64) @inline true returns (k: i64, r: f64)
 }
 
 ; log1p(r) for |r| < 1/32 as hi + lo: r - r^2/2 + r^3 q, q to r^13/13.
-; r^2 as hi + lo (lo exact by FMA, nothing without), -r^2/2 exact, r -
+; r^2 as hi + lo (lo exact on every target: mul_error), -r^2/2 exact, r -
 ; r^2/2 with its rounding error kept.
 function log1p_small[T](probe: T, r0: f64) @inline true returns (hi: f64, lo: f64)
 {
@@ -178,7 +181,7 @@ function log1p_small[T](probe: T, r0: f64) @inline true returns (hi: f64, lo: f6
     q := r0.mul_add(q, zero - 0.25)
     q := r0.mul_add(q, 0.3333333333333333)
     let sh r0 * r0
-    let sl r0.mul_add(r0, zero - sh)
+    let sl r0.mul_error(r0)
     let half zero - 0.5 * sh
     let hi0 r0 + half
     let err0 (r0 - hi0) + half
@@ -442,19 +445,6 @@ function trig_reduce_medium[T](probe: T, v: f64) @inline true returns (n: i64, h
     (n: t.to_bits() as i64, hi: h, lo: e + nk.mul_add(p4_bits.float_from_bits(), wl))
 }
 
-; a b - (a b rounded), exactly, without FMA: Dekker's product (each factor
-; split into halves of 26 bits, whose products are exact)
-function product_error[T](probe: T, a: f64, b: f64, p: f64) @inline true returns f64
-{
-    let ca a * 134217729.0
-    let ah ca - (ca - a)
-    let al a - ah
-    let cb b * 134217729.0
-    let bh cb - (cb - b)
-    let bl b - bh
-    (((ah * bh - p) + ah * bl) + al * bh) + al * bl
-}
-
 ; x = N pi/64 + (hi + lo) for 2^15 <= |x| (Payne and Hanek), N modulo
 ; 128: |x| = m 2^e, m an integer of 53 bits; |x| 2/pi modulo 4 needs only
 ; the bits of 2/pi from 2^-(e - 1) on -- the ones before give multiples
@@ -554,7 +544,7 @@ function trig_reduce_large[T](probe: T, x: f64) returns (n: i64, hi: f64, lo: f6
     ; times pi/64 as hi + lo
     let lo_bits: u64 0x3c41a62633145c07
     let rh f_hi * 0.04908738521234052
-    let rl product_error(probe, f_hi, 0.04908738521234052, rh) + f_hi.mul_add(lo_bits.float_from_bits(), f_lo * 0.04908738521234052)
+    let rl f_hi.mul_error(0.04908738521234052) + f_hi.mul_add(lo_bits.float_from_bits(), f_lo * 0.04908738521234052)
     let hi rh + rl
     let lo (rh - hi) + rl
     if (b >> 63) = 1
@@ -878,9 +868,9 @@ function pow_core[T](probe: T, ax: f64, vy: f64, sign: f64) @inline true returns
     let lh l.hi + l.lo
     let ll (l.hi - lh) + l.lo
     ; y log x reaches 745: the product's error matters at 2^-44, so it is
-    ; exact on every target (Dekker's product), not only with FMA
+    ; exact on every target (mul_error: FMA, else Dekker's product)
     let ph vy * lh
-    let pl product_error(probe, vy, lh, ph) + vy * ll
+    let pl vy.mul_error(lh) + vy * ll
     if ph > 709.782712893384
         return (infinity_f64(probe) * sign) as T
     if ph < zero - 745.1332191019412

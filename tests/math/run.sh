@@ -58,7 +58,7 @@ cross() {
     # tan, atan2, asin, acos: the rest of a division is not exact without
     # FMA (math.scaly)
     local lim=1.0
-    case "$fn" in tan|atan2|asin|acos) lim=2.0 ;; pow) lim=3.0 ;; esac
+    case "$fn" in tan|atan2|asin|acos) lim=2.0 ;; esac
     python3 tests/math/check.py $fn 20000 3 "$X/bits_generic" $lim; verdict $? "$fn generic"
   done
 }
