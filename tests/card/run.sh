@@ -12,8 +12,10 @@
 #
 # NOT in the bar: it needs a Chrome with WebGPU (CHROME; on Linux a Chromium
 # such as Brave, whose WebGPU wants --enable-unsafe-webgpu and, for the real
-# card, --use-angle=vulkan -- CHROME_FLAGS), a wasi-sdk (WASI_SDK, else
-# ~/opt/wasi-sdk-*) and node, and is SKIPPED by name without one of them.
+# card, --enable-features=Vulkan --use-angle=vulkan -- CHROME_FLAGS: without
+# them a headless one draws on the processor, SwiftShader, and passes all
+# the same), a wasi-sdk (WASI_SDK, else ~/opt/wasi-sdk-*) and node, and is
+# SKIPPED by name without one of them. It says which card it ran on.
 #
 # Usage: tests/card/run.sh [compiler]   (default scalyc/build/scalyc; the tool
 #        beside it, tools/scaly-of.sh)
@@ -75,6 +77,12 @@ for line in sys.stdin:
         v = r.get('$2', '')
         print(v if isinstance(v, str) else json.dumps(v), end='')"
 }
+
+adapter=$(field card adapter)
+echo "card: on $adapter"
+if printf '%s' "$adapter" | grep -q '"fallback": true'; then
+  echo "card: NOTE -- a fallback adapter: the processor drew for the card (see CHROME_FLAGS)"
+fi
 
 for name in "${names[@]}"; do
   native_out=$("$T/native/$name" 2>/dev/null); native_rc=$?

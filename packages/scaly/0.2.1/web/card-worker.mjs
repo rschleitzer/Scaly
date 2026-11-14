@@ -20,14 +20,18 @@
 // copied out, every run's fault word with it, and the program is woken: word
 // 0 of `shared` 1 with the bytes behind the head, 2 with why it did not run
 // (its length in word 1) -- a round that met an index beyond its vector, or
-// what WebGPU said.
+// what WebGPU said. Words 2 to 5 of the head say what the flush was: its
+// milliseconds (from the message's arrival to the bytes), its runs, the
+// loads and their megabytes -- for a page that shows where the time goes.
 //
 // The first message is { type: 'hello', files }; the answer says whether the
-// page has a card: { card, why, limits }.
+// page has a card: { card, why, limits, adapter } -- `adapter` its vendor,
+// architecture, description and whether it is a fallback (the processor
+// drawing for a card it lacks).
 
 const GROUP = 64;
 const ROW = 65535;
-const HEAD = 8;
+const HEAD = 24;
 // a run's fault word, at its own offset in one buffer per flush
 const FAULT_STRIDE = 256;
 
@@ -55,7 +59,10 @@ async function hello(data) {
   };
   try { device = await adapter.requestDevice({ requiredLimits: limits }); }
   catch (e) { return { card: false, why: `requestDevice failed: ${e && e.message || e}` }; }
-  return { card: true, why: '', limits };
+  const info = adapter.info || {};
+  const said = { vendor: info.vendor || '', architecture: info.architecture || '', description: info.description || '',
+                 fallback: !!(info.isFallbackAdapter ?? adapter.isFallbackAdapter) };
+  return { card: true, why: '', limits, adapter: said };
 }
 
 function pipeline(wgsl) {
@@ -79,8 +86,14 @@ function filled(bytes) {
 }
 
 async function flush({ ops, read, shared }) {
-  const state = new Int32Array(shared, 0, 2);
+  const begun = performance.now();
+  const state = new Int32Array(shared, 0, 6);
+  const loads = ops.filter(o => o.op === 'load');
   const answer = (code, why) => {
+    state[2] = Math.round(performance.now() - begun);
+    state[3] = ops.filter(o => o.op === 'run').length;
+    state[4] = loads.length;
+    state[5] = Math.round(loads.reduce((sum, o) => sum + o.bytes, 0) / 1e6);
     if (code === 2) {
       const text = encoder.encode(why).subarray(0, shared.byteLength - HEAD);
       new Uint8Array(shared, HEAD, text.length).set(text);

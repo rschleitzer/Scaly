@@ -15348,7 +15348,25 @@ define Planner
                                                                 if sm_ref <> null
                                                                 {
                                                                     let m (*sm_ref)
-                                                                    let idx_op this.subscript_index_value(this.collapse_operand_sequence(row))
+                                                                    var idx_op this.subscript_index_value(this.collapse_operand_sequence(row))
+                                                                    ; the index takes the operator's parameter type as
+                                                                    ; any argument does (fold_string_args_to_char#): a
+                                                                    ; constant settled to its width, a narrower integer
+                                                                    ; widened -- a u32 index went as an i32 into the
+                                                                    ; `size_t` of `operator []`, which the native ABIs
+                                                                    ; mostly forgave and wasm refused (2026-11-14)
+                                                                    if m.parameter_types <> null and m.parameter_types.length > 0
+                                                                    {
+                                                                        let ipt_ptr m.parameter_types.get(m.parameter_types.length - 1)
+                                                                        if ipt_ptr <> null
+                                                                        {
+                                                                            let ipt (*ipt_ptr)
+                                                                            if Planner.type_is_integer_like(ipt) and this.constant_shape(idx_op)
+                                                                                idx_op := this.settle_constant(idx_op, ipt)
+                                                                            else if this.integer_operand_widens(ipt, idx_op)
+                                                                                idx_op := this.widen_integer_operand(ipt, idx_op)
+                                                                        }
+                                                                    }
                                                                     this.ensure_type_layout(recv_op.result_type)
                                                                     this.ensure_type_layout(m.return_type)
                                                                     var sub_args Vector[PlannedOperand](2)
@@ -22267,9 +22285,12 @@ define Planner
                 can_throw := true
 
             ; Carry the winner's planned parameter types so the dispatch site
-            ; folds the operands (bare String -> char, f64 literal -> f32). For
-            ; the []-subscript path (no arg types) this is empty and the fold is
-            ; a no-op. Stack holder promoted like the s129 &sparams_holder.
+            ; folds the operands (bare String -> char, f64 literal -> f32).
+            ; The []-subscript path (no arg types) takes the operator's own:
+            ; its index is settled or widened to it (collapse_subscripts#).
+            ; Stack holder promoted like the s129 &sparams_holder.
+            if sel_fold_params.length = 0 and op_name = "[]"
+                sel_fold_params := this.operator_planned_param_types(op)
             var fmop_params_holder Vector[PlannedType](sel_fold_params)
             MethodMatch^this(
                 null,

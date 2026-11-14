@@ -19,7 +19,7 @@ self.onmessage = async ({ data: { wasm } }) => {
     } catch (e) {
       status = 'ended: ' + (e && e.message || e);
     }
-    self.postMessage({ card: true, status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), runs: card.runs, flushes: card.flushes });
+    self.postMessage({ card: true, adapter: card.adapter, status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), runs: card.runs, flushes: card.flushes });
   } catch (e) {
     self.postMessage({ card: true, failed: String(e && e.stack || e) });
   }

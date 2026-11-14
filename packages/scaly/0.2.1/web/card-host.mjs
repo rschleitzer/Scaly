@@ -25,14 +25,17 @@
 // CardHost.why says which. Instead of a URL it takes a Worker made from
 // card-worker.mjs. `files`: a Map of path -> ArrayBuffer or
 // SharedArrayBuffer whose bytes CardVector.from_file fills a vector from on
-// the card's side; a SharedArrayBuffer is shared, not copied.
+// the card's side; a SharedArrayBuffer is shared, not copied. `trace`, a
+// function, is told after every flush what it was: { ms, runs, loads, mb }.
+// `adapter` says which card the page got ({ vendor, architecture,
+// description, fallback }).
 
 const decoder = new TextDecoder();
 // how many bytes the answer of a read may hold beyond its head
-const HEAD = 8;
+const HEAD = 24;
 
 export class CardHost {
-  static async open(source, { files = new Map() } = {}) {
+  static async open(source, { files = new Map(), trace = null } = {}) {
     CardHost.why = '';
     if (typeof SharedArrayBuffer === 'undefined' || typeof Atomics === 'undefined') {
       CardHost.why = 'no SharedArrayBuffer (the page is not cross-origin isolated)';
@@ -52,13 +55,15 @@ export class CardHost {
       CardHost.why = hello.why || 'no card';
       return null;
     }
-    return new CardHost(worker, new Set(files.keys()), hello);
+    return new CardHost(worker, new Set(files.keys()), hello, trace);
   }
 
-  constructor(worker, paths, hello) {
+  constructor(worker, paths, hello, trace) {
     this.worker = worker;
     this.paths = paths;
     this.limits = hello.limits;
+    this.adapter = hello.adapter || {};
+    this.trace = trace;
     this.next = 1;
     this.ops = [];
     this.transfer = [];
@@ -134,13 +139,14 @@ export class CardHost {
         const memory = getMemory();
         const n = u(bytes);
         const shared = new SharedArrayBuffer(HEAD + Math.max(n, u(capacity)));
-        const state = new Int32Array(shared, 0, 2);
+        const state = new Int32Array(shared, 0, 6);
         const ops = this.ops, transfer = this.transfer;
         this.ops = [];
         this.transfer = [];
         this.flushes++;
         this.worker.postMessage({ type: 'flush', ops, read: { id: u(id), at: u(at), bytes: n }, shared }, transfer);
         Atomics.wait(state, 0, 0);
+        if (this.trace) this.trace({ ms: state[2], runs: state[3], loads: state[4], mb: state[5] });
         if (state[0] === 1) {
           new Uint8Array(memory.buffer, u(ptr), n).set(new Uint8Array(shared, HEAD, n));
           return 0;

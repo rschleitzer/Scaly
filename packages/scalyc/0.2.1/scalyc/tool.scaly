@@ -534,7 +534,7 @@ define tool
         true
     }
 
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, gpu: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
     {
         if tool.lines_may_double(names, roots) = false
             return false
@@ -565,12 +565,12 @@ define tool
             let dir root.substring(0, slash as size_t)
             var files Array[String]()
             tool.package_files(dir, "", &files)
-            let base tool.package_base(np, root, triple, cpu, selection)
+            let base tool.package_base(np, root, triple, cpu, gpu, selection)
             ; what the package defines, written by whichever build comes first
             ; (check_definitions# below)
             def_owners.add(String(np))
             def_files.add("`base`.defs")
-            if tool.compile_package(np, root, given_triple, cpu, release, selection) = false
+            if tool.compile_package(np, root, given_triple, cpu, release, gpu, selection) = false
             {
                 Console.println("Error: package `np` did not build")
                 return false
@@ -634,7 +634,7 @@ define tool
 
     ; where a package compiled for this build lies in the cache, without the
     ; extension: `<cache>/<name>-<version>-<key>`
-    procedure package_base(name: String, root: String, triple: String, cpu: String, selection: String) returns String
+    procedure package_base(name: String, root: String, triple: String, cpu: String, gpu: bool, selection: String) returns String
     {
         let slash root.last_index_of(47)
         var dir String(root)
@@ -647,17 +647,21 @@ define tool
         var files Array[String]()
         tool.package_files(dir, "", &files)
         ; -mcpu is part of what a package is compiled for: it reaches the
-        ; IR (a SIMD operation's target form, every function's attribute)
+        ; IR (a SIMD operation's target form, every function's attribute),
+        ; and so is --gpu (a loop's kernel and its card's run beside it)
         var root_for_deps String(root)
-        let key tool.package_key(dir, &files, triple, "O2`cpu``tool.dependency_versions(root_for_deps, selection)`")
+        var flags "O2`cpu`"
+        if gpu
+            flags := "`flags`+gpu"
+        let key tool.package_key(dir, &files, triple, "`flags``tool.dependency_versions(root_for_deps, selection)`")
         "`tool.cache_root()`/`name`-`version`-`tool.hex16(key)`"
     }
 
     ; whether the cache holds the package as this build takes it: its
     ; bitcode (--release) or its object, and what it defines
-    procedure package_compiled(name: String, root: String, given_triple: String, cpu: String, release: bool, selection: String) returns bool
+    procedure package_compiled(name: String, root: String, given_triple: String, cpu: String, release: bool, gpu: bool, selection: String) returns bool
     {
-        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, selection)
+        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, gpu, selection)
         var compiled "`base`.o"
         if release
             compiled := "`base`.bc"
@@ -669,9 +673,9 @@ define tool
     ; defines beside it. A package whose interface the cache lacks writes it
     ; in the same compiler run (Options.interface_dir). False when it did not
     ; compile.
-    procedure compile_package(name: String, root: String, given_triple: String, cpu: String, release: bool, selection: String) returns bool mutable modeler_error_count
+    procedure compile_package(name: String, root: String, given_triple: String, cpu: String, release: bool, gpu: bool, selection: String) returns bool mutable modeler_error_count
     {
-        if tool.package_compiled(name, root, given_triple, cpu, release, selection)
+        if tool.package_compiled(name, root, given_triple, cpu, release, gpu, selection)
             return true
         var cache tool.cache_root()
         if tool.ensure_directory(cache) = false
@@ -679,7 +683,7 @@ define tool
             Console.println("Error: cannot create the build cache `cache`")
             return false
         }
-        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, selection)
+        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, gpu, selection)
         let slash root.last_index_of(47)
         var dir String(root)
         if slash >= 0
@@ -704,6 +708,9 @@ define tool
         o.no_tests := true
         o.target_triple := String(given_triple)
         o.target_cpu := String(cpu)
+        ; a package's loops over CardVectors go to the card as the program's
+        ; do: its parallel loops are built --gpu with it
+        o.gpu := gpu
         if release
             o.bitcode := true
         else
@@ -1629,7 +1636,7 @@ define tool
     ; routine's result reaches, WriteCensus.declared_reach#) -- a program
     ; would be refused on its first build and taken on its second.
     procedure prepare_interfaces(mutable root_file: String) mutable modeler_error_count
-        tool.prepare_packages(root_file, false, String(), String(), false)
+        tool.prepare_packages(root_file, false, String(), String(), false, false)
 
     ; prepare_interfaces# for `scaly build` (`build`): a package without its
     ; interface that the build will compile as well is compiled NOW, and the
@@ -1638,7 +1645,7 @@ define tool
     ; of a whole plan (9 s of 47 for a package of 300 000 lines). Only a
     ; package already compiled without its interface is planned for the
     ; interface alone.
-    procedure prepare_packages(mutable root_file: String, build: bool, given_triple: String, cpu: String, release: bool) mutable modeler_error_count
+    procedure prepare_packages(mutable root_file: String, build: bool, given_triple: String, cpu: String, release: bool, gpu: bool) mutable modeler_error_count
     {
         setenv("SCALY_PACKAGE_SUMS", "", 1)
         let selection Modeler.select_versions(root_file, false)
@@ -1669,9 +1676,9 @@ define tool
             tool.package_files(dir, "", &files)
             if tool.interface_wanted(name, versions.at(i), dir, &files, root, selection).get_length() > 0
             {
-                if build and tool.package_compiled(name, root, given_triple, cpu, release, selection) = false
+                if build and tool.package_compiled(name, root, given_triple, cpu, release, gpu, selection) = false
                 {
-                    tool.compile_package(name, root, given_triple, cpu, release, selection)
+                    tool.compile_package(name, root, given_triple, cpu, release, gpu, selection)
                     i := i + 1
                     continue
                 }
