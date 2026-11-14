@@ -2519,6 +2519,67 @@ const char* scaly_argument(unsigned long long index)
     return index < scaly_argument_count() ? scaly_argv_[index] : 0;
 }
 
+
+/* The graphics card's vectors (scaly/card.scaly, ROADMAP-card.md): no host of
+ * this file has a card, so every CardVector lives in the program's memory and
+ * none of the others is ever called. They are here, not in a file of their
+ * own, because every runtime archive carries this file: a CardVector, which
+ * any program may use, names them on every target -- the one seed serves all
+ * (a page's host is scaly/card/card_wasm.c). */
+int scaly_card_available(void)
+{
+    return 0;
+}
+
+unsigned int scaly_card_create(unsigned long long bytes)
+{
+    (void)bytes;
+    return 0;
+}
+
+static void scaly_card_none(const char *what)
+{
+    fprintf(stderr, "card: %s without a card host\n", what);
+    fflush(stderr);
+    exit(15);
+}
+
+void scaly_card_write(unsigned int id, unsigned long long at, const void *from, unsigned long long bytes)
+{
+    (void)id; (void)at; (void)from; (void)bytes;
+    scaly_card_none("write");
+}
+
+void scaly_card_read(unsigned int id, unsigned long long at, void *into, unsigned long long bytes)
+{
+    (void)id; (void)at; (void)into; (void)bytes;
+    scaly_card_none("read");
+}
+
+int scaly_card_load(unsigned int id, unsigned long long at, const char *path, unsigned long long offset, unsigned long long bytes)
+{
+    (void)id; (void)at; (void)path; (void)offset; (void)bytes;
+    scaly_card_none("load");
+    return 0;
+}
+
+void scaly_card_run(const char *wgsl, const char *where, long long count, const unsigned int *words, unsigned long long n_words,
+                    void **buffers, const unsigned long long *sizes, const unsigned int *ids, unsigned long long n_inputs, unsigned long long n_outputs)
+{
+    (void)wgsl; (void)where; (void)count; (void)words; (void)n_words;
+    (void)buffers; (void)sizes; (void)ids; (void)n_inputs; (void)n_outputs;
+    scaly_card_none("run");
+}
+
+/* A CardVector's element touched by the processor while it lives on the
+ * card. */
+void scaly_panic_card(const char *what)
+{
+    fprintf(stderr, "card: %s\n", what);
+    fflush(stderr);
+    exit(15);
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

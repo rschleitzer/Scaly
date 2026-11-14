@@ -4505,6 +4505,11 @@ define WriteCensus
                 return false
             if name.starts_with(String("scaly_panic_"))
                 return false
+            ; a CardVector's memory and its kernels' runs: another device's
+            ; memory and computation, not the world outside -- but for a
+            ; vector filled from a file (scaly/card.scaly)
+            if name.starts_with(String("scaly_card_")) and name <> "scaly_card_load"
+                return false
             if name.starts_with(String("scaly_eio_wake"))
                 return false
             if name = "scaly_eio_ncpu"

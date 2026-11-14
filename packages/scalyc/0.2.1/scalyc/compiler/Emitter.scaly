@@ -19242,6 +19242,18 @@ define Emitter
                 oi := oi + 1
             }
 
+            ; a loop over CardVectors (ROADMAP-card.md): where its vectors live
+            ; on the card, ONE run handed to the host, which only lists it --
+            ; nothing waits --, else the processor's loop; never the gates'
+            ; weighing. A host without CardVectors (Metal, so far) keeps them
+            ; in memory.
+            if gk.k_card
+            {
+                if host <> 2
+                    return emit_parallel_for for_expr
+                return this.emit_card_for(offer, &gk.k_buffer_cards, &gk.k_output_cards, for_expr)
+            }
+
             ; at the head: only where the host says the card is tried there
             let forced_ty LLVMFunctionType(i32_ty, null as pointer[LLVMTypeRef], 0, 0)
             let forced_fn this.get_parfor_runtime_fn("scaly_gpu_forced", forced_ty)
@@ -19531,6 +19543,252 @@ define Emitter
             fr_args.put(0, parts)
             LLVMBuildCall2(builder, free_ty, free_fn, fr_args.data, 1, "")
             on_card
+        }
+
+        ; A loop over CardVectors (emit_gpu_for#): the card's run where the
+        ; first CardVector it names lives on the card (its id is not 0), the
+        ; processor's loop where it lives in memory. That all its vectors
+        ; live in one place is the host's to check (scaly_card_run) and the
+        ; processor's element access's (CardVector[]).
+        procedure emit_card_for(mutable this, mutable offer: GpuOffer, in_cards: ref[Array[int]], out_cards: ref[Array[int]], mutable for_expr: PlannedFor) returns LLVMValueRef
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            var first: LLVMValueRef null
+            var i: size_t 0
+            while first = null and i < offer.buffer_ops.length
+            {
+                if i < in_cards.length and in_cards[i] <> 0
+                    first := this.card_id_of(offer.buffer_ops[i])
+                i := i + 1
+            }
+            i := 0
+            while first = null and i < offer.output_ops.length
+            {
+                if i < out_cards.length and out_cards[i] <> 0
+                    first := this.card_id_of(offer.output_ops[i])
+                i := i + 1
+            }
+            if first = null
+                return emit_parallel_for for_expr
+            let on_card LLVMBuildICmp(builder, LLVMIntPredicate.NE(), first, LLVMConstInt(i32_ty, 0, 0), "card.on")
+            let card_block create_block("card.run")
+            let cpu_block create_block("card.cpu")
+            let done_block create_block("card.done")
+            LLVMBuildCondBr(builder, on_card, card_block, cpu_block)
+
+            LLVMPositionBuilderAtEnd(builder, card_block)
+            if this.emit_card_run(offer, in_cards, out_cards) = false
+            {
+                ; a value of a shape this does not know: the processor, whose
+                ; element access traps where the vector is on the card
+                LLVMBuildBr(builder, cpu_block)
+            }
+            else
+                LLVMBuildBr(builder, done_block)
+
+            LLVMPositionBuilderAtEnd(builder, cpu_block)
+            emit_parallel_for for_expr
+            if LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder) = null
+                LLVMBuildBr(builder, done_block)
+            LLVMPositionBuilderAtEnd(builder, done_block)
+            null
+        }
+
+        ; The id of a CardVector operand ({length, data, id}), null for a
+        ; shape this does not know.
+        procedure card_id_of(mutable this, mutable op: PlannedOperand) returns LLVMValueRef
+        {
+            let v emit_operand op
+            if v = null
+                return null
+            let i32_ty LLVMInt32TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let vk LLVMGetTypeKind(LLVMTypeOf(v))
+            if vk = LLVMTypeKind.Struct()
+            {
+                if LLVMCountStructElementTypes(LLVMTypeOf(v)) <> 3
+                    return null
+                return LLVMBuildExtractValue(builder, v, 2, "card.id")
+            }
+            if vk <> LLVMTypeKind.Pointer()
+                return null
+            var at v
+            if LLVMIsAAllocaInst(v) <> null
+            {
+                let slot_kind LLVMGetTypeKind(LLVMGetAllocatedType(v))
+                if slot_kind = LLVMTypeKind.Pointer()
+                    at := LLVMBuildLoad2(builder, ptr_ty, v, "card.record")
+                else if slot_kind <> LLVMTypeKind.Struct()
+                    return null
+            }
+            let id_at LLVMBuildStructGEP2(builder, this.card_record_type(), at, 2, "card.id.at")
+            LLVMBuildLoad2(builder, i32_ty, id_at, "card.id")
+        }
+
+        procedure card_record_type(mutable this) returns LLVMTypeRef
+        {
+            var fields Vector[LLVMTypeRef](3)
+            fields.put(0, LLVMInt64TypeInContext(context))
+            fields.put(1, LLVMPointerTypeInContext(context, 0))
+            fields.put(2, LLVMInt32TypeInContext(context))
+            LLVMStructTypeInContext(context, fields.data, 3, 0)
+        }
+
+        ; A buffer of a card's run: a CardVector by its id (and its length),
+        ; an ordinary one by its address, which the host copies. False for
+        ; a shape this does not know.
+        procedure card_bind_buffer(mutable this, mutable op: PlannedOperand, kind: int, card: bool, mutable bufs_ty: LLVMTypeRef, mutable bufs: LLVMValueRef, mutable sizes_ty: LLVMTypeRef, mutable sizes: LLVMValueRef, mutable ids_ty: LLVMTypeRef, mutable ids: LLVMValueRef, slot: size_t) returns bool
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            if card = false
+            {
+                if this.gpu_bind_buffer(op, kind, bufs_ty, bufs, sizes_ty, sizes, slot) = false
+                    return false
+                gpu_store_slot(LLVMConstInt(i32_ty, 0, 0), ids_ty, ids, slot)
+                return true
+            }
+            let v emit_operand op
+            if v = null
+                return false
+            var length: LLVMValueRef null
+            var data: LLVMValueRef null
+            var id: LLVMValueRef null
+            let vk LLVMGetTypeKind(LLVMTypeOf(v))
+            if vk = LLVMTypeKind.Struct()
+            {
+                if LLVMCountStructElementTypes(LLVMTypeOf(v)) <> 3
+                    return false
+                length := LLVMBuildExtractValue(builder, v, 0, "card.length")
+                data := LLVMBuildExtractValue(builder, v, 1, "card.data")
+                id := LLVMBuildExtractValue(builder, v, 2, "card.id")
+            }
+            else if vk = LLVMTypeKind.Pointer()
+            {
+                var at v
+                if LLVMIsAAllocaInst(v) <> null
+                {
+                    let slot_kind LLVMGetTypeKind(LLVMGetAllocatedType(v))
+                    if slot_kind = LLVMTypeKind.Pointer()
+                        at := LLVMBuildLoad2(builder, ptr_ty, v, "card.record")
+                    else if slot_kind <> LLVMTypeKind.Struct()
+                        return false
+                }
+                let record_ty this.card_record_type()
+                length := LLVMBuildLoad2(builder, i64_ty, LLVMBuildStructGEP2(builder, record_ty, at, 0, "card.length.at"), "card.length")
+                data := LLVMBuildLoad2(builder, ptr_ty, LLVMBuildStructGEP2(builder, record_ty, at, 1, "card.data.at"), "card.data")
+                id := LLVMBuildLoad2(builder, i32_ty, LLVMBuildStructGEP2(builder, record_ty, at, 2, "card.id.at"), "card.id")
+            }
+            else
+                return false
+            var stride: size_t 4
+            if kind = 5 or kind = 6
+                stride := 8
+            gpu_store_slot(data, bufs_ty, bufs, slot)
+            gpu_store_slot(length, sizes_ty, sizes, slot * 2)
+            gpu_store_slot(LLVMConstInt(i64_ty, stride, 0), sizes_ty, sizes, slot * 2 + 1)
+            gpu_store_slot(id, ids_ty, ids, slot)
+            true
+        }
+
+        ; The card's run of a CardVector loop, handed to the host
+        ; (scaly_card_run, scaly/card/card_wasm.c): the kernel's WGSL and
+        ; site, the count of rounds, the scalars' words as for the per-loop
+        ; card (emit_gpu_offer#), per buffer -- the inputs, then the outputs --
+        ; its address, element count and element bytes, and its id (0: an
+        ; ordinary vector, whose elements the host copies now). False where a
+        ; value has a shape this does not know.
+        procedure emit_card_run(mutable this, mutable offer: GpuOffer, in_cards: ref[Array[int]], out_cards: ref[Array[int]]) returns bool
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let n_in offer.buffer_ops.length
+            let n_out offer.output_ops.length
+            var words_len offer.words
+            if words_len = 0
+                words_len := 1
+            let words_ty LLVMArrayType2(i32_ty, words_len)
+            let words entry_alloca(words_ty, "card.words")
+            var word: size_t 0
+            var ui: size_t 0
+            while ui < offer.uniform_ops.length
+            {
+                var uop offer.uniform_ops[ui]
+                let kind offer.uniform_kinds[ui]
+                let v emit_operand uop
+                if kind >= 100
+                {
+                    let wrote this.gpu_store_record(v, uop, words_ty, words, word)
+                    if wrote < 0
+                        return false
+                    word := word + (wrote as size_t)
+                }
+                else
+                {
+                    if this.gpu_store_scalar(v, kind, words_ty, words, word) = false
+                        return false
+                    if kind = 5 or kind = 6
+                        word := word + 2
+                    else
+                        word := word + 1
+                }
+                ui := ui + 1
+            }
+            var n_bufs n_in + n_out
+            if n_bufs = 0
+                n_bufs := 1
+            let bufs_ty LLVMArrayType2(ptr_ty, n_bufs)
+            let bufs entry_alloca(bufs_ty, "card.buffers")
+            let sizes_ty LLVMArrayType2(i64_ty, n_bufs * 2)
+            let sizes entry_alloca(sizes_ty, "card.sizes")
+            let ids_ty LLVMArrayType2(i32_ty, n_bufs)
+            let ids entry_alloca(ids_ty, "card.ids")
+            var bi: size_t 0
+            while bi < n_in
+            {
+                var bop offer.buffer_ops[bi]
+                let card bi < in_cards.length and in_cards[bi] <> 0
+                if this.card_bind_buffer(bop, offer.buffer_kinds[bi], card, bufs_ty, bufs, sizes_ty, sizes, ids_ty, ids, bi) = false
+                    return false
+                bi := bi + 1
+            }
+            bi := 0
+            while bi < n_out
+            {
+                var oop offer.output_ops[bi]
+                let card bi < out_cards.length and out_cards[bi] <> 0
+                if this.card_bind_buffer(oop, offer.output_kinds[bi], card, bufs_ty, bufs, sizes_ty, sizes, ids_ty, ids, n_in + bi) = false
+                    return false
+                bi := bi + 1
+            }
+            var ptys Vector[LLVMTypeRef](10)
+            ptys.put(0, ptr_ty)
+            ptys.put(1, ptr_ty)
+            ptys.put(2, i64_ty)
+            ptys.put(3, ptr_ty)
+            ptys.put(4, i64_ty)
+            ptys.put(5, ptr_ty)
+            ptys.put(6, ptr_ty)
+            ptys.put(7, ptr_ty)
+            ptys.put(8, i64_ty)
+            ptys.put(9, i64_ty)
+            let run_ty LLVMFunctionType(LLVMVoidTypeInContext(context), ptys.data, 10, 0)
+            let run_fn this.get_parfor_runtime_fn("scaly_card_run", run_ty)
+            var args Vector[LLVMValueRef](10)
+            args.put(0, offer.wgsl)
+            args.put(1, offer.site)
+            args.put(2, offer.count)
+            args.put(3, words)
+            args.put(4, LLVMConstInt(i64_ty, offer.words, 0))
+            args.put(5, bufs)
+            args.put(6, sizes)
+            args.put(7, ids)
+            args.put(8, LLVMConstInt(i64_ty, n_in, 0))
+            args.put(9, LLVMConstInt(i64_ty, n_out, 0))
+            LLVMBuildCall2(builder, run_ty, run_fn, args.data, 10, "")
+            true
         }
 
         ; One round's part folded into a reduction's variable, by the

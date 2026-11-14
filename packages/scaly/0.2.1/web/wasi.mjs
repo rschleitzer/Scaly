@@ -193,8 +193,11 @@ export class Wasi {
   // module that asks for them is then instantiated with imports(module).
   // net: the network of a node of a cluster (a Net of net.mjs, as this node
   // sees it); without one every socket the program asks for is refused.
+  // card: where a program's CardVectors live (a CardHost of card-host.mjs);
+  // without one they live in its memory.
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
-                stdin_more = null, stdout = null, stderr = null, gpu = null, threads = null, net = null } = {}) {
+                stdin_more = null, stdout = null, stderr = null, gpu = null, threads = null, net = null,
+                card = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
@@ -210,6 +213,7 @@ export class Wasi {
     this.gpu = gpu;
     this.threads = threads;
     this.net = net;
+    this.card = card;
   }
 
   // a thread of the program (thread.mjs): the instance's
@@ -620,6 +624,9 @@ export class Wasi {
       // the sockets of a program built for threads (scaly/fiber/eio_wasm.c);
       // a program built without them does not import the module
       scaly_net: w.net ? w.net.imports(() => w.memory) : NO_NET,
+      // the CardVectors of a program (scaly/card/card_wasm.c); without a
+      // card host they live in its memory
+      scaly_card: w.card ? w.card.imports(() => w.memory) : NO_CARD_HOST,
       ...(w.threads ? w.threads.imports(module) : {}),
     };
   }
@@ -636,6 +643,12 @@ function sleep_ms(ms) {
 // The host of a kernel where there is no card: every loop stays on the
 // processor.
 export const NO_CARD = { forced: () => 0, run: () => 0, kept: () => { } };
+
+// The host of CardVectors where there is no card: every one lives in the
+// program's memory, and none of the rest is asked.
+export const NO_CARD_HOST = {
+  available: () => 0, create: () => 0, write: () => { }, load: () => 0, run: () => { }, read: () => 0,
+};
 
 // The host of the sockets where there is no network (net.mjs has the one
 // there is): every socket refused, nothing to wait for.
