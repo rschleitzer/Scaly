@@ -22724,7 +22724,14 @@ define Emitter
             words.put(2, LLVMConstInt(i64_ty, offsets[0], 0))
             words.put(3, LLVMConstInt(i64_ty, offsets[1], 0))
             words.put(4, LLVMConstInt(i64_ty, offsets[base_fields + ncap], 0))
-            words.put(5, LLVMConstInt(i64_ty, ncap, 0))
+            ; the count of captures; above it, bit 32: written inside
+            ; `relaxed` (its rounds may go to a helper of another FMA class),
+            ; bit 33: its rounds call mul_add (set at the module's end,
+            ; mark_cluster_loops#)
+            var count_word: u64 ncap as u64
+            if for_expr.is_relaxed
+                count_word := count_word | 0x100000000
+            words.put(5, LLVMConstInt(i64_ty, count_word as size_t, 0))
             var c: size_t 0
             while c < ncap
             {
@@ -22850,12 +22857,97 @@ define Emitter
             false
         }
 
+        ; Bit 33 of a loop's count word where its rounds -- its task, or a
+        ; routine that calls, transitively -- call mul_add (an indirect call
+        ; counts: it may): such rounds compute other bits on a processor of
+        ; another FMA class, and the runtime sends them only to helpers of
+        ; this machine's unless the loop is `relaxed`. Read off the finished
+        ; module, after the build stamp: what it marks is the same on every
+        ; target.
+        procedure mark_cluster_loops(mutable this)
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            var i: size_t 0
+            while i < cluster_loops.length
+            {
+                let desc cluster_loops[i]
+                let initial LLVMGetInitializer(desc)
+                let task LLVMGetAggregateElement(initial, 0)
+                let words LLVMGetAggregateElement(initial, 1)
+                if task <> null and words <> null and this.reaches_mul_add(task)
+                {
+                    let nwords LLVMGetArrayLength2(LLVMTypeOf(words)) as size_t
+                    var vals Vector[LLVMValueRef](nwords)
+                    var w: size_t 0
+                    while w < nwords
+                    {
+                        vals.put(w, LLVMGetAggregateElement(words, w as u32))
+                        w := w + 1
+                    }
+                    let marked LLVMConstIntGetZExtValue(vals[5]) | 0x200000000
+                    vals.put(5, LLVMConstInt(i64_ty, marked as size_t, 0))
+                    var parts Vector[LLVMValueRef](2)
+                    parts.put(0, task)
+                    parts.put(1, LLVMConstArray2(i64_ty, vals.data, nwords))
+                    LLVMSetInitializer(desc, LLVMConstStructInContext(context, parts.data, 2, 0))
+                }
+                i := i + 1
+            }
+        }
+
+        ; Does the routine, or one it calls, call mul_add (scaly_mul_add_*,
+        ; emit_float#)? An indirect call answers yes.
+        procedure reaches_mul_add(mutable this, mutable start: LLVMValueRef) returns bool
+        {
+            var queue Array[LLVMValueRef]()
+            queue.add(start)
+            var q: size_t 0
+            while q < queue.length
+            {
+                let f queue[q]
+                q := q + 1
+                var bb LLVMGetFirstBasicBlock(f)
+                while bb <> null
+                {
+                    var inst LLVMGetFirstInstruction(bb)
+                    while inst <> null
+                    {
+                        if LLVMIsACallInst(inst) <> null
+                        {
+                            let callee LLVMGetCalledValue(inst)
+                            if LLVMIsAFunction(callee) = null
+                                return true
+                            var name_len: c_size 0
+                            let name LLVMGetValueName2(callee, &name_len)
+                            if name <> null and String(name as pointer[const_char], name_len as size_t).starts_with("scaly_mul_add_")
+                                return true
+                            if LLVMIsDeclaration(callee) = 0
+                            {
+                                var known false
+                                for g in queue
+                                {
+                                    if g = callee
+                                        known := true
+                                }
+                                if known = false
+                                    queue.add(callee)
+                            }
+                        }
+                        inst := LLVMGetNextInstruction(inst)
+                    }
+                    bb := LLVMGetNextBasicBlock(bb)
+                }
+            }
+            false
+        }
+
         ; --cluster: one constructor that makes every loop of this module a
         ; helper can run known to the runtime before main.
         procedure emit_cluster_ctor(mutable this) returns LLVMValueRef
         {
             if cluster_loops.length = 0
                 return null
+            this.mark_cluster_loops()
             let void_ty LLVMVoidTypeInContext(context)
             let ptr_ty LLVMPointerTypeInContext(context, 0)
             let ctor LLVMAddFunction(llvm_module, "scaly.cluster.loops", LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0))

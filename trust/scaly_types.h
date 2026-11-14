@@ -2187,6 +2187,7 @@ struct NodePeer
     int32_t fd;
     bool alive;
     uint64_t peer_stamp;
+    uint64_t peer_traits;
     uint64_t* chan_ids;
     Channel** chans;
     uint64_t chan_count;

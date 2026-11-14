@@ -1,9 +1,11 @@
-; Mixed processors: this program calls mul_add (through exp), so its rounds
-; go only to helpers of its FMA class -- an x86_64 helper built for Haswell
-; computes them bit for bit as arm64 does, one built for the generic x86_64
-; (no FMA) is passed over. tests/cluster/run.sh builds it for both and runs
-; an arm64 coordinator with x86_64 helpers under Rosetta. It prints the
-; bits of its results, folded: the same line wherever a round was computed.
+; Mixed processors: two strict loops, one whose rounds call mul_add
+; (through exp) and one whose rounds do not. tests/cluster/run.sh builds it
+; for arm64 and for x86_64 (Haswell, with FMA, and the generic x86_64,
+; without) and runs an arm64 coordinator with an x86_64 helper under
+; Rosetta: a helper of this machine's FMA class takes both loops, one of
+; the other class only the loop without mul_add -- the other stays here,
+; where it computes the bits it must. It prints the bits of its results,
+; folded: the same lines wherever a round was computed.
 
 function wave(x: f64, n: int) returns f64
 {
@@ -17,20 +19,46 @@ function wave(x: f64, n: int) returns f64
     s
 }
 
-procedure heavy(mutable out: Vector[f64])
+function spin(x: f64, n: int) returns f64
+{
+    var s x
+    var k 0
+    while k < n
+    {
+        s := s * 0.999 + 0.5 / (1.0 + (k as f64))
+        k := k + 1
+    }
+    s
+}
+
+procedure waves(mutable out: Vector[f64])
 {
     for i in out.length
         out.put(i, wave((i as f64) / 1000.0, 20000))
 }
 
-var out Vector[f64](4000)
-heavy(out)
-var folded: u64 0
-var m: size_t 0
-while m < out.length
+procedure spins(mutable out: Vector[f64])
 {
-    let v out[m]
-    folded := (folded * 31) xor v.to_bits()
-    m := m + 1
+    for i in out.length
+        out.put(i, spin((i as f64) / 1000.0, 100000))
 }
-print "math `folded`"
+
+function folded(v: Vector[f64]) returns u64
+{
+    var f: u64 0
+    var m: size_t 0
+    while m < v.length
+    {
+        let x v[m]
+        f := (f * 31) xor x.to_bits()
+        m := m + 1
+    }
+    f
+}
+
+var a Vector[f64](4000)
+waves(a)
+print "math `folded(a)`"
+var b Vector[f64](4000)
+spins(b)
+print "plain `folded(b)`"

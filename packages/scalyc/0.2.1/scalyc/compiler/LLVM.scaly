@@ -436,6 +436,9 @@ procedure LLVMSetOrdering(inst: LLVMValueRef, ordering: i32) extern
 
 ; Query whether a global is marked constant (0 = mutable global)
 function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns i32 extern
+function LLVMGetInitializer(global_var: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetAggregateElement(c: LLVMValueRef, idx: u32) returns LLVMValueRef extern
+function LLVMIsAFunction(val: LLVMValueRef) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Arithmetic

@@ -2220,6 +2220,7 @@ struct NodePeer
     int32_t fd;
     bool alive;
     uint64_t peer_stamp;
+    uint64_t peer_traits;
     uint64_t* chan_ids;
     Channel** chans;
     uint64_t chan_count;
@@ -3247,6 +3248,8 @@ Vector<HelperFound> Helpers_find(scaly_frame*, int64_t) asm("_ZN7Helpers4findEPN
 bool Cluster_ready(double) asm("_ZN7Cluster5readyE3f64");
 int64_t Cluster_desc_word(void*, uint64_t) asm("_ZN7Cluster9desc_wordEPvm");
 void* Cluster_find_loop(uint64_t) asm("_ZN7Cluster9find_loopE3u64");
+uint64_t Cluster_capture_count(void*) asm("_ZN7Cluster13capture_countEPv");
+bool Cluster_serves(NodePeer*, void*) asm("_ZN7Cluster6servesER8NodePeerPv");
 uint8_t* Cluster_capture_record(void*, void*, uint64_t) asm("_ZN7Cluster14capture_recordEPvPvm");
 bool Cluster_travels_out(int64_t) asm("_ZN7Cluster11travels_outE3i64");
 scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(uint8_t*, int64_t) asm("_ZN7Cluster9buffer_ofEP2u83i64");
@@ -13602,18 +13605,7 @@ __attribute__((weak)) bool Hmac_same(Slice<uint8_t>& a, Slice<uint8_t>& b)
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) bool cluster_traits_fit(uint64_t mine, uint64_t theirs)
 {
-    if (((((((uint64_t)((uint64_t)(mine) >> (uint64_t)(8LL)))) & 511ULL)) != (((((uint64_t)((uint64_t)(theirs) >> (uint64_t)(8LL)))) & 511ULL))))
-    {
-        return false;
-    }
-    if ((((mine & 2ULL)) == 0ULL))
-    {
-        return true;
-    }
-    else
-    {
-        return (((mine & 1ULL)) == ((theirs & 1ULL)));
-    }
+    return ((((((uint64_t)((uint64_t)(mine) >> (uint64_t)(8LL)))) & 511ULL)) == (((((uint64_t)((uint64_t)(theirs) >> (uint64_t)(8LL)))) & 511ULL)));
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
@@ -13880,14 +13872,7 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
     uint64_t their_traits = (*(((iw) + (int64_t)(3LL))));
     if (((cluster_traits_fit(my_traits, their_traits)) == (false)))
     {
-        if (((((((uint64_t)((uint64_t)(my_traits) >> (uint64_t)(8LL)))) & 511ULL)) != (((((uint64_t)((uint64_t)(their_traits) >> (uint64_t)(8LL)))) & 511ULL))))
-        {
-            scaly_eputs(((const char*)"node: connect refused - another layout (pointer width or byte order): local "));
-        }
-        else
-        {
-            scaly_eputs(((const char*)"node: connect refused - another FMA class, and the program calls mul_add (its rounds would compute other bits): local "));
-        }
+        scaly_eputs(((const char*)"node: connect refused - another layout (pointer width or byte order): local "));
         scaly_eputp(((void*)((((uint64_t)(my_traits))))));
         scaly_eputs(((const char*)" peer "));
         scaly_eputp(((void*)((((uint64_t)(their_traits))))));
@@ -13901,7 +13886,7 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
         return (NodePeer*)(nullptr);
     }
     Page* p = Page_allocate_page();
-    NodePeer* np = (&((*({ NodePeer* scaly_t1 = (NodePeer*)scaly_rt_allocate((void*)(p), sizeof(NodePeer), alignof(NodePeer)); *scaly_t1 = NodePeer{0ULL, fd, true, theirs, ((uint64_t*)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, 0ULL, scaly_eio_now_ns(), 0ULL, 0LL}; scaly_t1; }))));
+    NodePeer* np = (&((*({ NodePeer* scaly_t1 = (NodePeer*)scaly_rt_allocate((void*)(p), sizeof(NodePeer), alignof(NodePeer)); *scaly_t1 = NodePeer{0ULL, fd, true, theirs, their_traits, ((uint64_t*)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, ((Channel**)(Page_allocate(*(p), (64ULL * 8ULL), 8ULL))), 0ULL, 0ULL, scaly_eio_now_ns(), 0ULL, 0LL}; scaly_t1; }))));
     Io_set_nonblocking(fd);
     uint64_t handle = Thread_spawn(((void*)&node_reader_entry), ((void*)(np)));
     np->reader = handle;
@@ -14683,6 +14668,23 @@ __attribute__((weak)) int64_t Cluster_desc_word(void* desc, uint64_t k)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) uint64_t Cluster_capture_count(void* desc)
+{
+    return ((uint64_t)((((((uint64_t)(Cluster_desc_word(desc, 5ULL)))) & 4294967295ULL))));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) bool Cluster_serves(NodePeer* peer, void* desc)
+{
+    uint64_t flags = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
+    if (((((flags & 8589934592ULL)) == 0ULL) ? true : (((flags & 4294967296ULL)) != 0ULL)))
+    {
+        return true;
+    }
+    return (((peer->peer_traits & 1ULL)) == ((scaly_build_traits() & 1ULL)));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) uint8_t* Cluster_capture_record(void* desc, void* cell, uint64_t c)
 {
     uint64_t off = ((uint64_t)(Cluster_desc_word(desc, (6ULL + (c * 3ULL)))));
@@ -14730,7 +14732,7 @@ __attribute__((weak)) bool Cluster_read_only(int64_t kind)
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(void* desc, void* cell)
 {
-    uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
+    uint64_t ncap = Cluster_capture_count(desc);
     uint64_t read = 0ULL;
     uint64_t per_round = 0ULL;
     uint64_t c = 0ULL;
@@ -14766,7 +14768,7 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(void* desc,
 __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void* cell, uint64_t offer, int64_t lo, int64_t hi, bool cached)
 {
     uint64_t size = ((uint64_t)(Cluster_desc_word(desc, 1ULL)));
-    uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
+    uint64_t ncap = Cluster_capture_count(desc);
     uint64_t nin = 0ULL;
     uint64_t c = 0ULL;
     while ((c < ncap))
@@ -14831,7 +14833,7 @@ __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void Cluster_take_result(void* desc, void* cell, ClusterResult* res)
 {
-    uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
+    uint64_t ncap = Cluster_capture_count(desc);
     uint64_t j = 0ULL;
     uint64_t c = 0ULL;
     while ((c < ncap))
@@ -14945,7 +14947,7 @@ __attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, 
     ClusterResult* res = (&((*({ ClusterResult* scaly_t3 = (ClusterResult*)scaly_rt_allocate((void*)(ap), sizeof(ClusterResult), alignof(ClusterResult)); *scaly_t3 = ClusterResult{job->lo, job->hi, true, (*({ Vector<Vector<uint8_t>>* scaly_t4 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(ap), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t4 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t4), 0ULL); scaly_t4; }))}; scaly_t3; }))));
     void* task = (*((((((void**)(desc)))) + (int64_t)(0LL))));
     uint64_t size = ((uint64_t)(Cluster_desc_word(desc, 1ULL)));
-    uint64_t ncap = ((uint64_t)(Cluster_desc_word(desc, 5ULL)));
+    uint64_t ncap = Cluster_capture_count(desc);
     void* cell = Page_allocate(*(rp), size, 16ULL);
     memcpy(cell, ((void*)((job->cell).data)), ((size_t)(size)));
     int64_t lo = job->lo;
@@ -15394,13 +15396,28 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
     }
     int64_t queued = stretches;
     uint64_t k = 0ULL;
+    uint64_t serving = 0ULL;
     while ((k < n))
     {
         (*(((busy) + (int64_t)(k)))) = (0LL - 1LL);
         NodePeer* peer = (*(((cluster_peers) + (int64_t)(k))));
-        (*(((live) + (int64_t)(k)))) = (peer->alive ? (((uint8_t)(1LL))) : (uint8_t)0ULL);
+        (*(((live) + (int64_t)(k)))) = ((peer->alive ? Cluster_serves(((NodePeer*)(peer)), desc) : false) ? (((uint8_t)(1LL))) : (uint8_t)0ULL);
+        if (((*(((live) + (int64_t)(k)))) == (uint8_t)1ULL))
+        {
+            serving = (serving + 1ULL);
+        }
         (*(((full) + (int64_t)(k)))) = (uint8_t)0ULL;
         k = (k + 1ULL);
+    }
+    if ((serving == 0ULL))
+    {
+        if (Cluster_tracing())
+        {
+            scaly_eputs(((const char*)"cluster: no helper of this machine\047s FMA class for a loop that calls mul_add: its rounds stay here"));
+            scaly_eputnl();
+        }
+        Page_release_page(qp);
+        return (int32_t)0ULL;
     }
     int64_t done = 0LL;
     bool ok = true;
@@ -15602,7 +15619,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
             scaly_eputs(((const char*)" ms"));
             scaly_eputnl();
         }
-        if ((peer->alive ? ((double)(((double)((double)(first) * (double)(((double)1.25))))) < (double)(here_ns)) : false))
+        if (((peer->alive ? Cluster_serves(((NodePeer*)(peer)), desc) : false) ? ((double)(((double)((double)(first) * (double)(((double)1.25))))) < (double)(here_ns)) : false))
         {
             (*(((takes) + (int64_t)(k)))) = (uint8_t)1ULL;
             rate = ((double)((double)(rate) + (double)(((double)((double)((((double)(s)))) / (double)(each))))));

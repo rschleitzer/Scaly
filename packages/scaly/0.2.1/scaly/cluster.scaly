@@ -91,16 +91,12 @@ function scaly_build_stamp() returns u64 extern
 ; to 15 the pointer's bytes, bit 16 little-endian.
 function scaly_build_traits() returns u64 extern
 
-; Can a node of these traits compute for one of mine? The same layout
-; (pointer, byte order: regions go over the wire as pages), and where the
-; program calls mul_add the same FMA class -- with one rounding or two, a
-; round would not compute the bits this machine does.
+; Can a node of these traits be in my cluster? The same layout (pointer,
+; byte order: regions go over the wire as pages). Its FMA class is asked
+; per loop (Cluster.serves#): a loop whose rounds call mul_add, and that is
+; not `relaxed`, goes only to helpers of this machine's.
 function cluster_traits_fit(mine: u64, theirs: u64) returns bool
-{
-    if ((mine >> 8) & 0x1ff) <> ((theirs >> 8) & 0x1ff)
-        return false
-    (mine & 2) = 0 or (mine & 1) = (theirs & 1)
-}
+    ((mine >> 8) & 0x1ff) = ((theirs >> 8) & 0x1ff)
 
 ; "SCALYNOD", little-endian.
 define NODE_WIRE_MAGIC u64 0x444f4e594c414353
@@ -269,6 +265,7 @@ define NodePeer
     fd: i32
     var alive: bool
     peer_stamp: u64
+    peer_traits: u64
     chan_ids: pointer[u64]
     chans: pointer[pointer[Channel]]
     var chan_count: size_t
@@ -526,10 +523,7 @@ define Cluster
         let their_traits iw[3]
         if cluster_traits_fit(my_traits, their_traits) = false
         {
-            if ((my_traits >> 8) & 0x1ff) <> ((their_traits >> 8) & 0x1ff)
-                scaly_eputs "node: connect refused - another layout (pointer width or byte order): local "
-            else
-                scaly_eputs "node: connect refused - another FMA class, and the program calls mul_add (its rounds would compute other bits): local "
+            scaly_eputs "node: connect refused - another layout (pointer width or byte order): local "
             scaly_eputp((my_traits as size_t) as pointer[void])
             scaly_eputs " peer "
             scaly_eputp((their_traits as size_t) as pointer[void])
@@ -544,7 +538,7 @@ define Cluster
         }
 
         let p Page.allocate_page()
-        let np &NodePeer^p(0, fd, true, theirs, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[u64], p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, 0, scaly_eio_now_ns(), 0, 0)
+        let np &NodePeer^p(0, fd, true, theirs, their_traits, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[u64], p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, 0, scaly_eio_now_ns(), 0, 0)
         Io.set_nonblocking(fd)
         let handle Thread.spawn(&node_reader_entry, np as pointer[void])
         np.reader := handle
@@ -1308,6 +1302,24 @@ define Cluster
         w[k]
     }
 
+    ; The count of a loop's captures: word 5 below bit 32 (above it the
+    ; loop's flags, serves#).
+    function capture_count(desc: pointer[void]) returns size_t
+        ((Cluster.desc_word(desc, 5) as u64) & 0xffffffff) as size_t
+
+    ; May this helper compute the loop's rounds? Where they call mul_add
+    ; (bit 33, the Emitter's mark_cluster_loops#) and the loop is not
+    ; `relaxed` (bit 32), only one of this machine's FMA class may: with
+    ; one rounding or two, a round would not compute the bits this machine
+    ; does. Every other loop goes to any helper of the cluster.
+    procedure serves(peer: ref[NodePeer], desc: pointer[void]) returns bool
+    {
+        let flags Cluster.desc_word(desc, 5) as u64
+        if (flags & 0x200000000) = 0 or (flags & 0x100000000) <> 0
+            return true
+        (peer.peer_traits & 1) = (scaly_build_traits() & 1)
+    }
+
     ; Where the record of capture c lies: in the cell, or where the cell
     ; points.
     function capture_record(desc: pointer[void], cell: pointer[void], c: size_t) returns pointer[u8]
@@ -1351,7 +1363,7 @@ define Cluster
     ; The bytes of what the rounds read, and what one round puts.
     procedure weight(desc: pointer[void], cell: pointer[void]) returns (read: size_t, per_round: size_t)
     {
-        let ncap Cluster.desc_word(desc, 5) as size_t
+        let ncap Cluster.capture_count(desc)
         var read: size_t 0
         var per_round: size_t 0
         var c: size_t 0
@@ -1377,7 +1389,7 @@ define Cluster
     procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], offer: u64, lo: i64, hi: i64, cached: bool) returns size_t
     {
         let size Cluster.desc_word(desc, 1) as size_t
-        let ncap Cluster.desc_word(desc, 5) as size_t
+        let ncap Cluster.capture_count(desc)
         var nin: size_t 0
         var c: size_t 0
         while c < ncap
@@ -1437,7 +1449,7 @@ define Cluster
     ; What a helper's stretch put, into this program's buffers.
     procedure take_result(desc: pointer[void], cell: pointer[void], res: ref[ClusterResult])
     {
-        let ncap Cluster.desc_word(desc, 5) as size_t
+        let ncap Cluster.capture_count(desc)
         var j: size_t 0
         var c: size_t 0
         while c < ncap
@@ -1549,7 +1561,7 @@ define Cluster
         let res &ClusterResult^ap(job.lo, job.hi, true, Vector[Vector[u8]]^ap(0))
         let task (desc as pointer[pointer[void]])[0]
         let size Cluster.desc_word(desc, 1) as size_t
-        let ncap Cluster.desc_word(desc, 5) as size_t
+        let ncap Cluster.capture_count(desc)
         let cell rp.allocate(size, 16)
         memcpy(cell, job.cell.data as pointer[void], size as c_size)
         let lo job.lo
@@ -2030,13 +2042,26 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
     }
     var queued stretches
     var k: size_t 0
+    var serving: size_t 0
     while k < n
     {
         busy[k] := 0 - 1
         let peer cluster_peers[k]
-        live[k] := if peer.alive: (1 as u8) else 0
+        live[k] := if peer.alive and Cluster.serves(peer as ref[NodePeer], desc): (1 as u8) else 0
+        if live[k] = 1
+            serving := serving + 1
         full[k] := 0
         k := k + 1
+    }
+    if serving = 0
+    {
+        if Cluster.tracing()
+        {
+            scaly_eputs "cluster: no helper of this machine's FMA class for a loop that calls mul_add: its rounds stay here"
+            scaly_eputnl()
+        }
+        Page.release_page(qp)
+        return 0
     }
     var done: i64 0
     var ok true
@@ -2228,7 +2253,7 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
             scaly_eputs " ms"
             scaly_eputnl()
         }
-        if peer.alive and first * 1.25 < here_ns
+        if peer.alive and Cluster.serves(peer as ref[NodePeer], desc) and first * 1.25 < here_ns
         {
             takes[k] := 1
             rate := rate + (s as f64) / each

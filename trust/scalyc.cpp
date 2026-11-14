@@ -18064,6 +18064,9 @@ extern "C" LLVMOpaqueValue* LLVMBuildAtomicRMW(LLVMOpaqueBuilder*, int32_t, LLVM
 extern "C" LLVMOpaqueValue* LLVMBuildAtomicCmpXchg(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, int32_t, int32_t, int32_t);
 extern "C" void LLVMSetOrdering(LLVMOpaqueValue*, int32_t);
 extern "C" int32_t LLVMIsGlobalConstant(LLVMOpaqueValue*);
+extern "C" LLVMOpaqueValue* LLVMGetInitializer(LLVMOpaqueValue*);
+extern "C" LLVMOpaqueValue* LLVMGetAggregateElement(LLVMOpaqueValue*, uint32_t);
+extern "C" LLVMOpaqueValue* LLVMIsAFunction(LLVMOpaqueValue*);
 extern "C" LLVMOpaqueValue* LLVMBuildAdd(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildIntCast2(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueType*, int32_t, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildNSWAdd(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
@@ -18692,6 +18695,8 @@ LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter&, PlannedFor&, LLVMOpaqueVal
 LLVMOpaqueValue* Emitter_emit_cluster_offer(Emitter&, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_218emit_cluster_offerEP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2");
 bool Emitter_llvm_type_is_plain(Emitter&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_218llvm_type_is_plainEP14LLVMOpaqueTypeB6scalycB4v0_2");
+bool Emitter_reaches_mul_add(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_215reaches_mul_addEP15LLVMOpaqueValueB6scalycB4v0_2");
+void Emitter_mark_cluster_loops(Emitter&) asm("_ZN7EmitterB6scalycB4v0_218mark_cluster_loopsEv");
 LLVMOpaqueValue* Emitter_emit_while(Emitter&, PlannedWhile&) asm("_ZN7EmitterB6scalycB4v0_210emit_whileE12PlannedWhileB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_repeat(Emitter&, PlannedRepeat&) asm("_ZN7EmitterB6scalycB4v0_211emit_repeatE13PlannedRepeatB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_try_value_at_end(Emitter&, PlannedTry&, LLVMOpaqueValue*, LLVMOpaqueBasicBlock*, LLVMOpaqueBasicBlock*) asm("_ZN7EmitterB6scalycB4v0_216try_value_at_endE10PlannedTryB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2");
@@ -161080,7 +161085,12 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
     Vector_put62<LLVMOpaqueValue*>((*words), 2ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), 0LL), (int32_t)0ULL));
     Vector_put62<LLVMOpaqueValue*>((*words), 3ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), 1LL), (int32_t)0ULL));
     Vector_put62<LLVMOpaqueValue*>((*words), 4ULL, LLVMConstInt(i64_ty, Vector11<uint64_t>((*offsets), (base_fields + ncap)), (int32_t)0ULL));
-    Vector_put62<LLVMOpaqueValue*>((*words), 5ULL, LLVMConstInt(i64_ty, ncap, (int32_t)0ULL));
+    uint64_t count_word = ((uint64_t)(ncap));
+    if ((for_expr).is_relaxed)
+    {
+        count_word = (count_word | 4294967296ULL);
+    }
+    Vector_put62<LLVMOpaqueValue*>((*words), 5ULL, LLVMConstInt(i64_ty, ((uint64_t)(count_word)), (int32_t)0ULL));
     uint64_t c = 0ULL;
     while ((c < ncap))
     {
@@ -161258,6 +161268,99 @@ __attribute__((weak)) bool Emitter_llvm_type_is_plain(Emitter& scaly_self, LLVMO
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_mark_cluster_loops(Emitter& scaly_self)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    LLVMOpaqueType* i64_ty = LLVMInt64TypeInContext(this_->context);
+    uint64_t i = 0ULL;
+    while ((i < this_->cluster_loops->length))
+    {
+        LLVMOpaqueValue* desc = Array22<LLVMOpaqueValue*>(*(this_->cluster_loops), i);
+        LLVMOpaqueValue* initial = LLVMGetInitializer(desc);
+        LLVMOpaqueValue* task = LLVMGetAggregateElement(initial, (uint32_t)0ULL);
+        LLVMOpaqueValue* words = LLVMGetAggregateElement(initial, (uint32_t)1ULL);
+        if (((((task) != (nullptr)) ? ((words) != (nullptr)) : false) ? Emitter_reaches_mul_add(*(this_), task) : false))
+        {
+            uint64_t nwords = ((uint64_t)(LLVMGetArrayLength2(LLVMTypeOf(words))));
+            Vector<LLVMOpaqueValue*>* vals = ({ Vector<LLVMOpaqueValue*>* scaly_t1 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t1 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t1), nwords); scaly_t1; });
+            uint64_t w = 0ULL;
+            while ((w < nwords))
+            {
+                Vector_put62<LLVMOpaqueValue*>((*vals), w, LLVMGetAggregateElement(words, ((uint32_t)(w))));
+                w = (w + 1ULL);
+            }
+            uint64_t marked = (LLVMConstIntGetZExtValue(Vector26<LLVMOpaqueValue*>((*vals), 5LL)) | 8589934592ULL);
+            Vector_put62<LLVMOpaqueValue*>((*vals), 5ULL, LLVMConstInt(i64_ty, ((uint64_t)(marked)), (int32_t)0ULL));
+            Vector<LLVMOpaqueValue*>* parts = ({ Vector<LLVMOpaqueValue*>* scaly_t2 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t2 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t2), 2ULL); scaly_t2; });
+            Vector_put62<LLVMOpaqueValue*>((*parts), 0ULL, task);
+            Vector_put62<LLVMOpaqueValue*>((*parts), 1ULL, LLVMConstArray2(i64_ty, ((*vals)).data, nwords));
+            LLVMSetInitializer(desc, LLVMConstStructInContext(this_->context, ((*parts)).data, (uint32_t)2ULL, (int32_t)0ULL));
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) bool Emitter_reaches_mul_add(Emitter& scaly_self, LLVMOpaqueValue* start)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    Array<LLVMOpaqueValue*>* queue = ({ Array<LLVMOpaqueValue*>* scaly_t1 = (Array<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<LLVMOpaqueValue*>), alignof(Array<LLVMOpaqueValue*>)); *scaly_t1 = Array<LLVMOpaqueValue*>{}; (void)0; scaly_t1; });
+    Array_add182<LLVMOpaqueValue*>((*queue), start);
+    uint64_t q = 0ULL;
+    while ((q < ((*queue)).length))
+    {
+        LLVMOpaqueValue* f = Array22<LLVMOpaqueValue*>((*queue), q);
+        q = (q + 1ULL);
+        LLVMOpaqueBasicBlock* bb = LLVMGetFirstBasicBlock(f);
+        while (((bb) != (nullptr)))
+        {
+            LLVMOpaqueValue* inst = LLVMGetFirstInstruction(bb);
+            while (((inst) != (nullptr)))
+            {
+                if (((LLVMIsACallInst(inst)) != (nullptr)))
+                {
+                    LLVMOpaqueValue* callee = LLVMGetCalledValue(inst);
+                    if (((LLVMIsAFunction(callee)) == (nullptr)))
+                    {
+                        return true;
+                    }
+                    size_t name_len = (size_t)0ULL;
+                    uint8_t* name = LLVMGetValueName2(callee, (&(name_len)));
+                    if ((((name) != (nullptr)) ? String_starts_with(scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init((*scaly_t2), (uint8_t*)(((const char*)(name))), ((uint64_t)(name_len))); scaly_t2; }))), scaly_lvalue(String{(uint8_t*)"\016scaly_mul_add_"})) : false))
+                    {
+                        return true;
+                    }
+                    if ((LLVMIsDeclaration(callee) == (int32_t)0ULL))
+                    {
+                        bool known = false;
+                        for (auto scaly_t3 = Array_get_iterator<LLVMOpaqueValue*>(&scaly_local.f, (*queue));;)
+                        {
+                            LLVMOpaqueValue** scaly_t3_at = (LLVMOpaqueValue**)ArrayIterator_next<LLVMOpaqueValue*>(scaly_t3);
+                            if (scaly_t3_at == nullptr)
+                                break;
+                            LLVMOpaqueValue* g = *scaly_t3_at;
+                            if (((g) == (callee)))
+                            {
+                                known = true;
+                            }
+                        }
+                        if (((known) == (false)))
+                        {
+                            Array_add182<LLVMOpaqueValue*>((*queue), callee);
+                        }
+                    }
+                }
+                inst = LLVMGetNextInstruction(inst);
+            }
+            bb = LLVMGetNextBasicBlock(bb);
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_cluster_ctor(Emitter& scaly_self)
 {
     Emitter* this_ = &scaly_self;
@@ -161266,6 +161369,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_cluster_ctor(Emitter& scaly_
     {
         return (LLVMOpaqueValue*)(nullptr);
     }
+    Emitter_mark_cluster_loops(*(this_));
     LLVMOpaqueType* void_ty = LLVMVoidTypeInContext(this_->context);
     LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
     LLVMOpaqueValue* ctor = LLVMAddFunction(this_->llvm_module, ((const char*)"scaly.cluster.loops"), LLVMFunctionType(void_ty, ((LLVMOpaqueType**)(nullptr)), (uint32_t)0ULL, (int32_t)0ULL));
