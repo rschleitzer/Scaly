@@ -9,10 +9,13 @@
 ;     records and tuples of such numbers (and of such records), which it
 ;     builds, hands on and reads field by field -- a struct of the source;
 ;   - it reads scalars of its environment (the kernel's UNIFORMS) and
-;     elements of a Vector, Slice or Array of such numbers (its BUFFERS);
+;     elements of a Vector, Slice, Array or CardVector of such numbers (its
+;     BUFFERS);
 ;   - it writes with `put` at exactly the loop's counter into a Vector of
-;     such numbers (its OUTPUTS), and into the variables the TaskPlanner
-;     calls its REDUCTIONS -- a sum, a product, a largest. A card does not
+;     such numbers (its OUTPUTS) -- into a CardVector also at the counter
+;     plus a value every round shares (a cache written at a position) --,
+;     and into the variables the TaskPlanner calls its REDUCTIONS -- a sum,
+;     a product, a largest. A card does not
 ;     fold: a round's part of a reduction is a number of the round, started
 ;     at the operation's identity as on the processor, and the kernel gives
 ;     one such number per round; the processor folds them in the rounds'
@@ -20,9 +23,13 @@
 ;   - the functions it calls take and answer such values, are not
 ;     recursive, allocate nothing and are kernels themselves -- they are
 ;     listed callees first, the order a shading language wants them in;
-;     `sqrtf` is the card's own square root;
+;     `sqrtf` is the card's own square root, and in a `relaxed` loop
+;     `expf` its exponential (a card and the processor round exp apart);
 ;   - nothing in it allocates, builds a String or a record on a page, or
-;     leaves the loop early.
+;     leaves the loop early;
+;   - a loop that names a CardVector (ROADMAP-card.md) writes CardVectors
+;     alone and reduces nothing: its results stay where its vectors live,
+;     and nothing in it makes the processor wait for the card.
 ; The loop's own counter and a scalar of the environment are exempt from
 ; the 64-bit rule where they are narrowed on the spot: as the operand of a
 ; cast to a 32-bit type or as an index. The count of rounds itself is
@@ -111,6 +118,15 @@ define GpuKernel
         k_buffer_kinds: Array[int]
         k_output_ops: Array[PlannedOperand]
         k_output_kinds: Array[int]
+        ; Per buffer and output: 1 where it is a CardVector. Per output: its
+        ; index operand, and 1 where that is the counter plus a value every
+        ; round shares (a CardVector's put at an offset), 0 the counter.
+        ; k_card: the loop names a CardVector.
+        k_buffer_cards: Array[int]
+        k_output_cards: Array[int]
+        k_output_indices: Array[PlannedOperand]
+        k_output_based: Array[int]
+        var k_card: bool
         ; The functions it calls, a callee before its caller: symbols and
         ; names. fn_stack holds the ones being walked.
         k_functions: Array[String]
@@ -169,6 +185,11 @@ define GpuKernel
             k_buffer_kinds := Array[int]^this()
             k_output_ops := Array[PlannedOperand]^this()
             k_output_kinds := Array[int]^this()
+            k_buffer_cards := Array[int]^this()
+            k_output_cards := Array[int]^this()
+            k_output_indices := Array[PlannedOperand]^this()
+            k_output_based := Array[int]^this()
+            k_card := false
             k_functions := Array[String]^this()
             k_function_names := Array[String]^this()
             fn_stack := Array[String]^this()
@@ -296,6 +317,11 @@ define GpuKernel
             k_buffer_kinds.length := 0
             k_output_ops.length := 0
             k_output_kinds.length := 0
+            k_buffer_cards.length := 0
+            k_output_cards.length := 0
+            k_output_indices.length := 0
+            k_output_based.length := 0
+            k_card := false
             k_functions.length := 0
             k_function_names.length := 0
             fn_stack.length := 0
@@ -336,6 +362,34 @@ define GpuKernel
                     this.block_named("reads and writes ", (*o_ptr))
                 i := i + 1
             }
+            if k_blocked or k_card = false
+                return
+            ; a CardVector's loop: its results stay on the card
+            if k_red_names.length > 0
+            {
+                this.block("reduces beside a CardVector: write the result into a CardVector of one element")
+                return
+            }
+            i := 0
+            while i < k_outputs.length
+            {
+                if GpuKernel.int_of(&k_output_cards, i) = 0
+                {
+                    let o_ptr k_outputs.get i
+                    if o_ptr <> null
+                        this.block_named("writes a vector in memory beside a CardVector: ", (*o_ptr))
+                    return
+                }
+                i := i + 1
+            }
+        }
+
+        function int_of(values: ref[Array[int]], i: size_t) returns int
+        {
+            let p values.get i
+            if p = null
+                return 0
+            (*p)
         }
 
         ; The verdict of the loop just classified, as the report prints it.
@@ -526,9 +580,24 @@ define GpuKernel
             match nm
                 case "ref" case "pointer"
                     return GpuKernel.buffer_kind_direct(g_ptr.unwrap())
-                case "Vector" case "Slice" case "Array"
+                case "Vector" case "Slice" case "Array" case "CardVector"
                     return GpuKernel.scalar_kind(g_ptr.unwrap())
             0 - 1
+        }
+
+        ; Is it a CardVector (also behind one reference)?
+        function is_card_type(t: PlannedType) returns bool
+        {
+            if t.name = "CardVector"
+                return true
+            if t.name <> "ref" and t.name <> "pointer"
+                return false
+            if t.generics = null or t.generics.length <> 1
+                return false
+            let g_ptr t.generics.get 0
+            if g_ptr = null
+                return false
+            g_ptr.unwrap().name = "CardVector"
         }
 
         function buffer_kind_direct(t: PlannedType) returns int
@@ -540,7 +609,7 @@ define GpuKernel
                 return 0 - 1
             let nm t.name
             match nm
-                case "Vector" case "Slice" case "Array"
+                case "Vector" case "Slice" case "Array" case "CardVector"
                     return GpuKernel.scalar_kind(g_ptr.unwrap())
             0 - 1
         }
@@ -993,10 +1062,22 @@ define GpuKernel
             k_function_names.add name_copy
         }
 
-        ; `sqrtf`: a function of the card's own, by the extern's name.
+        ; `sqrtf`, and in a relaxed loop `expf`: a function of the card's
+        ; own, by the extern's name. A square root is rounded exactly
+        ; everywhere; an exponential is not, so it goes to the card only
+        ; where the program lets floating point be rounded less strictly.
         function builtin_of(this: GpuKernel, call: PlannedCall) returns String
         {
-            if call.name <> "sqrtf" or call.args = null or call.args.length <> 1
+            if call.args = null or call.args.length <> 1
+                return ""
+            var builtin String("sqrt")
+            if call.name = "expf"
+            {
+                if k_relaxed = false
+                    return ""
+                builtin := String("exp")
+            }
+            else if call.name <> "sqrtf"
                 return ""
             if GpuKernel.scalar_kind(call.result_type) <> 4
                 return ""
@@ -1011,7 +1092,7 @@ define GpuKernel
                 {
                     choose f_ptr.impl
                         when ext: Extern
-                            return "sqrt"
+                            return builtin
                         else
                             return ""
                 }
@@ -1803,15 +1884,24 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind)
                 this.note_wide("an element of `name`")
+            let card GpuKernel.is_card_type(GpuKernel.receiver_type(call))
+            if card
+                k_card := true
             if this.note_name(&k_buffers, &k_buffer_types, name, GpuKernel.receiver_type(call))
             {
                 let recv_ptr call.args.get 0
                 k_buffer_ops.add(recv_ptr.unwrap())
                 k_buffer_kinds.add kind
+                if card
+                    k_buffer_cards.add 1
+                else
+                    k_buffer_cards.add 0
             }
         }
 
-        ; out.put(i, v): the round's result, at exactly the loop's counter.
+        ; out.put(i, v): the round's result, at exactly the loop's counter --
+        ; into a CardVector also at the counter plus a value every round
+        ; shares.
         procedure k_put(mutable this: GpuKernel, call: PlannedCall)
         {
             if call.args = null or call.args.length <> 3
@@ -1826,10 +1916,21 @@ define GpuKernel
             let val_ptr call.args.get 2
             if idx_ptr = null or val_ptr = null
                 return
+            let card GpuKernel.is_card_type(GpuKernel.receiver_type(call))
+            var based 0
             if this.is_own_counter(idx_ptr.unwrap()) = false
             {
-                this.block("a put at another index than the loop's counter")
-                return
+                if card = false or this.counter_plus_shared(idx_ptr.unwrap()) = false
+                {
+                    this.block("a put at another index than the loop's counter")
+                    return
+                }
+                ; an index: narrowed on the spot, its parts too; the shared
+                ; part's names are the kernel's uniforms
+                this.k_index_sum(idx_ptr.unwrap())
+                if k_blocked
+                    return
+                based := 1
             }
             this.k_operand(val_ptr.unwrap(), false)
             if k_blocked
@@ -1839,12 +1940,162 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind)
                 this.note_wide("an element of `name`")
+            if card
+                k_card := true
             if this.note_name(&k_outputs, &k_output_types, name, GpuKernel.receiver_type(call))
             {
                 let recv_ptr call.args.get 0
                 k_output_ops.add(recv_ptr.unwrap())
                 k_output_kinds.add kind
+                if card
+                    k_output_cards.add 1
+                else
+                    k_output_cards.add 0
+                k_output_indices.add(idx_ptr.unwrap())
+                k_output_based.add based
             }
+        }
+
+        ; The index of a put at an offset (counter_plus_shared#): its sum
+        ; and what it adds are narrowed where they stand, as an index is.
+        procedure k_index_sum(mutable this: GpuKernel, op: PlannedOperand)
+        {
+            choose op.expr
+                when c: Call
+                {
+                    if c.args <> null
+                    {
+                        var i: size_t 0
+                        while i < c.args.length
+                        {
+                            let a_ptr c.args.get i
+                            if a_ptr <> null
+                                this.k_operand(a_ptr.unwrap(), true)
+                            i := i + 1
+                        }
+                    }
+                    return
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.k_index_sum((*r))
+                    }
+                    return
+                }
+                when tp: Tuple
+                {
+                    let c_ptr tp.components.get 0
+                    if c_ptr <> null
+                    {
+                        let in_ptr c_ptr.unwrap().value.get(0)
+                        if in_ptr <> null
+                            this.k_index_sum(in_ptr.unwrap())
+                    }
+                    return
+                }
+                else
+                    0
+            this.k_operand(op, true)
+        }
+
+        ; `base + i` or `i + base`: the loop's counter plus a value every
+        ; round shares -- under a cast between integers, too.
+        function counter_plus_shared(this: GpuKernel, op: PlannedOperand) returns bool
+        {
+            if GpuKernel.has_members(op)
+                return false
+            choose op.expr
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    if GpuKernel.kind_is_integer(GpuKernel.scalar_kind(as_expr.target_type)) = false
+                        return false
+                    let r as_expr.value
+                    return this.counter_plus_shared((*r))
+                }
+                when c: Call
+                {
+                    if c.is_intrinsic = false or c.is_operator = false or c.name <> "+" or c.args = null or c.args.length <> 2
+                        return false
+                    let a_ptr c.args.get 0
+                    let b_ptr c.args.get 1
+                    if a_ptr = null or b_ptr = null
+                        return false
+                    let a a_ptr.unwrap()
+                    let b b_ptr.unwrap()
+                    if this.is_own_counter(a) and this.round_free(b)
+                        return true
+                    return this.is_own_counter(b) and this.round_free(a)
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return false
+                    let in_ptr c_ptr.unwrap().value.get(0)
+                    if in_ptr = null
+                        return false
+                    return this.counter_plus_shared(in_ptr.unwrap())
+                }
+                else
+                    0
+            false
+        }
+
+        ; Is the value the same in every round: it names nothing the kernel
+        ; binds (no counter, no local of the body), and computes with the
+        ; language's operators alone?
+        function round_free(this: GpuKernel, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when k: Constant
+                    return true
+                when g: GlobalRef
+                    return true
+                when v: Variable
+                    return this.local_index(v.name) < 0
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    return this.round_free((*r))
+                }
+                when c: Call
+                {
+                    if c.is_intrinsic = false or c.is_operator = false or c.args = null
+                        return false
+                    var i: size_t 0
+                    while i < c.args.length
+                    {
+                        let a_ptr c.args.get i
+                        if a_ptr = null or this.round_free(a_ptr.unwrap()) = false
+                            return false
+                        i := i + 1
+                    }
+                    return true
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return false
+                    let in_ptr c_ptr.unwrap().value.get(0)
+                    if in_ptr = null
+                        return false
+                    return this.round_free(in_ptr.unwrap())
+                }
+                else
+                    0
+            false
         }
 
         ; The classified loop's counter, under groupings and casts between

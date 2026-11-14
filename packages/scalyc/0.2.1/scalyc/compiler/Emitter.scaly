@@ -19123,6 +19123,17 @@ define Emitter
             ; the reductions promote_for# just found for THIS loop
             gk.set_reductions(&parfor_checker.red_names, &parfor_checker.red_ops, 0, parfor_checker.red_names.length)
             gk.classify_loop(for_expr)
+            ; a loop over CardVectors must run on the card (ROADMAP-card.md):
+            ; one that is no kernel is the program's error, not a loop for
+            ; the processor
+            if gk.k_blocked and gk.k_card
+            {
+                let site this.gpu_site_text(for_expr)
+                let msg "`site`: error: a loop over a CardVector must run on the card, and this one cannot: `gk.k_reason`"
+                scaly_eputs msg
+                scaly_eputnl()
+                exit 4
+            }
             if gk.k_blocked
                 return emit_parallel_for for_expr
             var msl GpuMsl.GpuMsl()

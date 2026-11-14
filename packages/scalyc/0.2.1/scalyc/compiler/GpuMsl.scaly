@@ -2103,7 +2103,10 @@ define GpuMsl
 
         ; out.put(i, v): the round's result, at the thread's position. The
         ; index is the round's number (GpuKernel.is_own_counter) and is not
-        ; computed again.
+        ; computed again -- but for a CardVector's put at the counter plus a
+        ; shared value (GpuKernel.counter_plus_shared#), which writes where
+        ; its index says, and faults where that lies beyond the vector.
+        ; Metal is refused such a kernel until its host holds CardVectors.
         procedure put_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t)
         {
             if call.args = null or call.args.length <> 3
@@ -2120,11 +2123,103 @@ define GpuMsl
             }
             let ek GpuMsl.int_at(&gk.k_output_kinds, k)
             let ind GpuMsl.indent_of(depth)
+            if GpuMsl.int_at(&gk.k_output_based, k) <> 0
+            {
+                if m_wgsl = false
+                {
+                    this.refuse("a put at an offset: Metal's host holds no CardVector yet")
+                    return
+                }
+                let at this.index_sum(out, gk, (*call.args)[1], depth)
+                if m_refused
+                    return
+                let based_value this.operand(out, gk, (*call.args)[2], depth)
+                if m_refused
+                    return
+                let based_fitted this.fit(based_value, m_atom_kind, ek)
+                out.append(this.fault_where(ind, "`at` >= arrayLength(&o`k`)", "o`k`[`at`] = `based_fitted`"))
+                return
+            }
             let value this.operand(out, gk, (*call.args)[2], depth)
             if m_refused
                 return
             let fitted this.fit(value, m_atom_kind, ek)
             out.append "`ind`o`k`[gid] = `fitted`;\n"
+        }
+
+        ; The index of a put at an offset (GpuKernel.counter_plus_shared#),
+        ; narrowed as GpuKernel took it: each part a u32 where it stands, the
+        ; sum in u32. Answers a u32 name.
+        procedure index_sum(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
+        {
+            choose op.expr
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        return this.index_sum(out, gk, (*r), depth)
+                    }
+                }
+                when tp: Tuple
+                {
+                    let c_ptr tp.components.get 0
+                    if c_ptr <> null
+                    {
+                        let in_ptr c_ptr.unwrap().value.get(0)
+                        if in_ptr <> null
+                            return this.index_sum(out, gk, in_ptr.unwrap(), depth)
+                    }
+                }
+                when c: Call
+                {
+                    if c.args <> null and c.args.length = 2 and c.name = "+"
+                    {
+                        let a this.index_part(out, gk, (*c.args)[0], depth)
+                        if m_refused
+                            return ""
+                        let b this.index_part(out, gk, (*c.args)[1], depth)
+                        if m_refused
+                            return ""
+                        let t this.temp()
+                        let ind GpuMsl.indent_of(depth)
+                        out.append(this.declare_value(ind, 3, t, "`a` + `b`"))
+                        ; a sum past 32 bits lies beyond every vector
+                        out.append(this.fault_where(ind, "`t` < `a`", ""))
+                        m_atom_kind := 3
+                        m_atom_high := String^this("")
+                        return t
+                    }
+                }
+                else
+                    0
+            this.index_part(out, gk, op, depth)
+        }
+
+        ; A part of such an index as a u32: its low word -- a fault where
+        ; its high word is not zero.
+        procedure index_part(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
+        {
+            let v this.operand(out, gk, op, depth)
+            if m_refused
+                return ""
+            if GpuMsl.is_int(m_atom_kind) = false
+            {
+                this.refuse("an index that is no integer")
+                return ""
+            }
+            let ind GpuMsl.indent_of(depth)
+            if this.is_pair(m_atom_kind)
+            {
+                let high String(m_atom_high)
+                if high.get_length() > 0 and high.equals("0u") = false
+                    out.append(this.fault_where(ind, "`high` != 0u", ""))
+            }
+            let t this.temp()
+            out.append(this.declare_value(ind, 3, t, this.conv(3, v)))
+            m_atom_kind := 3
+            m_atom_high := String^this("")
+            t
         }
 
         ; ================================================================
@@ -2849,7 +2944,8 @@ define GpuMsl
 
         ; A function of the card's own (GpuKernel.builtin_of#): `sqrtf`,
         ; which Metal's safe math and the processor round alike -- WGSL's
-        ; does not promise it, and floating point goes there only relaxed.
+        ; does not promise it, and floating point goes there only relaxed --,
+        ; and `expf`, which comes here only from a relaxed loop.
         procedure builtin_call(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, builtin: String, depth: size_t) returns String
         {
             let a this.operand(out, gk, (*call.args)[0], depth)

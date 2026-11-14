@@ -1,0 +1,15 @@
+; A loop over a CardVector that is no kernel: under --gpu, for a target
+; whose host has a card, the compiler refuses it (rc 4) and says why --
+; it would otherwise run on the processor over a vector that lives on the
+; card (ROADMAP-card.md). tests/gpu-plan/run.sh compiles it for wasm32.
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let n 64
+    var a CardVector[float](n)
+    var total: float 0.0
+    relaxed for i in n
+        total := total + a[i]
+    print "`total`"
+    0
+}

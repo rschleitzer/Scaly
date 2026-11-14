@@ -69,6 +69,31 @@ check "whole numbers in the block: as without"      'line 23 | grep -q "kernel (
 check "a 64-bit integer stays metal's, relaxed or not" 'line 25 | grep -q "kernel (metal): .*not webgpu: .*64-bit integer$"'
 check "after the block the word no longer holds"    'line 28 | grep -q "kernel (metal): .*the loop is not relaxed$"'
 
+# CardVectors (ROADMAP-card.md): a buffer and an output like a Vector's, a put
+# also at an offset every round shares; a loop naming one writes CardVectors
+# alone and reduces nothing -- and under --gpu one that is no kernel is rc 4.
+got=$("$STAGE" --gpu-plan tests/gpu-plan/card.scaly 2>&1 | grep '^gpu-plan:')
+line() { printf '%s\n' "$got" | grep "card.scaly:$1:"; }
+check "card: seven loops, four kernels"            'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 7 for-loops, 7 parallel, 4 kernels$"'
+check "card: a put at the counter"                  'line 19 | grep -q "kernel (metal, webgpu): out b; in a$"'
+check "card: a put at an offset rounds share"       'line 22 | grep -q "kernel (metal, webgpu): out cache; in at, a$"'
+check "card: a vector in memory beside it"          'line 25 | grep -q "no kernel: writes a vector in memory beside a CardVector: plain$"'
+check "card: a reduction beside it"                 'line 29 | grep -q "no kernel: reduces beside a CardVector: write the result into a CardVector of one element$"'
+check "card: the reduction as one element"         'line 32 | grep -q "kernel (metal, webgpu): out one; in n, a$"'
+check "card: the exponential in a relaxed loop"    'line 44 | grep -q "kernel (metal, webgpu): out e; in a$"'
+check "card: and not in one that is not"          'line 47 | grep -q "no kernel: calls a function whose body is not here: expf$"'
+cw=$("$STAGE" --gpu-wgsl tests/gpu-plan/card.scaly 2>&1)
+check "card: the offset is checked, then written"   'printf "%s\n" "$cw" | grep -q "if (t2 >= arrayLength(&o0)) { F = 1u; } else { o0\[t2\] = t3; }"'
+check "card: a high word of the offset faults"      'printf "%s\n" "$cw" | grep -q "if (u0_h != 0u) { F = 1u; }"'
+check "card: a sum past 32 bits faults"             'printf "%s\n" "$cw" | grep -q "if (t2 < t0) { F = 1u; }"'
+check "card: the card's own exponential"            'printf "%s\n" "$cw" | grep -q "= exp(t0);"'
+check "card: metal holds no offset put yet"         '"$STAGE" --gpu-msl tests/gpu-plan/card.scaly 2>&1 | grep -q "card.scaly:22:.*refused: a put at an offset"'
+T=$(mktemp -d)
+rout=$("$STAGE" --gpu --target wasm32-wasip1 -c -o "$T/refused.o" tests/gpu-plan/card_refused.scaly 2>&1); rrc=$?
+rm -rf "$T"
+check "card: --gpu refuses a CardVector loop that is no kernel (rc $rrc)" '[ $rrc -eq 4 ]'
+check "card: and says where and why"                'printf "%s\n" "$rout" | grep -q "card_refused.scaly:11: error: a loop over a CardVector must run on the card, and this one cannot: reduces beside a CardVector"'
+
 echo "gpu-plan: $pass PASS, $fail FAIL"
 for f in "${failures[@]}"; do echo "  FAIL: $f"; done
 [ $fail -eq 0 ]

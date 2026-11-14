@@ -1,0 +1,51 @@
+; CardVectors in loops (ROADMAP-card.md): which GpuKernel takes and which
+; it refuses -- tests/gpu-plan/run.sh pins the verdicts, tests/gpu/run.sh the
+; WGSL of the kernels, and both that `--gpu` refuses a CardVector loop that
+; is no kernel.
+
+function expf(x: float) returns float extern
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let n 64
+    var a CardVector[float](n)
+    var b CardVector[float](n)
+    var cache CardVector[float](n * 4)
+    var plain Vector[float](n)
+    var one CardVector[float](1)
+    var e CardVector[float](n)
+    let at n
+    ; at the counter
+    relaxed for i in n
+        b.put(i, a[i] * 2.0)
+    ; at an offset every round shares
+    relaxed for i in n
+        cache.put(at + i, a[i])
+    ; a vector in memory beside a CardVector
+    relaxed for i in n
+        plain.put(i, a[i])
+    ; a reduction beside a CardVector
+    var total: float 0.0
+    relaxed for i in n
+        total := total + a[i]
+    ; the reduction as a CardVector of one element
+    relaxed for k in 1
+    {
+        var sum: float 0.0
+        var i: u32 0
+        while i < (n as u32)
+        {
+            sum := sum + a[i]
+            i := i + 1
+        }
+        one.put(k, sum)
+    }
+    ; the card's exponential, in a relaxed loop
+    relaxed for i in n
+        e.put(i, expf(a[i]))
+    ; and not in one that is not
+    for i in n
+        e.put(i, expf(a[i]))
+    print "`b[0]` `cache[at]` `plain[0]` `total` `one[0]`"
+    0
+}
