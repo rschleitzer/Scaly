@@ -558,10 +558,18 @@ class="num"
 ></li
 ><li
 ><a
-href="scaling-machines.htm#scaling-machines-nodes"
+href="scaling-machines.htm#scaling-machines-for"
 ><span
 class="num"
 >9.2</span
+>A for over Machines</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-nodes"
+><span
+class="num"
+>9.3</span
 >Nodes and Channels</a
 ></li
 ><li
@@ -569,7 +577,7 @@ class="num"
 href="scaling-machines.htm#scaling-machines-messages"
 ><span
 class="num"
->9.3</span
+>9.4</span
 >A Message Is a Region</a
 ></li
 ><li
@@ -577,7 +585,7 @@ class="num"
 href="scaling-machines.htm#scaling-machines-build"
 ><span
 class="num"
->9.4</span
+>9.5</span
 >One Program, One Build</a
 ></li
 ><li
@@ -585,7 +593,7 @@ class="num"
 href="scaling-machines.htm#scaling-machines-failure"
 ><span
 class="num"
->9.5</span
+>9.6</span
 >When a Node Fails</a
 ></li
 ></ol
@@ -1424,11 +1432,13 @@ href="#scaling-machines-overview"
       on its own. Past the machine's edge memory is no longer shared, a
       message takes a fraction of a millisecond instead of a few
       nanoseconds, and the other side may stop answering. Scaly does not
-      hide that edge. Within a machine a <code
+      hide that edge. A <code
 >for</code
-> decides by itself
-      where its rounds run; across machines the program says what goes
-      where, and what it sends is a message.</p
+> whose rounds are pure may still
+      cross it: the runtime hands its rounds to copies of the program on
+      other machines where that pays, as it hands them to the cores and to
+      the graphics card. Everything else the program says itself — what
+      goes where — and what it sends is a message.</p
 ><p
 >A message is a region (<a
 href="scaling-why.htm#scaling-why-regions"
@@ -1441,6 +1451,145 @@ href="scaling-why.htm#scaling-why-regions"
       code to write and no schema to keep in step with the program.</p
 ></section
 ><section
+id="scaling-machines-for"
+><h2
+><a
+class="header"
+href="#scaling-machines-for"
+>A for over Machines</a
+></h2
+><p
+>The program below counts the primes below three million in
+      blocks: a plain <code
+>for</code
+> over the blocks, each round counting
+      the primes of its block and putting the count in its place. Nothing
+      in it says where its rounds run:</p
+><pre
+class="listing"
+><code
+>function is_prime(n: int) returns bool
+{
+    if n &#60; 2
+        return false
+    var d 2
+    while d * d &#60;= n
+    {
+        if n % d = 0
+            return false
+        d := d + 1
+    }
+    true
+}
+
+function count_primes(from: int, to: int) returns int
+{
+    var count 0
+    for k in to - from
+        if is_prime(from + k)
+            count := count + 1
+    count
+}
+
+let limit 3000000
+let blocks 300
+var counts Vector[int](blocks as size_t)
+for b in blocks
+    counts.put(b as size_t, count_primes(limit * b / blocks, limit * (b + 1) / blocks))
+var total 0
+for c in counts
+    total := total + c
+print "`total` primes below `limit`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly build --cluster primes.scaly -o primes
+$ ./primes --scaly-helper=once &#38;
+$ ./primes --scaly-helper=once &#38;
+$ SCALY_CLUSTER=on ./primes
+216816 primes below 3000000</code
+></pre
+><p
+>Built with <code
+>--cluster</code
+>, every <code
+>for</code
+> whose
+      rounds can travel is described to the runtime — which part of the
+      program runs a round, and what it reads and writes. Started with
+      <code
+>--scaly-helper</code
+>, the same program does not run its main:
+      it announces itself on the local network and waits for rounds.
+      Started as it is, it is the coordinator, and where one of its loops
+      is heavy enough it looks for helpers of its own build, hands each a
+      stretch of rounds, runs stretches itself, and gives a helper that
+      sends one back the next. What the rounds put comes back into the
+      coordinator's vector; inside a stretch a helper uses its own cores,
+      so the inner <code
+>for</code
+> of <code
+>count_primes</code
+> runs
+      there as it would here.</p
+><p
+>Rounds travel where what they read and write can: numbers and
+      records of numbers, vectors, slices and arrays of them read whole,
+      and those they <code
+>put</code
+> into at the counter. A reduction, a
+      value a round keeps, a string or a reference keeps the loop on this
+      machine — nothing is said, it runs as before. The count of this
+      program is such a reduction, and so it is added up here, after the
+      loop that went out.</p
+><p
+>Whether a loop goes out is measured as the driver measures the
+      cores and the card (<a
+href="scaling-loops.htm#scaling-loops-when"
+>When the Cores Are Worth It</a
+>,
+      <a
+href="scaling-gpu.htm#scaling-gpu-where"
+>Where a Loop Runs</a
+>): a loop that would take this
+      machine less than 20 milliseconds is never offered; the helpers take
+      part where, with what their stretches cost there and back, they end
+      it a quarter sooner, and what their stretches took teaches the next
+      offer. Here the helpers share the cores of one machine and gain
+      nothing — the runtime would find that out and keep the loop at home —,
+      so the transcript sends it anyway: <code
+>SCALY_CLUSTER=on</code
+>
+      sends every loop that can travel, <code
+>off</code
+> none, and
+      <code
+>SCALY_CLUSTER_TRACE=1</code
+> shows each stretch and each
+      decision. <code
+>--scaly-helper=once</code
+> ends a helper when its
+      coordinator lets go; without it a helper serves one coordinator after
+      the other until it is stopped.</p
+><p
+>A helper that goes — its connection closed, or silent past the
+      heartbeat — gives its stretch back, and another runs it; with none
+      left, the coordinator runs the rest. The rounds are pure, so the
+      result does not depend on who ran what. Across machines the helpers
+      hold the cluster's key and run the same build as the coordinator,
+      as every node of this chapter does
+      (<a
+href="#scaling-machines-build"
+>One Program, One Build</a
+>,
+      <a
+href="#scaling-machines-failure"
+>When a Node Fails</a
+>). What is not a pure loop
+      stays explicit, and the rest of this chapter is about that.</p
+></section
+><section
 id="scaling-machines-nodes"
 ><h2
 ><a
@@ -1449,8 +1598,8 @@ href="#scaling-machines-nodes"
 >Nodes and Channels</a
 ></h2
 ><p
->The program of this chapter counts the primes below three
-      million on three worker nodes. One program plays both roles: started
+>The same count, said explicitly, on three worker nodes. One
+      program plays both roles: started
       without an argument it coordinates, with one it works. The
       coordinator listens on a port, hands each worker that connects a
       share of the range, and prints what comes back:</p
@@ -1562,7 +1711,11 @@ $ ./primes
       machines the workers name the coordinator's host instead of
       <code
 >localhost</code
->, and nothing else changes.
+>, and every node is given the cluster's key
+      (below, <a
+href="#scaling-machines-failure"
+>When a Node Fails</a
+>).
       <code
 >Cluster.connect</code
 > keeps trying for as long as its last
@@ -1707,10 +1860,22 @@ href="#scaling-machines-failure"
       Its loss is the same to the last bit as on one node, and with one
       worker killed mid-run the others finish the training.</p
 ><p
->One limit is named: the nodes trust each other. A connection is
-      neither authenticated nor encrypted, and a node checks the framing
-      of what it receives, not the meaning — run a cluster only inside a
-      network you trust.</p
+>Who may join is decided before the first message. A cluster
+      without a key stays on one machine: a node listens on the loopback
+      only and refuses a peer from anywhere else. Across machines every
+      node holds the same key — in the environment as
+      <code
+>SCALY_CLUSTER_KEY</code
+>, or in the file
+      <code
+>~/.scaly/cluster.key</code
+> — and proves it when it connects,
+      by an HMAC over a challenge of the other side; a node with another
+      key, or none, is refused. One limit is named: the key keeps
+      strangers out, it does not hide what the nodes say to each other.
+      The messages are not encrypted, and a node checks the framing of
+      what it receives, not the meaning — run a cluster across machines
+      only inside a network you trust.</p
 ></section
 ></article
 ><nav
