@@ -2135,8 +2135,10 @@ template <> struct Vector<Vector<uint8_t>>
 struct ClusterJob
 {
     uint64_t hash;
+    uint64_t offer;
     int64_t lo;
     int64_t hi;
+    bool cached;
     Vector<uint8_t> cell;
     Vector<Vector<uint8_t>> inputs;
 };

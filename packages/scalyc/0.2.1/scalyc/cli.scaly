@@ -546,7 +546,7 @@ define cli
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
         Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
         Console.println "  --portable-simd  SIMD operations in their target-neutral form (the seed)"
-        Console.println "  --cluster      Let the program hand the rounds of a parallel for loop to helpers of its own build (the same program started with --scaly-helper; SCALY_CLUSTER=on sends them; not with --jit or --run)"
+        Console.println "  --cluster      Let the program hand the rounds of a parallel for loop to helpers of its own build (the same program started with --scaly-helper) where they end it sooner; SCALY_CLUSTER=on sends every one, off none; not with --jit or --run"
         Console.println "  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)"
     }
 

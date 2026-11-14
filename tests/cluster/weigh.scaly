@@ -1,0 +1,126 @@
+; The cost model (ROADMAP-cluster.md, stage C3). Built with --cluster and
+; left alone (no SCALY_CLUSTER), a fit loop is offered at the driver's
+; gates with what its rounds cost: it goes to the helpers where they would
+; end it a quarter sooner than this machine alone.
+;
+; The argument names the loop, run in passes (the first pass begins the
+; search for helpers and runs here):
+;   heavy  much to compute, little to send: it goes out
+;   light  little to compute per byte it must send: it stays
+;   small  done here before anything could be asked: not offered at all
+;
+; Expected heavy: heavy 40.40783760973982
+; Expected light: light 1046922301874
+; Expected small: small 3515250
+
+function spin(x: f64, n: int) returns f64
+{
+    var s x
+    var k 0
+    while k < n
+    {
+        s := s * 0.999 + 0.5 / (1.0 + (k as f64))
+        k := k + 1
+    }
+    s
+}
+
+procedure heavy(mutable out: Vector[f64])
+{
+    for i in out.length
+        out.put(i, spin((i as f64) / 1000.0, 100000))
+}
+
+procedure light(xs: Slice[int], mutable out: Vector[int])
+{
+    for i in xs.length
+    {
+        var v xs[i]
+        var k 0
+        while k < 100
+        {
+            v := (v * 31 + k) % 1000003
+            k := k + 1
+        }
+        out.put(i, v)
+    }
+}
+
+procedure small(mutable out: Vector[int])
+{
+    for i in out.length
+        out.put(i, (spin((i as f64), 5000) * 1000.0) as int)
+}
+
+let args os.arguments()
+var which: u8 0
+if args.length > 0
+{
+    let first: Slice[u8] args[0]
+    which := first[0]
+}
+if which = ("h" as char) as u8
+{
+    var out Vector[f64](8000)
+    var pass 0
+    var sum 0.0
+    while pass < 4
+    {
+        heavy(out)
+        sum := 0.0
+        var m: size_t 0
+        while m < out.length
+        {
+            sum := sum + out[m]
+            m := m + 1
+        }
+        pass := pass + 1
+    }
+    print "heavy `sum`"
+}
+if which = ("l" as char) as u8
+{
+    let n: size_t 2097152
+    var xs Vector[int](n)
+    var j: size_t 0
+    while j < n
+    {
+        xs.put(j, (j as int) % 1000)
+        j := j + 1
+    }
+    var out Vector[int](n)
+    var pass 0
+    var sum 0
+    while pass < 5
+    {
+        light(xs.as_slice(), out)
+        sum := 0
+        var m: size_t 0
+        while m < n
+        {
+            sum := sum + out[m]
+            m := m + 1
+        }
+        pass := pass + 1
+    }
+    print "light `sum`"
+}
+if which = ("s" as char) as u8
+{
+    var out Vector[int](1000)
+    var pass 0
+    var sum 0
+    while pass < 3
+    {
+        small(out)
+        sum := 0
+        var m: size_t 0
+        while m < out.length
+        {
+            sum := sum + out[m]
+            m := m + 1
+        }
+        pass := pass + 1
+    }
+    print "small `sum`"
+}

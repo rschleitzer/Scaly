@@ -39,10 +39,13 @@
 ; (scaly_helper_main: it announces itself to the helpers' multicast group
 ; and serves coordinators); Helpers.find# is how a coordinator finds those
 ; of its own build. Built with `scalyc --cluster`, a parallel `for` whose
-; captures can travel has a descriptor (scaly_cluster_register), and its
-; head asks scaly_cluster_offer# first: with SCALY_CLUSTER=on and helpers
-; there, its rounds go to them in stretches and what they put comes back;
-; otherwise -- no helper, or none left -- the loop runs here as always.
+; captures can travel has a descriptor (scaly_cluster_register), and the
+; driver asks scaly_cluster_offer# at its gates, with what a round cost:
+; where helpers are there and would end the loop a quarter sooner, its
+; rounds go to them and to this machine in stretches, and what the
+; helpers put comes back; otherwise -- no helper, none that pays, or none
+; left -- the loop runs here as always. SCALY_CLUSTER=on sends every such
+; loop from its head to the helpers alone, SCALY_CLUSTER=off none.
 
 ; The handshake preamble [magic, protocol version, build stamp] (all
 ; u64, 24 bytes, sent immediately in BOTH directions) is the one wire
@@ -134,17 +137,35 @@ define HELPER_CHANNEL u64 900
 ; the record. The hash names the loop the same in every build of the program.
 define CLUSTER_RESULT u64 901
 define CLUSTER_TABLE_MOST size_t 4096
+define CLUSTER_PEERS_MOST size_t 256
 
-; A stretch of rounds for a helper: the loop, the rounds, the cell as the
-; coordinator filled it, and every buffer the rounds read, whole. Like
-; every message it is the FIRST object on its page (Cluster.send sends the
-; region from the page the message lies on), so its parts are given to it
-; after it is made.
+; The cost model (ROADMAP-cluster.md, C3). A loop whose remaining rounds
+; take this machine less than CLUSTER_FLOOR_NS is never offered -- not even
+; a search for helpers is started for it. Helpers must finish the loop a
+; quarter sooner than this machine alone (as the card must); a stretch
+; lasts at least CLUSTER_LATENCIES times its helper's latency; the network
+; is believed to carry a byte in CLUSTER_BYTE_NS (100 MB/s, a gigabit's
+; worth) and a helper's core to run a round as fast as one here until a
+; stretch measured it.
+define CLUSTER_FLOOR_NS i64 20000000
+define CLUSTER_LATENCIES i64 50
+define CLUSTER_BYTE_NS i64 10
+; A search that found nobody is made again after this long.
+define CLUSTER_SEARCH_AGAIN_NS i64 10000000000
+
+; A stretch of rounds for a helper: the loop, the offer it belongs to, the
+; rounds, the cell as the coordinator filled it, and every buffer the
+; rounds read, whole -- or, `cached`, none of them: the helper keeps them
+; from the first stretch of the offer. Like every message it is the FIRST
+; object on its page (Cluster.send sends the region from the page the
+; message lies on), so its parts are given to it after it is made.
 define ClusterJob
 (
     hash: u64
+    offer: u64
     lo: i64
     hi: i64
+    cached: bool
     var cell: Vector[u8]
     var inputs: Vector[Vector[u8]]
 )
@@ -169,6 +190,25 @@ shared cluster_peers_asked: bool false
 ; -- on a worker of this machine or in a helper -- runs where its rounds
 ; run (1 while an offer is under way, 2 for good in a helper).
 shared atomic cluster_offering: u64 0
+shared cluster_offers: u64 0
+; Offers come from the thread the loops were made known on (the program's
+; own, before main) and from no other: a loop on a worker of this machine
+; runs where its caller's rounds run.
+mutable cluster_home: bool false
+; What the coordinator learned of each helper: its cores, its latency (half
+; the time its connection took), and how much longer than predicted its
+; stretches took (1 until one was measured).
+shared cluster_peer_cores: pointer[i64] null
+shared cluster_peer_lat: pointer[f64] null
+shared cluster_peer_factor: pointer[f64] null
+; The search for helpers runs on a thread of its own (0 not begun, 1
+; under way, 2 done); what it found waits here until an offer connects it.
+shared atomic cluster_search: u64 0
+shared cluster_search_done_at: i64 0
+shared cluster_found_hosts: pointer[pointer[const_char]] null
+shared cluster_found_ports: pointer[i32] null
+shared cluster_found_cores: pointer[i64] null
+shared cluster_found_count: size_t 0
 
 ; A helper a coordinator found: where it listens, how many cores it has.
 define HelperFound
@@ -206,6 +246,13 @@ define NodePeer
     reader: size_t
     var down_reason: i64
 )
+
+; The search for helpers, on a thread of its own (Cluster.ready#).
+procedure cluster_search_entry(mutable arg: pointer[void]) returns pointer[void]
+{
+    Cluster.search()
+    null
+}
 
 ; The reader thread's entry (free procedure: taken with &).
 procedure node_reader_entry(mutable arg: pointer[void]) returns pointer[void]
@@ -990,35 +1037,135 @@ define Cluster
         getenv("SCALY_CLUSTER_TRACE") <> null
     }
 
-    ; Are the rounds of a fit loop to go to helpers (SCALY_CLUSTER=on)?
-    procedure forced() returns bool
+    ; SCALY_CLUSTER: 1 "on" (every fit loop is sent, from its head), 0
+    ; "off" (none is), 2 unset or anything else (the cost model decides at
+    ; the driver's gates).
+    procedure mode() returns int
     {
         let v getenv("SCALY_CLUSTER")
         if v = null
-            return false
-        v[0] = ("o" as char) and v[1] = ("n" as char) and v[2] = (0 as char)
+            return 2
+        if v[0] = ("o" as char) and v[1] = ("n" as char) and v[2] = (0 as char)
+            return 1
+        if v[0] = ("o" as char) and v[1] = ("f" as char) and v[2] = ("f" as char) and v[3] = (0 as char)
+            return 0
+        2
     }
 
-    ; The helpers of this program this coordinator is connected to: found
-    ; and connected the first time a loop asks, kept for the program's life.
+    ; The helpers of this program this coordinator is connected to, found
+    ; and connected here and now the first time (the forced offer's way).
     procedure helpers() returns size_t
     {
-        if cluster_peers_asked
-            return cluster_peer_count
-        cluster_peers_asked := true
+        if scaly_atomic_cas_u64(&cluster_search, 0 as u64, 1 as u64) = 0
+            Cluster.search()
+        else
+            while scaly_atomic_load_u64(&cluster_search) <> 2
+                poll(null as pointer[pollfd], 0, 2)
+        Cluster.connect_found()
+        cluster_peer_count
+    }
+
+    ; The search itself: the helpers that answer, kept on a page of their
+    ; own for the thread that connects them (cluster_search becomes 2).
+    procedure search()
+    {
         let found Helpers.find(1000)
         let p Page.allocate_page()
-        cluster_peers := p.allocate((found.length + 1) * 8, 8) as pointer[pointer[NodePeer]]
-        for h in found
+        let n found.length
+        let hosts p.allocate((n + 1) * 8, 8) as pointer[pointer[const_char]]
+        let ports p.allocate((n + 1) * 4, 4) as pointer[i32]
+        let cores p.allocate((n + 1) * 8, 8) as pointer[i64]
+        var i: size_t 0
+        while i < n
         {
-            let peer Cluster.connect(h.host.to_c_string(), h.port)
+            let h found[i]
+            let len h.host.get_length()
+            let text p.allocate(len + 1, 1) as pointer[u8]
+            memcpy(text as pointer[void], h.host.c_data() as pointer[void], len as c_size)
+            text[len] := 0
+            hosts[i] := text as pointer[const_char]
+            ports[i] := h.port
+            cores[i] := h.cores
+            i := i + 1
+        }
+        cluster_found_hosts := hosts
+        cluster_found_ports := ports
+        cluster_found_cores := cores
+        cluster_found_count := n
+        cluster_search_done_at := scaly_eio_now_ns()
+        scaly_atomic_store_u64(&cluster_search, 2 as u64)
+    }
+
+    ; Connect what the search found (after it is done; once), timing each
+    ; connection: half of it is the helper's latency.
+    procedure connect_found()
+    {
+        if cluster_peers = null
+        {
+            let p Page.allocate_page()
+            cluster_peers := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[pointer[NodePeer]]
+            cluster_peer_cores := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[i64]
+            cluster_peer_lat := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[f64]
+            cluster_peer_factor := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[f64]
+        }
+        if cluster_peers_asked
+            return
+        cluster_peers_asked := true
+        var i: size_t 0
+        while i < cluster_found_count and cluster_peer_count < CLUSTER_PEERS_MOST
+        {
+            let t0 scaly_eio_now_ns()
+            let peer Cluster.connect(cluster_found_hosts[i], cluster_found_ports[i])
             if peer <> null
             {
-                cluster_peers[cluster_peer_count] := peer as pointer[NodePeer]
-                cluster_peer_count := cluster_peer_count + 1
+                let k cluster_peer_count
+                cluster_peers[k] := peer as pointer[NodePeer]
+                cluster_peer_cores[k] := if cluster_found_cores[i] > 0: cluster_found_cores[i] else 1
+                cluster_peer_lat[k] := ((scaly_eio_now_ns() - t0) as f64) / 2.0
+                cluster_peer_factor[k] := 1.0
+                cluster_peer_count := k + 1
+            }
+            i := i + 1
+        }
+    }
+
+    ; Are helpers there for an offer whose rounds would take this machine
+    ; `local_ns`? The first such offer begins the search on a thread of its
+    ; own and waits for it a sixteenth of that at most (a second at most);
+    ; a later one finds it done. A search that found nobody is made again
+    ; after a while: a helper may have come since.
+    procedure ready(local_ns: f64) returns bool
+    {
+        if scaly_atomic_load_u64(&cluster_search) = 2 and cluster_peer_count = 0 and cluster_peers_asked
+        {
+            if scaly_eio_now_ns() - cluster_search_done_at > CLUSTER_SEARCH_AGAIN_NS
+            {
+                cluster_peers_asked := false
+                scaly_atomic_store_u64(&cluster_search, 0 as u64)
             }
         }
-        cluster_peer_count
+        if scaly_atomic_cas_u64(&cluster_search, 0 as u64, 1 as u64) = 0
+        {
+            if Cluster.tracing()
+            {
+                scaly_eputs "cluster: looking for helpers"
+                scaly_eputnl()
+            }
+            Thread.spawn(&cluster_search_entry, null as pointer[void])
+        }
+        if scaly_atomic_load_u64(&cluster_search) <> 2
+        {
+            var wait (local_ns / 16.0) as i64
+            if wait > 1000000000
+                wait := 1000000000
+            let deadline scaly_eio_now_ns() + wait
+            while scaly_atomic_load_u64(&cluster_search) <> 2 and scaly_eio_now_ns() < deadline
+                poll(null as pointer[pollfd], 0, 2)
+            if scaly_atomic_load_u64(&cluster_search) <> 2
+                return false
+        }
+        Cluster.connect_found()
+        cluster_peer_count > 0
     }
 
     ; The descriptor of the loop of that hash; null where this build has none.
@@ -1074,9 +1221,41 @@ define Cluster
         (length: words[0], data: (words[1] as pointer[u8]))
     }
 
-    ; A stretch for a helper: the cell, every buffer the rounds read, and
-    ; the stretch of every one they put into.
-    procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], lo: i64, hi: i64)
+    ; Is a capture of this kind one the rounds only read (a record behind
+    ; an address, a whole buffer)? A helper keeps those for the offer.
+    function read_only(kind: i64) returns bool
+    {
+        let base kind & 15
+        kind = 17 or base = 2 or base = 3
+    }
+
+    ; The bytes of what the rounds read, and what one round puts.
+    procedure weight(desc: pointer[void], cell: pointer[void]) returns (read: size_t, per_round: size_t)
+    {
+        let ncap Cluster.desc_word(desc, 5) as size_t
+        var read: size_t 0
+        var per_round: size_t 0
+        var c: size_t 0
+        while c < ncap
+        {
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
+            let base kind & 15
+            if kind = 17
+                read := read + elem
+            else if base = 2 or base = 3
+                read := read + Cluster.buffer_of(Cluster.capture_record(desc, cell, c), kind).length * elem
+            else if base = 4 or base = 5
+                per_round := per_round + elem
+            c := c + 1
+        }
+        (read: read, per_round: per_round)
+    }
+
+    ; A stretch for a helper: the cell, every buffer the rounds read (none,
+    ; `cached`, where the helper has them from this offer's first stretch),
+    ; and the stretch of every one they put into. Answers the bytes sent.
+    procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], offer: u64, lo: i64, hi: i64, cached: bool) returns size_t
     {
         let size Cluster.desc_word(desc, 1) as size_t
         let ncap Cluster.desc_word(desc, 5) as size_t
@@ -1089,16 +1268,22 @@ define Cluster
             c := c + 1
         }
         let mp Page.allocate_page()
-        let job &ClusterJob^mp(Cluster.desc_word(desc, 0) as u64, lo, hi, Vector[u8]^mp(0), Vector[Vector[u8]]^mp(0))
+        let job &ClusterJob^mp(Cluster.desc_word(desc, 0) as u64, offer, lo, hi, cached, Vector[u8]^mp(0), Vector[Vector[u8]]^mp(0))
         var cv Vector[u8]^mp(size)
         memcpy(cv.data as pointer[void], cell, size as c_size)
         var ins Vector[Vector[u8]]^mp(nin)
+        var sent size
         var j: size_t 0
         c := 0
         while c < ncap
         {
             let kind Cluster.desc_word(desc, 7 + c * 3)
-            if Cluster.travels_out(kind)
+            if Cluster.travels_out(kind) and cached and Cluster.read_only(kind)
+            {
+                ins.put(j, Vector[u8]^mp(0))
+                j := j + 1
+            }
+            else if Cluster.travels_out(kind)
             {
                 let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
                 let rec Cluster.capture_record(desc, cell, c)
@@ -1119,6 +1304,7 @@ define Cluster
                 var bv Vector[u8]^mp(bytes)
                 memcpy(bv.data as pointer[void], from as pointer[void], bytes as c_size)
                 ins.put(j, bv)
+                sent := sent + bytes
                 j := j + 1
             }
             c := c + 1
@@ -1126,6 +1312,7 @@ define Cluster
         job.cell := cv
         job.inputs := ins
         Cluster.send(peer, HELPER_CHANNEL, job as pointer[void])
+        sent
     }
 
     ; What a helper's stretch put, into this program's buffers.
@@ -1181,10 +1368,13 @@ define Cluster
     }
 
     ; A helper's side: every stretch a coordinator sends is run and answered,
-    ; until the coordinator lets go.
+    ; until the coordinator lets go. The last stretch that brought what the
+    ; rounds read is kept: the later stretches of its offer come without.
     procedure serve(mutable peer: pointer[NodePeer])
     {
         let ch Cluster.channel(peer, HELPER_CHANNEL)
+        var kept: ref[ReceivedRegion]? null
+        var kept_job: pointer[ClusterJob] null
         repeat
         {
             let raw Channel.receive(ch)
@@ -1194,12 +1384,32 @@ define Cluster
             let job rr.root as pointer[ClusterJob]
             Cluster.fix_job(rr, job as ref[ClusterJob])
             let rp Page.allocate_page()
-            let res Cluster.run_job(rp, job as ref[ClusterJob])
+            var src job
+            if job.cached
+            {
+                if kept_job <> null and kept_job.offer = job.offer
+                    src := kept_job
+                else
+                    src := null
+            }
+            let res Cluster.run_job(rp, job as ref[ClusterJob], src)
             Cluster.send(peer, CLUSTER_RESULT, res as pointer[void])
             rp.deallocate_extensions()
             Page.release_page(rp)
-            Cluster.dispose_message(rr)
+            if job.cached
+                Cluster.dispose_message(rr)
+            else
+            {
+                let old: ref[ReceivedRegion]? kept
+                if old <> null
+                    Cluster.dispose_message(old)
+                kept := rr
+                kept_job := job
+            }
         }
+        let last: ref[ReceivedRegion]? kept
+        if last <> null
+            Cluster.dispose_message(last)
     }
 
     ; One stretch, here: the cell built again -- its plain values as the
@@ -1207,13 +1417,15 @@ define Cluster
     ; with the stretch, a written one at a buffer of the stretch's own, set
     ; so that the round's counter indexes it as it indexes the
     ; coordinator's --, then the loop's own task function, and what it put.
-    procedure run_job(rp: ref[Page], job: ref[ClusterJob]) returns ref[ClusterResult]
+    ; What the rounds read comes from `src`: the job itself, or the one of
+    ; its offer that brought it (null: none did -- not ok).
+    procedure run_job(rp: ref[Page], job: ref[ClusterJob], src: pointer[ClusterJob]) returns ref[ClusterResult]
     {
         ; the answer on a page of its own, first on it; rp holds the
         ; stretch's scratch and is given back after the answer went
         let ap Page.allocate_page()
         let desc Cluster.find_loop(job.hash)
-        if desc = null
+        if desc = null or src = null
             return &ClusterResult^ap(job.lo, job.hi, false, Vector[Vector[u8]]^ap(0))
         let res &ClusterResult^ap(job.lo, job.hi, true, Vector[Vector[u8]]^ap(0))
         let task (desc as pointer[pointer[void]])[0]
@@ -1249,7 +1461,7 @@ define Cluster
             if kind = 17
             {
                 ; the record came beside the cell: the cell points at it
-                let part job.inputs[j]
+                let part src.inputs[j]
                 (((cell as size_t) + off) as pointer[pointer[u8]])[0] := part.data
                 j := j + 1
             }
@@ -1266,7 +1478,7 @@ define Cluster
                 var data: size_t 0
                 if base = 2 or base = 3
                 {
-                    let part job.inputs[j]
+                    let part src.inputs[j]
                     length := part.length / elem
                     data := part.data as size_t
                     j := j + 1
@@ -1489,7 +1701,8 @@ procedure scaly_helper_main()
 define Helpers
 {
     ; The helpers of this program that answer within `ms` milliseconds,
-    ; each once.
+    ; each once -- and no longer than 150 milliseconds after the last new
+    ; one: a helper answers an ask at once, so they come together.
     procedure find(ms: int) returns Vector[HelperFound]
     {
         let key Cluster.key()
@@ -1504,7 +1717,8 @@ define Helpers
         var ids List[u64]()
         var buf Vector[u8](128)
         var from u8[64]
-        let deadline scaly_eio_now_ns() + ms * 1000000
+        let limit scaly_eio_now_ns() + ms * 1000000
+        var deadline limit
         repeat
         {
             let left (deadline - scaly_eio_now_ns()) / 1000000
@@ -1527,6 +1741,9 @@ define Helpers
                     {
                         ids.add(id)
                         found.add(HelperFound(String(from as pointer[const_char]), Cluster.word_at(d, 4) as i32, Cluster.word_at(d, 5) as i64, id))
+                        deadline := scaly_eio_now_ns() + 150000000
+                        if deadline > limit
+                            deadline := limit
                     }
                 }
             }
@@ -1542,6 +1759,7 @@ define Helpers
 ; constructor calls this once for every descriptor of the module.
 procedure scaly_cluster_register(desc: pointer[void])
 {
+    cluster_home := true
     if cluster_table = null
     {
         let p Page.allocate_page()
@@ -1554,31 +1772,54 @@ procedure scaly_cluster_register(desc: pointer[void])
     }
 }
 
-; The coordinator's offer, asked at the head of such a loop: where it is
-; forced (SCALY_CLUSTER=on) and helpers are there, the rounds 0 to count go
-; to them in stretches, a helper taking the next as it sends one back, and
-; what they put lands in this program's buffers. 1 where every round ran so;
-; 0 where they did not -- no helper, or none left --: the processor's loop
-; then runs as always and computes the same, the rounds being pure.
-procedure scaly_cluster_offer(desc: pointer[void], cell: pointer[void], count: int) returns i32
+; The coordinator's offer, asked at the head of such a loop (per1k 0) and
+; at the driver's gates (per1k: what a round cost one core here, <<10, as
+; the driver measured it; done: the rounds that ran already; workers: the
+; cores this machine would run the rest on). SCALY_CLUSTER=on sends every
+; fit loop from its head, to the helpers alone; unset, the cost model
+; decides at the gates, and this machine runs stretches beside its
+; helpers; off, nothing is sent. 1 where every round from `done` on ran
+; so; 0 where the processor's loop is to run them as always -- the rounds
+; are pure, so a stretch that ran twice computes the same.
+procedure scaly_cluster_offer(desc: pointer[void], cell: pointer[void], count: int, done: int, per1k: int, workers: int) returns i32
 {
-    if count <= 0 or Cluster.forced() = false
+    if count - done <= 0 or cluster_home = false
+        return 0
+    let mode Cluster.mode()
+    let at_head per1k <= 0
+    if mode = 0
+        return 0
+    if mode = 1 and at_head = false
+        return 0
+    if mode = 2 and at_head
         return 0
     if scaly_atomic_cas_u64(&cluster_offering, 0 as u64, 1 as u64) <> 0
         return 0
-    let answer cluster_offer_rounds(desc, cell, count)
+    cluster_offers := cluster_offers + 1
+    var answer: i32 0
+    if mode = 1
+        answer := cluster_offer_forced(desc, cell, count)
+    else
+        answer := cluster_offer_weighed(desc, cell, count, done, per1k, workers)
     scaly_atomic_store_u64(&cluster_offering, 0 as u64)
     answer
 }
 
-; The offer itself, while it is the only one.
-procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: int) returns i32
+; Milliseconds of a time in nanoseconds, for the trace.
+function cluster_ms(ns: f64) returns i64
+    (ns / 1000000.0) as i64
+
+; The forced offer: the rounds go to the helpers in stretches, a helper
+; taking the next as it sends one back, and what they put lands in this
+; program's buffers. 0 where no helper is there or none is left.
+procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: int) returns i32
 {
     let n Cluster.helpers()
     if n = 0
         return 0
     if current_scheduler = null
         Scheduler.create(Page.allocate_page())
+    let offer cluster_offers
     var chunk (count + (n as i64) * 4 - 1) / ((n as i64) * 4)
     if chunk < 1
         chunk := 1
@@ -1587,6 +1828,7 @@ procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: 
     let queue qp.allocate((stretches as size_t) * 8, 8) as pointer[i64]
     let busy qp.allocate(n * 8, 8) as pointer[i64]
     let live qp.allocate(n, 1) as pointer[u8]
+    let full qp.allocate(n, 1) as pointer[u8]
     var q: i64 0
     while q < stretches
     {
@@ -1600,6 +1842,7 @@ procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: 
         busy[k] := 0 - 1
         let peer cluster_peers[k]
         live[k] := if peer.alive: (1 as u8) else 0
+        full[k] := 0
         k := k + 1
     }
     var done: i64 0
@@ -1617,7 +1860,8 @@ procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: 
                 var hi lo + chunk
                 if hi > count
                     hi := count
-                Cluster.send_job(cluster_peers[k], desc, cell, lo, hi)
+                Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, full[k] = 1)
+                full[k] := 1
                 busy[k] := lo
             }
             k := k + 1
@@ -1701,3 +1945,324 @@ procedure cluster_offer_rounds(desc: pointer[void], cell: pointer[void], count: 
     if ok: 1 else 0
 }
 
+; The offer the cost model decides. What the rest takes here: its rounds
+; times a round's cost on one core, over this machine's cores. What it
+; takes with the helpers: the rounds over the rates of all -- this
+; machine's and each helper's: a stretch's rounds over its time, which is
+; the helper's latency, the bytes of the stretch there and back, and its
+; rounds on the helper's cores, as fast as here until measured --, plus
+; the longest first stretch (it carries what the rounds read). A helper
+; whose first stretch alone would not end before this machine ends the
+; rest does not take part; the helpers take part where all of it ends a
+; quarter sooner. Then this machine and its helpers each take the next
+; stretch as they finish one, the stretches smaller toward the end, a
+; helper's measured time teaching how much its stretches take longer than
+; predicted. A helper that goes or does not know the loop gives its
+; stretch back, and the others run it.
+procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count: int, done: int, per1k: int, workers: int) returns i32
+{
+    let left count - done
+    let round (per1k as f64) / 1024.0
+    let cores: i64 if workers > 0: workers else 1
+    let here_ns (left as f64) * round / (cores as f64)
+    if here_ns < (CLUSTER_FLOOR_NS as f64)
+        return 0
+    if Cluster.ready(here_ns) = false
+    {
+        if Cluster.tracing()
+        {
+            scaly_eputs "cluster: "
+            scaly_eputi(left)
+            scaly_eputs " rounds stay here ("
+            scaly_eputi(cluster_ms(here_ns))
+            scaly_eputs " ms, no helpers)"
+            scaly_eputnl()
+        }
+        return 0
+    }
+    if current_scheduler = null
+        Scheduler.create(Page.allocate_page())
+    let n cluster_peer_count
+    let w Cluster.weight(desc, cell)
+    let byte_ns CLUSTER_BYTE_NS as f64
+    var share left / (((n as i64) + 1) * 4)
+    if share < 1
+        share := 1
+    let sp Page.allocate_page()
+    let stretch sp.allocate(n * 8, 8) as pointer[i64]
+    let takes sp.allocate(n, 1) as pointer[u8]
+    var rate (cores as f64) / round
+    var tail: f64 0.0
+    var helpers: i64 0
+    var k: size_t 0
+    while k < n
+    {
+        takes[k] := 0
+        let peer cluster_peers[k]
+        let lat cluster_peer_lat[k]
+        let f cluster_peer_factor[k]
+        let per round * f / (cluster_peer_cores[k] as f64)
+        var s ((lat * (CLUSTER_LATENCIES as f64)) / per) as i64
+        if s < share
+            s := share
+        if s > left
+            s := left
+        stretch[k] := s
+        let each lat + (((s as size_t) * w.per_round * 2) as f64) * byte_ns + (s as f64) * per
+        let first each + (w.read as f64) * byte_ns
+        if peer.alive and first * 1.25 < here_ns
+        {
+            takes[k] := 1
+            rate := rate + (s as f64) / each
+            if first > tail
+                tail := first
+            helpers := helpers + 1
+        }
+        else
+        {
+            ; not now: what it learned fades, and it is asked again in time
+            cluster_peer_factor[k] := f * 0.9 + 0.1
+        }
+        k := k + 1
+    }
+    let with_ns (left as f64) / rate + tail
+    if helpers = 0 or with_ns * 1.25 >= here_ns
+    {
+        if Cluster.tracing()
+        {
+            scaly_eputs "cluster: "
+            scaly_eputi(left)
+            scaly_eputs " rounds stay here ("
+            scaly_eputi(cluster_ms(here_ns))
+            if helpers = 0
+                scaly_eputs " ms, no helper would end a stretch sooner)"
+            else
+            {
+                scaly_eputs " ms, with helpers "
+                scaly_eputi(cluster_ms(with_ns))
+                scaly_eputs " ms)"
+            }
+            scaly_eputnl()
+        }
+        sp.deallocate_extensions()
+        Page.release_page(sp)
+        return 0
+    }
+    let offer cluster_offers
+    let busy_lo sp.allocate(n * 8, 8) as pointer[i64]
+    let busy_hi sp.allocate(n * 8, 8) as pointer[i64]
+    let sent_at sp.allocate(n * 8, 8) as pointer[i64]
+    let sent_bytes sp.allocate(n * 8, 8) as pointer[size_t]
+    let full sp.allocate(n, 1) as pointer[u8]
+    let back_lo sp.allocate(n * 8 + 8, 8) as pointer[i64]
+    let back_hi sp.allocate(n * 8 + 8, 8) as pointer[i64]
+    var backs: size_t 0
+    k := 0
+    while k < n
+    {
+        busy_lo[k] := 0 - 1
+        full[k] := 0
+        k := k + 1
+    }
+    let task (desc as pointer[pointer[void]])[0]
+    let size Cluster.desc_word(desc, 1) as size_t
+    let at_lo Cluster.desc_word(desc, 2) as size_t
+    let at_hi Cluster.desc_word(desc, 3) as size_t
+    let pool TaskPool.default_pool()
+    let g TaskGroup.create()
+    let fair_parts (helpers + 1) * 2
+    let t0 scaly_eio_now_ns()
+    var next done
+    var here_busy false
+    var here_rounds: i64 0
+    var out_rounds: i64 0
+    var lost: i64 0
+    repeat
+    {
+        ; every helper taking part and without a stretch gets the next
+        k := 0
+        while k < n
+        {
+            if takes[k] = 1 and busy_lo[k] < 0
+            {
+                var lo: i64 0 - 1
+                var hi: i64 0
+                if backs > 0
+                {
+                    backs := backs - 1
+                    lo := back_lo[backs]
+                    hi := back_hi[backs]
+                }
+                else if next < count
+                {
+                    var s stretch[k]
+                    let fair (count - next + fair_parts - 1) / fair_parts
+                    if s > fair
+                        s := fair
+                    if s < 1
+                        s := 1
+                    lo := next
+                    hi := next + s
+                    if hi > count
+                        hi := count
+                    next := hi
+                }
+                if lo >= 0
+                {
+                    sent_at[k] := scaly_eio_now_ns()
+                    sent_bytes[k] := Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, full[k] = 1)
+                    full[k] := 1
+                    busy_lo[k] := lo
+                    busy_hi[k] := hi
+                }
+            }
+            k := k + 1
+        }
+        ; this machine: the next stretch, on its cores
+        if here_busy = false
+        {
+            var lo: i64 0 - 1
+            var hi: i64 0
+            if backs > 0
+            {
+                backs := backs - 1
+                lo := back_lo[backs]
+                hi := back_hi[backs]
+            }
+            else if next < count
+            {
+                var s share
+                let fair (count - next + fair_parts - 1) / fair_parts
+                if s > fair
+                    s := fair
+                if s < 1
+                    s := 1
+                lo := next
+                hi := next + s
+                if hi > count
+                    hi := count
+                next := hi
+            }
+            if lo >= 0
+            {
+                var parts cores
+                if parts > hi - lo
+                    parts := hi - lo
+                let step (hi - lo + parts - 1) / parts
+                var a lo
+                while a < hi
+                {
+                    var b a + step
+                    if b > hi
+                        b := hi
+                    let sub sp.allocate(size, 16)
+                    memcpy(sub, cell, size as c_size)
+                    (((sub as size_t) + at_lo) as pointer[i64])[0] := a
+                    (((sub as size_t) + at_hi) as pointer[i64])[0] := b
+                    TaskPool.submit(pool, task, sub, g)
+                    a := b
+                }
+                here_busy := true
+                here_rounds := here_rounds + (hi - lo)
+            }
+        }
+        var outstanding here_busy
+        k := 0
+        while k < n
+        {
+            if busy_lo[k] >= 0
+                outstanding := true
+            k := k + 1
+        }
+        if outstanding = false
+            break
+        ; what came back
+        var got false
+        k := 0
+        while k < n
+        {
+            if busy_lo[k] >= 0
+            {
+                var timed false
+                let raw Channel.receive_timeout(Cluster.channel(cluster_peers[k], CLUSTER_RESULT), 0 as i32, &timed)
+                var gone false
+                if raw <> null
+                {
+                    let rr raw as ref[ReceivedRegion]
+                    let res rr.root as pointer[ClusterResult]
+                    Cluster.fix_result(rr, res as ref[ClusterResult])
+                    if res.ok
+                    {
+                        Cluster.take_result(desc, cell, res as ref[ClusterResult])
+                        let rounds (res.hi - res.lo) as f64
+                        let took (scaly_eio_now_ns() - sent_at[k]) as f64
+                        let moved ((sent_bytes[k] + (rounds as size_t) * w.per_round) as f64) * byte_ns
+                        let predicted rounds * round / (cluster_peer_cores[k] as f64)
+                        var f (took - cluster_peer_lat[k] - moved) / predicted
+                        if f < 0.05
+                            f := 0.05
+                        if f > 64.0
+                            f := 64.0
+                        cluster_peer_factor[k] := (cluster_peer_factor[k] + f) / 2.0
+                        out_rounds := out_rounds + (res.hi - res.lo)
+                        busy_lo[k] := 0 - 1
+                    }
+                    else
+                        gone := true
+                    Cluster.dispose_message(rr)
+                    got := true
+                }
+                else if timed = false
+                    gone := true
+                if gone
+                {
+                    ; its stretch goes back; the others run it
+                    back_lo[backs] := busy_lo[k]
+                    back_hi[backs] := busy_hi[k]
+                    backs := backs + 1
+                    busy_lo[k] := 0 - 1
+                    takes[k] := 0
+                    lost := lost + 1
+                    got := true
+                }
+            }
+            k := k + 1
+        }
+        if here_busy and scaly_atomic_load_u64(&g.pending_) = 0
+        {
+            TaskGroup.wait(g)
+            here_busy := false
+            got := true
+        }
+        if got = false
+            poll(null as pointer[pollfd], 0, 1)
+    }
+    TaskGroup.dispose(g)
+    if Cluster.tracing()
+    {
+        scaly_eputs "cluster: "
+        scaly_eputi(left)
+        scaly_eputs " rounds out: "
+        scaly_eputi(here_rounds)
+        scaly_eputs " here, "
+        scaly_eputi(out_rounds)
+        scaly_eputs " on "
+        scaly_eputi(helpers)
+        scaly_eputs " helpers ("
+        scaly_eputi(cluster_ms((scaly_eio_now_ns() - t0) as f64))
+        scaly_eputs " ms, here alone "
+        scaly_eputi(cluster_ms(here_ns))
+        scaly_eputs " ms"
+        if lost > 0
+        {
+            scaly_eputs ", "
+            scaly_eputi(lost)
+            scaly_eputs " helpers lost"
+        }
+        scaly_eputs ")"
+        scaly_eputnl()
+    }
+    sp.deallocate_extensions()
+    Page.release_page(sp)
+    1
+}

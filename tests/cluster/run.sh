@@ -345,5 +345,46 @@ else
   rounds_check "no helper" "$OUT/cluster_${t}_none.log" "^string"
 fi
 
+# ---- the cost model (ROADMAP-cluster.md, C3): left alone (no
+# SCALY_CLUSTER), a fit loop is offered at the driver's gates with what its
+# rounds cost, and goes to the helpers only where they would end it a
+# quarter sooner. Each loop runs in passes; the first begins the search for
+# helpers. A heavy loop (much to compute, little to send) goes out; a
+# light one (little to compute per byte it must send) stays; a small one is
+# done before anything is asked. The output is the program's own either way.
+t=weigh
+WB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$WB"
+if ! "$STAGE" --cluster -O2 -o "$WB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  # weigh_check <loop> <out file> <grep for the trace, or ! and one it must not have>
+  weigh_check() {
+    local want got
+    want=$(sed -n "s/^; Expected $1: //p" tests/cluster/$t.scaly)
+    got=$(scaly_lf < "$2" | grep -v '^cluster: ')
+    local ok=1
+    [ "$got" = "$want" ] || ok=0
+    if [ "${3:0:1}" = "!" ]; then grep -q "${3:1}" "$2" && ok=0; else grep -q "$3" "$2" || ok=0; fi
+    if [ $ok = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, $1: '$(tr '\n' '|' < "$2")'"); fi
+  }
+  for loop in heavy light small; do
+    SCALY_CLUSTER=off "$WB" $loop > "$OUT/cluster_${t}_${loop}_alone.log" 2>&1
+    weigh_check $loop "$OUT/cluster_${t}_${loop}_alone.log" "!^cluster: "
+  done
+  SCALY_CLUSTER_TRACE=1 "$WB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & W1=$!
+  SCALY_CLUSTER_TRACE=1 "$WB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & W2=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
+  for loop in heavy light small; do
+    SCALY_CLUSTER_TRACE=1 "$WB" $loop > "$OUT/cluster_${t}_${loop}.log" 2>&1
+  done
+  weigh_check heavy "$OUT/cluster_${t}_heavy.log" "rounds out: .* on 2 helpers"
+  weigh_check light "$OUT/cluster_${t}_light.log" "!rounds out:"
+  weigh_check small "$OUT/cluster_${t}_small.log" "!^cluster: "
+  # the light loop was weighed against the helpers, not merely left alone
+  if grep -q "rounds stay here (.*ms, no helper would end\|rounds stay here (.*ms, with helpers" "$OUT/cluster_${t}_light.log"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, light: never weighed against the helpers"); fi
+  kill $W1 $W2 2>/dev/null; wait $W1 $W2 2>/dev/null
+fi
+
 echo "cluster: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

@@ -21202,7 +21202,12 @@ define Emitter
             ; --cluster: rounds that can travel are offered to helpers first
             ; (scaly_cluster_offer); where it answers 1 they all ran there,
             ; and the loop below is jumped over.
+            ; The driver's gates ask again below, with what a round cost
+            ; (cluster_desc, cluster_cell, cluster_count).
             var cluster_after: LLVMBasicBlockRef null
+            var cluster_desc: LLVMValueRef null
+            var cluster_cell: LLVMValueRef null
+            var cluster_count: LLVMValueRef null
             if config.cluster and for_expr.is_iterator_loop = false and keeps = false and n_red = 0 and pointer_bytes = 8
             {
                 let desc this.cluster_descriptor(for_expr, task_fn, cell_ty, base_fields, cap_names, cap_types, cap_uses, cap_slot_tys)
@@ -21210,6 +21215,9 @@ define Emitter
                 {
                     let count LLVMBuildIntCast2(builder, seq_value, i64_ty, 1, "cluster.count")
                     let tcell entry_alloca(cell_ty, "cluster.cell")
+                    cluster_desc := desc
+                    cluster_cell := tcell
+                    cluster_count := count
                     LLVMBuildStore(builder, LLVMConstInt(i64_ty, 0, 0), LLVMBuildStructGEP2(builder, cell_ty, tcell, 0, "cluster.lo"))
                     LLVMBuildStore(builder, count, LLVMBuildStructGEP2(builder, cell_ty, tcell, 1, "cluster.hi"))
                     ci := 0
@@ -21220,19 +21228,9 @@ define Emitter
                         ci := ci + 1
                     }
                     LLVMBuildStore(builder, LLVMConstNull(ptr_ty), LLVMBuildStructGEP2(builder, cell_ty, tcell, (base_fields + cap_count) as u32, "cluster.cancel"))
-                    var of_tys Vector[LLVMTypeRef](3)
-                    of_tys.put(0, ptr_ty)
-                    of_tys.put(1, ptr_ty)
-                    of_tys.put(2, i64_ty)
-                    let i32_ty LLVMInt32TypeInContext(context)
-                    let of_ty LLVMFunctionType(i32_ty, of_tys.data, 3, 0)
-                    let of_fn get_parfor_runtime_fn("_Z19scaly_cluster_offerPvPvi", of_ty)
-                    var of_args Vector[LLVMValueRef](3)
-                    of_args.put(0, desc)
-                    of_args.put(1, tcell)
-                    of_args.put(2, count)
-                    let taken LLVMBuildCall2(builder, of_ty, of_fn, of_args.data, 3, "cluster.taken")
-                    let ran LLVMBuildICmp(builder, LLVMIntPredicate.NE(), taken, LLVMConstInt(i32_ty, 0, 0), "cluster.ran")
+                    ; at the head: only where it is forced (SCALY_CLUSTER=on)
+                    let c0h LLVMConstInt(i64_ty, 0, 0)
+                    let ran this.emit_cluster_offer(desc, tcell, count, c0h, c0h, c0h)
                     cluster_after := create_block("cluster.after")
                     let here create_block("cluster.here")
                     LLVMBuildCondBr(builder, ran, cluster_after, here)
@@ -21518,6 +21516,14 @@ define Emitter
                         LLVMBuildStore(builder, n64, offer.kept_left)
                     }
                 }
+                ; --cluster: then the helpers, at the same cost
+                if cluster_desc <> null
+                {
+                    let hc_ran this.emit_cluster_offer(cluster_desc, cluster_cell, cluster_count, c0, eg_p, hs_ncpu)
+                    let hc_cpu create_block("pfor.gate.headfork.here")
+                    LLVMBuildCondBr(builder, hc_ran, cluster_after, hc_cpu)
+                    LLVMPositionBuilderAtEnd(builder, hc_cpu)
+                }
                 var hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
                 if n_fp > 0
                 {
@@ -21708,6 +21714,23 @@ define Emitter
                         LLVMBuildStore(builder, LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "gpu.kept.t"), offer.kept_at)
                         LLVMBuildStore(builder, LLVMBuildSub(builder, n64, il_i, "gpu.kept.n"), offer.kept_left)
                     }
+                }
+                ; --cluster: then the helpers, for the rounds from i on.
+                ; Where they ran, the site is promoted as by a fork.
+                if cluster_desc <> null
+                {
+                    let cc_ran this.emit_cluster_offer(cluster_desc, cluster_cell, cluster_count, il_i, rc_p1k, rs_ncpu)
+                    let cc_out create_block("pfor.fork.helpers")
+                    let cc_cpu create_block("pfor.fork.here")
+                    LLVMBuildCondBr(builder, cc_ran, cc_out, cc_cpu)
+                    LLVMPositionBuilderAtEnd(builder, cc_out)
+                    let cc_q LLVMBuildLoad2(builder, i64_ty, quiet_slot, "parfor.quietv")
+                    let cc_isq LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cc_q, c0, "parfor.isquiet")
+                    let cc_cur LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitecur")
+                    let cc_pub LLVMBuildSelect(builder, cc_isq, cc_cur, rc_p1k, "parfor.publish")
+                    LLVMBuildStore(builder, cc_pub, site_p1k)
+                    LLVMBuildBr(builder, cluster_after)
+                    LLVMPositionBuilderAtEnd(builder, cc_cpu)
                 }
                 var rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
                 if n_fp > 0
@@ -22338,6 +22361,36 @@ define Emitter
             }
 
             null
+        }
+
+        ; --cluster: the offer of a loop's rounds from `done` on to the
+        ; helpers (scaly_cluster_offer), and whether they all ran there (i1).
+        ; per1k is what a round cost one core, <<10, as the driver measured
+        ; it (0 at the head, where it is asked only when forced), workers
+        ; the cores this machine would run them on.
+        procedure emit_cluster_offer(mutable this, desc: LLVMValueRef, cell: LLVMValueRef, count: LLVMValueRef, done: LLVMValueRef, per1k: LLVMValueRef, workers: LLVMValueRef) returns LLVMValueRef
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var of_tys Vector[LLVMTypeRef](6)
+            of_tys.put(0, ptr_ty)
+            of_tys.put(1, ptr_ty)
+            of_tys.put(2, i64_ty)
+            of_tys.put(3, i64_ty)
+            of_tys.put(4, i64_ty)
+            of_tys.put(5, i64_ty)
+            let of_ty LLVMFunctionType(i32_ty, of_tys.data, 6, 0)
+            let of_fn get_parfor_runtime_fn("_Z19scaly_cluster_offerPvPviiii", of_ty)
+            var of_args Vector[LLVMValueRef](6)
+            of_args.put(0, desc)
+            of_args.put(1, cell)
+            of_args.put(2, count)
+            of_args.put(3, done)
+            of_args.put(4, per1k)
+            of_args.put(5, workers)
+            let taken LLVMBuildCall2(builder, of_ty, of_fn, of_args.data, 6, "cluster.taken")
+            LLVMBuildICmp(builder, LLVMIntPredicate.NE(), taken, LLVMConstInt(i32_ty, 0, 0), "cluster.ran")
         }
 
         ; --cluster: the descriptor of a parallel loop whose rounds can run
