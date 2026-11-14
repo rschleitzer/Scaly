@@ -19138,7 +19138,10 @@ define Emitter
                 return emit_parallel_for for_expr
             var msl GpuMsl.GpuMsl()
             let source msl.kernel_source(&gk, for_expr)
-            if msl.m_refused
+            ; a loop over CardVectors goes to a page's card by its WGSL alone:
+            ; Metal's refusal (a put at an offset, until Metal's host holds
+            ; CardVectors) holds it back only on Metal
+            if msl.m_refused and (gk.k_card = false or host <> 2)
                 return emit_parallel_for for_expr
             ; the host binds 29 buffers beside its own two
             if gk.k_buffer_ops.length + gk.k_output_ops.length + gk.k_red_names.length > 29
@@ -19190,12 +19193,19 @@ define Emitter
             ; point is relaxed: beside Metal's text the host takes the one
             ; its card reads, and a page has no other
             var wgsl_source String()
+            ; the words of the kernel's scalars: Metal's and WGSL's lay them
+            ; out alike; where Metal refused the loop, WGSL's count
+            var uniform_words msl.m_uniform_words
             if gk.portable()
             {
                 var wgsl_printer GpuMsl.GpuMsl()
                 let printed wgsl_printer.kernel_source_wgsl(&gk, for_expr)
                 if wgsl_printer.m_refused = false
+                {
                     wgsl_source := printed
+                    if msl.m_refused
+                        uniform_words := wgsl_printer.m_uniform_words
+                }
             }
             if host = 2 and wgsl_source.get_length() = 0
                 return emit_parallel_for for_expr
@@ -19211,7 +19221,7 @@ define Emitter
             let site this.gpu_site_text(for_expr)
             offer.site := LLVMBuildGlobalStringPtr(builder, site.to_c_string(), ".gpu.site")
             offer.count := count
-            offer.words := msl.m_uniform_words
+            offer.words := uniform_words
             var oi: size_t 0
             while oi < gk.k_uniform_ops.length
             {

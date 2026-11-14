@@ -1,11 +1,15 @@
 ; A vector whose home may be the graphics card (ROADMAP-card.md).
 ;
-; A loop over a CardVector is a loop like any other: it runs on the cores,
-; and -- once the compiler sends such loops to the card (slice C2) -- on the
-; card where the vectors live there. What crosses between the program and
-; the vector in bulk is visible: write, read and from_file. A vector lives
-; in the program's memory until a card host exists (slice C3); the surface
-; does not change when it moves.
+; Its home is decided once, when it is made: on the card where the program's
+; host has one (scaly_card_available: a page that handed the program a card,
+; scaly/card/card_wasm.c), else in the program's memory. A loop over
+; CardVectors that the compiler makes a kernel (--gpu) runs on the card where
+; they live there -- handed to the host, which lists it and waits for
+; nothing -- and on the cores where they live in memory. What crosses
+; between the program and a vector on the card is visible: write, read and
+; from_file; `read` is where the program waits for the card. An element
+; read or written by the processor while its vector lives on the card is a
+; trap (scaly_panic_card).
 ;
 ; T is a 32-bit number (u32, i32, float): what a kernel binds.
 
@@ -13,10 +17,24 @@ use scaly.memory.Page
 use scaly.memory.runtime
 use scaly.containers.Slice
 
+; The host's side (scaly/card/card_wasm.c in a page; eio.c and
+; eio_windows.c elsewhere, which have no card). Memory and computation of
+; another device, not the world outside: free of I/O but for `load`
+; (WriteCensus.extern_is_io#).
+function scaly_card_available() returns i32 extern
+procedure scaly_card_create(bytes: u64) returns u32 extern
+procedure scaly_card_write(id: u32, at: u64, from: pointer[void], bytes: u64) extern
+procedure scaly_card_read(id: u32, at: u64, mutable into: pointer[void], bytes: u64) extern
+procedure scaly_card_load(id: u32, at: u64, path: pointer[const_char], offset: u64, bytes: u64) returns i32 extern
+procedure scaly_panic_card(what: pointer[const_char]) extern
+
 define CardVector[T]
 (
     length: size_t
+    ; the elements in memory; null on the card
     data: pointer[T]
+    ; its id on the card; 0 in memory
+    id: u32
 )
 {
     ; n elements, zero
@@ -24,17 +42,24 @@ define CardVector[T]
     {
         let own_page Page.get(this)
         length := len
+        data := null
+        id := 0
+        if scaly_card_available() <> 0
+        {
+            id := scaly_card_create((len * sizeof T) as u64)
+            return
+        }
         if len > 0
         {
             data := own_page.allocate(len * sizeof T, alignof T) as pointer[T]
             memset(data, 0, len * sizeof T as c_size)
         }
-        else
-            data := null
     }
 
     operator [](i: size_t) returns T
     {
+        if id <> 0
+            scaly_panic_card("an element of a CardVector on the card, read by the processor")
         if i >= length
             scaly_panic_oob("CardVector[]", i, length)
         *(data + i)
@@ -42,6 +67,8 @@ define CardVector[T]
 
     procedure put(mutable this: CardVector[T], i: size_t, item: T)
     {
+        if id <> 0
+            scaly_panic_card("an element of a CardVector on the card, written by the processor")
         if i >= length
             scaly_panic_oob("CardVector.put", i, length)
         *(data + i) := item
@@ -52,8 +79,14 @@ define CardVector[T]
     {
         if at > length or from.length > length - at
             scaly_panic_oob("CardVector.write", at + from.length, length)
-        if from.length > 0
-            memcpy((data + at) as pointer[void], from.data as pointer[void], from.length * sizeof T as c_size)
+        if from.length = 0
+            return
+        if id <> 0
+        {
+            scaly_card_write(id, (at * sizeof T) as u64, from.data as pointer[void], (from.length * sizeof T) as u64)
+            return
+        }
+        memcpy((data + at) as pointer[void], from.data as pointer[void], from.length * sizeof T as c_size)
     }
 
     procedure write(mutable this: CardVector[T], from: Slice[T])
@@ -61,13 +94,20 @@ define CardVector[T]
         this.write_at(0, from)
     }
 
-    ; The elements from `at` on into `into` -- as many as it holds.
+    ; The elements from `at` on into `into` -- as many as it holds. On the
+    ; card this waits for every run before it.
     procedure read_at(this: CardVector[T], at: size_t, mutable into: Slice[T])
     {
         if at > length or into.length > length - at
             scaly_panic_oob("CardVector.read", at + into.length, length)
-        if into.length > 0
-            memcpy(into.data as pointer[void], (data + at) as pointer[void], into.length * sizeof T as c_size)
+        if into.length = 0
+            return
+        if id <> 0
+        {
+            scaly_card_read(id, (at * sizeof T) as u64, into.data as pointer[void], (into.length * sizeof T) as u64)
+            return
+        }
+        memcpy(into.data as pointer[void], (data + at) as pointer[void], into.length * sizeof T as c_size)
     }
 
     procedure read(this: CardVector[T], mutable into: Slice[T])
@@ -76,14 +116,17 @@ define CardVector[T]
     }
 
     ; The elements filled from a file: as many bytes as they take, from
-    ; `offset` in the file on. False where the file cannot be read so far.
+    ; `offset` in the file on -- on the card by the host, from its own copy
+    ; of the file. False where the file cannot be read so far.
     procedure from_file(mutable this: CardVector[T], path: String, offset: size_t) returns bool
     {
+        let bytes length * sizeof T
+        if id <> 0
+            return scaly_card_load(id, 0, path.to_c_string(), offset as u64, bytes as u64) <> 0
         let file fopen(path.to_c_string(), "rb")
         if file = null
             return false
         scaly_eio_seek(file, offset as int, 0)
-        let bytes length * sizeof T
         var got: c_size 0
         if bytes > 0
             got := fread(data as pointer[void], 1, bytes as c_size, file)

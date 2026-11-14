@@ -1,0 +1,16 @@
+; A kernel over a CardVector that writes beyond it: natively the put traps
+; (exit 15), on the card the round faults and the read that waits for it
+; ends the program the same way. tests/card/run.sh compares the exit codes.
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let n: u32 64
+    var v CardVector[u32](n as size_t)
+    let at: u32 32
+    relaxed for k in n
+        v.put(at + k, k)
+    var out Vector[u32](n as size_t)
+    v.read(out.as_slice())
+    print "not reached `out[0]`"
+    0
+}

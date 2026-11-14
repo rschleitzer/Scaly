@@ -1,0 +1,61 @@
+; CardVectors (ROADMAP-card.md): written, run over by kernels -- at the
+; counter, at an offset every round shares, a sum into one element --, read
+; back. tests/card/run.sh runs it natively, where they live in memory, and
+; in a page with a card, where they live there: both must print the same.
+; Every number is 32 bits and every float operation exact, so that the
+; card's `relaxed` rounding cannot tell them apart.
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let n: u32 300
+    let len n as size_t
+    var src Vector[float](len)
+    var i: size_t 0
+    while i < len
+    {
+        src.put(i, (i as float) * 0.5)
+        i := i + 1
+    }
+    var a CardVector[float](len)
+    a.write(src.as_slice())
+    ; at the counter
+    var b CardVector[float](len)
+    relaxed for k in n
+        b.put(k, a[k] * 2.0 + 1.0)
+    ; at an offset every round shares: the middle third of `cache`
+    var cache CardVector[u32](3 * len)
+    let at: u32 n
+    relaxed for k in n
+        cache.put(at + k, k * 3)
+    ; a sum, into a vector of one element
+    var total CardVector[u32](1)
+    relaxed for one in 1
+    {
+        var sum: u32 0
+        var j: u32 0
+        while j < n
+        {
+            sum := sum + cache[at + j]
+            j := j + 1
+        }
+        total.put(one, sum)
+    }
+    ; what crosses back
+    var bs Vector[float](len)
+    b.read(bs.as_slice())
+    var cs Vector[u32](3 * len)
+    cache.read(cs.as_slice())
+    var ts Vector[u32](1)
+    total.read(ts.as_slice())
+    var check: u32 0
+    i := 0
+    while i < 3 * len
+    {
+        check := check * 31 + cs[i]
+        i := i + 1
+    }
+    print "b `bs[0]` `bs[1]` `bs[299]`"
+    print "cache `cs[0]` `cs[300]` `cs[301]` `cs[599]` `cs[600]` check `check`"
+    print "total `ts[0]`"
+    0
+}

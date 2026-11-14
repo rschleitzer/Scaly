@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CardVectors on the page's card</title>
+<pre id="out">running</pre>
+<script type="module">
+// Every program tests/card/run.sh built for wasm32, each in a worker of its
+// own (worker.mjs) with the page's card: one line per program.
+const lines = [];
+try {
+  const programs = await (await fetch('programs.json')).json();
+  for (const name of programs) {
+    const worker = new Worker('./worker.mjs', { type: 'module' });
+    const answer = await new Promise(resolve => {
+      worker.onmessage = event => resolve(event.data);
+      worker.onerror = event => resolve({ card: true, failed: event.message || 'the worker did not start' });
+      worker.postMessage({ wasm: name + '.wasm' });
+    });
+    worker.terminate();
+    if (!answer.card) { lines.push('SKIP ' + JSON.stringify(answer.why)); break; }
+    lines.push('RUN ' + JSON.stringify({ name, ...answer }));
+  }
+} catch (e) {
+  lines.push('FAILED page ' + JSON.stringify(String(e && e.stack || e)));
+}
+document.getElementById('out').textContent = lines.join('\n');
+await fetch('/result', { method: 'POST', body: lines.join('\n') });
+</script>
