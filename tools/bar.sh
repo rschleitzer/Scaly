@@ -34,7 +34,9 @@
 #             build, then one --bench-batch run (in BAR_VSCODE_DIR, default the
 #             scenario's directory) whose first BAR_VSCODE_LINES lines must equal
 #             the baseline's
-# tests/cluster runs last and alone: it is bound by TIMING (see below).
+# tests/cluster runs last and alone: it is bound by TIMING (see below), and
+# beside it the wasm fixtures marked `; Isolated:`, which the compiler lane
+# builds but leaves for then (WASM_DEFER; tests/wasm/run.sh says why).
 # The port and tscaly suites run under SCALY_POISON=1, as the acid rounds did.
 #
 # Every step's output is in its own log under $BAR_LOG (default: a fresh
@@ -154,7 +156,7 @@ lane_compiler() {
   step regress tests/regress/run.sh "$BIN" || rc=1
   step selfhosted tests/selfhosted/run.sh "$BIN" || rc=1
   step target tests/target/run.sh "$BIN" || rc=1
-  step wasm tests/wasm/run.sh "$BIN" || rc=1
+  step wasm env WASM_DEFER="$LOG/wasm-deferred" tests/wasm/run.sh "$BIN" || rc=1
   step fiber tests/fiber/run.sh "$BIN" || rc=1
   step escape tests/escape/run.sh "$BIN" || rc=1
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1
@@ -324,6 +326,7 @@ for i in "${!PIDS[@]}"; do wait "${PIDS[$i]}" || RC=1; done
 # no timing of the test: a frame delivered after the local close, fixed in
 # the runtime on 2026-10-05 — Cluster.dispatch#, gate tests/cluster/lateframe.)
 step cluster tests/cluster/run.sh "$BIN" > "$LOG/lane_tail.txt" || RC=1
+step wasm-alone tests/wasm/run.sh --deferred "$LOG/wasm-deferred" >> "$LOG/lane_tail.txt" || RC=1
 kill $MEM_PID 2>/dev/null
 
 for l in "${LANES[@]}"; do cat "$LOG/lane_$l.txt"; done

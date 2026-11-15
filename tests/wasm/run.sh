@@ -50,8 +50,21 @@
 #
 # Usage: tests/wasm/run.sh [stage-binary]   (default /tmp/scalyc_stage2; the
 #        tool beside it, tools/scaly-of.sh)
+#
+# A fixture of 4 marked `; Isolated:` counts forks and submits, which follow
+# measured time: beside other suites a cold loop measures as heavy and forks
+# (parallel_hotspot's "wave1-forked"). With WASM_DEFER=<dir> such a fixture
+# is built as always but not run -- its module is left in <dir> -- and
+#        tests/wasm/run.sh --deferred <dir>
+# runs them later, alone (tools/bar.sh does it after its lanes, beside
+# tests/cluster). Without WASM_DEFER they run in their place, as before.
 cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
+DEFERRED=""
+if [ "${1:-}" = --deferred ]; then
+  DEFERRED=${2:?"usage: tests/wasm/run.sh --deferred <dir>"}
+  set --
+fi
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
 TOOL=$(tools/scaly-of.sh "$STAGE")
 T=wasm32-wasip1
@@ -65,6 +78,30 @@ if [ -z "$wasi" ] || [ ! -x "$wasi/bin/clang" ]; then
 fi
 # a node that STARTS (tools/node.sh): one that is merely there fails every run
 NODE=$(tools/node.sh) || { echo "wasm: SKIP (no node that starts, to run a WASI module)"; exit 0; }
+PAGE="packages/scaly/$(tools/version.sh scaly)/web/run.mjs"
+
+# a fixture of 4, built: its stdout and exit code as its markers say, on four threads
+run_threaded() {
+  local n=$1 wasm=$2 src=tests/fiber/$1.scaly want want_rc out rc
+  want=$(sed -n 's/^; Expected: //p' "$src")
+  want_rc=$(sed -n 's/^; ExpectedExit: //p' "$src" | head -1)
+  out=$(SCALY_WORKERS=4 "$NODE" --no-warnings "$PAGE" "$wasm" 2>"$wasm.err"); rc=$?
+  if [ "$rc" = "${want_rc:-0}" ] && [ "$out" = "$want" ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$n(rc=$rc: $(printf '%s' "$out" | tail -c 100 | tr '\n' ' ')$(tail -c 120 "$wasm.err" | tr '\n' ' '))")
+  fi
+}
+
+if [ -n "$DEFERRED" ]; then
+  pass=0; fail=0; failures=()
+  for wasm in "$DEFERRED"/*.wasm; do
+    [ -e "$wasm" ] || { echo "wasm (threads, alone): nothing deferred"; exit 0; }
+    run_threaded "$(basename "$wasm" .wasm)" "$wasm"
+  done
+  echo "wasm (threads, alone): fixtures $pass PASS, $fail FAIL ${failures[*]}"
+  [ $fail -eq 0 ]; exit
+fi
 [ -x "$TOOL" ] || { echo "wasm: FAIL — no tool beside $STAGE ($TOOL)"; exit 1; }
 
 WORK=$(mktemp -d)
@@ -73,7 +110,6 @@ trap 'rm -rf "$WORK"' EXIT
 printf '#!/bin/sh\nexec "%s/bin/clang" --sysroot="%s/share/wasi-sysroot" "$@"\n' "$wasi" "$wasi" > "$WORK/cc"
 chmod 755 "$WORK/cc"
 export SCALY_CC="$WORK/cc" SCALY_CACHE="$WORK/cache"
-PAGE="packages/scaly/$(tools/version.sh scaly)/web/run.mjs"
 JOBS=${REGRESS_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 PY=$(command -v python3 || command -v python) || { echo "wasm: no python3" >&2; exit 2; }
 
@@ -142,23 +178,18 @@ THREADED="forkjoin_after_pool forkjoin_emit forkjoin_runtime parallel_alias para
   taskpool_default thread_alloc thread_churn thread_deep_stack thread_hello thread_reclaim trace_balance"
 TT=wasm32-wasip1-threads
 RUN="$NODE --no-warnings $PAGE"
-pass=0; fail=0; failures=()
+pass=0; fail=0; failures=(); deferred=0
 for n in $THREADED; do
   src=tests/fiber/$n.scaly
   if ! "$TOOL" build --target $TT "$src" -o "$WORK/t_$n.wasm" > "$WORK/t_$n.build" 2>&1; then
     fail=$((fail+1)); failures+=("$n(build: $(grep -m1 -i 'error' "$WORK/t_$n.build" | cut -c1-120))"); continue
   fi
-  want=$(sed -n 's/^; Expected: //p' "$src")
-  want_rc=$(sed -n 's/^; ExpectedExit: //p' "$src" | head -1)
-  # shellcheck disable=SC2086
-  out=$(SCALY_WORKERS=4 $RUN "$WORK/t_$n.wasm" 2>"$WORK/t_$n.err"); rc=$?
-  if [ "$rc" = "${want_rc:-0}" ] && [ "$out" = "$want" ]; then
-    pass=$((pass+1))
-  else
-    fail=$((fail+1)); failures+=("$n(rc=$rc: $(printf '%s' "$out" | tail -c 100 | tr '\n' ' ')$(tail -c 120 "$WORK/t_$n.err" | tr '\n' ' '))")
+  if [ -n "${WASM_DEFER:-}" ] && grep -q '^; Isolated:' "$src"; then
+    mkdir -p "$WASM_DEFER" && cp "$WORK/t_$n.wasm" "$WASM_DEFER/$n.wasm" && deferred=$((deferred+1)) && continue
   fi
+  run_threaded "$n" "$WORK/t_$n.wasm"
 done
-echo "wasm (threads): fixtures $pass PASS, $fail FAIL ${failures[*]}"
+echo "wasm (threads): fixtures $pass PASS, $fail FAIL${WASM_DEFER:+, $deferred deferred to run alone} ${failures[*]}"
 [ $fail -eq 0 ] || failed=1
 SCALY_WORKERS=4 REGRESS_TARGET=$TT REGRESS_RUN="$RUN" REGRESS_SKIP=tests/wasm/skip REGRESS_NAME="wasm (threads): regress" \
   "$PY" tests/regress/run.py "$STAGE" "$TOOL" "" "$WORK" "$JOBS" || failed=1
