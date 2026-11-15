@@ -18,9 +18,10 @@ Variables pane, and only a real DAP session shows that.
 Prints one line per finding; exits non-zero if any check failed.
 """
 import json
-import signal
+import os
 import subprocess
 import sys
+import threading
 
 # ★A hard wall-clock limit, because every read below is a BLOCKING readline on
 # the adapter's stdout. Measured while building this: point it at a program that
@@ -112,7 +113,7 @@ def main():
     line = int(line_s)
     failures = []
 
-    def on_timeout(_sig, _frm):
+    def on_timeout():
         print("dap: FAIL adapter went silent (no response within %ds)"
               % TIMEOUT_SECONDS)
         sys.stdout.flush()
@@ -124,10 +125,13 @@ def main():
                 proc.kill()
         except Exception:
             pass
-        sys.exit(1)
+        os._exit(1)
 
-    signal.signal(signal.SIGALRM, on_timeout)
-    signal.alarm(TIMEOUT_SECONDS)
+    # A timer thread, not SIGALRM, which Windows does not have. From a thread
+    # sys.exit would end only the thread, so the process leaves by os._exit.
+    watchdog = threading.Timer(TIMEOUT_SECONDS, on_timeout)
+    watchdog.daemon = True
+    watchdog.start()
 
     def check(cond, what):
         if not cond:
@@ -214,7 +218,7 @@ def main():
           "`items` reads %r — the Vector formatter did not load"
           % names.get("items"))
 
-    signal.alarm(0)
+    watchdog.cancel()
     d.send("disconnect", terminateDebuggee=True)
     try:
         d.p.wait(timeout=10)

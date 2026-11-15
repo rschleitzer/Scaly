@@ -44,19 +44,32 @@ need() { # need <description> <pattern> <haystack-file>
   if grep -q -- "$2" "$3"; then ok; else bad "$1"; fi
 }
 
-DWARFDUMP=$(command -v llvm-dwarfdump || true)
-if [ -z "$DWARFDUMP" ]; then
+# ★Windows: -g writes CodeView, which the link puts into a .pdb beside the
+# program, not DWARF (Emitter.scaly says why). There the oracle is
+# llvm-pdbutil and every claim below is asked of the .pdb, in CodeView's
+# words: a parameter is an S_LOCAL flagged `param`, a slot that holds a
+# POINTER to the object is a reference type (`String&`) where DWARF has
+# DW_OP_deref, and an instantiation is named `Vector<int>`. Until 2026-11-15
+# the suite asked llvm-dwarfdump on Windows too and every check failed --
+# or it was skipped where no llvm-dwarfdump was installed.
+COFF=${SCALY_COFF:-0}
+ORACLE_NAME=llvm-dwarfdump
+[ "$COFF" = 1 ] && ORACLE_NAME=llvm-pdbutil
+ORACLE=$(command -v "$ORACLE_NAME" || true)
+if [ -z "$ORACLE" ]; then
   # tools/llvm-env.sh knows where the pinned LLVM lives.
   # shellcheck disable=SC1091
   . tools/llvm-env.sh >/dev/null 2>&1 || true
-  [ -n "$LLVM_PREFIX" ] && [ -x "$LLVM_PREFIX/bin/llvm-dwarfdump" ] && DWARFDUMP="$LLVM_PREFIX/bin/llvm-dwarfdump"
+  [ -n "$LLVM_PREFIX" ] && [ -x "$LLVM_PREFIX/bin/$ORACLE_NAME" ] && ORACLE="$LLVM_PREFIX/bin/$ORACLE_NAME"
 fi
-if [ -z "$DWARFDUMP" ]; then
-  echo "debuginfo: SKIP (no llvm-dwarfdump)"
+if [ -z "$ORACLE" ]; then
+  echo "debuginfo: SKIP (no $ORACLE_NAME)"
   exit 0
 fi
+DWARFDUMP=$ORACLE
+PDB=${OUT%.exe}.pdb
 
-rm -rf "$OUT" "$OUT.dSYM" /tmp/debuginfo_nog.ll
+rm -rf "$OUT" "$OUT.dSYM" "$PDB" /tmp/debuginfo_nog.ll
 "$SCALY" build "$SRC" -g -o "$OUT" >/tmp/debuginfo_build.log 2>&1
 if [ ! -x "$OUT" ]; then
   echo "debuginfo: FAIL — -g compile produced no binary"
@@ -69,78 +82,82 @@ fi
 got=$("$OUT" 2>/dev/null)
 if [ "$got" = "34" ]; then ok; else bad "-g binary printed '$got', expected '34'"; fi
 
-# The DWARF container: .dSYM on macOS, the executable itself elsewhere.
-TARGET="$OUT"
-[ -d "$OUT.dSYM" ] && TARGET="$OUT.dSYM"
-
-"$DWARFDUMP" --name=shift --show-children "$TARGET" >/tmp/debuginfo_shift.txt 2>/dev/null
-"$DWARFDUMP" --name=main  --show-children "$TARGET" >/tmp/debuginfo_main.txt  2>/dev/null
-"$DWARFDUMP" "$TARGET" >/tmp/debuginfo_all.txt 2>/dev/null
-
-# 1. PARAMETERS: all three of shift, as formal parameters and correctly typed.
-n=$(grep -c DW_TAG_formal_parameter /tmp/debuginfo_shift.txt)
-if [ "$n" = "3" ]; then ok; else bad "shift has $n DW_TAG_formal_parameter, expected 3"; fi
-need "parameter p missing"            '"p"'      /tmp/debuginfo_shift.txt
-need "parameter dx missing"           '"dx"'     /tmp/debuginfo_shift.txt
-need "parameter flag missing"         '"flag"'   /tmp/debuginfo_shift.txt
-need "parameter p is not typed Point" '"Point"'  /tmp/debuginfo_shift.txt
-need "parameter flag is not typed bool" '"bool"' /tmp/debuginfo_shift.txt
-
-# 2. A `let` inside a function body.
-need "let inner missing from shift"   '"inner"'  /tmp/debuginfo_shift.txt
-
-# 3. Top-level `let`s — the synthetic main's scope.
-for v in pt base name out; do
-  need "top-level let $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
-done
-
-# 3b. The variable of a `for`, sequential (k) and through the parallel driver's
-#     inline rounds (each): bound as values like a `let`, they had no variable
-#     at all, and a debugger showed every local of a loop body but its own.
-for v in k each; do
-  need "loop variable $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
-done
-
-# 4. String: the type itself, its member, and — the half that is easy to get
-#    backwards — the DEREF in the location. `name` holds a POINTER to the
-#    String, so a location without DW_OP_deref would read the pointer's own
-#    slot as if it were the object: silently wrong by one indirection.
-need "no DW_TAG_structure_type named String" '"String"' /tmp/debuginfo_all.txt
-need "String has no data member"             '"data"'   /tmp/debuginfo_all.txt
-if grep -A3 '"name"' /tmp/debuginfo_main.txt | grep -q DW_OP_deref \
-   || grep -B3 '"name"' /tmp/debuginfo_main.txt | grep -q DW_OP_deref; then
-  ok
+if [ "$COFF" = 1 ]; then
+  . tests/debuginfo/codeview.sh
 else
-  bad "String local 'name' has no DW_OP_deref in its location"
+  # The DWARF container: .dSYM on macOS, the executable itself elsewhere.
+  TARGET="$OUT"
+  [ -d "$OUT.dSYM" ] && TARGET="$OUT.dSYM"
+
+  "$DWARFDUMP" --name=shift --show-children "$TARGET" >/tmp/debuginfo_shift.txt 2>/dev/null
+  "$DWARFDUMP" --name=main  --show-children "$TARGET" >/tmp/debuginfo_main.txt  2>/dev/null
+  "$DWARFDUMP" "$TARGET" >/tmp/debuginfo_all.txt 2>/dev/null
+
+  # 1. PARAMETERS: all three of shift, as formal parameters and correctly typed.
+  n=$(grep -c DW_TAG_formal_parameter /tmp/debuginfo_shift.txt)
+  if [ "$n" = "3" ]; then ok; else bad "shift has $n DW_TAG_formal_parameter, expected 3"; fi
+  need "parameter p missing"            '"p"'      /tmp/debuginfo_shift.txt
+  need "parameter dx missing"           '"dx"'     /tmp/debuginfo_shift.txt
+  need "parameter flag missing"         '"flag"'   /tmp/debuginfo_shift.txt
+  need "parameter p is not typed Point" '"Point"'  /tmp/debuginfo_shift.txt
+  need "parameter flag is not typed bool" '"bool"' /tmp/debuginfo_shift.txt
+
+  # 2. A `let` inside a function body.
+  need "let inner missing from shift"   '"inner"'  /tmp/debuginfo_shift.txt
+
+  # 3. Top-level `let`s — the synthetic main's scope.
+  for v in pt base name out; do
+    need "top-level let $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
+  done
+
+  # 3b. The variable of a `for`, sequential (k) and through the parallel driver's
+  #     inline rounds (each): bound as values like a `let`, they had no variable
+  #     at all, and a debugger showed every local of a loop body but its own.
+  for v in k each; do
+    need "loop variable $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
+  done
+
+  # 4. String: the type itself, its member, and — the half that is easy to get
+  #    backwards — the DEREF in the location. `name` holds a POINTER to the
+  #    String, so a location without DW_OP_deref would read the pointer's own
+  #    slot as if it were the object: silently wrong by one indirection.
+  need "no DW_TAG_structure_type named String" '"String"' /tmp/debuginfo_all.txt
+  need "String has no data member"             '"data"'   /tmp/debuginfo_all.txt
+  if grep -A3 '"name"' /tmp/debuginfo_main.txt | grep -q DW_OP_deref \
+     || grep -B3 '"name"' /tmp/debuginfo_main.txt | grep -q DW_OP_deref; then
+    ok
+  else
+    bad "String local 'name' has no DW_OP_deref in its location"
+  fi
+
+  # 4b. The SIGNATURE: element 0 of the DISubroutineType is the return type, and
+  #     without it lldb's `finish` cannot report a returned value.
+  need "shift has no DW_AT_type (return type)" 'DW_AT_type' /tmp/debuginfo_shift.txt
+
+  # 4c. A union's TAG is an enumeration over ALL variants, including the
+  #     payload-less ones — the payload union holds members only for variants that
+  #     HAVE a payload, so its member index is not the tag and no reader can
+  #     reconstruct the mapping. Nothing/1 is the entry that proves it.
+  "$DWARFDUMP" --name=Pick --show-children "$TARGET" >/tmp/debuginfo_pick.txt 2>/dev/null
+  need "no DW_TAG_enumeration_type for the union tag" 'DW_TAG_enumeration_type' /tmp/debuginfo_pick.txt
+  need "tag enumeration lacks the Chosen variant"     '"Chosen"'  /tmp/debuginfo_pick.txt
+  need "tag enumeration lacks the PAYLOAD-LESS variant" '"Nothing"' /tmp/debuginfo_pick.txt
+
+  # 4d. Every generic INSTANTIATION needs its own DW_AT_name. lldb uniques types
+  #     by name, so two Vector[T] both called "Vector" collapse into one and the
+  #     survivor's element type is used for both — elements then read at the wrong
+  #     stride, silently. The fixture instantiates Vector over int AND (via String)
+  #     over char, so two distinct names must exist.
+  #
+  #     ★The pattern must pin Vector EXACTLY. `VectorI` also matches
+  #     "VectorIterator[char]", so an unanchored count passed against a compiler
+  #     that collapsed every Vector into one — it was counting the iterators.
+  #     Accept both spellings: the readable `Vector[T]` di_display_name normally
+  #     produces, and the mangled `_Z6VectorI...E` it falls back to when a
+  #     PlannedType arrives without its generics.
+  vnames=$(grep -oE 'DW_AT_name[^"]*"(Vector\[[^]]*\]|_Z6VectorI[^"]*E)"' /tmp/debuginfo_all.txt | sort -u | wc -l | tr -d ' ')
+  if [ "$vnames" -ge 2 ]; then ok; else bad "only $vnames distinct Vector instantiation names, expected >= 2"; fi
 fi
-
-# 4b. The SIGNATURE: element 0 of the DISubroutineType is the return type, and
-#     without it lldb's `finish` cannot report a returned value.
-need "shift has no DW_AT_type (return type)" 'DW_AT_type' /tmp/debuginfo_shift.txt
-
-# 4c. A union's TAG is an enumeration over ALL variants, including the
-#     payload-less ones — the payload union holds members only for variants that
-#     HAVE a payload, so its member index is not the tag and no reader can
-#     reconstruct the mapping. Nothing/1 is the entry that proves it.
-"$DWARFDUMP" --name=Pick --show-children "$TARGET" >/tmp/debuginfo_pick.txt 2>/dev/null
-need "no DW_TAG_enumeration_type for the union tag" 'DW_TAG_enumeration_type' /tmp/debuginfo_pick.txt
-need "tag enumeration lacks the Chosen variant"     '"Chosen"'  /tmp/debuginfo_pick.txt
-need "tag enumeration lacks the PAYLOAD-LESS variant" '"Nothing"' /tmp/debuginfo_pick.txt
-
-# 4d. Every generic INSTANTIATION needs its own DW_AT_name. lldb uniques types
-#     by name, so two Vector[T] both called "Vector" collapse into one and the
-#     survivor's element type is used for both — elements then read at the wrong
-#     stride, silently. The fixture instantiates Vector over int AND (via String)
-#     over char, so two distinct names must exist.
-#
-#     ★The pattern must pin Vector EXACTLY. `VectorI` also matches
-#     "VectorIterator[char]", so an unanchored count passed against a compiler
-#     that collapsed every Vector into one — it was counting the iterators.
-#     Accept both spellings: the readable `Vector[T]` di_display_name normally
-#     produces, and the mangled `_Z6VectorI...E` it falls back to when a
-#     PlannedType arrives without its generics.
-vnames=$(grep -oE 'DW_AT_name[^"]*"(Vector\[[^]]*\]|_Z6VectorI[^"]*E)"' /tmp/debuginfo_all.txt | sort -u | wc -l | tr -d ' ')
-if [ "$vnames" -ge 2 ]; then ok; else bad "only $vnames distinct Vector instantiation names, expected >= 2"; fi
 
 # 5. -g must be GATED: a non-g compile carries no debug metadata whatsoever.
 "$STAGE" -S -o /tmp/debuginfo_nog.ll "$SRC" >/dev/null 2>&1
@@ -154,13 +171,31 @@ done
 
 # 6. Optional: read the VALUES. A location that resolves to garbage is worse
 #    than a missing variable, and only a debugger can tell the difference.
+# ★On Windows lldb reads a .pdb only with its NATIVE reader (without it no
+#  symbol was found and `b probe.scaly:33` bound nowhere), the parameter p, a
+#  `Point&` there, shows its fields only as `*p`, and the stop after every
+#  top-level binding is line 46: at 45 CodeView's line starts before the call
+#  and `out` is not yet written. The lldb of the LLVM release needs
+#  python311.dll to start at all; without it the value checks are skipped,
+#  said so, rather than failed.
+LINE2=45
+LLDB_EXTRA=()
+if [ "$COFF" = 1 ]; then
+  export LLDB_USE_NATIVE_PDB_READER=1
+  LINE2=46
+  LLDB_EXTRA=(-o "frame variable *p")
+fi
+LLDB_OK=0
 if command -v lldb >/dev/null 2>&1; then
+  if lldb --version >/dev/null 2>&1; then LLDB_OK=1; else echo "debuginfo: lldb does not start (on Windows: python311.dll not on PATH) -- value checks SKIPPED"; fi
+fi
+if [ "$LLDB_OK" = 1 ]; then
   # Line 33 is `set running: ...` inside shift — the parameters and `inner` are
   # all bound there. Line 45 is `let out shift(...)`, after every top-level
   # binding. Keep both in step with probe.scaly; a breakpoint on a comment or on
   # the declaration line itself reads UNINITIALIZED memory and looks like a
   # compiler defect.
-  lldb -b -o "b probe.scaly:33" -o run -o "frame variable" -o finish "$OUT" \
+  lldb -b -o "b probe.scaly:33" -o run -o "frame variable" "${LLDB_EXTRA[@]}" -o finish "$OUT" \
     >/tmp/debuginfo_lldb.txt 2>&1
   need "lldb: parameter p.x is not 10"  'x = 10'   /tmp/debuginfo_lldb.txt
   need "lldb: parameter p.y is not 20"  'y = 20'   /tmp/debuginfo_lldb.txt
@@ -169,7 +204,7 @@ if command -v lldb >/dev/null 2>&1; then
   need "lldb: let inner is not 17"      'inner = 17' /tmp/debuginfo_lldb.txt
   need "lldb: finish reports no return value" 'Return value' /tmp/debuginfo_lldb.txt
 
-  lldb -b -o "b probe.scaly:45" -o run -o "frame variable" "$OUT" \
+  lldb -b -o "b probe.scaly:$LINE2" -o run -o "frame variable" "$OUT" \
     >/tmp/debuginfo_lldb2.txt 2>&1
   need "lldb: let base is not 7"        'base = 7' /tmp/debuginfo_lldb2.txt
   need "lldb: let out is not 34"        'out = 34' /tmp/debuginfo_lldb2.txt
@@ -194,10 +229,11 @@ if command -v lldb >/dev/null 2>&1; then
   #    length prefix gone, and a Vector's elements become children at the right
   #    stride. The stride half is what caught the type-name collapse.
   lldb -b -o "command script import tools/lldb/scaly.py" \
-       -o "b probe.scaly:45" -o run -o "frame variable name items" "$OUT" \
+       -o "b probe.scaly:$LINE2" -o run -o "frame variable name items" "$OUT" \
     >/tmp/debuginfo_fmt.txt 2>&1
   need "formatter: not loaded"                 'formatters loaded'  /tmp/debuginfo_fmt.txt
-  need "formatter: String is not decoded"      'name = "probe"'     /tmp/debuginfo_fmt.txt
+  # (a reference, as `name` is on Windows, prints its address before the summary)
+  need "formatter: String is not decoded"      'name = \(0x[0-9a-f]* \)\?"probe"' /tmp/debuginfo_fmt.txt
   need "formatter: Vector count missing"       '3 element(s)'       /tmp/debuginfo_fmt.txt
   need "formatter: Vector element 0 is not 7"  '\[0\] = 7'          /tmp/debuginfo_fmt.txt
   need "formatter: Vector element 2 is not 9"  '\[2\] = 9'          /tmp/debuginfo_fmt.txt
@@ -214,9 +250,10 @@ for c in lldb-dap lldb-dap-21 /opt/homebrew/opt/llvm@21/bin/lldb-dap \
   p=$(command -v "$c" 2>/dev/null || true)
   [ -n "$p" ] && { DAP="$p"; break; }
 done
+[ -n "$DAP" ] && ! "$DAP" --help >/dev/null 2>&1 && { echo "debuginfo: lldb-dap does not start -- DAP check SKIPPED"; DAP=""; }
 if [ -n "$DAP" ] && command -v python3 >/dev/null 2>&1; then
   if python3 tests/debuginfo/dap_smoke.py "$DAP" "$OUT" \
-       "$PWD/$SRC" 45 "$PWD/tools/lldb/scaly.py" >/tmp/debuginfo_dap.txt 2>&1; then
+       "$PWD/$SRC" "$LINE2" "$PWD/tools/lldb/scaly.py" >/tmp/debuginfo_dap.txt 2>&1; then
     ok
   else
     while read -r l; do bad "${l#dap: FAIL }"; done < <(grep '^dap: FAIL' /tmp/debuginfo_dap.txt)

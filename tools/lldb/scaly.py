@@ -236,11 +236,26 @@ def __lldb_init_module(debugger, internal_dict):
     # The bare alternative stays in each pattern for non-generic spellings and
     # for the day InstantiationInfo.type_args is populated and the names become
     # readable (`Vector[int]`); then these can lose the mangled arm.
-    add = debugger.HandleCommand
+    #
+    # ★Windows writes CodeView, where an instantiation is named in template
+    # syntax -- `Vector<int>` (tests/target, check_codeview) -- so each pattern
+    # takes `<...>` too; without it a Vector read from a .pdb stayed raw fields.
+    #
+    # ★Through the command INTERPRETER with a return object of its own, not
+    # debugger.HandleCommand: that one writes its result to the debugger's
+    # output, and lldb-dap on Windows died on the first such write
+    # (0xC0000409, tests/debuginfo/dap_smoke.py, 2026-11-15) -- the Variables
+    # pane of VS Code never got a formatter there.
+    interpreter = debugger.GetCommandInterpreter()
+
+    def add(command):
+        result = lldb.SBCommandReturnObject()
+        interpreter.HandleCommand(command, result)
+
     add('type summary add -F scaly.string_summary -x "^String$"')
-    add('type synthetic add -l scaly.VectorChildren -x "^(Vector(\\[.*\\])?|_Z6VectorI.*E)$"')
-    add('type synthetic add -l scaly.ArrayChildren  -x "^(Array(\\[.*\\])?|_Z5ArrayI.*E)$"')
-    add('type synthetic add -l scaly.ListChildren   -x "^(List(\\[.*\\])?|_Z4ListI.*E)$"')
-    add('type summary add -F scaly._count_summary -e -x "^(Vector(\\[.*\\])?|_Z6VectorI.*E)$"')
-    add('type summary add -F scaly._count_summary -e -x "^(Array(\\[.*\\])?|_Z5ArrayI.*E)$"')
+    add('type synthetic add -l scaly.VectorChildren -x "^(Vector(\\[.*\\]|<.*>)?|_Z6VectorI.*E)$"')
+    add('type synthetic add -l scaly.ArrayChildren  -x "^(Array(\\[.*\\]|<.*>)?|_Z5ArrayI.*E)$"')
+    add('type synthetic add -l scaly.ListChildren   -x "^(List(\\[.*\\]|<.*>)?|_Z4ListI.*E)$"')
+    add('type summary add -F scaly._count_summary -e -x "^(Vector(\\[.*\\]|<.*>)?|_Z6VectorI.*E)$"')
+    add('type summary add -F scaly._count_summary -e -x "^(Array(\\[.*\\]|<.*>)?|_Z5ArrayI.*E)$"')
     print("scaly: formatters loaded (String, Vector, Array, List)")
