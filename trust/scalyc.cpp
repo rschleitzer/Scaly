@@ -19051,11 +19051,11 @@ bool repl_mentions(String&, String&) asm("_ZN4replB6scalycB4v0_28mentionsE6Strin
 String repl_compose(scaly_frame*, String&, Array<ReplValue>*, Array<ReplStatement>*, String&, String&, bool, uint64_t*) asm("_ZN4replB6scalycB4v0_27composeEPN4scaly6memory4PageE6StringR5ArrayI9ReplValueB6scalycB4v0_2ER5ArrayI13ReplStatementB6scalycB4v0_2E6String6StringbRm");
 void repl_report(String&, uint64_t, uint64_t, String&, String&) asm("_ZN4replB6scalycB4v0_26reportE6Stringmm6String6String");
 void cli_register_packages(Planner*, Program*) asm("_ZN3cliB6scalycB4v0_217register_packagesER7PlannerB6scalycB4v0_2R7ProgramB6scalycB4v0_2");
-void repl_learn(Plan*, ReplProbe*) asm("_ZN4replB6scalycB4v0_25learnER4PlanB6scalycB4v0_2R9ReplProbeB6scalycB4v0_2");
+void repl_learn(scaly_frame*, Plan*, ReplProbe*) asm("_ZN4replB6scalycB4v0_25learnEPN4scaly6memory4PageER4PlanB6scalycB4v0_2R9ReplProbeB6scalycB4v0_2");
 bool cli_compile_jit_dependencies(Program*, String&, Array<String>*, Array<String>*) asm("_ZN3cliB6scalycB4v0_224compile_jit_dependenciesER7ProgramB6scalycB4v0_26StringR5ArrayI6StringER5ArrayI6StringE");
 bool repl_process(scaly_frame*, String&, uint64_t, String&, ReplProbe*, bool, void**, Array<String>*, Array<int64_t>*) asm("_ZN4replB6scalycB4v0_27processEPN4scaly6memory4PageE6Stringm6StringR9ReplProbeB6scalycB4v0_2bPPvR5ArrayI6StringER5ArrayIiE");
-void repl_learn_records(Vector<PlannedStructure>*, ReplProbe*) asm("_ZN4replB6scalycB4v0_213learn_recordsER6VectorI16PlannedStructureB6scalycB4v0_2ER9ReplProbeB6scalycB4v0_2");
-void repl_learn_statements(Vector<PlannedStatement>*, ReplProbe*) asm("_ZN4replB6scalycB4v0_216learn_statementsER6VectorI16PlannedStatementB6scalycB4v0_2ER9ReplProbeB6scalycB4v0_2");
+void repl_learn_records(scaly_frame*, Vector<PlannedStructure>*, ReplProbe*) asm("_ZN4replB6scalycB4v0_213learn_recordsEPN4scaly6memory4PageER6VectorI16PlannedStructureB6scalycB4v0_2ER9ReplProbeB6scalycB4v0_2");
+void repl_learn_statements(scaly_frame*, Vector<PlannedStatement>*, ReplProbe*) asm("_ZN4replB6scalycB4v0_216learn_statementsEPN4scaly6memory4PageER6VectorI16PlannedStatementB6scalycB4v0_2ER9ReplProbeB6scalycB4v0_2");
 bool repl_is_record(ReplProbe*, String&) asm("_ZN4replB6scalycB4v0_29is_recordER9ReplProbeB6scalycB4v0_26String");
 void repl_flatten(scaly_frame*, ReplProbe*, String&, String&, int64_t, Array<ReplField>*) asm("_ZN4replB6scalycB4v0_27flattenEPN4scaly6memory4PageER9ReplProbeB6scalycB4v0_26String6StringiR5ArrayI9ReplFieldB6scalycB4v0_2E");
 String repl_type_of(scaly_frame*, ReplProbe*, String&) asm("_ZN4replB6scalycB4v0_27type_ofEPN4scaly6memory4PageER9ReplProbeB6scalycB4v0_26String");
@@ -183339,7 +183339,7 @@ __attribute__((weak)) bool repl_process(scaly_frame* scaly_rp, String& source, u
     WriteCensus_mark_stub_purity((*gate), *(plan));
     if (((run) == (false)))
     {
-        repl_learn(plan, probe);
+        repl_learn(scaly_rp, plan, probe);
         return true;
     }
     Emitter_EmitterConfig* config = ({ Emitter_EmitterConfig* scaly_t11 = (Emitter_EmitterConfig*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Emitter_EmitterConfig), alignof(Emitter_EmitterConfig)); *scaly_t11 = Emitter_EmitterConfig{}; Emitter_EmitterConfig_init((*scaly_t11)); scaly_t11; });
@@ -183373,18 +183373,18 @@ __attribute__((weak)) bool repl_process(scaly_frame* scaly_rp, String& source, u
 }
 
 // packages/scalyc/0.2.1/scalyc/repl.scaly
-__attribute__((weak)) void repl_learn(Plan* plan, ReplProbe* out)
+__attribute__((weak)) void repl_learn(scaly_frame* scaly_rp, Plan* plan, ReplProbe* out)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     if (((plan->structures) != (nullptr)))
     {
-        repl_learn_records(plan->structures, out);
+        repl_learn_records(scaly_rp, plan->structures, out);
     }
     if (((plan->functions) == (nullptr)))
     {
         return;
     }
-    for (auto scaly_t1 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(plan->functions));;)
+    for (auto scaly_t1 = Vector_get_iterator<PlannedFunction>(scaly_rp, *(plan->functions));;)
     {
         PlannedFunction* scaly_t1_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t1);
         if (scaly_t1_at == nullptr)
@@ -183407,7 +183407,7 @@ __attribute__((weak)) void repl_learn(Plan* plan, ReplProbe* out)
                                 PlannedBlock b = scaly_payload<PlannedBlock>(scaly_t4);
                                 if ((((b).statements) != (nullptr)))
                                 {
-                                    repl_learn_statements((b).statements, out);
+                                    repl_learn_statements(scaly_rp, (b).statements, out);
                                 }
                             }
                             else
@@ -183427,10 +183427,8 @@ __attribute__((weak)) void repl_learn(Plan* plan, ReplProbe* out)
 }
 
 // packages/scalyc/0.2.1/scalyc/repl.scaly
-__attribute__((weak)) void repl_learn_records(Vector<PlannedStructure>* structures, ReplProbe* out)
+__attribute__((weak)) void repl_learn_records(scaly_frame* scaly_rp, Vector<PlannedStructure>* structures, ReplProbe* out)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    Page* page = Page_get((void*)(out));
     uint64_t i = 0ULL;
     while ((i < structures->length))
     {
@@ -183450,10 +183448,10 @@ __attribute__((weak)) void repl_learn_records(Vector<PlannedStructure>* structur
             {
                 continue;
             }
-            String t = Planner_get_readable_name(&scaly_local.f, pr->prop_type);
-            Array_add<String>(out->rec_names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), st->name); scaly_t1; }))));
-            Array_add<String>(out->rec_fields, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), pr->name); scaly_t2; }))));
-            Array_add<String>(out->rec_types, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), t); scaly_t3; }))));
+            String t = Planner_get_readable_name(scaly_rp, pr->prop_type);
+            Array_add<String>(out->rec_names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), st->name); scaly_t1; }))));
+            Array_add<String>(out->rec_fields, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), pr->name); scaly_t2; }))));
+            Array_add<String>(out->rec_types, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), t); scaly_t3; }))));
         }
     }
 }
@@ -183521,10 +183519,10 @@ __attribute__((weak)) void repl_flatten(scaly_frame* scaly_rp, ReplProbe* probe,
 }
 
 // packages/scalyc/0.2.1/scalyc/repl.scaly
-__attribute__((weak)) void repl_learn_statements(Vector<PlannedStatement>* body, ReplProbe* out)
+__attribute__((weak)) void repl_learn_statements(scaly_frame* scaly_rp, Vector<PlannedStatement>* body, ReplProbe* out)
 {
-    scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    String* last_type = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; });
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    String* last_type = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; });
     bool last_is_action = false;
     uint64_t i = 0ULL;
     while ((i < body->length))
@@ -183540,22 +183538,21 @@ __attribute__((weak)) void repl_learn_statements(Vector<PlannedStatement>* body,
                 if (((((b).binding_item).name) != (nullptr)))
                 {
                     String* name = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue((*(((b).binding_item).name)))); scaly_t3; });
-                    String* t = ({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init3((*scaly_t4)); scaly_t4; });
+                    String* t = ({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init3((*scaly_t4)); scaly_t4; });
                     if (((((b).binding_item).item_type) != (nullptr)))
                     {
-                        (*t) = Planner_get_readable_name(&scaly_local.f, scaly_lvalue((*(((b).binding_item).item_type))));
+                        (*t) = Planner_get_readable_name(scaly_rp, scaly_lvalue((*(((b).binding_item).item_type))));
                     }
                     else
                     {
                         if (((((b).operation) != (nullptr)) ? ((b).operation->length > 0ULL) : false))
                         {
                             PlannedOperand* last = Vector_at<PlannedOperand>(*((b).operation), ((b).operation->length - 1ULL));
-                            (*t) = Planner_get_readable_name(&scaly_local.f, last->result_type);
+                            (*t) = Planner_get_readable_name(scaly_rp, last->result_type);
                         }
                     }
-                    Page* page = Page_get((void*)(out));
-                    Array_add<String>(out->names, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), (*name)); scaly_t5; }))));
-                    Array_add<String>(out->types, scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), (*t)); scaly_t6; }))));
+                    Array_add<String>(out->names, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), (*name)); scaly_t5; }))));
+                    Array_add<String>(out->types, scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), (*t)); scaly_t6; }))));
                 }
             }
             else if (scaly_t2->tag == 0)
@@ -183564,7 +183561,7 @@ __attribute__((weak)) void repl_learn_statements(Vector<PlannedStatement>* body,
                 if (((((a).target) == (nullptr)) ? true : ((a).target->length == 0ULL)))
                 {
                     last_is_action = true;
-                    (*last_type) = Planner_get_readable_name(&scaly_local.f, (a).result_type);
+                    (*last_type) = Planner_get_readable_name(scaly_rp, (a).result_type);
                 }
             }
             else
@@ -183575,14 +183572,13 @@ __attribute__((weak)) void repl_learn_statements(Vector<PlannedStatement>* body,
     }
     if ((((last_is_action ? (String_get_length((*last_type)) > 0ULL) : false) ? ((String_equals((*last_type), scaly_lvalue(String{(uint8_t*)"\004void"}))) == (false)) : false) ? ((String_equals((*last_type), scaly_lvalue(String{(uint8_t*)"\002()"}))) == (false)) : false))
     {
-        Page* page = Page_get((void*)(out));
         if ((String_starts_with((*last_type), scaly_lvalue(String{(uint8_t*)"\004ref["})) ? String_ends_with((*last_type), scaly_lvalue(String{(uint8_t*)"\001]"})) : false))
         {
-            out->it_type = (*({ String* scaly_t7 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue(String_substring(&scaly_lvalue(scaly_frame{(void*)(page), nullptr}), (*last_type), 4ULL, (String_get_length((*last_type)) - 5ULL)))); scaly_t7; }));
+            out->it_type = (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue(String_substring(scaly_rp, (*last_type), 4ULL, (String_get_length((*last_type)) - 5ULL)))); scaly_t7; }));
         }
         else
         {
-            out->it_type = (*({ String* scaly_t8 = (String*)scaly_rt_allocate((void*)(page), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), (*last_type)); scaly_t8; }));
+            out->it_type = (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), (*last_type)); scaly_t8; }));
         }
     }
 }
