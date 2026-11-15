@@ -186674,6 +186674,10 @@ __attribute__((weak)) bool cli_compile_dep_package_to_object(String& entry_file_
         return false;
     }
     Emitter_jit_clear_thread_locals((*dep_emitter));
+    if (Emitter_target_is_coff_format((*dep_emitter)))
+    {
+        Emitter_jit_import_externals((*dep_emitter));
+    }
     if ((String_get_length(defs_file) > 0ULL))
     {
         File_write_from_string(defs_file, scaly_lvalue(({

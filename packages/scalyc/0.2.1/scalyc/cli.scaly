@@ -2320,6 +2320,15 @@ define cli
         ; package's mutable globals (scalyc's own `modeler_error_count`) hit it
         ; exactly the same way.
         dep_emitter.jit_clear_thread_locals()
+        ; ... and on COFF its declarations go through import slots, as the
+        ; program module's do (Emitter.jit_import_externals says why). Without
+        ; it a package taking the address of a host function -- a `try` hands
+        ; scaly_catch_push the runtime's scaly_panic_mark -- got it by ADRP from
+        ; the JIT's memory, terabytes from scaly.exe: the high bits were wrong
+        ; and the call a DEP violation (tests/book, the http server of
+        ; scaling-connections, every run under `scaly run`; 2026-11-15).
+        if dep_emitter.target_is_coff_format()
+            dep_emitter.jit_import_externals()
         ; what the package defines, for tool.check_definitions#
         if defs_file.get_length() > 0
             File.write_from_string(defs_file, "`dep_planner.generic_function_names()``dep_emitter.defined_symbols()`")

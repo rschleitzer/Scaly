@@ -1503,7 +1503,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -3307960465873720080
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 666738182737824945
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -641894,9 +641894,9 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   %wrapped_frame = alloca { ptr, ptr }, align 8
   %iter.alloca = alloca %_Z14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
-  %sret.result61 = alloca { ptr }, align 8
-  %sret.result59 = alloca { ptr }, align 8
-  %sret.result57 = alloca { ptr }, align 8
+  %sret.result66 = alloca { ptr }, align 8
+  %sret.result64 = alloca { ptr }, align 8
+  %sret.result62 = alloca { ptr }, align 8
   %dep_emitter = alloca ptr, align 8
   %dep_config = alloca ptr, align 8
   %struct.init = alloca %_ZN7Emitter13EmitterConfigB6scalycB4v0_2E, align 8
@@ -642046,88 +642046,98 @@ if.then44:                                        ; preds = %frame.forced36
 if.end45:                                         ; preds = %frame.forced36
   %dep_emitter46 = load ptr, ptr %dep_emitter, align 8
   call void @_ZN7EmitterB6scalycB4v0_223jit_clear_thread_localsEv(ptr %dep_emitter46)
-  %call47 = call i64 @_ZN6String10get_lengthEv(ptr %2)
-  %gt = icmp ugt i64 %call47, 0
-  br i1 %gt, label %if.then48, label %if.end49
+  %dep_emitter47 = load ptr, ptr %dep_emitter, align 8
+  %call48 = call i1 @_ZN7EmitterB6scalycB4v0_221target_is_coff_formatEv(ptr %dep_emitter47)
+  br i1 %call48, label %if.then49, label %if.end50
 
-if.then48:                                        ; preds = %if.end45
-  %frame.page50 = load ptr, ptr %frame, align 8
-  %frame.has_page51 = icmp ne ptr %frame.page50, null
-  br i1 %frame.has_page51, label %frame.forced53, label %frame.force52
+if.then49:                                        ; preds = %if.end45
+  %dep_emitter51 = load ptr, ptr %dep_emitter, align 8
+  call void @_ZN7EmitterB6scalycB4v0_220jit_import_externalsEv(ptr %dep_emitter51)
+  br label %if.end50
 
-if.end49:                                         ; preds = %frame.forced53, %if.end45
-  %dep_emitter63 = load ptr, ptr %dep_emitter, align 8
-  %call64 = call i1 @_ZN7EmitterB6scalycB4v0_220write_object_to_fileE6String(ptr %dep_emitter63, ptr %1)
-  %eq65 = icmp eq i1 %call64, false
-  br i1 %eq65, label %if.then66, label %if.end67
+if.end50:                                         ; preds = %if.then49, %if.end45
+  %call52 = call i64 @_ZN6String10get_lengthEv(ptr %2)
+  %gt = icmp ugt i64 %call52, 0
+  br i1 %gt, label %if.then53, label %if.end54
 
-frame.force52:                                    ; preds = %if.then48
-  %forced_page54 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced53
+if.then53:                                        ; preds = %if.end50
+  %frame.page55 = load ptr, ptr %frame, align 8
+  %frame.has_page56 = icmp ne ptr %frame.page55, null
+  br i1 %frame.has_page56, label %frame.forced58, label %frame.force57
 
-frame.forced53:                                   ; preds = %frame.force52, %if.then48
-  %forced_page55 = phi ptr [ %frame.page50, %if.then48 ], [ %forced_page54, %frame.force52 ]
-  %struct.region56 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page55, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region56)
-  %dep_planner58 = load ptr, ptr %dep_planner, align 8
-  call void @_ZN7PlannerB6scalycB4v0_222generic_function_namesEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result57, ptr %frame, ptr %dep_planner58)
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %sret.result57)
-  %dep_emitter60 = load ptr, ptr %dep_emitter, align 8
-  call void @_ZN7EmitterB6scalycB4v0_215defined_symbolsEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result59, ptr %frame, ptr %dep_emitter60)
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %sret.result59)
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result61, ptr %frame, ptr %struct.region56)
-  %call62 = call i1 @_ZN4File17write_from_stringE6String6String(ptr %2, ptr %sret.result61)
-  br label %if.end49
+if.end54:                                         ; preds = %frame.forced58, %if.end50
+  %dep_emitter68 = load ptr, ptr %dep_emitter, align 8
+  %call69 = call i1 @_ZN7EmitterB6scalycB4v0_220write_object_to_fileE6String(ptr %dep_emitter68, ptr %1)
+  %eq70 = icmp eq i1 %call69, false
+  br i1 %eq70, label %if.then71, label %if.end72
 
-if.then66:                                        ; preds = %if.end49
+frame.force57:                                    ; preds = %if.then53
+  %forced_page59 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced58
+
+frame.forced58:                                   ; preds = %frame.force57, %if.then53
+  %forced_page60 = phi ptr [ %frame.page55, %if.then53 ], [ %forced_page59, %frame.force57 ]
+  %struct.region61 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page60, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region61)
+  %dep_planner63 = load ptr, ptr %dep_planner, align 8
+  call void @_ZN7PlannerB6scalycB4v0_222generic_function_namesEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result62, ptr %frame, ptr %dep_planner63)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region61, ptr %sret.result62)
+  %dep_emitter65 = load ptr, ptr %dep_emitter, align 8
+  call void @_ZN7EmitterB6scalycB4v0_215defined_symbolsEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result64, ptr %frame, ptr %dep_emitter65)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region61, ptr %sret.result64)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result66, ptr %frame, ptr %struct.region61)
+  %call67 = call i1 @_ZN4File17write_from_stringE6String6String(ptr %2, ptr %sret.result66)
+  br label %if.end54
+
+if.then71:                                        ; preds = %if.end54
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end67:                                         ; preds = %if.end49
+if.end72:                                         ; preds = %if.end54
   %load.struct = load %_Z4PlanB6scalycB4v0_2, ptr %call25, align 8
   %functions = extractvalue %_Z4PlanB6scalycB4v0_2 %load.struct, 4
   %ne = icmp ne ptr %functions, null
-  br i1 %ne, label %if.then68, label %if.end69
+  br i1 %ne, label %if.then73, label %if.end74
 
-if.then68:                                        ; preds = %if.end67
-  %call70 = call ptr @_ZN4Page3getEPv(ptr %4)
-  %load.struct71 = load %_Z4PlanB6scalycB4v0_2, ptr %call25, align 8
-  %functions72 = extractvalue %_Z4PlanB6scalycB4v0_2 %load.struct71, 4
-  call void @_ZN6VectorI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr null, ptr %functions72)
+if.then73:                                        ; preds = %if.end72
+  %call75 = call ptr @_ZN4Page3getEPv(ptr %4)
+  %load.struct76 = load %_Z4PlanB6scalycB4v0_2, ptr %call25, align 8
+  %functions77 = extractvalue %_Z4PlanB6scalycB4v0_2 %load.struct76, 4
+  call void @_ZN6VectorI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr null, ptr %functions77)
   br label %for.cond
 
-if.end69:                                         ; preds = %for.exit, %if.end67
+if.end74:                                         ; preds = %for.exit, %if.end72
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-for.cond:                                         ; preds = %frame.forced76, %if.then68
+for.cond:                                         ; preds = %frame.forced81, %if.then73
   %next = call ptr @_ZN14VectorIteratorI15PlannedFunctionB6scalycB4v0_2E4nextEv(ptr %iter.alloca)
   %is.done = icmp eq ptr %next, null
   br i1 %is.done, label %for.exit, label %for.body
 
 for.body:                                         ; preds = %for.cond
-  store ptr %call70, ptr %wrapped_frame, align 8
+  store ptr %call75, ptr %wrapped_frame, align 8
   %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
   store ptr null, ptr %wrapped.parent, align 8
-  %frame.page73 = load ptr, ptr %wrapped_frame, align 8
-  %frame.has_page74 = icmp ne ptr %frame.page73, null
-  br i1 %frame.has_page74, label %frame.forced76, label %frame.force75
+  %frame.page78 = load ptr, ptr %wrapped_frame, align 8
+  %frame.has_page79 = icmp ne ptr %frame.page78, null
+  br i1 %frame.has_page79, label %frame.forced81, label %frame.force80
 
 for.exit:                                         ; preds = %for.cond
-  br label %if.end69
+  br label %if.end74
 
-frame.force75:                                    ; preds = %for.body
-  %forced_page77 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  br label %frame.forced76
+frame.force80:                                    ; preds = %for.body
+  %forced_page82 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  br label %frame.forced81
 
-frame.forced76:                                   ; preds = %frame.force75, %for.body
-  %forced_page78 = phi ptr [ %frame.page73, %for.body ], [ %forced_page77, %frame.force75 ]
-  %struct.region79 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page78, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %load.struct80 = load %_Z15PlannedFunctionB6scalycB4v0_2, ptr %next, align 8
-  %mangled_name = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct80, 4
+frame.forced81:                                   ; preds = %frame.force80, %for.body
+  %forced_page83 = phi ptr [ %frame.page78, %for.body ], [ %forced_page82, %frame.force80 ]
+  %struct.region84 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page83, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %load.struct85 = load %_Z15PlannedFunctionB6scalycB4v0_2, ptr %next, align 8
+  %mangled_name = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct85, 4
   store { ptr } %mangled_name, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region79, ptr %arg.tmp)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %4, ptr %struct.region79)
+  call void @_ZN6StringC1E6String(ptr %struct.region84, ptr %arg.tmp)
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %4, ptr %struct.region84)
   br label %for.cond
 }
 
