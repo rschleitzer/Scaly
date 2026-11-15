@@ -760,7 +760,6 @@ define repl
     ; every plain record the plan lays out, a row per public field
     procedure learn_records(structures: ref[Vector[PlannedStructure]], mutable out: ref[ReplProbe])
     {
-        let page Page.get(out)
         var i: size_t 0
         while i < structures.length
         {
@@ -777,9 +776,9 @@ define repl
                 if pr.is_private
                     continue
                 let t Planner.get_readable_name(pr.prop_type)
-                out.rec_names.add(String^page(st.name))
-                out.rec_fields.add(String^page(pr.name))
-                out.rec_types.add(String^page(t))
+                out.rec_names.add(String(st.name))
+                out.rec_fields.add(String(pr.name))
+                out.rec_types.add(String(t))
             }
         }
     }
@@ -849,9 +848,8 @@ define repl
                             let last b.operation.at(b.operation.length - 1)
                             t := Planner.get_readable_name(last.result_type)
                         }
-                        let page Page.get(out)
-                        out.names.add(String^page(name))
-                        out.types.add(String^page(t))
+                        out.names.add(String(name))
+                        out.types.add(String(t))
                     }
                 }
                 when a: PlannedAction
@@ -868,11 +866,10 @@ define repl
         if last_is_action and last_type.get_length() > 0 and last_type.equals("void") = false and last_type.equals("()") = false
         {
             ; `n` of a session value is a ref[int]: `it` holds the int
-            let page Page.get(out)
             if last_type.starts_with("ref[") and last_type.ends_with("]")
-                out.it_type := String^page(last_type.substring(4, last_type.get_length() - 5))
+                out.it_type := String(last_type.substring(4, last_type.get_length() - 5))
             else
-                out.it_type := String^page(last_type)
+                out.it_type := String(last_type)
         }
     }
 
