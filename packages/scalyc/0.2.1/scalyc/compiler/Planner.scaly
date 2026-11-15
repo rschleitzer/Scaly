@@ -1266,7 +1266,8 @@ define Planner
         current_fn_local_filled: ref[Array[String]]
         current_fn_bind_local: Array[size_t]
         ; beside it, the REFERENCE verdict of the same bound call
-        ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local) — behind a
+        ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local; 2 a class-1
+        ; referent built on this frame, ref_call_built_here#) — behind a
         ; reference for the Planner's page budget (see current_fn_local_filled)
         current_fn_bind_refv: ref[Array[int]]
         ; names bound from a call whose LIFE is Local: an object built on this
@@ -40622,6 +40623,13 @@ define Planner
                 return Planner.type_init_allocates_buffer(c.result_type) or this.census_type_is_ref_like(c.result_type)
             if (*cvp) = 1
             {
+                ; built on the page this frame PASSES, and that is the Emitter's
+                ; choice for a call: this frame's local page for a Local call,
+                ; else the caller page where the frame has one -- then nothing
+                ; of it is this frame's (`into.put(at, *make(n))` in a procedure
+                ; R8 gave the page was refused, 2026-11-15)
+                if this.escape_fn_has_page() and Planner.lifetime_is_local(c.life) = false
+                    return false
                 ; a VIEW or reference built on the caller page points INTO it:
                 ; this frame's page, local
                 if this.census_type_is_ref_like(c.result_type)
@@ -40736,6 +40744,68 @@ define Planner
             fp.page_parameter <> null
         }
 
+        ; deref_bound_ref_local#: is `dv` a name bound to a reference whose
+        ; call built its referent on this frame (ref_call_built_here#)?
+        ; The second net under R8's store_referent mode: `let made make(n)`,
+        ; `into.put(at, *made)` in a procedure without a page read not-local
+        ; here -- a name bound to a reference holds no object of this frame --
+        ; and the caller read a released String (2026-11-08, gate
+        ; store_deref_built_value; the checker's half 2026-11-15)
+        function deref_bound_ref_local(this: Planner, dv: PlannedOperand) returns bool
+        {
+            if dv.member_access <> null
+            {
+                let ma (*dv.member_access)
+                if ma.length > 0
+                    return false
+            }
+            choose dv.expr
+                when v: Variable
+                {
+                    if this.census_type_is_ref_like(v.variable_type) = false
+                        return false
+                    if this.escape_name_is_current_param(v.name)
+                        return false
+                    let bi this.bind_index_of(v.name)
+                    if bi < 0
+                        return false
+                    let rp current_fn_bind_refv.get(bi as size_t)
+                    return rp <> null and (*rp) = 2
+                }
+                else
+                    return false
+            false
+        }
+
+        ; ref_call_built_here#: does `c` answer a reference to a value it BUILT
+        ; (residence class 1) on the page this frame hands it -- this frame's
+        ; own: a Local call, or any call where the frame has no caller page
+        ; (the Emitter's choice of a call's page argument)? Recorded as 2 in
+        ; current_fn_bind_refv, read by deref_bound_ref_local# alone.
+        ; ★Narrow on purpose: current_fn_bind_local# judges a REFERENCE
+        ; through every class, and a view of a parameter's buffer read local
+        ; there (`let cgens (*struct_type.generics)`, `cgens.get pi` in
+        ; Planner.enter_concept_generic_scope# -- the first version of this
+        ; net refused it)
+        function ref_call_built_here(this: Planner, c: PlannedCall) returns bool
+        {
+            if c.is_operator
+                return false
+            if Planner.last_segment_is_capitalized(c.name)
+                return false
+            if this.census_type_is_ref_like(c.result_type) = false
+                return false
+            let ci residence.rr_class_index.lookup(c.mangled_name)
+            if ci < 0
+                return false
+            let cvp residence.rr_class_vals.get(ci as size_t)
+            if cvp = null or (*cvp) <> 1
+                return false
+            if Planner.lifetime_is_local(c.life)
+                return true
+            this.escape_fn_has_page() = false
+        }
+
         ; a record handed BY VALUE is copied into the callee's keep — its
         ; BUFFER is not. Where that buffer lives: a parameter's or a field's
         ; with the caller (never local); a local bound from a visible
@@ -40831,7 +40901,15 @@ define Planner
                                 {
                                     let da c.args.get 0
                                     if da <> null
-                                        return this.deep_by_value_local(da.unwrap())
+                                    {
+                                        let dv da.unwrap()
+                                        ; `*r` over a NAME bound to a reference copies
+                                        ; the referent with its parts, and they live
+                                        ; where the bound call built it
+                                        if this.type_owns_buffer(arg.result_type, 0) and this.deref_bound_ref_local(dv)
+                                            return true
+                                        return this.deep_by_value_local(dv)
+                                    }
                                 }
                         return false
                     }
@@ -42772,7 +42850,10 @@ define Planner
                                                 if bverdict
                                                     bvv := 1
                                                 current_fn_bind_local.add bvv
-                                                current_fn_bind_refv.add(this.ref_call_verdict(bcall))
+                                                var brv this.ref_call_verdict(bcall)
+                                                if brv < 0 and this.ref_call_built_here(bcall)
+                                                    brv := 2
+                                                current_fn_bind_refv.add brv
                                                 if Planner.lifetime_is_local(bcall.life)
                                                     current_fn_frame_objects.add(String^this((*binding.binding_item.name)))
                                             }

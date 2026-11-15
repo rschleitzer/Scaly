@@ -9,11 +9,13 @@
 ; (Planner.referent_builds#: a callee returning a reference that residence
 ; places on the caller page). Each `keep_*` is one spelling, and `forward`
 ; only hands its parameter on. Never silent, and not part of this gate: a
-; non-optional `ref[Item]` (it reads as its pointee without a star) and the
-; dereference of the call itself, `into.put(at, *make(2, ...))` -- the escape
-; checker refuses both stores, before and after (the second one still,
-; although R8 now gives the procedure its page). Found writing the
-; Modeler's handle_named_type#.
+; non-optional `ref[Item]` (it reads as its pointee without a star) -- the
+; escape checker refuses that store. Found writing the Modeler's
+; handle_named_type#.
+; ★2026-11-15: the dereference of the CALL itself, `into.put(at, *make(2,
+; ...))` (keep_direct), was refused by the escape checker although R8 gives
+; the procedure its page -- its class-1 rule read the result as this
+; frame's whatever page the frame passed (Planner.by_value_call_local#).
 ; Expected: PASS
 
 define Item
@@ -30,6 +32,12 @@ procedure keep_bound(mutable into: Vector[Item], at: size_t) returns size_t
     let made make(1, String("bound"))
     if made <> null
         into.put(at, *made)
+    at + 1
+}
+
+procedure keep_direct(mutable into: Vector[Item], at: size_t) returns size_t
+{
+    into.put(at, *make(2, String("direct")))
     at + 1
 }
 
@@ -53,6 +61,7 @@ procedure forward(mutable into: Vector[Item]) returns size_t
 {
     var at: size_t 0
     at := keep_bound(into, at)
+    at := keep_direct(into, at)
     at := keep_grouped(into, at)
     keep_set(into, at)
 }
@@ -71,7 +80,7 @@ function churn() returns size_t
 
 procedure run() returns String
 {
-    var items Vector[Item](3)
+    var items Vector[Item](4)
     forward(items)
     churn()
     var sb StringBuilder()
@@ -90,7 +99,7 @@ procedure run() returns String
 if getenv("SCALY_POISON") <> null
     Page.enable_poison()
 let got run()
-if got.equals("1:bound;3:grouped;4:set;")
+if got.equals("1:bound;2:direct;3:grouped;4:set;")
     print "PASS"
 else
     print "FAIL `got`"
