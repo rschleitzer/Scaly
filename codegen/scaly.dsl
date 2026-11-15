@@ -5,6 +5,7 @@
 <!ENTITY parser       SYSTEM "parser.scm"       >
 <!ENTITY highlight    SYSTEM "highlight.scm"    >
 <!ENTITY operation    SYSTEM "operation.scm"    >
+<!ENTITY grammardoc   SYSTEM "grammar-doc.scm"  >
 <!ENTITY rules        SYSTEM "rules.scm"        >
 ]>
 
@@ -17,6 +18,7 @@
 &parser;
 &highlight;
 &operation;
+&grammardoc;
 &rules;
 
 </STYLE-SPECIFICATION>

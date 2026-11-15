@@ -1510,14 +1510,6 @@ class="defines"
 class="rhs"
 ><a
 class="nonterminal"
-href="#prod.Package"
->Package</a
->* <a
-class="nonterminal"
-href="#prod.Use"
->Use</a
->* <a
-class="nonterminal"
 href="#prod.Declaration"
 >Declaration</a
 >* </span
@@ -1536,23 +1528,21 @@ class="defines"
 class="rhs"
 ><a
 class="nonterminal"
-href="#prod.Symbol"
->Symbol</a
-> ':'? </span
-></div
-><div
-class="production"
-id="prod.Symbol"
-><a
-class="lhs"
-href="#prod.Symbol"
->Symbol</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
-><a
+href="#prod.Empty"
+>Empty</a
+> | <a
+class="nonterminal"
+href="#prod.Package"
+>Package</a
+> | <a
+class="nonterminal"
+href="#prod.Libraries"
+>Libraries</a
+> | <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+> | <a
 class="nonterminal"
 href="#prod.Private"
 >Private</a
@@ -1566,20 +1556,24 @@ href="#prod.Function"
 >Function</a
 > | <a
 class="nonterminal"
+href="#prod.Procedure"
+>Procedure</a
+> | <a
+class="nonterminal"
 href="#prod.Operator"
 >Operator</a
 > | <a
 class="nonterminal"
-href="#prod.Trait"
->Trait</a
-> | <a
-class="nonterminal"
-href="#prod.Macro"
->Macro</a
-> | <a
-class="nonterminal"
 href="#prod.Module"
 >Module</a
+> | <a
+class="nonterminal"
+href="#prod.Mutable"
+>Mutable</a
+> | <a
+class="nonterminal"
+href="#prod.Shared"
+>Shared</a
 ></span
 ></div
 ><div
@@ -1622,12 +1616,12 @@ href="#prod.Function"
 >Function</a
 > | <a
 class="nonterminal"
-href="#prod.Operator"
->Operator</a
+href="#prod.Procedure"
+>Procedure</a
 > | <a
 class="nonterminal"
-href="#prod.Trait"
->Trait</a
+href="#prod.Operator"
+>Operator</a
 > | <a
 class="nonterminal"
 href="#prod.Module"
@@ -1648,23 +1642,13 @@ class="defines"
 class="rhs"
 ><a
 class="nonterminal"
-href="#prod.Constituent"
->Constituent</a
-> ':'? </span
-></div
-><div
-class="production"
-id="prod.Constituent"
-><a
-class="lhs"
-href="#prod.Constituent"
->Constituent</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
-><a
+href="#prod.Empty"
+>Empty</a
+> | <a
+class="nonterminal"
+href="#prod.Init"
+>Init</a
+> | <a
 class="nonterminal"
 href="#prod.Definition"
 >Definition</a
@@ -1680,18 +1664,6 @@ href="#prod.Procedure"
 class="nonterminal"
 href="#prod.Operator"
 >Operator</a
-> | <a
-class="nonterminal"
-href="#prod.Implement"
->Implement</a
-> | <a
-class="nonterminal"
-href="#prod.Trait"
->Trait</a
-> | <a
-class="nonterminal"
-href="#prod.Macro"
->Macro</a
 > | <a
 class="nonterminal"
 href="#prod.Module"
@@ -1714,6 +1686,10 @@ class="rhs"
 class="nonterminal"
 href="#prod.GenericParameters"
 >GenericParameters</a
+>? <a
+class="nonterminal"
+href="#prod.Pending"
+>Pending</a
 >? ':'? <a
 class="nonterminal"
 href="#prod.Attribute"
@@ -1759,6 +1735,20 @@ class="nonterminal"
 href="#prod.Attribute"
 >Attribute</a
 >* ',' </span
+></div
+><div
+class="production"
+id="prod.Pending"
+><a
+class="lhs"
+href="#prod.Pending"
+>Pending</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'pending' </span
 ></div
 ><div
 class="production"
@@ -1818,7 +1808,7 @@ href="#prod.Structure"
 class="nonterminal"
 href="#prod.Body"
 >Body</a
->? ':'? </span
+>? </span
 ></div
 ><div
 class="production"
@@ -1838,17 +1828,9 @@ href="#prod.Use"
 >Use</a
 >* <a
 class="nonterminal"
-href="#prod.Init"
->Init</a
->* <a
-class="nonterminal"
-href="#prod.DeInit"
->DeInit</a
->? <a
-class="nonterminal"
 href="#prod.Member"
 >Member</a
->* '}' ':'? </span
+>* '}' </span
 ></div
 ><div
 class="production"
@@ -1870,7 +1852,7 @@ href="#prod.Use"
 class="nonterminal"
 href="#prod.Declaration"
 >Declaration</a
->* '}' ':'? </span
+>* '}' </span
 ></div
 ><div
 class="production"
@@ -1892,7 +1874,7 @@ href="#prod.Variant"
 class="nonterminal"
 href="#prod.Body"
 >Body</a
->? ':'? </span
+>? </span
 ></div
 ><div
 class="production"
@@ -1936,7 +1918,7 @@ href="#prod.Type"
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
->* ':'? </span
+>* </span
 ></div
 ><div
 class="production"
@@ -2070,15 +2052,111 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->IDENTIFIER <a
+><a
 class="nonterminal"
-href="#prod.TypeAnnotation"
->TypeAnnotation</a
+href="#prod.Writable"
+>Writable</a
+>? IDENTIFIER <a
+class="nonterminal"
+href="#prod.ParameterAnnotation"
+>ParameterAnnotation</a
 >? ',' ':'? <a
 class="nonterminal"
 href="#prod.Attribute"
 >Attribute</a
->* ':'? </span
+>* </span
+></div
+><div
+class="production"
+id="prod.Writable"
+><a
+class="lhs"
+href="#prod.Writable"
+>Writable</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'mutable' </span
+></div
+><div
+class="production"
+id="prod.Io"
+><a
+class="lhs"
+href="#prod.Io"
+>Io</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'io' </span
+></div
+><div
+class="production"
+id="prod.GlobalWrites"
+><a
+class="lhs"
+href="#prod.GlobalWrites"
+>GlobalWrites</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'mutable' IDENTIFIER <a
+class="nonterminal"
+href="#prod.WrittenGlobal"
+>WrittenGlobal</a
+>* </span
+></div
+><div
+class="production"
+id="prod.WrittenGlobal"
+><a
+class="lhs"
+href="#prod.WrittenGlobal"
+>WrittenGlobal</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>',' IDENTIFIER </span
+></div
+><div
+class="production"
+id="prod.GlobalReads"
+><a
+class="lhs"
+href="#prod.GlobalReads"
+>GlobalReads</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'reads' IDENTIFIER <a
+class="nonterminal"
+href="#prod.ReadGlobal"
+>ReadGlobal</a
+>* </span
+></div
+><div
+class="production"
+id="prod.ReadGlobal"
+><a
+class="lhs"
+href="#prod.ReadGlobal"
+>ReadGlobal</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>',' IDENTIFIER </span
 ></div
 ><div
 class="production"
@@ -2144,70 +2222,6 @@ href="#prod.Name"
 ></div
 ><div
 class="production"
-id="prod.Implement"
-><a
-class="lhs"
-href="#prod.Implement"
->Implement</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'implement' <a
-class="nonterminal"
-href="#prod.Type"
->Type</a
-> <a
-class="nonterminal"
-href="#prod.Attribute"
->Attribute</a
->* ':'? '{' <a
-class="nonterminal"
-href="#prod.Use"
->Use</a
->* <a
-class="nonterminal"
-href="#prod.Method"
->Method</a
->* '}' ':'? </span
-></div
-><div
-class="production"
-id="prod.Trait"
-><a
-class="lhs"
-href="#prod.Trait"
->Trait</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'trait' <a
-class="nonterminal"
-href="#prod.Name"
->Name</a
-> <a
-class="nonterminal"
-href="#prod.Extends"
->Extends</a
->? <a
-class="nonterminal"
-href="#prod.Attribute"
->Attribute</a
->* '{' <a
-class="nonterminal"
-href="#prod.Use"
->Use</a
->* <a
-class="nonterminal"
-href="#prod.Method"
->Method</a
->* '}' ':'? </span
-></div
-><div
-class="production"
 id="prod.Method"
 ><a
 class="lhs"
@@ -2246,30 +2260,16 @@ class="defines"
 class="rhs"
 >'init' <a
 class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
+>? <a
+class="nonterminal"
 href="#prod.ParameterSet"
 >ParameterSet</a
 >? ':'? <a
 class="nonterminal"
-href="#prod.Action"
->Action</a
-> ':'? </span
-></div
-><div
-class="production"
-id="prod.DeInit"
-><a
-class="lhs"
-href="#prod.DeInit"
->DeInit</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'deinit' ':'? <a
-class="nonterminal"
-href="#prod.Action"
->Action</a
+href="#prod.Implementation"
+>Implementation</a
 > ':'? </span
 ></div
 ><div
@@ -2404,6 +2404,18 @@ href="#prod.Throws"
 >Throws</a
 >? ':'? <a
 class="nonterminal"
+href="#prod.Io"
+>Io</a
+>? <a
+class="nonterminal"
+href="#prod.GlobalWrites"
+>GlobalWrites</a
+>? ':'? <a
+class="nonterminal"
+href="#prod.GlobalReads"
+>GlobalReads</a
+>? ':'? <a
+class="nonterminal"
 href="#prod.Implementation"
 >Implementation</a
 > </span
@@ -2436,6 +2448,10 @@ href="#prod.Instruction"
 class="nonterminal"
 href="#prod.Intrinsic"
 >Intrinsic</a
+> | <a
+class="nonterminal"
+href="#prod.Linked"
+>Linked</a
 ></span
 ></div
 ><div
@@ -2464,7 +2480,7 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->'instruction' ':'? </span
+>'instruction' </span
 ></div
 ><div
 class="production"
@@ -2478,65 +2494,21 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->'intrinsic' ':'? </span
+>'intrinsic' </span
 ></div
 ><div
 class="production"
-id="prod.Extends"
+id="prod.Linked"
 ><a
 class="lhs"
-href="#prod.Extends"
->Extends</a
+href="#prod.Linked"
+>Linked</a
 ><span
 class="defines"
 >::=</span
 ><span
 class="rhs"
->'extends' <a
-class="nonterminal"
-href="#prod.Extend"
->Extend</a
->* </span
-></div
-><div
-class="production"
-id="prod.Extend"
-><a
-class="lhs"
-href="#prod.Extend"
->Extend</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
-><a
-class="nonterminal"
-href="#prod.Type"
->Type</a
-> ',' </span
-></div
-><div
-class="production"
-id="prod.Macro"
-><a
-class="lhs"
-href="#prod.Macro"
->Macro</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'macro' IDENTIFIER <a
-class="nonterminal"
-href="#prod.Model"
->Model</a
-> <a
-class="nonterminal"
-href="#prod.Operand"
->Operand</a
->+ </span
+>'linked' </span
 ></div
 ><div
 class="production"
@@ -2554,7 +2526,7 @@ class="rhs"
 class="nonterminal"
 href="#prod.Model"
 >Model</a
-> ':'? </span
+> </span
 ></div
 ><div
 class="production"
@@ -2598,7 +2570,7 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->'module' IDENTIFIER ':'? </span
+>'module' IDENTIFIER </span
 ></div
 ><div
 class="production"
@@ -2628,20 +2600,6 @@ href="#prod.Source"
 ></div
 ><div
 class="production"
-id="prod.Version"
-><a
-class="lhs"
-href="#prod.Version"
->Version</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->LITERAL '.' LITERAL </span
-></div
-><div
-class="production"
 id="prod.Source"
 ><a
 class="lhs"
@@ -2653,6 +2611,52 @@ class="defines"
 ><span
 class="rhs"
 >LITERAL </span
+></div
+><div
+class="production"
+id="prod.Libraries"
+><a
+class="lhs"
+href="#prod.Libraries"
+>Libraries</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'extern' IDENTIFIER <a
+class="nonterminal"
+href="#prod.Library"
+>Library</a
+>* ':'? </span
+></div
+><div
+class="production"
+id="prod.Library"
+><a
+class="lhs"
+href="#prod.Library"
+>Library</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>',' IDENTIFIER </span
+></div
+><div
+class="production"
+id="prod.Version"
+><a
+class="lhs"
+href="#prod.Version"
+>Version</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>LITERAL '.' LITERAL </span
 ></div
 ><div
 class="production"
@@ -2730,8 +2734,8 @@ href="#prod.Literal"
 >Literal</a
 > | <a
 class="nonterminal"
-href="#prod.Type"
->Type</a
+href="#prod.Name"
+>Name</a
 > | <a
 class="nonterminal"
 href="#prod.Object"
@@ -2778,12 +2782,28 @@ href="#prod.Repeat"
 >Repeat</a
 > | <a
 class="nonterminal"
+href="#prod.Relaxed"
+>Relaxed</a
+> | <a
+class="nonterminal"
 href="#prod.SizeOf"
 >SizeOf</a
 > | <a
 class="nonterminal"
+href="#prod.AlignOf"
+>AlignOf</a
+> | <a
+class="nonterminal"
 href="#prod.Is"
 >Is</a
+> | <a
+class="nonterminal"
+href="#prod.As"
+>As</a
+> | <a
+class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
 ></span
 ></div
 ><div
@@ -2906,31 +2926,13 @@ href="#prod.Operand"
 >Operand</a
 >+ <a
 class="nonterminal"
+href="#prod.Optional"
+>Optional</a
+>? <a
+class="nonterminal"
 href="#prod.Attribute"
 >Attribute</a
 >* ',' </span
-></div
-><div
-class="production"
-id="prod.Block"
-><a
-class="lhs"
-href="#prod.Block"
->Block</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'{' <a
-class="nonterminal"
-href="#prod.Use"
->Use</a
->* <a
-class="nonterminal"
-href="#prod.Statement"
->Statement</a
->* '}' </span
 ></div
 ><div
 class="production"
@@ -2950,13 +2952,31 @@ href="#prod.Operand"
 >Operand</a
 >+ ':' <a
 class="nonterminal"
-href="#prod.Command"
->Command</a
+href="#prod.Then"
+>Then</a
 > <a
 class="nonterminal"
 href="#prod.Else"
 >Else</a
 >? </span
+></div
+><div
+class="production"
+id="prod.Then"
+><a
+class="lhs"
+href="#prod.Then"
+>Then</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Statement"
+>Statement</a
+> </span
 ></div
 ><div
 class="production"
@@ -2972,8 +2992,8 @@ class="defines"
 class="rhs"
 >'else' ':'? <a
 class="nonterminal"
-href="#prod.Command"
->Command</a
+href="#prod.Statement"
+>Statement</a
 > </span
 ></div
 ><div
@@ -3044,24 +3064,6 @@ href="#prod.Operand"
 ></div
 ><div
 class="production"
-id="prod.Statement"
-><a
-class="lhs"
-href="#prod.Statement"
->Statement</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
-><a
-class="nonterminal"
-href="#prod.Command"
->Command</a
-> ':'? </span
-></div
-><div
-class="production"
 id="prod.While"
 ><a
 class="lhs"
@@ -3080,7 +3082,7 @@ href="#prod.Condition"
 class="nonterminal"
 href="#prod.Label"
 >Label</a
->? <a
+>? ':'? <a
 class="nonterminal"
 href="#prod.Action"
 >Action</a
@@ -3125,6 +3127,10 @@ class="defines"
 ><span
 class="rhs"
 >'try' <a
+class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
+>? <a
 class="nonterminal"
 href="#prod.Condition"
 >Condition</a
@@ -3178,23 +3184,27 @@ href="#prod.Name"
 >Name</a
 > ':'? <a
 class="nonterminal"
-href="#prod.Command"
->Command</a
-> ':'? </span
+href="#prod.Statement"
+>Statement</a
+> </span
 ></div
 ><div
 class="production"
-id="prod.Command"
+id="prod.Statement"
 ><a
 class="lhs"
-href="#prod.Command"
->Command</a
+href="#prod.Statement"
+>Statement</a
 ><span
 class="defines"
 >::=</span
 ><span
 class="rhs"
 ><a
+class="nonterminal"
+href="#prod.Empty"
+>Empty</a
+> | <a
 class="nonterminal"
 href="#prod.Operation"
 >Operation</a
@@ -3210,10 +3220,6 @@ href="#prod.Var"
 class="nonterminal"
 href="#prod.Mutable"
 >Mutable</a
-> | <a
-class="nonterminal"
-href="#prod.Set"
->Set</a
 > | <a
 class="nonterminal"
 href="#prod.Continue"
@@ -3246,8 +3252,8 @@ class="defines"
 class="rhs"
 >'let' <a
 class="nonterminal"
-href="#prod.Binding"
->Binding</a
+href="#prod.LetBinding"
+>LetBinding</a
 > </span
 ></div
 ><div
@@ -3264,9 +3270,67 @@ class="defines"
 class="rhs"
 >'var' <a
 class="nonterminal"
+href="#prod.LetBinding"
+>LetBinding</a
+> </span
+></div
+><div
+class="production"
+id="prod.LetBinding"
+><a
+class="lhs"
+href="#prod.LetBinding"
+>LetBinding</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
 href="#prod.Binding"
 >Binding</a
-> </span
+> | <a
+class="nonterminal"
+href="#prod.Decomposition"
+>Decomposition</a
+></span
+></div
+><div
+class="production"
+id="prod.Decomposition"
+><a
+class="lhs"
+href="#prod.Decomposition"
+>Decomposition</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.DecomposedName"
+>DecomposedName</a
+>* ')' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>* </span
+></div
+><div
+class="production"
+id="prod.DecomposedName"
+><a
+class="lhs"
+href="#prod.DecomposedName"
+>DecomposedName</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER ',' </span
 ></div
 ><div
 class="production"
@@ -3284,7 +3348,51 @@ class="rhs"
 class="nonterminal"
 href="#prod.Binding"
 >Binding</a
-> </span
+> <a
+class="nonterminal"
+href="#prod.Linked"
+>Linked</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Shared"
+><a
+class="lhs"
+href="#prod.Shared"
+>Shared</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'shared' <a
+class="nonterminal"
+href="#prod.Atomic"
+>Atomic</a
+>? <a
+class="nonterminal"
+href="#prod.Binding"
+>Binding</a
+> <a
+class="nonterminal"
+href="#prod.Linked"
+>Linked</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Atomic"
+><a
+class="lhs"
+href="#prod.Atomic"
+>Atomic</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'atomic' </span
 ></div
 ><div
 class="production"
@@ -3306,7 +3414,7 @@ href="#prod.BindingAnnotation"
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
->+ </span
+>* </span
 ></div
 ><div
 class="production"
@@ -3339,10 +3447,6 @@ class="defines"
 ><span
 class="rhs"
 ><a
-class="nonterminal"
-href="#prod.Structure"
->Structure</a
-> | <a
 class="nonterminal"
 href="#prod.Type"
 >Type</a
@@ -3440,7 +3544,11 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->IDENTIFIER <a
+><a
+class="nonterminal"
+href="#prod.Mutability"
+>Mutability</a
+>? IDENTIFIER <a
 class="nonterminal"
 href="#prod.TypeAnnotation"
 >TypeAnnotation</a
@@ -3452,7 +3560,7 @@ href="#prod.Initializer"
 class="nonterminal"
 href="#prod.Attribute"
 >Attribute</a
->* ':'? </span
+>* </span
 ></div
 ><div
 class="production"
@@ -3474,6 +3582,92 @@ href="#prod.Type"
 ></div
 ><div
 class="production"
+id="prod.ParameterAnnotation"
+><a
+class="lhs"
+href="#prod.ParameterAnnotation"
+>ParameterAnnotation</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>':' <a
+class="nonterminal"
+href="#prod.Lazy"
+>Lazy</a
+>? <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> </span
+></div
+><div
+class="production"
+id="prod.Lazy"
+><a
+class="lhs"
+href="#prod.Lazy"
+>Lazy</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'lazy' </span
+></div
+><div
+class="production"
+id="prod.Mutability"
+><a
+class="lhs"
+href="#prod.Mutability"
+>Mutability</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Immutable"
+>Immutable</a
+> | <a
+class="nonterminal"
+href="#prod.Variable"
+>Variable</a
+></span
+></div
+><div
+class="production"
+id="prod.Immutable"
+><a
+class="lhs"
+href="#prod.Immutable"
+>Immutable</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'let' </span
+></div
+><div
+class="production"
+id="prod.Variable"
+><a
+class="lhs"
+href="#prod.Variable"
+>Variable</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'var' </span
+></div
+><div
+class="production"
 id="prod.Continue"
 ><a
 class="lhs"
@@ -3488,7 +3682,7 @@ class="rhs"
 class="nonterminal"
 href="#prod.Loop"
 >Loop</a
->? ':'? </span
+>? </span
 ></div
 ><div
 class="production"
@@ -3510,7 +3704,7 @@ href="#prod.Loop"
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
->* ':'? </span
+>* </span
 ></div
 ><div
 class="production"
@@ -3574,11 +3768,11 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->'lambda' <a
+>'\\' <a
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
->+ ':' <a
+>* ':' <a
 class="nonterminal"
 href="#prod.Action"
 >Action</a
@@ -3608,7 +3802,7 @@ href="#prod.Operand"
 class="nonterminal"
 href="#prod.Label"
 >Label</a
->? <a
+>? ':'? <a
 class="nonterminal"
 href="#prod.Action"
 >Action</a
@@ -3626,7 +3820,7 @@ class="defines"
 >::=</span
 ><span
 class="rhs"
->'label' IDENTIFIER ':'? </span
+>'label' IDENTIFIER </span
 ></div
 ><div
 class="production"
@@ -3644,7 +3838,25 @@ class="rhs"
 class="nonterminal"
 href="#prod.Label"
 >Label</a
->? <a
+>? ':'? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> </span
+></div
+><div
+class="production"
+id="prod.Relaxed"
+><a
+class="lhs"
+href="#prod.Relaxed"
+>Relaxed</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'relaxed' ':'? <a
 class="nonterminal"
 href="#prod.Action"
 >Action</a
@@ -3668,8 +3880,8 @@ href="#prod.Operation"
 >Operation</a
 > | <a
 class="nonterminal"
-href="#prod.Set"
->Set</a
+href="#prod.Block"
+>Block</a
 ></span
 ></div
 ><div
@@ -3688,29 +3900,51 @@ class="rhs"
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
->+ </span
+>+ <a
+class="nonterminal"
+href="#prod.Becomes"
+>Becomes</a
+>? </span
 ></div
 ><div
 class="production"
-id="prod.Set"
+id="prod.Becomes"
 ><a
 class="lhs"
-href="#prod.Set"
->Set</a
+href="#prod.Becomes"
+>Becomes</a
 ><span
 class="defines"
 >::=</span
 ><span
 class="rhs"
->'set' <a
-class="nonterminal"
-href="#prod.Operand"
->Operand</a
->+ ':' <a
+>'=' <a
 class="nonterminal"
 href="#prod.Operand"
 >Operand</a
 >+ </span
+></div
+><div
+class="production"
+id="prod.Block"
+><a
+class="lhs"
+href="#prod.Block"
+>Block</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Statement"
+>Statement</a
+>* '}' </span
 ></div
 ><div
 class="production"
@@ -3725,6 +3959,24 @@ class="defines"
 ><span
 class="rhs"
 >'sizeof' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> </span
+></div
+><div
+class="production"
+id="prod.AlignOf"
+><a
+class="lhs"
+href="#prod.AlignOf"
+>AlignOf</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'alignof' <a
 class="nonterminal"
 href="#prod.Type"
 >Type</a
@@ -3750,6 +4002,24 @@ href="#prod.Name"
 ></div
 ><div
 class="production"
+id="prod.As"
+><a
+class="lhs"
+href="#prod.As"
+>As</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'as' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> </span
+></div
+><div
+class="production"
 id="prod.Type"
 ><a
 class="lhs"
@@ -3762,13 +4032,17 @@ class="defines"
 class="rhs"
 ><a
 class="nonterminal"
-href="#prod.Name"
->Name</a
+href="#prod.TypeName"
+>TypeName</a
 > <a
 class="nonterminal"
 href="#prod.GenericArguments"
 >GenericArguments</a
 >? <a
+class="nonterminal"
+href="#prod.InnerType"
+>InnerType</a
+>* <a
 class="nonterminal"
 href="#prod.Optional"
 >Optional</a
@@ -3777,6 +4051,86 @@ class="nonterminal"
 href="#prod.Lifetime"
 >Lifetime</a
 >? </span
+></div
+><div
+class="production"
+id="prod.InnerType"
+><a
+class="lhs"
+href="#prod.InnerType"
+>InnerType</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'.' IDENTIFIER <a
+class="nonterminal"
+href="#prod.GenericArguments"
+>GenericArguments</a
+>? </span
+></div
+><div
+class="production"
+id="prod.TypeName"
+><a
+class="lhs"
+href="#prod.TypeName"
+>TypeName</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> | <a
+class="nonterminal"
+href="#prod.TupleType"
+>TupleType</a
+></span
+></div
+><div
+class="production"
+id="prod.TupleType"
+><a
+class="lhs"
+href="#prod.TupleType"
+>TupleType</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.TupleTypeComponent"
+>TupleTypeComponent</a
+>* ')' </span
+></div
+><div
+class="production"
+id="prod.TupleTypeComponent"
+><a
+class="lhs"
+href="#prod.TupleTypeComponent"
+>TupleTypeComponent</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> <a
+class="nonterminal"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+>? ',' </span
 ></div
 ><div
 class="production"
@@ -3828,10 +4182,6 @@ href="#prod.Call"
 >Call</a
 > | <a
 class="nonterminal"
-href="#prod.Local"
->Local</a
-> | <a
-class="nonterminal"
 href="#prod.Reference"
 >Reference</a
 > | <a
@@ -3853,20 +4203,6 @@ class="defines"
 ><span
 class="rhs"
 >'#' </span
-></div
-><div
-class="production"
-id="prod.Local"
-><a
-class="lhs"
-href="#prod.Local"
->Local</a
-><span
-class="defines"
->::=</span
-><span
-class="rhs"
->'$' </span
 ></div
 ><div
 class="production"
@@ -3895,6 +4231,20 @@ class="defines"
 ><span
 class="rhs"
 >'!' </span
+></div
+><div
+class="production"
+id="prod.Empty"
+><a
+class="lhs"
+href="#prod.Empty"
+>Empty</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>':' </span
 ></div
 ></div
 ></article

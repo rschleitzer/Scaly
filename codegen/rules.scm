@@ -26,6 +26,9 @@
         (file "docs/book/words.js"
             (generate-words)
         )
+        (file "docs/scaly/grammar.xml"
+            (generate-grammar-doc)
+        )
     )
 )
 ]]>
