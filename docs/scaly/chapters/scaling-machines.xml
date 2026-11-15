@@ -102,8 +102,10 @@ $ SCALY_CLUSTER=on ./primes
       left, the coordinator runs the rest. The rounds are pure, so the
       result does not depend on who ran what. Across machines the helpers
       hold the cluster's key and run the same build as the coordinator,
-      as every node of this chapter does
+      as every node of this chapter does — on whatever processor, within
+      the rule for floating point
       (<xref linkend="scaling-machines-build"/>,
+      <xref linkend="scaling-machines-bits"/>,
       <xref linkend="scaling-machines-failure"/>). What is not a pure loop
       stays explicit, and the rest of this chapter is about that.</para>
   </section>
@@ -266,6 +268,82 @@ counts.send(c)      ; error: send builds the message on a page of its own</progr
       else: each sends a stamp of its build when it connects, and a node
       whose stamp differs is refused, with both stamps in the error. A
       new version of the program is a new cluster.</para>
+    <para>The stamp is taken from the program as the compiler emits it,
+      before it becomes one processor's instructions, so it does not name
+      the processor or the system. The same source built with the same
+      compiler for an arm64 Mac, an x86_64 Linux server or an arm64 Linux
+      board has one stamp, and their nodes form one cluster: on all of
+      them a record is laid out alike — 64-bit pointers, little-endian —,
+      and the nodes tell each other so when they connect. A build for
+      WebAssembly, with pointers of four bytes, joins only its own kind,
+      and a build for Windows has a stamp of its own for now.</para>
+  </section>
+
+  <section xml:id="scaling-machines-bits">
+    <title>The Same Bits on Every Processor</title>
+    <para>A round must compute the same on a helper as at home, or the
+      result would depend on who ran what. Addition, subtraction,
+      multiplication, division and the square root are rounded exactly
+      as IEEE 754 says on every processor, and the compiler never fuses
+      a multiplication with an addition on its own. The C library's
+      <code>exp</code>, <code>sin</code> or <code>log</code> are another
+      matter: each system approximates them its own way, and the last
+      bit differs between them. So the standard library brings its own,
+      written in Scaly from those exact operations: <code>exp</code>,
+      <code>exp2</code>, <code>expm1</code>, <code>log</code>,
+      <code>log2</code>, <code>log10</code>, <code>log1p</code>,
+      <code>sin</code>, <code>cos</code>, <code>tan</code>,
+      <code>atan</code>, <code>atan2</code>, <code>asin</code>,
+      <code>acos</code>, <code>pow</code>, <code>hypot</code>,
+      <code>cbrt</code>, <code>sinh</code>, <code>cosh</code> and
+      <code>tanh</code>, for <code>f64</code> and <code>f32</code>. Their
+      result is the double nearest to the exact value for nearly every
+      argument, and never more than about 0.52 units in the last place
+      from it. They are generic, so each is made in the program that
+      calls it: put in line, and a loop over it can use the processor's
+      vector lanes.</para>
+    <programlisting>let x 0.5
+print "`exp(x)` `log(x)` `sin(x)` `cos(x)`"
+print "`pow(2.0, x)` `atan2(1.0, 1.0) * 4.0`"
+let bits sin(x).to_bits()
+print "`bits`"</programlisting>
+    <screen>1.6487212707001282 -0.6931471805599453 0.479425538604203 0.8775825618903728
+1.4142135623730951 3.141592653589793
+4602308182625945072</screen>
+    <para>The last line is what every processor of one class prints. The
+      classes are two, and one operation tells them apart:
+      <code>x.mul_add(y, z)</code>, <code>x * y + z</code> with one
+      rounding where the processor has a fused multiply-add — an arm64
+      processor always, an x86_64 one from Haswell on, in a build for
+      <code>-mcpu=x86-64-v3</code> or <code>-mcpu=native</code> on such a
+      machine — and with two where it has not: a build for the generic
+      x86_64, and WebAssembly. The functions above use it, so they come
+      in two flavours from one source. With the fused operation they
+      compute the same bits everywhere; without it they are
+      <emphasis>relaxed</emphasis>, as fast and within one unit in the
+      last place (two for <code>tan</code>, <code>atan2</code> and
+      <code>hypot</code>), but not the same bits.
+      <code>x.mul_error(y)</code>, the rounding error of a product, is
+      exact in both: where a result would suffer — <code>pow</code> —
+      the library uses it.</para>
+    <para>Each node announces its class when it is found and when it
+      connects. A loop whose rounds call <code>mul_add</code> — themselves
+      or through <code>exp</code>, <code>sin</code> and the rest — goes
+      only to helpers of the coordinator's class; every other loop goes
+      to every helper, other loops of the same program too. Written
+      <code>relaxed</code> (<xref linkend="scaling-gpu-numbers"/>), such a
+      loop may go to the other class as well, and its results may then
+      differ in the last bits, as on a card under WebGPU:</para>
+    <programlisting role="fragment">for i in n
+    out.put(i, exp(xs[i]))      ; to helpers of this machine's class
+relaxed for i in n
+    out.put(i, exp(xs[i]))      ; to every helper</programlisting>
+    <para>The tests of the cluster runtime run an arm64 Mac as the
+      coordinator with x86_64 helpers under Rosetta 2. A helper built for
+      Haswell takes every loop, and the results are the same to the last
+      bit as on the Mac alone; one built for the generic x86_64 takes the
+      loops without <code>mul_add</code> and the relaxed one, and leaves
+      the strict loop with <code>exp</code> to the Mac.</para>
   </section>
 
   <section xml:id="scaling-machines-failure">
