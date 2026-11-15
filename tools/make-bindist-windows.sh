@@ -70,7 +70,7 @@ mkdir -p "$STAGE/libexec" "$STAGE/lib"
 
 # 1. from the seed, LLVM linked in
 SCALY_STATIC_LLVM_DIR="$LIBS" tools/build-from-seed.sh "$STAGE/libexec/scalyc.exe" > "$STAGE/build.log" 2>&1 \
-  || { tail -20 "$STAGE/build.log"; echo "make-bindist-windows: FAIL — build-from-seed"; exit 1; }
+  || { grep -n -E '(error|fatal error):' "$STAGE/build.log" | head -20; tail -20 "$STAGE/build.log"; echo "make-bindist-windows: FAIL — build-from-seed"; exit 1; }
 for p in scalyc scaly scalyls; do
   [ -f "$STAGE/libexec/$p.exe" ] || { echo "make-bindist-windows: FAIL — $p.exe was not built"; exit 1; }
 done
