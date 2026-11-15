@@ -30,9 +30,18 @@ pass=0; fail=0
 # beside the one in front -- prints nothing in the book, and must have ended
 # with rc 0 and no output when the transcript ends (BG_SECONDS at most)
 BG_SECONDS=${BG_SECONDS:-60}
+# A helper (`--scaly-helper`) runs with SCALY_CLUSTER_TRACE, and the first
+# command in FRONT after it waits for its `helper: ready` (BG_READY seconds
+# at most): a coordinator asks for helpers once, and a helper not yet in the
+# multicast group is not found -- a `--scaly-helper=once` then waits out
+# BG_SECONDS. On Windows the first start of a fresh build took up to 7.5 s
+# (the virus scan; 0.5 s after it), which no fixed pause covers
+# (scaling-machines, 2026-11-15). The trace's lines (`helper: `) are not
+# the output a background command must not have.
+BG_READY=${BG_READY:-30}
 run_transcript() {
   local dir=$1 transcript=$2 work=$3 cmd="" want="" rc=0
-  local bg_pids=() bg_cmds=() bg_logs=()
+  local bg_pids=() bg_cmds=() bg_logs=() bg_wait=()
   mkdir -p "$work"
   check() {
     [ -n "$cmd" ] || return 0
@@ -51,8 +60,9 @@ run_transcript() {
     esac
     run="$env$run"
     if [ "$bg" = 1 ]; then
-      local log="$work/bg-${#bg_pids[@]}.log"
-      (cd "$work" && exec bash -c "$run") < /dev/null > "$log" 2>&1 &
+      local log="$work/bg-${#bg_pids[@]}.log" trace=""
+      if [[ "$run" == *--scaly-helper* ]]; then trace="SCALY_CLUSTER_TRACE=1 "; bg_wait+=("$log"); fi
+      (cd "$work" && exec bash -c "$trace$run") < /dev/null > "$log" 2>&1 &
       bg_pids+=($!); bg_cmds+=("$cmd"); bg_logs+=("$log")
       if [ -n "$(printf '%s' "$want" | tr -d '[:space:]')" ]; then
         echo "FAIL $(basename "$dir"): \$ $cmd -- a command in the background shows no output"
@@ -60,6 +70,14 @@ run_transcript() {
       fi
       return 0
     fi
+    local w t
+    for w in "${bg_wait[@]}"; do
+      t=0
+      until grep -q '^helper: ready' "$w" 2>/dev/null || [ $t -ge $((BG_READY * 10)) ]; do
+        sleep 0.1; t=$((t + 1))
+      done
+    done
+    bg_wait=()
     got=$(cd "$work" && bash -c "$run" < /dev/null 2>&1); local crc=$?
     if [ "$crc" != 0 ] || [ "$got" != "$(printf '%s' "$want" | sed '$ { /^$/ d; }')" ]; then
       echo "FAIL $(basename "$dir"): \$ $cmd (rc=$crc)"
@@ -88,9 +106,9 @@ run_transcript() {
       rc=1
     fi
     wait "${bg_pids[$k]}"; local brc=$?
-    if [ "$brc" != 0 ] || [ -s "${bg_logs[$k]}" ]; then
+    if [ "$brc" != 0 ] || grep -qv '^helper: ' "${bg_logs[$k]}"; then
       echo "FAIL $(basename "$dir"): \$ ${bg_cmds[$k]} (rc=$brc)"
-      head -8 "${bg_logs[$k]}" | sed 's/^/    /'
+      grep -v '^helper: ' "${bg_logs[$k]}" | head -8 | sed 's/^/    /'
       rc=1
     fi
   done
