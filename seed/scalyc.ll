@@ -1503,7 +1503,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 666738182737824945
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 2548216838425929259
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -537307,15 +537307,15 @@ if.then111:                                       ; preds = %if.end41
 
 if.end112:                                        ; preds = %if.end119, %if.end41
   %tag_dty = load ptr, ptr %var_vec, align 8
-  %eq175 = icmp eq ptr %tag_dty, null
-  br i1 %eq175, label %if.then176, label %if.end177
+  %eq178 = icmp eq ptr %tag_dty, null
+  br i1 %eq178, label %if.then179, label %if.end180
 
 if.then118:                                       ; preds = %if.then111
   %frame.page120 = load ptr, ptr %frame, align 8
   %frame.has_page121 = icmp ne ptr %frame.page120, null
   br i1 %frame.has_page121, label %frame.forced123, label %frame.force122
 
-if.end119:                                        ; preds = %if.end154, %if.then111
+if.end119:                                        ; preds = %if.end157, %if.then111
   br label %if.end112
 
 frame.force122:                                   ; preds = %if.then118
@@ -537346,9 +537346,12 @@ while.body129:                                    ; preds = %while.cond128
   br i1 %ne135, label %if.then136, label %if.end137
 
 while.exit130:                                    ; preds = %while.cond128
-  %eadded151 = load i64, ptr %vadded, align 8
-  %gt152 = icmp ugt i64 %eadded151, 0
-  br i1 %gt152, label %if.then153, label %if.end154
+  %tag_size151 = load i64, ptr %tag_size, align 8
+  %mul152 = mul i64 %tag_size151, 8
+  %call153 = call ptr @_ZN7EmitterB6scalycB4v0_219di_placeholder_typeEm(ptr %0, i64 %mul152)
+  %eadded154 = load i64, ptr %vadded, align 8
+  %gt155 = icmp ugt i64 %eadded154, 0
+  br i1 %gt155, label %if.then156, label %if.end157
 
 if.then136:                                       ; preds = %while.body129
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp57, ptr align 1 %call134, i64 ptrtoint (ptr getelementptr (%_Z14PlannedVariantB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
@@ -537377,119 +537380,119 @@ if.end137:                                        ; preds = %if.then136, %while.
   store i64 %add150, ptr %vi, align 1
   br label %while.cond128
 
-if.then153:                                       ; preds = %while.exit130
-  %load.struct155 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_builder156 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct155, 14
-  %load.struct157 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_cu158 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct157, 16
-  %dname159 = load ptr, ptr %dname, align 8
-  %call160 = call ptr @_ZN6String6c_dataEv(ptr %dname159)
-  %dname161 = load ptr, ptr %dname, align 8
-  %call162 = call i64 @_ZN6String10get_lengthEv(ptr %dname161)
-  %load.struct163 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_file164 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct163, 15
-  %load.struct165 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
-  %line166 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct165, 0
-  %tag_size167 = load i64, ptr %tag_size, align 8
-  %mul168 = mul i64 %tag_size167, 8
-  %enum_vec169 = load ptr, ptr %vty, align 8
-  %load.struct170 = load %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr %enum_vec169, align 8
-  %data171 = extractvalue %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E %load.struct170, 1
-  %eadded172 = load i64, ptr %vadded, align 8
-  %as.trunc173 = trunc i64 %eadded172 to i32
-  %call174 = call ptr @LLVMDIBuilderCreateEnumerationType(ptr %di_builder156, ptr %di_cu158, ptr %call160, i64 %call162, ptr %di_file164, i32 %line166, i64 %mul168, i32 0, ptr %data171, i32 %as.trunc173, ptr null)
-  store ptr %call174, ptr %var_vec, align 1
-  br label %if.end154
+if.then156:                                       ; preds = %while.exit130
+  %load.struct158 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_builder159 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct158, 14
+  %load.struct160 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_cu161 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct160, 16
+  %dname162 = load ptr, ptr %dname, align 8
+  %call163 = call ptr @_ZN6String6c_dataEv(ptr %dname162)
+  %dname164 = load ptr, ptr %dname, align 8
+  %call165 = call i64 @_ZN6String10get_lengthEv(ptr %dname164)
+  %load.struct166 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_file167 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct166, 15
+  %load.struct168 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
+  %line169 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct168, 0
+  %tag_size170 = load i64, ptr %tag_size, align 8
+  %mul171 = mul i64 %tag_size170, 8
+  %enum_vec172 = load ptr, ptr %vty, align 8
+  %load.struct173 = load %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr %enum_vec172, align 8
+  %data174 = extractvalue %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E %load.struct173, 1
+  %eadded175 = load i64, ptr %vadded, align 8
+  %as.trunc176 = trunc i64 %eadded175 to i32
+  %call177 = call ptr @LLVMDIBuilderCreateEnumerationType(ptr %di_builder159, ptr %di_cu161, ptr %call163, i64 %call165, ptr %di_file167, i32 %line169, i64 %mul171, i32 0, ptr %data174, i32 %as.trunc176, ptr %call153)
+  store ptr %call177, ptr %var_vec, align 1
+  br label %if.end157
 
-if.end154:                                        ; preds = %if.then153, %while.exit130
+if.end157:                                        ; preds = %if.then156, %while.exit130
   br label %if.end119
 
-if.then176:                                       ; preds = %if.end112
-  %tag_size178 = load i64, ptr %tag_size, align 8
-  %mul179 = mul i64 %tag_size178, 8
-  %call180 = call ptr @_ZN7EmitterB6scalycB4v0_219di_placeholder_typeEm(ptr %0, i64 %mul179)
-  store ptr %call180, ptr %var_vec, align 1
-  br label %if.end177
+if.then179:                                       ; preds = %if.end112
+  %tag_size181 = load i64, ptr %tag_size, align 8
+  %mul182 = mul i64 %tag_size181, 8
+  %call183 = call ptr @_ZN7EmitterB6scalycB4v0_219di_placeholder_typeEm(ptr %0, i64 %mul182)
+  store ptr %call183, ptr %var_vec, align 1
+  br label %if.end180
 
-if.end177:                                        ; preds = %if.then176, %if.end112
+if.end180:                                        ; preds = %if.then179, %if.end112
   store { ptr } { ptr @.sconst.5817 }, ptr %arg.tmp, align 1
   store { ptr } { ptr @.sconst.5818 }, ptr %arg.tmp74, align 1
-  %load.struct181 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_builder182 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct181, 14
-  %call183 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp)
-  %call184 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
-  %load.struct185 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_file186 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct185, 15
-  %load.struct187 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
-  %line188 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct187, 0
-  %tag_size189 = load i64, ptr %tag_size, align 8
-  %mul190 = mul i64 %tag_size189, 8
-  %tag_dty191 = load ptr, ptr %var_vec, align 8
-  %call192 = call ptr @LLVMDIBuilderCreateMemberType(ptr %di_builder182, ptr %call14, ptr %call183, i64 %call184, ptr %di_file186, i32 %line188, i64 %mul190, i32 0, i64 0, i32 0, ptr %tag_dty191)
-  %frame.page193 = load ptr, ptr %frame, align 8
-  %frame.has_page194 = icmp ne ptr %frame.page193, null
-  br i1 %frame.has_page194, label %frame.forced196, label %frame.force195
+  %load.struct184 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_builder185 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct184, 14
+  %call186 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp)
+  %call187 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
+  %load.struct188 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_file189 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct188, 15
+  %load.struct190 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
+  %line191 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct190, 0
+  %tag_size192 = load i64, ptr %tag_size, align 8
+  %mul193 = mul i64 %tag_size192, 8
+  %tag_dty194 = load ptr, ptr %var_vec, align 8
+  %call195 = call ptr @LLVMDIBuilderCreateMemberType(ptr %di_builder185, ptr %call14, ptr %call186, i64 %call187, ptr %di_file189, i32 %line191, i64 %mul193, i32 0, i64 0, i32 0, ptr %tag_dty194)
+  %frame.page196 = load ptr, ptr %frame, align 8
+  %frame.has_page197 = icmp ne ptr %frame.page196, null
+  br i1 %frame.has_page197, label %frame.forced199, label %frame.force198
 
-frame.force195:                                   ; preds = %if.end177
-  %forced_page197 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced196
+frame.force198:                                   ; preds = %if.end180
+  %forced_page200 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced199
 
-frame.forced196:                                  ; preds = %frame.force195, %if.end177
-  %forced_page198 = phi ptr [ %frame.page193, %if.end177 ], [ %forced_page197, %frame.force195 ]
-  %struct.region199 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page198, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2EC1Em(ptr %struct.region199, i64 2)
-  store ptr %struct.region199, ptr %vty, align 1
+frame.forced199:                                  ; preds = %frame.force198, %if.end180
+  %forced_page201 = phi ptr [ %frame.page196, %if.end180 ], [ %forced_page200, %frame.force198 ]
+  %struct.region202 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page201, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2EC1Em(ptr %struct.region202, i64 2)
+  store ptr %struct.region202, ptr %vty, align 1
   %out_vec = load ptr, ptr %vty, align 8
-  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %out_vec, i64 0, ptr %call192)
+  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %out_vec, i64 0, ptr %call195)
   store i64 1, ptr %vadded, align 1
-  %payload_ty200 = load ptr, ptr %payload_ty, align 8
-  %ne201 = icmp ne ptr %payload_ty200, null
-  br i1 %ne201, label %if.then202, label %if.end203
+  %payload_ty203 = load ptr, ptr %payload_ty, align 8
+  %ne204 = icmp ne ptr %payload_ty203, null
+  br i1 %ne204, label %if.then205, label %if.end206
 
-if.then202:                                       ; preds = %frame.forced196
-  %load.struct204 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_builder205 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct204, 14
-  %call206 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp74)
-  %call207 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp74)
-  %load.struct208 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_file209 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct208, 15
-  %load.struct210 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
-  %line211 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct210, 0
-  %tag_size212 = load i64, ptr %tag_size, align 8
-  %mul213 = mul i64 %tag_size212, 8
-  %payload_ty214 = load ptr, ptr %payload_ty, align 8
-  %call215 = call ptr @LLVMDIBuilderCreateMemberType(ptr %di_builder205, ptr %call14, ptr %call206, i64 %call207, ptr %di_file209, i32 %line211, i64 %mul36, i32 0, i64 %mul213, i32 0, ptr %payload_ty214)
-  %out_vec216 = load ptr, ptr %vty, align 8
-  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %out_vec216, i64 1, ptr %call215)
+if.then205:                                       ; preds = %frame.forced199
+  %load.struct207 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_builder208 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct207, 14
+  %call209 = call ptr @_ZN6String6c_dataEv(ptr %arg.tmp74)
+  %call210 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp74)
+  %load.struct211 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_file212 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct211, 15
+  %load.struct213 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
+  %line214 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct213, 0
+  %tag_size215 = load i64, ptr %tag_size, align 8
+  %mul216 = mul i64 %tag_size215, 8
+  %payload_ty217 = load ptr, ptr %payload_ty, align 8
+  %call218 = call ptr @LLVMDIBuilderCreateMemberType(ptr %di_builder208, ptr %call14, ptr %call209, i64 %call210, ptr %di_file212, i32 %line214, i64 %mul36, i32 0, i64 %mul216, i32 0, ptr %payload_ty217)
+  %out_vec219 = load ptr, ptr %vty, align 8
+  call void @_ZN6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %out_vec219, i64 1, ptr %call218)
   store i64 2, ptr %vadded, align 1
-  br label %if.end203
+  br label %if.end206
 
-if.end203:                                        ; preds = %if.then202, %frame.forced196
-  %load.struct217 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_builder218 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct217, 14
-  %load.struct219 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_cu220 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct219, 16
-  %dname221 = load ptr, ptr %dname, align 8
-  %call222 = call ptr @_ZN6String6c_dataEv(ptr %dname221)
-  %dname223 = load ptr, ptr %dname, align 8
-  %call224 = call i64 @_ZN6String10get_lengthEv(ptr %dname223)
-  %load.struct225 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %di_file226 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct225, 15
-  %load.struct227 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
-  %line228 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct227, 0
-  %out_vec229 = load ptr, ptr %vty, align 8
-  %load.struct230 = load %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr %out_vec229, align 8
-  %data231 = extractvalue %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E %load.struct230, 1
+if.end206:                                        ; preds = %if.then205, %frame.forced199
+  %load.struct220 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_builder221 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct220, 14
+  %load.struct222 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_cu223 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct222, 16
+  %dname224 = load ptr, ptr %dname, align 8
+  %call225 = call ptr @_ZN6String6c_dataEv(ptr %dname224)
+  %dname226 = load ptr, ptr %dname, align 8
+  %call227 = call i64 @_ZN6String10get_lengthEv(ptr %dname226)
+  %load.struct228 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %di_file229 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct228, 15
+  %load.struct230 = load %_ZN7Emitter8DebugPosB6scalycB4v0_2E, ptr %sret.result, align 4
+  %line231 = extractvalue %_ZN7Emitter8DebugPosB6scalycB4v0_2E %load.struct230, 0
+  %out_vec232 = load ptr, ptr %vty, align 8
+  %load.struct233 = load %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E, ptr %out_vec232, align 8
+  %data234 = extractvalue %_Z6VectorIP18LLVMOpaqueMetadataB6scalycB4v0_2E %load.struct233, 1
   %out_count = load i64, ptr %vadded, align 8
-  %as.trunc232 = trunc i64 %out_count to i32
-  %call233 = call ptr @_ZN6String6c_dataEv(ptr %empty)
-  %call234 = call ptr @LLVMDIBuilderCreateStructType(ptr %di_builder218, ptr %di_cu220, ptr %call222, i64 %call224, ptr %di_file226, i32 %line228, i64 %mul, i32 0, i32 0, ptr null, ptr %data231, i32 %as.trunc232, i32 0, ptr null, ptr %call233, i64 0)
-  call void @LLVMMetadataReplaceAllUsesWith(ptr %call14, ptr %call234)
-  %field.inplace235 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 28
-  %deref.recv236 = load ptr, ptr %field.inplace235, align 8
-  call void @_ZN5ArrayIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %deref.recv236, i64 %length, ptr %call234)
+  %as.trunc235 = trunc i64 %out_count to i32
+  %call236 = call ptr @_ZN6String6c_dataEv(ptr %empty)
+  %call237 = call ptr @LLVMDIBuilderCreateStructType(ptr %di_builder221, ptr %di_cu223, ptr %call225, i64 %call227, ptr %di_file229, i32 %line231, i64 %mul, i32 0, i32 0, ptr null, ptr %data234, i32 %as.trunc235, i32 0, ptr null, ptr %call236, i64 0)
+  call void @LLVMMetadataReplaceAllUsesWith(ptr %call14, ptr %call237)
+  %field.inplace238 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 28
+  %deref.recv239 = load ptr, ptr %field.inplace238, align 8
+  call void @_ZN5ArrayIP18LLVMOpaqueMetadataB6scalycB4v0_2E3putEmP18LLVMOpaqueMetadataB6scalycB4v0_2(ptr %deref.recv239, i64 %length, ptr %call237)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call234
+  ret ptr %call237
 }
 
 define linkonce_odr void @_ZN7EmitterB6scalycB4v0_225set_synthetic_debug_scopeE6String3i32(ptr %0, ptr %1, i32 %2) {

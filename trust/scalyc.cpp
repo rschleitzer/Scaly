@@ -141834,9 +141834,10 @@ __attribute__((weak)) LLVMOpaqueMetadata* Emitter_di_union_type(Emitter& scaly_s
                 }
                 ei = (ei + 1ULL);
             }
+            LLVMOpaqueMetadata* tag_base = Emitter_di_placeholder_type(*(this_), (tag_size * 8ULL));
             if ((eadded > 0ULL))
             {
-                tag_dty = LLVMDIBuilderCreateEnumerationType(this_->di_builder, this_->di_cu, String_c_data(dname), ((size_t)(String_get_length(dname))), this_->di_file, (pos).line, ((tag_size * 8ULL)), (int32_t)0ULL, ((*enum_vec)).data, (((int32_t)(eadded))), ((LLVMOpaqueMetadata*)(nullptr)));
+                tag_dty = LLVMDIBuilderCreateEnumerationType(this_->di_builder, this_->di_cu, String_c_data(dname), ((size_t)(String_get_length(dname))), this_->di_file, (pos).line, ((tag_size * 8ULL)), (int32_t)0ULL, ((*enum_vec)).data, (((int32_t)(eadded))), tag_base);
             }
         }
     }

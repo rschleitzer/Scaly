@@ -1907,8 +1907,14 @@ define Emitter
                         }
                         ei := ei + 1
                     }
+                    ; ★The enumeration names its UNDERLYING type, an unsigned
+                    ; one of the tag's size. DWARF did without; CodeView wrote
+                    ; `underlying type: void`, and lldb, reading the .pdb, could
+                    ; not size the enum and dropped the `tag` member entirely
+                    ; (tests/debuginfo, 2026-11-15) -- clang names it on every target.
+                    let tag_base this.di_placeholder_type(tag_size * 8)
                     if eadded > 0
-                        tag_dty := LLVMDIBuilderCreateEnumerationType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (tag_size * 8), 0, enum_vec.data, (eadded as i32), null as LLVMMetadataRef)
+                        tag_dty := LLVMDIBuilderCreateEnumerationType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (tag_size * 8), 0, enum_vec.data, (eadded as i32), tag_base)
                 }
             }
             if tag_dty = null
