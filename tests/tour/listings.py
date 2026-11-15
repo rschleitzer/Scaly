@@ -33,7 +33,7 @@ for m in re.finditer(r'xml:id="([^"]+)"|<programlisting( role="([^"]*)")?>(.*?)<
     if m.group(3) == 'fragment':
         continue
     n += 1
-    with open(os.path.join(out, f'{n:02d}-{current}.scaly'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(out, f'{n:02d}-{current}.scaly'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(html.unescape(m.group(4)) + '\n')
     # a task's solution: beside it what it must print, the section's
     # <screen role="expect"> (tests/tour/run.sh compares)
@@ -42,7 +42,7 @@ for m in re.finditer(r'xml:id="([^"]+)"|<programlisting( role="([^"]*)")?>(.*?)<
         expect = re.search(r'<screen role="expect">(.*?)</screen>', body[max(sec, 0):], re.S)
         if not expect:
             sys.exit(f'listings.py: the solution in {current} has no <screen role="expect">')
-        with open(os.path.join(out, f'{n:02d}-{current}.expect'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(out, f'{n:02d}-{current}.expect'), 'w', encoding='utf-8', newline='\n') as f:
             f.write(html.unescape(expect.group(1)))
 if n == 0 and sys.argv[4:5] != ['empty']:
     sys.exit(f'listings.py: no listing in {section}')

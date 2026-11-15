@@ -44,7 +44,7 @@ for chapter in sys.argv[2:]:
             n += 1
             d = os.path.join(out, '%02d-%s' % (n, current))
             os.makedirs(d, exist_ok=True)
-            with open(os.path.join(d, 'prog.scaly'), 'w', encoding='utf-8') as f:
+            with open(os.path.join(d, 'prog.scaly'), 'w', encoding='utf-8', newline='\n') as f:
                 f.write(html.unescape(m.group(4)).strip('\n') + '\n')
             pending = (d, current)
             last = [d, current, 0]
@@ -61,7 +61,7 @@ for chapter in sys.argv[2:]:
             print('listings.py: %s: a second screen of plain output' % last[1])
             errors += 1
             continue
-        with open(os.path.join(last[0], name), 'w', encoding='utf-8') as f:
+        with open(os.path.join(last[0], name), 'w', encoding='utf-8', newline='\n') as f:
             f.write(screen)
         pending = None
     if pending:
