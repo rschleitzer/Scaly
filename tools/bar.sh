@@ -19,10 +19,13 @@
 #             debuginfo, trust
 #             (trust/check.sh)
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
-#   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
+#   dazzle    likewise; dazzle and opensp from THEIR repository (../dazzle or
 #             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
-#             this tree's compiler, then the codegen gate here; then http,
-#             json, compress, tls, h3, pg, redis, tool, tour, book
+#             this tree's compiler, then the codegen gate here
+#   ports     likewise; http, json, compress, sqlite, tds, tls, h3, pg,
+#             redis, tool, tour, book (a lane of their own beside dazzle's
+#             since 2026-11-15: one after the other they were the bar's
+#             longest lane)
 #   tscaly    the TypeScript port, a repository of its own since 2026-10-05
 #             (github.com/rschleitzer/tscaly), expected beside this one or at
 #             $TSCALY_REPO and SKIPPED by name when it is not there: its
@@ -139,11 +142,12 @@ T1=$(date +%s)
 # ---- phase 2: the lanes ------------------------------------------------------
 
 # The tscaly lane opens with the largest compilation of the bar (the package,
-# 6.5 GB), and the lsp and ports lanes open with their own largest: three
+# 6.5 GB), and the lsp and dazzle lanes open with their own largest: three
 # whole-tree scalyls at ~2 GB each and the dazzle LTO build at 3 GB. All at
 # once that is past 16 GB (measured 2026-10-03 under a 16 GB cap: the package
 # compile, the dazzle build and three scalyls killed in the same second). So
-# those two lanes wait for the package compile: the suite redirects its first
+# those lanes, and the ports lane beside dazzle's, wait for the package
+# compile: the suite redirects its first
 # PROGRAM build into tscaly_tokens-build.log the moment the package object is
 # done, and the `tscaly` step's own marker covers a suite that stopped before
 # it built anything. They are a tenth of the tscaly lane, so the wait is free.
@@ -199,7 +203,7 @@ dazzle_env() {  # dazzle_env <command of the dazzle repository> [args]
   ( cd "$DAZZLE_REPO" && env SCALY_POISON=1 SCALYC="$BIN" LIBSCALY="$TSCALY_LIB" SCALY_HOME="$ROOT" "$@" )
 }
 
-lane_ports() {
+lane_dazzle() {
   ulimit -s 65520
   local rc=0
   await_tscaly_build
@@ -214,6 +218,12 @@ lane_ports() {
   else
     echo "SKIP dazzle, dazzle-codegen (no checkout at $DAZZLE_REPO — git clone https://github.com/rschleitzer/dazzle there, or set DAZZLE_REPO)"
   fi
+  return $rc
+}
+lane_ports() {
+  ulimit -s 65520
+  local rc=0
+  await_tscaly_build
   step http tests/http/run.sh "$BIN" || rc=1
   step json tests/json/run.sh "$BIN" || rc=1
   step compress tests/compress/run.sh "$BIN" || rc=1
@@ -306,7 +316,7 @@ mem_line() {
     sleep 10
   done ) > "$LOG/memory.txt" 2>&1 & MEM_PID=$!
 
-declare -a LANES=(compiler lsp ports tscaly)
+declare -a LANES=(compiler lsp dazzle ports tscaly)
 if [ "$QUICK" = 0 ] && [ -n "${BAR_VSCODE_SCENARIO:-}" ] && [ -n "${BAR_VSCODE_BASELINE:-}" ]; then
   LANES+=(vscode)
 fi
