@@ -16818,9 +16818,11 @@ bool Planner_ref_arg_lifted(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB
 bool Planner_deep_by_value_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_219deep_by_value_localE14PlannedOperandB6scalycB4v0_2");
 bool Planner_payload_promoted_without_page(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_229payload_promoted_without_pageE14PlannedOperandB6scalycB4v0_2");
 bool Planner_variant_payload_local(Planner&, PlannedVariantConstruction&) asm("_ZN7PlannerB6scalycB4v0_221variant_payload_localE26PlannedVariantConstructionB6scalycB4v0_2");
+bool Planner_deref_bound_ref_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221deref_bound_ref_localE14PlannedOperandB6scalycB4v0_2");
+bool Planner_last_segment_is_capitalized(String&) asm("_ZN7PlannerB6scalycB4v0_227last_segment_is_capitalizedE6String");
+bool Planner_ref_call_built_here(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_219ref_call_built_hereE11PlannedCallB6scalycB4v0_2");
 bool Planner_census_carry(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_212census_carryE14PlannedOperandB6scalycB4v0_2");
 bool Planner_fpt_any_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_213fpt_any_localE14PlannedOperandB6scalycB4v0_2");
-bool Planner_last_segment_is_capitalized(String&) asm("_ZN7PlannerB6scalycB4v0_227last_segment_is_capitalizedE6String");
 bool Planner_call_components_local(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_221call_components_localE11PlannedCallB6scalycB4v0_2");
 bool Planner_name_is_plain(Planner&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_213name_is_plainE6Stringm");
 bool Planner_model_value_is_plain(Planner&, Type&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_220model_value_is_plainE4TypeB6scalycB4v0_2m");
@@ -76012,6 +76014,10 @@ __attribute__((weak)) bool Planner_by_value_call_local(Planner& scaly_self, Plan
     }
     if ((((*(cvp))) == 1ULL))
     {
+        if ((Planner_escape_fn_has_page(*(this_)) ? ((Planner_lifetime_is_local((c).life)) == (false)) : false))
+        {
+            return false;
+        }
         if (Planner_census_type_is_ref_like(*(this_), (c).result_type))
         {
             return true;
@@ -76153,6 +76159,80 @@ __attribute__((weak)) bool Planner_escape_fn_has_page(Planner& scaly_self)
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_deref_bound_ref_local(Planner& scaly_self, PlannedOperand& dv)
+{
+    Planner* this_ = &scaly_self;
+    if ((((dv).member_access) != (nullptr)))
+    {
+        Vector<PlannedMemberAccess> ma = ((*((dv).member_access)));
+        if (((ma).length > 0ULL))
+        {
+            return false;
+        }
+    }
+    {
+        auto&& scaly_t1 = (dv).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            if (((Planner_census_type_is_ref_like(*(this_), (v).variable_type)) == (false)))
+            {
+                return false;
+            }
+            if (Planner_escape_name_is_current_param(*(this_), (v).name))
+            {
+                return false;
+            }
+            int64_t bi = Planner_bind_index_of(*(this_), (v).name);
+            if ((bi < 0LL))
+            {
+                return false;
+            }
+            int64_t* rp = Array_get<int64_t>(*(this_->current_fn_bind_refv), ((uint64_t)(bi)));
+            return (((rp) != (nullptr)) ? (((*(rp))) == 2LL) : false);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_ref_call_built_here(Planner& scaly_self, PlannedCall& c)
+{
+    Planner* this_ = &scaly_self;
+    if ((c).is_operator)
+    {
+        return false;
+    }
+    if (Planner_last_segment_is_capitalized((c).name))
+    {
+        return false;
+    }
+    if (((Planner_census_type_is_ref_like(*(this_), (c).result_type)) == (false)))
+    {
+        return false;
+    }
+    int64_t ci = ConceptIndex_lookup(this_->residence->rr_class_index, (c).mangled_name);
+    if ((ci < 0LL))
+    {
+        return false;
+    }
+    uint64_t* cvp = Array_get<uint64_t>(this_->residence->rr_class_vals, ((uint64_t)(ci)));
+    if ((((cvp) == (nullptr)) ? true : (((*(cvp))) != 1ULL)))
+    {
+        return false;
+    }
+    if (Planner_lifetime_is_local((c).life))
+    {
+        return true;
+    }
+    return ((Planner_escape_fn_has_page(*(this_))) == (false));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) bool Planner_deep_by_value_local(Planner& scaly_self, PlannedOperand& arg)
 {
     Planner* this_ = &scaly_self;
@@ -76268,7 +76348,12 @@ __attribute__((weak)) bool Planner_deep_by_value_local(Planner& scaly_self, Plan
                             PlannedOperand* da = Vector_get<PlannedOperand>(*((c).args), 0ULL);
                             if (((da) != (nullptr)))
                             {
-                                return Planner_deep_by_value_local(*(this_), scaly_lvalue((*(((PlannedOperand*)(da))))));
+                                PlannedOperand* dv = ((PlannedOperand*)(da));
+                                if ((Planner_type_owns_buffer(*(this_), (arg).result_type, 0ULL) ? Planner_deref_bound_ref_local(*(this_), scaly_lvalue((*(dv)))) : false))
+                                {
+                                    return true;
+                                }
+                                return Planner_deep_by_value_local(*(this_), scaly_lvalue((*(dv))));
                             }
                         }
                     }
@@ -78693,7 +78778,12 @@ __attribute__((weak)) void Planner_escape_walk_statement(scaly_frame* scaly_rp, 
                                             bvv = 1ULL;
                                         }
                                         Array_add88<uint64_t>(this_->current_fn_bind_local, bvv);
-                                        Array_add88<int64_t>(*(this_->current_fn_bind_refv), Planner_ref_call_verdict(*(this_), bcall));
+                                        int64_t brv = Planner_ref_call_verdict(*(this_), bcall);
+                                        if (((brv < 0LL) ? Planner_ref_call_built_here(*(this_), bcall) : false))
+                                        {
+                                            brv = 2LL;
+                                        }
+                                        Array_add88<int64_t>(*(this_->current_fn_bind_refv), brv);
                                         if (Planner_lifetime_is_local((bcall).life))
                                         {
                                             Array_add<String>(*(this_->current_fn_frame_objects), scaly_lvalue((*({ String* scaly_t10 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t10 = String{}; String_init2((*scaly_t10), scaly_lvalue((*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t11 = ((*(((binding).binding_item).name))); scaly_t11; })))); scaly_t10; }))));
