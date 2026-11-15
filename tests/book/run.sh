@@ -71,7 +71,7 @@ run_transcript() {
       return 0
     fi
     local w t
-    for w in "${bg_wait[@]}"; do
+    for w in ${bg_wait[@]+"${bg_wait[@]}"}; do
       t=0
       until grep -q '^helper: ready' "$w" 2>/dev/null || [ $t -ge $((BG_READY * 10)) ]; do
         sleep 0.1; t=$((t + 1))
