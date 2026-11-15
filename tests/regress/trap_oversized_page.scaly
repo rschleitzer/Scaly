@@ -1,0 +1,30 @@
+; Runtime trap: Page.allocate on an OVERSIZED page (exit 19).
+;
+; An oversized page holds one object -- a buffer larger than a page -- and
+; has no bump pointer. `Page.get(a)` on an address inside such a buffer masks
+; the address down to that block's header and answers a page nothing can be
+; allocated from. Before the check, the fast path returned address 0 and
+; wrote the bump pointer over the header; now Page.allocate names the case
+; and exits 19.
+;
+; ★It had no gate: the regression runner could not ask for an exit code
+; until `; expect-rc:` (the wish list's residue, 2026-11-15).
+;
+; expect-rc: 19
+; expect-out: Page.allocate: this page is OVERSIZED
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var big Array[u8]()
+    var i: size_t 0
+    while i < 20000
+    {
+        big.add(7 as u8)
+        i := i + 1
+    }
+    let inside big.at(16)
+    let page Page.get(inside as pointer[void])
+    page.allocate(16, 8)
+    print "FAIL: allocated from an oversized page"
+    0
+}
