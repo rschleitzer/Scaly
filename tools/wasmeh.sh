@@ -38,5 +38,14 @@ if [ -n "${SCALY_ARCH:-}" ]; then
     ARCHFLAG="-arch $SCALY_ARCH"
 fi
 
-${CLANGXX:-clang++} $ARCHFLAG -std=c++17 -O2 -fno-rtti -fno-exceptions -I"$INC" \
+# Windows: the C++ headers come from MSVC's STL, which refuses a clang older
+# than the one it was made for (STL1000: MSVC 14.52 asks for clang 22, LLVM is
+# 21). Its documented switch lets it through: the file uses LLVM's headers and
+# none of the STL's newer parts.
+STLFLAG=""
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*|Windows*) STLFLAG="-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH" ;;
+esac
+
+${CLANGXX:-clang++} $ARCHFLAG $STLFLAG -std=c++17 -O2 -fno-rtti -fno-exceptions -I"$INC" \
     -c packages/scalyc/0.2.1/scalyc/compiler/wasm_eh.cpp -o "$OUT"
