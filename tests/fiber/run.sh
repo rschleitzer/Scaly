@@ -6,10 +6,20 @@
 # cache), run, and compare stdout to the test's "; Expected:" comment.
 #
 # Usage: tests/fiber/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
+#
+# With FIBER_DEFER=<dir> the fixtures marked `; Isolated:` are built but not
+# run -- their programs are left in <dir> -- and
+#        tests/fiber/run.sh --deferred <dir>
+# runs them later: tools/bar.sh does it after its lanes, where nothing else
+# runs beside them (run.py's "alone" is alone in the SUITE, not on the machine).
 cd "$(dirname "$0")/../.." || exit 1
 
 # ---- platform (tests/platform.sh): binaries carry .exe on the Windows box.
 . tests/platform.sh || exit 1
+if [ "${1:-}" = --deferred ]; then
+  PY=$(command -v python3 || command -v python) || { echo "fiber: no python3" >&2; exit 2; }
+  exec "$PY" tests/fiber/run.py --deferred "${2:?usage: tests/fiber/run.sh --deferred <dir>}" "$SCALY_EXE"
+fi
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
 # the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
 SCALY=$(tools/scaly-of.sh "$STAGE")

@@ -17,6 +17,11 @@ stdout and (where given) its stderr are what its markers say:
                            drives does not exist there (a POSIX signal sent
                            with kill(), say)
 
+FIBER_DEFER=<dir> leaves the isolated ones built in <dir> instead of running
+them, and `run.py --deferred <dir> <exe suffix>` runs them from there later:
+alone in the suite is not alone on a machine that runs other suites beside it
+(tools/bar.sh's lanes).
+
 A driver and not a shell loop since 2026-10-03:
 the loop ran the 65 fixtures one after another, each wrapped in a handful of
 processes, and Git Bash emulates every fork. Here every build runs in parallel,
@@ -27,6 +32,7 @@ cores, where the contention a parallel run adds is largest.
 import concurrent.futures
 import glob
 import os
+import shutil
 import subprocess
 import sys
 
@@ -93,9 +99,25 @@ def run(fx):
                                                   " stderr: '%s'" % err1 if err1 else ""))
 
 
+def deferred(where, exe):
+    # run.py --deferred <dir> <exe suffix>: the programs FIBER_DEFER left there
+    fixtures = [fx for fx in (Fixture(p, where, exe) for p in
+                              sorted(glob.glob(os.path.join(REPO, "tests", "fiber", "*.scaly"))))
+                if os.path.exists(fx.binp)]
+    for fx in fixtures:
+        run(fx)
+    failures = [fx.verdict[1] for fx in fixtures if not fx.verdict[0]]
+    print("fiber (alone): %d PASS, %d FAIL %s" % (len(fixtures) - len(failures), len(failures),
+                                                   " ".join(failures)))
+    sys.exit(0 if not failures else 1)
+
+
 def main():
+    if sys.argv[1] == "--deferred":
+        deferred(sys.argv[2], sys.argv[3])
     # run.py <tool> <exe suffix> <tmp> <jobs>
     scaly, exe, tmp, jobs = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+    defer = os.environ.get("FIBER_DEFER")
     fixtures = [Fixture(p, tmp, exe)
                 for p in sorted(glob.glob(os.path.join(REPO, "tests", "fiber", "*.scaly")))]
     if os.name == "nt":
@@ -106,12 +128,20 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         list(pool.map(lambda fx: build(fx, scaly), fixtures))
         list(pool.map(run, [fx for fx in fixtures if fx.built and not fx.isolated]))
+    left = []
     for fx in fixtures:
         if fx.built and fx.isolated:
-            run(fx)
+            if defer:
+                os.makedirs(defer, exist_ok=True)
+                shutil.copy2(fx.binp, os.path.join(defer, os.path.basename(fx.binp)))
+                left.append(fx)
+            else:
+                run(fx)
+    fixtures = [fx for fx in fixtures if fx not in left]
     failures = [fx.verdict[1] for fx in fixtures if not fx.verdict[0]]
-    print("fiber: %d PASS, %d FAIL %s" % (len(fixtures) - len(failures), len(failures),
-                                           " ".join(failures)))
+    print("fiber: %d PASS, %d FAIL%s %s" % (len(fixtures) - len(failures), len(failures),
+                                             ", %d deferred to run alone" % len(left) if defer else "",
+                                             " ".join(failures)))
     sys.exit(0 if not failures else 1)
 
 
