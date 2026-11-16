@@ -2671,9 +2671,12 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
             scaly_eputs " helpers, all there"
         else
             scaly_eputs " helpers, none left: this machine runs them"
-        scaly_eputs " ("
+        scaly_eputnl()
+        ; a line of its own: the page of web/cluster reads the one above
+        ; to its end
+        scaly_eputs "cluster: "
         scaly_eputi(sent as i64)
-        scaly_eputs " bytes sent)"
+        scaly_eputs " bytes sent"
         scaly_eputnl()
     }
     if ok: 1 else 0

@@ -477,7 +477,7 @@ else
   want=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
   SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$KB" > "$OUT/cluster_${t}.log" 2>&1
   got=$(scaly_lf < "$OUT/cluster_${t}.log" | grep -v '^cluster: ')
-  sent=$(grep 'all there' "$OUT/cluster_${t}.log" | sed 's/.*(\([0-9]*\) bytes sent)/\1/' | tr '\n' ' ')
+  sent=$(sed -n 's/^cluster: \([0-9]*\) bytes sent$/\1/p' "$OUT/cluster_${t}.log" | tr '\n' ' ')
   set -- $sent
   if [ "$got" = "$want" ] && [ $# = 4 ] && [ "$1" -gt 4194304 ] && [ "$2" -lt 65536 ] && [ "$3" -lt 65536 ] && [ "$4" -gt 4194304 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t: '$got', sent $sent"); fi
   kill $K1 2>/dev/null; wait $K1 2>/dev/null
@@ -493,7 +493,7 @@ else
   want=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
   SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$KB" > "$OUT/cluster_${t}.log" 2>&1
   got=$(scaly_lf < "$OUT/cluster_${t}.log" | grep -v '^cluster: ')
-  phases=$(grep 'all there' "$OUT/cluster_${t}.log" | sed 's/.*(\([0-9]*\) bytes sent)/\1/' | awk '{ph=(NR>1200)?3:((NR>1100)?2:1); s[ph]+=$1; c[ph]++} END {print c[1], c[2], c[3], s[1]/c[1], s[2]/c[2], s[3]/c[3]}')
+  phases=$(sed -n 's/^cluster: \([0-9]*\) bytes sent$/\1/p' "$OUT/cluster_${t}.log" | awk '{ph=(NR>1200)?3:((NR>1100)?2:1); s[ph]+=$1; c[ph]++} END {print c[1], c[2], c[3], s[1]/c[1], s[2]/c[2], s[3]/c[3]}')
   set -- $phases
   if [ "$got" = "$want" ] && [ "$1" = 1100 ] && [ "$2" = 100 ] && [ "$3" = 100 ] && [ "${5%.*}" -lt "${4%.*}" ] && [ "${6%.*}" = "${4%.*}" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t: '$got', phases $phases"); fi
   kill $K1 2>/dev/null; wait $K1 2>/dev/null
