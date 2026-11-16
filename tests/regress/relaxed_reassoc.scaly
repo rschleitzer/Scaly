@@ -1,0 +1,36 @@
+; Under `relaxed` the processor may regroup floating point too: every
+; operation the loop's body writes is `reassoc`, so a sum inside a round
+; vectorizes (a row of a matrix product: eight times on one core). Nothing
+; else is loosened -- no contraction --, and nothing outside the word:
+; the plain loop below, exp and mul_add keep their order.
+; expect-ir: %fmul = fmul reassoc float
+; expect-ir: %fadd = fadd reassoc float
+; expect-ir: %fmul = fmul float
+
+procedure rows(a: Slice[f32], x: Slice[f32], mutable out: Vector[f32], n: size_t)
+{
+    relaxed for i in out.length
+    {
+        var s: f32 0.0
+        var k: size_t 0
+        while k < n
+        {
+            s := s + a[i * n + k] * x[k]
+            k := k + 1
+        }
+        out.put(i, s)
+    }
+}
+
+procedure plain(a: Slice[f32], mutable out: Vector[f32])
+{
+    for i in out.length
+        out.put(i, a[i] * 2.0)
+}
+
+var a Vector[f32](16)
+var x Vector[f32](4)
+var out Vector[f32](4)
+rows(a.as_slice(), x.as_slice(), out, 4)
+plain(a.as_slice(), out)
+print "`out[0]`"

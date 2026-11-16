@@ -461,6 +461,8 @@ function LLVMBuildNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[
 
 ; Floating point arithmetic
 function LLVMBuildFAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMCanValueUseFastMathFlags(value: LLVMValueRef) returns i32 extern
+procedure LLVMSetFastMathFlags(mutable inst: LLVMValueRef, flags: u32) extern
 function LLVMBuildFSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildFMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildFDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern

@@ -1,8 +1,9 @@
 ; `relaxed` before a loop or before a block allows its loops to run where
 ; floating point is rounded less strictly than on the processor. It allows,
-; it does not require: on the processor a relaxed loop computes exactly what
-; the same loop computes without the word. A value, a nested loop and a
-; reduction inside it are what they are outside it.
+; it does not require. On the processor it lets operations be regrouped
+; (relaxed_reassoc.scaly), which changes nothing in a round that computes
+; one product or one quotient, as the loops here do: a value, a nested loop
+; and a reduction inside it are what they are outside it.
 
 function half(x: f32) returns f32
     x * 0.5

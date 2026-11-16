@@ -319,11 +319,16 @@ gpu-plan: 2 for-loops, 2 parallel, 2 kernels
 gpu-plan: relaxed.scaly:7:1: kernel (metal): out exact; calls half; not webgpu: floating point, and the loop is not relaxed
 gpu-plan: relaxed.scaly:9:9: kernel (metal, webgpu): out loose; calls half</screen>
     <para><code>relaxed</code> stands before a loop or before a block, and
-      holds for everything the loop's rounds compute, including the
-      functions they call. It allows, it does not require: on the
-      processor a relaxed loop computes exactly as before, and so it does
-      under Metal, which rounds as the processor does whether it has to
-      or not. Where a card of the looser kind computed it, a point on the
+      on a card it holds for everything the loop's rounds compute,
+      including the functions they call. It allows, it does not require.
+      On the processor it allows one thing: the operations the loop's body
+      writes may be regrouped, so that a sum inside a round — a row of a
+      matrix times a vector — runs on the processor's vector units, eight
+      times as fast on one core; the functions the body calls keep their
+      order. The last bits of such a sum may then differ from the same
+      loop without the word, as a regrouped sum does. Under Metal a relaxed
+      loop computes as before: Metal rounds as the processor does whether
+      it has to or not. Where a card of the looser kind computed it, a point on the
       edge of the Mandelbrot set may come out the other way — one
       whose iteration ends within a rounding error of 4.0. That is what
       the last words of the report at the head of this chapter say: the
