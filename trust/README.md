@@ -11,7 +11,7 @@ the second, independent compiler.
 ```
 trust/check.sh                 # build from the C++, emit the seed, compare
 CXX=g++ CC=gcc trust/check.sh  # the same without any of LLVM's toolchain
-trust/check-gcc.sh             # that, in an AlmaLinux 9 container without clang
+trust/check-gcc.sh             # that, in an AlmaLinux 9.8 container without clang
 trust/build.sh [out-dir]       # only the build: <out-dir>/scalyc
 ```
 

@@ -185,9 +185,9 @@
     <pre class="steps">git clone https://github.com/rschleitzer/Scaly &amp;&amp; cd Scaly
 trust/check.sh                  <span class="comment"># build from the C++, emit the seed, compare</span>
 CXX=g++ CC=gcc trust/check.sh   <span class="comment"># the same with GCC, nothing of LLVM's toolchain</span>
-trust/check-gcc.sh              <span class="comment"># that, in an AlmaLinux 9 container without clang</span></pre>
+trust/check-gcc.sh              <span class="comment"># that, in an AlmaLinux 9.8 container without clang</span></pre>
     <p>It needs a C++20 compiler, a C compiler and LLVM 21 (libLLVM and its headers); no Scaly compiler and no seed. It prints <code>OK</code> when the compiler built from the C++ emits all seven files of <code>seed/</code> exactly as they are committed — about half a minute on a laptop, a few minutes with GCC in the container.</p>
-    <p><strong>Every release is checked this way.</strong> The release workflow builds the compiler from the C++ with GCC in an AlmaLinux 9 container, with no clang installed, and makes no release of a version whose seed does not come out of it.</p>
+    <p><strong>Every release is checked this way.</strong> The release workflow builds the compiler from the C++ with GCC in an AlmaLinux 9.8 container, with no clang installed, and makes no release of a version whose seed does not come out of it.</p>
 
     <div class="section-label">What the C++ looks like</div>
     <p>It is written by the compiler's second back end (<code>scalyc --emit-cpp</code>), from the same plan the LLVM back end reads: after every decision about types, overloads, integer widths and where a value lives. The C++ shows those decisions written out instead of leaving them to the C++ compiler. A generic routine becomes a template where all its instances agree, character for character:</p>
@@ -215,6 +215,13 @@ trust/check-gcc.sh              <span class="comment"># that, in an AlmaLinux 9 
         <tr><td>the C++ in <code>trust/</code></td><td class="n">185 000 lines</td><td class="n">8.9 MB</td></tr>
         <tr><td>the seed, LLVM IR</td><td class="n"></td><td class="n">50 MB</td></tr>
     </table>
+
+    <div class="section-label">The programs, too</div>
+    <p>The seed is what the sources say; the programs the installer hands out are what the seed makes. Each archive is made again, byte for byte, from three things published with it: the <strong>commit</strong>, the <strong>profile</strong> its compiler was optimised with, and the <strong>tools</strong> it was made with. Beside every archive in the downloads lies its <code>.buildinfo</code> — the commit, the versions of LLVM, the C compiler, the linker and the system's SDK or packages, and the SHA-256 of the profile and of every file in the archive — and the profile itself.</p>
+    <pre class="steps">tools/verify-archive.sh 0.2.36            <span class="comment"># this machine's archive: fetch, rebuild, compare</span>
+tools/verify-archive.sh 0.2.36 linux-x86_64  <span class="comment"># a Linux one, rebuilt in its AlmaLinux 9.8 container</span></pre>
+    <p>It checks out the commit, rebuilds the archive from the seed with that profile, and says <code>SAME</code> or which files differ, and which of the tools were not the ones the archive was made with. The profile is an input like the seed: made by a training run of the compiler, it steers which functions are put in line and where code is laid out, never what a program does. Made twice it is not the same file — the training counts the probes of a table keyed by addresses — so it is not made again but taken.</p>
+    <p>An archive is the same bytes only where the tools are: a Mac rebuilds a Mac archive with the Xcode and the Homebrew LLVM its buildinfo names, a Linux archive is made in a container whose image and packages are fixed and named, a Windows archive with the LLVM release and the Visual Studio its buildinfo names.</p>
 
     <div class="section-label">What it proves, and what stays trusted</div>
     <p>Proven: the compiler built from this C++ by your C++ compiler produces the committed seed, so the seed carries nothing the C++ does not.</p>

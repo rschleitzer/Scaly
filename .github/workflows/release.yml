@@ -34,7 +34,7 @@
 #
 # ★Before anything is made, the seed must come out of the C++ (job `trust`):
 # trust/check-gcc.sh builds the compiler from trust/*.cpp with GCC in an
-# AlmaLinux 9 container, no clang installed, and compares what it emits with
+# AlmaLinux 9.8 container, no clang installed, and compares what it emits with
 # seed/ byte for byte (trust/README.md). A version that fails gets no
 # release and no archive.
 #

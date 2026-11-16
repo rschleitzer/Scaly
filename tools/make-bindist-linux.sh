@@ -11,8 +11,9 @@
 # version GLIBC_2.35. An upstream 2.34 lacks it -- only distributions past
 # their end of life shipped one.
 #
-# AlmaLinux 9 carries LLVM 21.1.8 with its static libraries (llvm-static),
-# the version the Windows legs take from LLVM's release. Its packages are
+# AlmaLinux 9.8 carries LLVM 21.1.8 with its static libraries (llvm-static),
+# the version the Windows legs take from LLVM's release (the repositories
+# of "9" moved to 22: tools/alma-pin.sh holds the container to 9.8's). Its packages are
 # built for x86-64-v2 (SSE4.2, POPCNT: 2009 and later), so on x86-64 that is
 # the floor of the CPU as well. It has no libzstd.a: Zstandard is built here
 # from its release. No libxml2.a either, and none is needed (build-from-seed.sh).

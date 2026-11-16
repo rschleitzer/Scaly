@@ -41,7 +41,7 @@
 # LLVM is built for the macOS it runs on (26, the minimum we promise), and a
 # Linux build carries the glibc version of its host as its floor — the
 # archives handed out are built by tools/make-bindist-linux.sh, which runs this
-# script in an AlmaLinux 9 container (glibc 2.34).
+# script in an AlmaLinux 9.8 container (glibc 2.34; tools/alma-pin.sh).
 #
 # Beside the archive: <archive>.buildinfo (the commit, the tools, the
 # profile's SHA-256, every file's) and, where a profile was used, the
