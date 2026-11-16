@@ -43,9 +43,16 @@
 # archives handed out are built by tools/make-bindist-linux.sh, which runs this
 # script in an AlmaLinux 9 container (glibc 2.34).
 #
+# Beside the archive: <archive>.buildinfo (the commit, the tools, the
+# profile's SHA-256, every file's) and, where a profile was used, the
+# profile itself as scaly-<version>-<system>.profdata -- what
+# tools/verify-archive.sh rebuilds the same bytes from (tools/repro.sh).
+#
 # Usage: tools/make-bindist.sh [version] [outdir]   (default: the VERSION file, dist)
 set -e
 cd "$(dirname "$0")/.."
+. tools/repro.sh
+source tools/llvm-env.sh > /dev/null
 VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 SYSTEM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
@@ -64,7 +71,7 @@ SCALY_STATIC_LLVM=1 tools/build-from-seed.sh "$STAGE/libexec/scalyc" > "$STAGE/b
 for p in scalyc scaly scalyls; do
   [ -x "$STAGE/libexec/$p" ] || { echo "make-bindist: FAIL — $p was not built"; exit 1; }
 done
-cp /tmp/libscaly.a "$STAGE/lib/libscaly.a"
+repro_ar "$STAGE/lib/libscaly.a" /tmp/libscaly.a
 rm -f "$STAGE/build.log"
 
 # 2. the compiler and the tool again, from the sources, with the profile
@@ -141,6 +148,10 @@ if [ "$PROFILE" != none ]; then
   mv "$PGO/scaly" "$STAGE/libexec/scaly"
   rm -rf "$PGO"
   if [ -n "$MADE" ]; then BUILT="with a profile$MADE"; else BUILT="with the profile $PROFILE"; fi
+  # the profile is an input of what is handed out: kept beside it
+  mkdir -p "$OUT"
+  if [ "$PROFILE" != "$OUT/scaly-$VERSION-$SYSTEM.profdata" ]; then cp "$PROFILE" "$OUT/scaly-$VERSION-$SYSTEM.profdata"; fi
+  PROFILE="$OUT/scaly-$VERSION-$SYSTEM.profdata"
   rm -f "$STAGE/scalyc.profdata"
 else
   echo "make-bindist: NOTE — SCALY_PGO_PROFILE=none: the programs are the seed recipe's, about 30 % slower to compile with"
@@ -158,9 +169,8 @@ fi
 # Our license and those of what is linked in (LLVM and others) travel with
 # the programs: an archive taken without the installer carries them too.
 cp LICENSE THIRD-PARTY-LICENSES.txt "$STAGE/"
-
 mkdir -p "$OUT"
-COPYFILE_DISABLE=1 tar --no-xattrs -czf "$TARBALL" -C "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib 2>/dev/null \
-  || COPYFILE_DISABLE=1 tar -czf "$TARBALL" -C "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib
-
+repro_buildinfo "$TARBALL.buildinfo" "$VERSION" "$SYSTEM" "$PROFILE" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib
+repro_tar_gz "$TARBALL" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib \
+  || { echo "make-bindist: FAIL — the archive"; exit 1; }
 echo "make-bindist: OK -> $TARBALL ($(du -h "$TARBALL" | cut -f1)), $BUILT"
