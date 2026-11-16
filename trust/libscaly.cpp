@@ -3219,6 +3219,9 @@ String Cluster_key(scaly_frame*) asm("_ZN7Cluster3keyEPN4scaly6memory4PageE");
 int32_t Cluster_listen(int32_t) asm("_ZN7Cluster6listenE3i32");
 String Cluster_read_key(scaly_frame*) asm("_ZN7Cluster8read_keyEPN4scaly6memory4PageE");
 int32_t Cluster_local_port(int32_t) asm("_ZN7Cluster10local_portE3i32");
+String Cluster_named(scaly_frame*) asm("_ZN7Cluster5namedEPN4scaly6memory4PageE");
+int32_t Cluster_port_number(String&) asm("_ZN7Cluster11port_numberE6String");
+int32_t Cluster_helper_port() asm("_ZN7Cluster11helper_portEv");
 NodePeer* Cluster_setup(scaly_frame*, int32_t, bool) asm("_ZN7Cluster5setupEPN4scaly6memory4PageE3i32b");
 NodePeer* Cluster_accept(scaly_frame*, int32_t) asm("_ZN7Cluster6acceptEPN4scaly6memory4PageE3i32");
 NodePeer* Cluster_connect(scaly_frame*, const char*, int32_t) asm("_ZN7Cluster7connectEPN4scaly6memory4PageEP10const_char3i32");
@@ -3250,7 +3253,7 @@ void Cluster_trace_stretch(int64_t, int64_t, int64_t) asm("_ZN7Cluster13trace_st
 int64_t Cluster_mode() asm("_ZN7Cluster4modeEv");
 void Cluster_connect_found() asm("_ZN7Cluster13connect_foundEv");
 uint64_t Cluster_helpers() asm("_ZN7Cluster7helpersEv");
-Vector<HelperFound> Helpers_find(scaly_frame*, int64_t) asm("_ZN7Helpers4findEPN4scaly6memory4PageEi");
+Vector<HelperFound> Helpers_wanted(scaly_frame*, String&) asm("_ZN7Helpers6wantedEPN4scaly6memory4PageE6String");
 bool Cluster_ready(double) asm("_ZN7Cluster5readyE3f64");
 int64_t Cluster_desc_word(void*, uint64_t) asm("_ZN7Cluster9desc_wordEPvm");
 void* Cluster_find_loop(uint64_t) asm("_ZN7Cluster9find_loopE3u64");
@@ -3270,6 +3273,8 @@ ClusterResult* Cluster_run_job(Page*, ClusterJob*, ClusterJob*) asm("_ZN7Cluster
 void Cluster_serve(NodePeer*) asm("_ZN7Cluster5serveEP8NodePeer");
 void* helper_announcer_entry(void*) asm("_Z22helper_announcer_entryPv");
 void scaly_helper_main() asm("_Z17scaly_helper_mainv");
+Vector<HelperFound> Helpers_named(scaly_frame*, String&) asm("_ZN7Helpers5namedEPN4scaly6memory4PageE6String");
+Vector<HelperFound> Helpers_find(scaly_frame*, int64_t) asm("_ZN7Helpers4findEPN4scaly6memory4PageEi");
 void scaly_cluster_register(void*) asm("_Z22scaly_cluster_registerPv");
 int64_t cluster_slot(void*) asm("_Z12cluster_slotPv");
 void scaly_cluster_kept(void*) asm("_Z18scaly_cluster_keptPv");
@@ -3461,6 +3466,7 @@ static const int64_t CLUSTER_FLOOR_NS = 20000000LL;
 static const int64_t CLUSTER_LATENCIES = 50LL;
 static const int64_t CLUSTER_BYTE_NS = 10LL;
 static const int64_t CLUSTER_SEARCH_AGAIN_NS = 10000000000LL;
+static const int64_t HELPER_SEARCH_MS = 2500LL;
 void** cluster_table asm("cluster_table") = (void**)(nullptr);
 uint64_t cluster_table_count asm("cluster_table_count") = (uint64_t)(0LL);
 double* cluster_loop_round asm("cluster_loop_round") = (double*)(nullptr);
@@ -3473,6 +3479,8 @@ uint64_t cluster_peer_count asm("cluster_peer_count") = (uint64_t)(0LL);
 bool cluster_peers_asked asm("cluster_peers_asked") = false;
 bool cluster_key_read asm("cluster_key_read") = false;
 const char* cluster_key_text asm("cluster_key_text") = (const char*)(nullptr);
+bool cluster_named_read asm("cluster_named_read") = false;
+const char* cluster_named_text asm("cluster_named_text") = (const char*)(nullptr);
 uint64_t cluster_offering asm("cluster_offering") = (uint64_t)(0LL);
 uint64_t cluster_offers asm("cluster_offers") = (uint64_t)(0LL);
 thread_local bool cluster_home asm("cluster_home") = false;
@@ -13749,6 +13757,71 @@ __attribute__((weak)) int32_t Cluster_local_port(int32_t fd)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) String Cluster_named(scaly_frame* scaly_rp)
+{
+    if (cluster_named_read)
+    {
+        return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init6((*scaly_t1), cluster_named_text); scaly_t1; }));
+    }
+    String* s = ({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init((*scaly_t2)); scaly_t2; });
+    const char* v = getenv(((const char*)"SCALY_CLUSTER_HELPERS"));
+    if (((v) != (nullptr)))
+    {
+        s = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init6((*scaly_t3), v); scaly_t3; });
+    }
+    Page* p = Page_allocate_page();
+    uint64_t n = String_get_length((*s));
+    uint8_t* text = ((uint8_t*)(Page_allocate(*(p), (n + 1ULL), 1ULL)));
+    if ((n > 0ULL))
+    {
+        memcpy(((void*)(text)), ((void*)(String_c_data((*s)))), ((size_t)(n)));
+    }
+    (*(((text) + (int64_t)(n)))) = (uint8_t)0ULL;
+    cluster_named_text = ((const char*)(text));
+    cluster_named_read = true;
+    return (*s);
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) int32_t Cluster_helper_port()
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    const char* v = getenv(((const char*)"SCALY_CLUSTER_PORT"));
+    if (((v) == (nullptr)))
+    {
+        return (int32_t)0ULL;
+    }
+    return Cluster_port_number(scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init6((*scaly_t2), v); scaly_t2; }))));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) int32_t Cluster_port_number(String& s)
+{
+    uint64_t n = String_get_length(s);
+    if (((n == 0ULL) ? true : (n > 5ULL)))
+    {
+        return (int32_t)0ULL;
+    }
+    int64_t v = 0LL;
+    uint64_t i = 0ULL;
+    while ((i < n))
+    {
+        uint8_t c = ((uint8_t)(String_get(s, i)));
+        if (((c < (uint8_t)48ULL) ? true : (c > (uint8_t)57ULL)))
+        {
+            return (int32_t)0ULL;
+        }
+        v = ((v * 10LL) + (((int64_t)((((uint8_t)(c - (uint8_t)48ULL)))))));
+        i = (i + 1ULL);
+    }
+    if ((v > 65535LL))
+    {
+        return (int32_t)0ULL;
+    }
+    return ((int32_t)(v));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) NodePeer* Cluster_accept(scaly_frame* scaly_rp, int32_t lfd)
 {
     int32_t fd = Io_accept(lfd);
@@ -14545,7 +14618,17 @@ template <class T1> static T1 Vector9(Vector<T1>& scaly_self, uint64_t i)
 __attribute__((weak)) void Cluster_search()
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    Vector<HelperFound> found = Helpers_find(&scaly_local.f, 1000LL);
+    int64_t t0 = scaly_eio_now_ns();
+    Vector<HelperFound> found = Helpers_wanted(&scaly_local.f, scaly_lvalue(Cluster_named(&scaly_local.f)));
+    if (Cluster_tracing())
+    {
+        scaly_eputs(((const char*)"cluster: "));
+        scaly_eputi(((int64_t)((found).length)));
+        scaly_eputs(((const char*)" helpers found in "));
+        scaly_eputi((((scaly_eio_now_ns() - t0)) / 1000000LL));
+        scaly_eputs(((const char*)" ms"));
+        scaly_eputnl();
+    }
     Page* p = Page_allocate_page();
     uint64_t n = (found).length;
     const char** hosts = ((const char**)(Page_allocate(*(p), (((n + 1ULL)) * 8ULL), 8ULL)));
@@ -14627,6 +14710,7 @@ __attribute__((weak)) bool Cluster_ready(double local_ns)
             scaly_eputnl();
         }
         Cluster_key(&scaly_local.f);
+        Cluster_named(&scaly_local.f);
         Thread_spawn(((void*)&cluster_search_entry), ((void*)(nullptr)));
     }
     if ((((uint64_t)__atomic_load_n((uint64_t*)((&(cluster_search))), __ATOMIC_SEQ_CST)) != 2ULL))
@@ -15132,7 +15216,7 @@ __attribute__((weak)) void scaly_helper_main()
     }
     String key = Cluster_key(&scaly_local.f);
     int32_t local_only = ((String_get_length(key) == 0ULL) ? (int32_t)1ULL : (int32_t)0ULL);
-    int32_t lfd = Cluster_listen((int32_t)0ULL);
+    int32_t lfd = Cluster_listen(Cluster_helper_port());
     if ((lfd < (((int32_t)(0LL)))))
     {
         scaly_eputs(((const char*)"helper: cannot listen"));
@@ -15173,6 +15257,47 @@ __attribute__((weak)) void scaly_helper_main()
             }
         }
     }
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) Vector<HelperFound> Helpers_named(scaly_frame* scaly_rp, String& text)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    List<HelperFound>* found = ({ List<HelperFound>* scaly_t1 = (List<HelperFound>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(List<HelperFound>), alignof(List<HelperFound>)); *scaly_t1 = List<HelperFound>{(Node<HelperFound>*)(nullptr), (Node<HelperFound>*)(nullptr)}; scaly_t1; });
+    uint64_t n = String_get_length(text);
+    uint64_t start = 0ULL;
+    while ((start < n))
+    {
+        uint64_t stop = n;
+        int64_t comma = String_index_of2(text, (uint8_t)44ULL, start);
+        if ((comma >= 0LL))
+        {
+            stop = ((uint64_t)(comma));
+        }
+        String entry = String_substring(&scaly_local.f, text, start, (stop - start));
+        int64_t colon = String_last_index_of(entry, (uint8_t)58ULL);
+        if ((colon > 0LL))
+        {
+            uint64_t after = ((uint64_t)(((colon + 1LL))));
+            int32_t port = Cluster_port_number(scaly_lvalue(String_substring(scaly_rp, entry, after, (String_get_length(entry) - after))));
+            if ((port > (int32_t)0ULL))
+            {
+                List_add3<HelperFound>((*found), scaly_lvalue((*({ HelperFound* scaly_t2 = (HelperFound*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(HelperFound), alignof(HelperFound)); *scaly_t2 = HelperFound{String_substring(scaly_rp, entry, 0ULL, ((uint64_t)(colon))), port, 0LL, 0ULL}; scaly_t2; }))));
+            }
+        }
+        start = (stop + 1ULL);
+    }
+    return (*({ Vector<HelperFound>* scaly_t4 = (Vector<HelperFound>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<HelperFound>), alignof(Vector<HelperFound>)); *scaly_t4 = Vector<HelperFound>{}; Vector_init9<HelperFound>((*scaly_t4), (*found)); scaly_t4; }));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) Vector<HelperFound> Helpers_wanted(scaly_frame* scaly_rp, String& named)
+{
+    if ((String_get_length(named) > 0ULL))
+    {
+        return Helpers_named(scaly_rp, named);
+    }
+    return Helpers_find(scaly_rp, 2500LL);
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
