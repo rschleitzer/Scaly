@@ -14952,6 +14952,7 @@ struct Emitter
     int64_t fj_mode;
     String fj_self;
     bool fj_seen;
+    bool relaxed_fp;
     String fj_name;
     String fj_file;
     Array<String> fork_files;
@@ -18095,6 +18096,8 @@ extern "C" LLVMOpaqueValue* LLVMBuildSRem(LLVMOpaqueBuilder*, LLVMOpaqueValue*, 
 extern "C" LLVMOpaqueValue* LLVMBuildURem(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildNeg(LLVMOpaqueBuilder*, LLVMOpaqueValue*, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildFAdd(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
+extern "C" int32_t LLVMCanValueUseFastMathFlags(LLVMOpaqueValue*);
+extern "C" void LLVMSetFastMathFlags(LLVMOpaqueValue*, uint32_t);
 extern "C" LLVMOpaqueValue* LLVMBuildFSub(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildFMul(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
 extern "C" LLVMOpaqueValue* LLVMBuildFDiv(LLVMOpaqueBuilder*, LLVMOpaqueValue*, LLVMOpaqueValue*, const char*);
@@ -18624,6 +18627,7 @@ LLVMOpaqueValue* Emitter_emit_call(Emitter&, PlannedCall&) asm("_ZN7EmitterB6sca
 LLVMOpaqueValue* Emitter_emit_intrinsic_operator(Emitter&, PlannedCall&) asm("_ZN7EmitterB6scalycB4v0_223emit_intrinsic_operatorE11PlannedCallB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_intrinsic_unary_op(Emitter&, String&, LLVMOpaqueValue*, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_223emit_intrinsic_unary_opE6StringP15LLVMOpaqueValueB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_simd_binary(Emitter&, String&, LLVMOpaqueValue*, LLVMOpaqueValue*, PlannedType&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_216emit_simd_binaryE6StringP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
+LLVMOpaqueValue* Emitter_relax(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&, String&, LLVMOpaqueValue*, LLVMOpaqueValue*, PlannedType&, PlannedType&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_224emit_intrinsic_binary_opE6StringP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_simd_scalar_to(Emitter&, LLVMOpaqueValue*, LLVMOpaqueType*, bool) asm("_ZN7EmitterB6scalycB4v0_214simd_scalar_toEP15LLVMOpaqueValueB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2b");
 LLVMOpaqueValue* Emitter_simd_splat(Emitter&, LLVMOpaqueValue*, LLVMOpaqueType*, bool) asm("_ZN7EmitterB6scalycB4v0_210simd_splatEP15LLVMOpaqueValueB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2b");
@@ -147460,7 +147464,10 @@ __attribute__((weak)) bool Emitter_emit_function_body(Emitter& scaly_self, Plann
             }
         }
     }
+    bool saved_relaxed = this_->relaxed_fp;
+    this_->relaxed_fp = false;
     bool ok = Emitter_emit_function_body_into(*(this_), func, llvm_func);
+    this_->relaxed_fp = saved_relaxed;
     if (this_->fj_seen)
     {
         Emitter_emit_fork_join_function(*(this_), func, llvm_func);
@@ -154117,7 +154124,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&
     {
         if (is_float)
         {
-            return LLVMBuildFAdd(this_->builder, l, r, ((const char*)"fadd"));
+            return Emitter_relax(*(this_), LLVMBuildFAdd(this_->builder, l, r, ((const char*)"fadd")));
         }
         return LLVMBuildAdd(this_->builder, l, r, ((const char*)"add"));
     }
@@ -154125,7 +154132,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&
     {
         if (is_float)
         {
-            return LLVMBuildFSub(this_->builder, l, r, ((const char*)"fsub"));
+            return Emitter_relax(*(this_), LLVMBuildFSub(this_->builder, l, r, ((const char*)"fsub")));
         }
         return LLVMBuildSub(this_->builder, l, r, ((const char*)"sub"));
     }
@@ -154133,7 +154140,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&
     {
         if (is_float)
         {
-            return LLVMBuildFMul(this_->builder, l, r, ((const char*)"fmul"));
+            return Emitter_relax(*(this_), LLVMBuildFMul(this_->builder, l, r, ((const char*)"fmul")));
         }
         return LLVMBuildMul(this_->builder, l, r, ((const char*)"mul"));
     }
@@ -154141,7 +154148,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&
     {
         if (is_float)
         {
-            return LLVMBuildFDiv(this_->builder, l, r, ((const char*)"fdiv"));
+            return Emitter_relax(*(this_), LLVMBuildFDiv(this_->builder, l, r, ((const char*)"fdiv")));
         }
         if (is_signed)
         {
@@ -154165,7 +154172,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_intrinsic_binary_op(Emitter&
     {
         if (is_float)
         {
-            return LLVMBuildFDiv(this_->builder, l, r, ((const char*)"fdiv"));
+            return Emitter_relax(*(this_), LLVMBuildFDiv(this_->builder, l, r, ((const char*)"fdiv")));
         }
         if (is_signed)
         {
@@ -154497,15 +154504,15 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_simd_binary(Emitter& scaly_s
             auto&& scaly_t1 = true;
             if (scaly_t1 == String_equals(op, scaly_lvalue(String{(uint8_t*)"\001+"})))
             {
-                return LLVMBuildFAdd(this_->builder, l, r, ((const char*)"simd.add"));
+                return Emitter_relax(*(this_), LLVMBuildFAdd(this_->builder, l, r, ((const char*)"simd.add")));
             }
             else if (scaly_t1 == String_equals(op, scaly_lvalue(String{(uint8_t*)"\001-"})))
             {
-                return LLVMBuildFSub(this_->builder, l, r, ((const char*)"simd.sub"));
+                return Emitter_relax(*(this_), LLVMBuildFSub(this_->builder, l, r, ((const char*)"simd.sub")));
             }
             else if (scaly_t1 == String_equals(op, scaly_lvalue(String{(uint8_t*)"\001*"})))
             {
-                return LLVMBuildFMul(this_->builder, l, r, ((const char*)"simd.mul"));
+                return Emitter_relax(*(this_), LLVMBuildFMul(this_->builder, l, r, ((const char*)"simd.mul")));
             }
         }
     }
@@ -154533,7 +154540,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_simd_binary(Emitter& scaly_s
         {
             if (is_float)
             {
-                return LLVMBuildFDiv(this_->builder, l, r, ((const char*)"simd.div"));
+                return Emitter_relax(*(this_), LLVMBuildFDiv(this_->builder, l, r, ((const char*)"simd.div")));
             }
             if (unsigned_)
             {
@@ -158294,9 +158301,27 @@ __attribute__((weak)) bool Emitter_block_dominates(Emitter& scaly_self, LLVMOpaq
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) LLVMOpaqueValue* Emitter_relax(Emitter& scaly_self, LLVMOpaqueValue* v)
+{
+    Emitter* this_ = &scaly_self;
+    if ((this_->relaxed_fp ? (LLVMCanValueUseFastMathFlags(v) != (int32_t)0ULL) : false))
+    {
+        LLVMSetFastMathFlags(v, (uint32_t)1ULL);
+    }
+    return v;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_for(Emitter& scaly_self, PlannedFor& for_expr)
 {
     Emitter* this_ = &scaly_self;
+    if (((for_expr).is_relaxed ? ((this_->relaxed_fp) == (false)) : false))
+    {
+        this_->relaxed_fp = true;
+        LLVMOpaqueValue* v = Emitter_emit_for(*(this_), for_expr);
+        this_->relaxed_fp = false;
+        return v;
+    }
     if (Emitter_promote_for(*(this_), for_expr))
     {
         if ((this_->config).gpu)
@@ -166061,6 +166086,7 @@ __attribute__((weak)) void Emitter_init(Emitter& scaly_self, Emitter_EmitterConf
     this_->fj_mode = 0LL;
     this_->fj_self = (*({ String* scaly_t39 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t39 = String{}; String_init3((*scaly_t39)); scaly_t39; }));
     this_->fj_seen = false;
+    this_->relaxed_fp = false;
     this_->fj_name = (*({ String* scaly_t40 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t40 = String{}; String_init3((*scaly_t40)); scaly_t40; }));
     this_->fj_file = (*({ String* scaly_t41 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t41 = String{}; String_init3((*scaly_t41)); scaly_t41; }));
     this_->fork_files = (*({ Array<String>* scaly_t42 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t42 = Array<String>{}; (void)0; scaly_t42; }));

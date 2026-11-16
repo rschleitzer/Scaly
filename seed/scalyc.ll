@@ -1456,7 +1456,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeIN7Emitter11LoopContextB6scalycB4v0_2EE = type { %_ZN7Emitter11LoopContextB6scalycB4v0_2E, ptr }
 %_Z12ListIteratorIN7Emitter11LoopContextB6scalycB4v0_2EE = type { ptr }
 %_Z13ArrayIteratorIN7Emitter11LoopContextB6scalycB4v0_2EE = type { ptr, i64 }
-%_Z7EmitterB6scalycB4v0_2 = type { %_ZN7Emitter13EmitterConfigB6scalycB4v0_2E, ptr, ptr, i1, i1, i64, i1, i1, i1, i1, i1, i1, ptr, ptr, ptr, ptr, ptr, ptr, { ptr }, { ptr }, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, ptr, ptr, ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { ptr }, ptr, ptr, ptr, %_ZN7Emitter10RegionInfoB6scalycB4v0_2E, ptr, ptr, ptr, ptr, i64, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z11TaskPlannerB6scalycB4v0_2, { ptr }, %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr, ptr, { ptr }, i64, { ptr }, i1, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, { ptr }, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z12StoreEffectsB6scalycB4v0_2, %_Z12StackVectorsB6scalycB4v0_2, ptr }
+%_Z7EmitterB6scalycB4v0_2 = type { %_ZN7Emitter13EmitterConfigB6scalycB4v0_2E, ptr, ptr, i1, i1, i64, i1, i1, i1, i1, i1, i1, ptr, ptr, ptr, ptr, ptr, ptr, { ptr }, { ptr }, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, ptr, ptr, ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, { ptr }, ptr, ptr, ptr, %_ZN7Emitter10RegionInfoB6scalycB4v0_2E, ptr, ptr, ptr, ptr, i64, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z11TaskPlannerB6scalycB4v0_2, { ptr }, %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr, ptr, { ptr }, i64, { ptr }, i1, i1, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, { ptr }, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z12StoreEffectsB6scalycB4v0_2, %_Z12StackVectorsB6scalycB4v0_2, ptr }
 %_ZN7Emitter8DebugPosB6scalycB4v0_2E = type { i32, i32 }
 %_Z6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E = type { i64, ptr }
 %_Z14VectorIteratorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E = type { ptr, i64 }
@@ -1503,7 +1503,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -7699476274765512274
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 5252404723226112800
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -520621,6 +520621,10 @@ declare ptr @LLVMBuildNeg(ptr, ptr, ptr)
 
 declare ptr @LLVMBuildFAdd(ptr, ptr, ptr, ptr)
 
+declare i32 @LLVMCanValueUseFastMathFlags(ptr)
+
+declare void @LLVMSetFastMathFlags(ptr, i32)
+
 declare ptr @LLVMBuildFSub(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildFMul(ptr, ptr, ptr, ptr)
@@ -543617,13 +543621,13 @@ if.end27:                                         ; preds = %lor.end, %if.end25
 
 land.rhs:                                         ; preds = %if.end25
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %broken_join = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 99
+  %broken_join = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 100
   %eq29 = icmp eq ptr %broken_join, null
   br i1 %eq29, label %lor.end, label %lor.rhs30
 
 lor.rhs30:                                        ; preds = %land.rhs
   %load.struct31 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %broken_join32 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct31, 99
+  %broken_join32 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct31, 100
   %ne33 = icmp ne ptr %2, %broken_join32
   br label %lor.end
 
@@ -545373,7 +545377,7 @@ if.end30:                                         ; preds = %if.then29, %land.rh
   br label %if.end21
 
 land.rhs31:                                       ; preds = %if.then20
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
   %field.inplace37 = getelementptr inbounds nuw %_Z15PlannedFunctionB6scalycB4v0_2, ptr %1, i32 0, i32 4
   %call38 = call i1 @_ZN12StoreEffectsB6scalycB4v0_213param_noaliasE6String11PlannedTypeB6scalycB4v0_2(ptr %field.inplace, ptr %field.inplace37, ptr %deref.tmp28)
   br i1 %call38, label %if.then29, label %if.end30
@@ -552053,7 +552057,7 @@ entry:
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 13
   %load.struct1 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_depth = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 96
+  %fj_depth = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 97
   %load.struct2 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %context = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 1
   %call = call ptr @LLVMInt64TypeInContext(ptr %context)
@@ -552078,14 +552082,14 @@ entry:
 
 if.then:                                          ; preds = %entry
   %load.struct1 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 93
+  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 94
   %call = call ptr @LLVMGlobalGetValueType(ptr %fj_seq_fn)
   call void @_ZN7EmitterB6scalycB4v0_27fj_argsEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2m(ptr noalias sret(%_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E) %sret.result, ptr %frame, ptr %0, ptr %1, ptr %call, i64 0)
   store ptr %sret.result, ptr %sargs, align 1
   %load.struct2 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 13
   %load.struct3 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn4 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct3, 93
+  %fj_seq_fn4 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct3, 94
   %sargs5 = load ptr, ptr %sargs, align 8
   %load.struct6 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %sargs5, align 8
   %data = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct6, 1
@@ -552099,10 +552103,10 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %load.struct10 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn11 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 93
+  %fj_seq_fn11 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 94
   %call12 = call ptr @LLVMGlobalGetValueType(ptr %fj_seq_fn11)
   %load.struct13 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct13, 94
+  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct13, 95
   %call14 = call ptr @LLVMGlobalGetValueType(ptr %fj_fj_fn)
   %call15 = call i32 @LLVMCountParamTypes(ptr %call12)
   %as.zext = zext i32 %call15 to i64
@@ -552113,13 +552117,13 @@ if.end:                                           ; preds = %entry
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %args, i64 %as.zext, ptr %call17)
   %args18 = load ptr, ptr %sargs, align 8
   %add = add i64 %as.zext, 1
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   %deref.recv = load ptr, ptr %field.inplace, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %args18, i64 %add, ptr %deref.recv)
   %load.struct19 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder20 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct19, 13
   %load.struct21 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn22 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct21, 94
+  %fj_fj_fn22 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct21, 95
   %args23 = load ptr, ptr %sargs, align 8
   %load.struct24 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %args23, align 8
   %data25 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct24, 1
@@ -552143,12 +552147,12 @@ entry:
   store ptr null, ptr %frame.parent, align 8
   %as.trunc = trunc i64 %2 to i32
   %call = call ptr @LLVMGetParam(ptr %1, i32 %as.trunc)
-  %fj_depth = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 96
+  %fj_depth = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
   store ptr %call, ptr %fj_depth, align 8
   %add = add i64 %2, 1
   %as.trunc1 = trunc i64 %add to i32
   %call2 = call ptr @LLVMGetParam(ptr %1, i32 %as.trunc1)
-  %fj_ctx = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %fj_ctx = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   store ptr %call2, ptr %fj_ctx, align 8
   %call3 = call ptr @_ZN7EmitterB6scalycB4v0_26fj_i64Ev(ptr %0)
   %call4 = call ptr @LLVMConstInt(ptr %call3, i64 12, i32 0)
@@ -552156,7 +552160,7 @@ entry:
   %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 13
   %call5 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGEEv()
   %load.struct6 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_depth7 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct6, 96
+  %fj_depth7 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct6, 97
   %call8 = call ptr @LLVMBuildICmp(ptr %builder, i32 %call5, ptr %fj_depth7, ptr %call4, ptr @.str.6054)
   %load.struct9 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %context = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct9, 1
@@ -552171,7 +552175,7 @@ entry:
   %builder18 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct17, 13
   call void @LLVMPositionBuilderAtEnd(ptr %builder18, ptr %call10)
   %load.struct19 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct19, 93
+  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct19, 94
   %call20 = call ptr @LLVMGlobalGetValueType(ptr %fj_seq_fn)
   %frame.page = load ptr, ptr %frame, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
@@ -552208,7 +552212,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct37 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder38 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct37, 13
   %load.struct39 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn40 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct39, 93
+  %fj_seq_fn40 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct39, 94
   %vals41 = load ptr, ptr %vals, align 8
   %load.struct42 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %vals41, align 8
   %data = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct42, 1
@@ -552303,10 +552307,10 @@ if.then:                                          ; preds = %choose.end
 
 if.end:                                           ; preds = %choose.end
   %load.struct2 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 93
+  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 94
   %call = call ptr @LLVMGlobalGetValueType(ptr %fj_seq_fn)
   %load.struct3 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct3, 94
+  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct3, 95
   %call4 = call ptr @LLVMGlobalGetValueType(ptr %fj_fj_fn)
   %call5 = call ptr @LLVMGetReturnType(ptr %call)
   %call6 = call i32 @LLVMCountParamTypes(ptr %call)
@@ -552379,7 +552383,7 @@ frame.forced33:                                   ; preds = %frame.force32, %fra
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2EC1Em(ptr %struct.region36, i64 1)
   store ptr %struct.region36, ptr %beat_args, align 1
   %beat_args37 = load ptr, ptr %beat_args, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   %deref.recv = load ptr, ptr %field.inplace, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %beat_args37, i64 0, ptr %deref.recv)
   store { ptr } { ptr @.sconst.6063 }, ptr %arg.tmp, align 1
@@ -552431,11 +552435,11 @@ frame.forced63:                                   ; preds = %frame.force62, %fra
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2EC1Em(ptr %struct.region66, i64 4)
   store ptr %struct.region66, ptr %push_args, align 1
   %push_args67 = load ptr, ptr %push_args, align 8
-  %field.inplace68 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %field.inplace68 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   %deref.recv69 = load ptr, ptr %field.inplace68, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %push_args67, i64 0, ptr %deref.recv69)
   %push_args70 = load ptr, ptr %push_args, align 8
-  %field.inplace71 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
+  %field.inplace71 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 96
   %deref.recv72 = load ptr, ptr %field.inplace71, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %push_args70, i64 1, ptr %deref.recv72)
   %push_args73 = load ptr, ptr %push_args, align 8
@@ -552522,7 +552526,7 @@ frame.forced124:                                  ; preds = %frame.force123, %fr
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2EC1Em(ptr %struct.region127, i64 2)
   store ptr %struct.region127, ptr %ci, align 1
   %ci128 = load ptr, ptr %ci, align 8
-  %field.inplace129 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %field.inplace129 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   %deref.recv130 = load ptr, ptr %field.inplace129, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %ci128, i64 0, ptr %deref.recv130)
   %ci131 = load ptr, ptr %ci, align 8
@@ -552547,13 +552551,13 @@ frame.forced124:                                  ; preds = %frame.force123, %fr
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %args146, i64 %as.zext, ptr %call46)
   %args147 = load ptr, ptr %args, align 8
   %add148 = add i64 %as.zext, 1
-  %field.inplace149 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %field.inplace149 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   %deref.recv150 = load ptr, ptr %field.inplace149, align 8
   call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %args147, i64 %add148, ptr %deref.recv150)
   %load.struct151 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder152 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct151, 13
   %load.struct153 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn154 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct153, 94
+  %fj_fj_fn154 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct153, 95
   %args155 = load ptr, ptr %args, align 8
   %load.struct156 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %args155, align 8
   %data157 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct156, 1
@@ -552703,7 +552707,7 @@ choose.when5:                                     ; preds = %choose.when
   store ptr null, ptr %right, align 1
   store %_Z14PlannedBindingB6scalycB4v0_2 %variant.val7, ptr %second, align 1
   %call = call ptr @_ZN7EmitterB6scalycB4v0_212emit_fj_forkE14PlannedOperandB6scalycB4v0_26OptionIR14PlannedOperandB6scalycB4v0_2E6OptionIR14PlannedBindingB6scalycB4v0_2ERP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %sret.result, ptr null, ptr %second, ptr %right)
-  %fj_preset = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
+  %fj_preset = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
   store ptr %call, ptr %fj_preset, align 8
   store %_Z14PlannedBindingB6scalycB4v0_2 %variant.val, ptr %first, align 1
   %call8 = call i1 @_ZN7EmitterB6scalycB4v0_212emit_bindingE14PlannedBindingB6scalycB4v0_2(ptr %0, ptr %first)
@@ -552723,20 +552727,20 @@ entry:
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 8
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fork_files = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 88
+  %fork_files = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 89
   %length = extractvalue %_Z5ArrayI6StringE %fork_files, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
   %i2 = load i64, ptr %i, align 8
   %call = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace, i64 %i2)
   %eq = icmp eq i64 %call, %1
   br i1 %eq, label %land.rhs, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %field.inplace8 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
+  %field.inplace8 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
   %own_page = call ptr @_Z3getPv(ptr %0)
   store ptr %own_page, ptr %wrapped_frame, align 8
   %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
@@ -552755,10 +552759,10 @@ if.end:                                           ; preds = %land.rhs, %while.bo
   br label %while.cond
 
 land.rhs:                                         ; preds = %while.body
-  %field.inplace3 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
+  %field.inplace3 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
   %i4 = load i64, ptr %i, align 8
   call void @_ZN5ArrayI6StringEixEm(ptr noalias sret({ ptr }) %sret.result, ptr %field.inplace3, i64 %i4)
-  %field.inplace5 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 87
+  %field.inplace5 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %field.inplace5)
   br i1 %call6, label %if.then, label %if.end
 
@@ -552770,13 +552774,13 @@ frame.forced:                                     ; preds = %frame.force, %while
   %forced_page9 = phi ptr [ %frame.page, %while.exit ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %load.struct10 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_file = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 87
+  %fj_file = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 88
   store { ptr } %fj_file, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %field.inplace8, ptr %struct.region)
-  %field.inplace11 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
+  %field.inplace11 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
   call void @_ZN5ArrayImE3addEm(ptr %field.inplace11, i64 %1)
-  %field.inplace12 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
+  %field.inplace12 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 91
   %own_page13 = call ptr @_Z3getPv(ptr %0)
   store ptr %own_page13, ptr %wrapped_frame14, align 8
   %wrapped.parent15 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame14, i32 0, i32 1
@@ -552923,7 +552927,7 @@ frame.forced31:                                   ; preds = %frame.force30, %if.
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %n136)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region34, i8 32)
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_name = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 86
+  %fj_name = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 87
   store { ptr } %fj_name, ptr %arg.tmp37, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %arg.tmp37)
   store { ptr } { ptr @.sconst.6059 }, ptr %arg.tmp38, align 1
@@ -552932,7 +552936,7 @@ frame.forced31:                                   ; preds = %frame.force30, %if.
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %n239)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region34, i8 32)
   %load.struct40 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_name41 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct40, 86
+  %fj_name41 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct40, 87
   store { ptr } %fj_name41, ptr %arg.tmp42, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %arg.tmp42)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region34)
@@ -553194,9 +553198,9 @@ entry:
   %file = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct, 15
   %parfor_file = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 78
   store { ptr } %file, ptr %parfor_file, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 102
   call void @_ZN12StackVectorsB6scalycB4v0_24scanE15PlannedFunctionB6scalycB4v0_2(ptr %field.inplace, ptr %1)
-  %stack_vectors_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 102
+  %stack_vectors_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 103
   store ptr %2, ptr %stack_vectors_fn, align 8
   %load.struct9 = load %_Z15PlannedFunctionB6scalycB4v0_2, ptr %1, align 8
   %impl = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct9, 10
@@ -554228,14 +554232,14 @@ entry:
   %load.struct5 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %context6 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct5, 1
   %load.struct7 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_task_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct7, 95
+  %fj_task_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct7, 96
   %call8 = call ptr @LLVMAppendBasicBlockInContext(ptr %context6, ptr %fj_task_fn, ptr @.str.6081)
   %load.struct9 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct9, 13
   call void @LLVMPositionBuilderAtEnd(ptr %builder, ptr %call8)
   call void @_ZN7EmitterB6scalycB4v0_220clear_debug_locationEv(ptr %0)
   %load.struct10 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_task_fn11 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 95
+  %fj_task_fn11 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct10, 96
   %call12 = call ptr @LLVMGetParam(ptr %fj_task_fn11, i32 0)
   %frame.page = load ptr, ptr %frame, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
@@ -554392,7 +554396,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct97 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder98 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct97, 13
   %load.struct99 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct99, 94
+  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct99, 95
   %args100 = load ptr, ptr %args, align 8
   %load.struct101 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %args100, align 8
   %data102 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct101, 1
@@ -554533,7 +554537,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct55 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder56 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct55, 13
   %load.struct57 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct57, 93
+  %fj_seq_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct57, 94
   %args58 = load ptr, ptr %args, align 8
   %load.struct59 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %args58, align 8
   %data60 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct59, 1
@@ -554554,7 +554558,7 @@ while.exit:                                       ; preds = %while.cond
   %load.struct72 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder73 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct72, 13
   %load.struct74 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct74, 94
+  %fj_fj_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct74, 95
   %args75 = load ptr, ptr %args, align 8
   %load.struct76 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %args75, align 8
   %data77 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct76, 1
@@ -554721,40 +554725,40 @@ frame.forced53:                                   ; preds = %frame.force52, %fra
   %llvm_module = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct60, 12
   %call61 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result)
   %call62 = call ptr @LLVMAddFunction(ptr %llvm_module, ptr %call61, ptr %call4)
-  %fj_seq_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 93
+  %fj_seq_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
   store ptr %call62, ptr %fj_seq_fn, align 8
   %load.struct63 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seq_fn64 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct63, 93
+  %fj_seq_fn64 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct63, 94
   %call65 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_28InternalEv()
   call void @LLVMSetLinkage(ptr %fj_seq_fn64, i32 %call65)
   %load.struct66 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %llvm_module67 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct66, 12
   %call68 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result49)
   %call69 = call ptr @LLVMAddFunction(ptr %llvm_module67, ptr %call68, ptr %call18)
-  %fj_fj_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
+  %fj_fj_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
   store ptr %call69, ptr %fj_fj_fn, align 8
   %load.struct70 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_fj_fn71 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct70, 94
+  %fj_fj_fn71 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct70, 95
   %call72 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_28InternalEv()
   call void @LLVMSetLinkage(ptr %fj_fj_fn71, i32 %call72)
   %load.struct73 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %llvm_module74 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct73, 12
   %call75 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result59)
   %call76 = call ptr @LLVMAddFunction(ptr %llvm_module74, ptr %call75, ptr %call30)
-  %fj_task_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
+  %fj_task_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 96
   store ptr %call76, ptr %fj_task_fn, align 8
   %load.struct77 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_task_fn78 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct77, 95
+  %fj_task_fn78 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct77, 96
   %call79 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_28InternalEv()
   call void @LLVMSetLinkage(ptr %fj_task_fn78, i32 %call79)
   %fj_mode = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 83
   store i64 1, ptr %fj_mode, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 93
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call80 = call i1 @_ZN7EmitterB6scalycB4v0_223emit_function_body_intoE15PlannedFunctionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1, ptr %deref.recv)
   %fj_mode81 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 83
   store i64 2, ptr %fj_mode81, align 8
-  %field.inplace82 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
+  %field.inplace82 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
   %deref.recv83 = load ptr, ptr %field.inplace82, align 8
   %call84 = call i1 @_ZN7EmitterB6scalycB4v0_223emit_function_body_intoE15PlannedFunctionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1, ptr %deref.recv83)
   %fj_mode85 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 83
@@ -554798,11 +554802,11 @@ if.then2:                                         ; preds = %if.end
   store { ptr } %mangled_name, ptr %fj_self4, align 8
   %load.struct5 = load %_Z15PlannedFunctionB6scalycB4v0_2, ptr %1, align 8
   %name = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct5, 3
-  %fj_name = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  %fj_name = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 87
   store { ptr } %name, ptr %fj_name, align 8
   %load.struct6 = load %_Z15PlannedFunctionB6scalycB4v0_2, ptr %1, align 8
   %file = extractvalue %_Z15PlannedFunctionB6scalycB4v0_2 %load.struct6, 15
-  %fj_file = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 87
+  %fj_file = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
   store { ptr } %file, ptr %fj_file, align 8
   br label %if.end3
 
@@ -554826,10 +554830,16 @@ if.then8:                                         ; preds = %if.end3
   br label %for.cond
 
 if.end9:                                          ; preds = %for.exit, %if.end3
-  %call18 = call i1 @_ZN7EmitterB6scalycB4v0_223emit_function_body_intoE15PlannedFunctionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1, ptr %call)
-  %load.struct19 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_seen20 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct19, 85
-  br i1 %fj_seen20, label %if.then21, label %if.end22
+  %load.struct18 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %relaxed_fp = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct18, 86
+  %relaxed_fp19 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  store i1 false, ptr %relaxed_fp19, align 1
+  %call20 = call i1 @_ZN7EmitterB6scalycB4v0_223emit_function_body_intoE15PlannedFunctionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1, ptr %call)
+  %relaxed_fp21 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  store i1 %relaxed_fp, ptr %relaxed_fp21, align 1
+  %load.struct22 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %fj_seen23 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct22, 85
+  br i1 %fj_seen23, label %if.then24, label %if.end25
 
 for.cond:                                         ; preds = %if.end17, %if.then8
   %next = call ptr @_ZN14VectorIteratorI6StringE4nextEv(ptr %iter.alloca)
@@ -554852,18 +554862,18 @@ if.then16:                                        ; preds = %for.body
 if.end17:                                         ; preds = %if.then16, %for.body
   br label %for.cond
 
-if.then21:                                        ; preds = %if.end9
+if.then24:                                        ; preds = %if.end9
   call void @_ZN7EmitterB6scalycB4v0_223emit_fork_join_functionE15PlannedFunctionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1, ptr %call)
-  br label %if.end22
+  br label %if.end25
 
-if.end22:                                         ; preds = %if.then21, %if.end9
-  %fj_self23 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 84
-  call void @_ZN6StringC1Ev(ptr %fj_self23)
-  %fj_seen24 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 85
-  store i1 false, ptr %fj_seen24, align 1
-  %fj_mode25 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 83
-  store i64 0, ptr %fj_mode25, align 8
-  ret i1 %call18
+if.end25:                                         ; preds = %if.then24, %if.end9
+  %fj_self26 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 84
+  call void @_ZN6StringC1Ev(ptr %fj_self26)
+  %fj_seen27 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 85
+  store i1 false, ptr %fj_seen27, align 1
+  %fj_mode28 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 83
+  store i64 0, ptr %fj_mode28, align 8
+  ret i1 %call20
 }
 
 define linkonce_odr void @_ZN7EmitterB6scalycB4v0_226emit_release_before_returnEv(ptr %0) {
@@ -556902,7 +556912,7 @@ entry:
   %ne = icmp ne ptr %call, null
   %id_probe = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 21
   store i1 %ne, ptr %id_probe, align 1
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
   call void @_ZN12StoreEffectsB6scalycB4v0_27analyzeE4PlanB6scalycB4v0_2(ptr %field.inplace, ptr %1)
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %context = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 1
@@ -559632,7 +559642,7 @@ if.then3:                                         ; preds = %if.end
   ret void
 
 if.end4:                                          ; preds = %if.end
-  %main_ir = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 91
+  %main_ir = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 92
   call void @_ZN6StringC1EP10const_char(ptr %main_ir, ptr %call1)
   call void @LLVMDisposeMessage(ptr %call1)
   ret void
@@ -560265,7 +560275,7 @@ if.end179:                                        ; preds = %if.end127
   %jit.call187 = call i64 %as.inttoptr185(i64 %7, ptr %8)
   %call188 = call i64 @scaly_eio_now_ns()
   %sub = sub i64 %call188, %call186
-  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 92
+  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 93
   store i64 %sub, ptr %run_ns, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 %jit.call187
@@ -561073,7 +561083,7 @@ if.end164:                                        ; preds = %while.exit
   %call169 = call i32 @scalyc_wasm_run(ptr %call167, i32 %as.trunc168, ptr %6)
   %call170 = call i64 @scaly_eio_now_ns()
   %sub = sub i64 %call170, %call165
-  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 92
+  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 93
   store i64 %sub, ptr %run_ns, align 8
   %as.sext = sext i32 %call169 to i64
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -564684,7 +564694,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %stack_vectors_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 102
+  %stack_vectors_fn = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 103
   %eq = icmp eq ptr %stack_vectors_fn, null
   br i1 %eq, label %if.then, label %lor.rhs
 
@@ -564693,7 +564703,7 @@ if.then:                                          ; preds = %lor.rhs, %entry
   ret i1 false
 
 if.end:                                           ; preds = %lor.rhs
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 102
   %field.inplace7 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 0
   %field.inplace8 = getelementptr inbounds nuw %_Z4SpanB6scalycB4v0_2, ptr %field.inplace7, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace8, align 8
@@ -564705,7 +564715,7 @@ lor.rhs:                                          ; preds = %entry
   %load.struct1 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %current_function = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 40
   %load.struct2 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %stack_vectors_fn3 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 102
+  %stack_vectors_fn3 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 103
   %ne = icmp ne ptr %current_function, %stack_vectors_fn3
   br i1 %ne, label %if.then, label %if.end
 
@@ -572374,7 +572384,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page295, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %load.struct296 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_name = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct296, 86
+  %fj_name = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct296, 87
   store { ptr } %fj_name, ptr %arg.tmp297, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp297)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 32)
@@ -572384,7 +572394,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp300)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 32)
   %load.struct301 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_name302 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct301, 86
+  %fj_name302 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct301, 87
   store { ptr } %fj_name302, ptr %arg.tmp303, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp303)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region)
@@ -572731,40 +572741,40 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
+  %arg.tmp292 = alloca { ptr }, align 8
   %arg.tmp288 = alloca { ptr }, align 8
-  %arg.tmp284 = alloca { ptr }, align 8
-  %arg.tmp279 = alloca { ptr }, align 8
-  %arg.tmp274 = alloca { ptr }, align 8
+  %arg.tmp283 = alloca { ptr }, align 8
+  %arg.tmp278 = alloca { ptr }, align 8
+  %arg.tmp269 = alloca { ptr }, align 8
   %arg.tmp265 = alloca { ptr }, align 8
-  %arg.tmp261 = alloca { ptr }, align 8
-  %arg.tmp256 = alloca { ptr }, align 8
-  %arg.tmp251 = alloca { ptr }, align 8
-  %arg.tmp246 = alloca { ptr }, align 8
-  %arg.tmp241 = alloca { ptr }, align 8
+  %arg.tmp260 = alloca { ptr }, align 8
+  %arg.tmp255 = alloca { ptr }, align 8
+  %arg.tmp250 = alloca { ptr }, align 8
+  %arg.tmp245 = alloca { ptr }, align 8
+  %arg.tmp230 = alloca { ptr }, align 8
   %arg.tmp226 = alloca { ptr }, align 8
-  %arg.tmp222 = alloca { ptr }, align 8
-  %arg.tmp217 = alloca { ptr }, align 8
-  %arg.tmp212 = alloca { ptr }, align 8
-  %arg.tmp207 = alloca { ptr }, align 8
-  %arg.tmp202 = alloca { ptr }, align 8
+  %arg.tmp221 = alloca { ptr }, align 8
+  %arg.tmp216 = alloca { ptr }, align 8
+  %arg.tmp211 = alloca { ptr }, align 8
+  %arg.tmp206 = alloca { ptr }, align 8
   %fp = alloca i32, align 4
-  %arg.tmp182 = alloca { ptr }, align 8
-  %arg.tmp174 = alloca { ptr }, align 8
-  %arg.tmp165 = alloca { ptr }, align 8
-  %arg.tmp162 = alloca { ptr }, align 8
-  %arg.tmp153 = alloca { ptr }, align 8
-  %arg.tmp150 = alloca { ptr }, align 8
-  %arg.tmp141 = alloca { ptr }, align 8
-  %arg.tmp138 = alloca { ptr }, align 8
-  %arg.tmp115 = alloca { ptr }, align 8
-  %arg.tmp112 = alloca { ptr }, align 8
-  %arg.tmp89 = alloca { ptr }, align 8
-  %arg.tmp87 = alloca { ptr }, align 8
-  %arg.tmp77 = alloca { ptr }, align 8
-  %arg.tmp69 = alloca { ptr }, align 8
-  %arg.tmp60 = alloca { ptr }, align 8
-  %arg.tmp50 = alloca { ptr }, align 8
-  %arg.tmp42 = alloca { ptr }, align 8
+  %arg.tmp186 = alloca { ptr }, align 8
+  %arg.tmp178 = alloca { ptr }, align 8
+  %arg.tmp169 = alloca { ptr }, align 8
+  %arg.tmp166 = alloca { ptr }, align 8
+  %arg.tmp157 = alloca { ptr }, align 8
+  %arg.tmp154 = alloca { ptr }, align 8
+  %arg.tmp145 = alloca { ptr }, align 8
+  %arg.tmp142 = alloca { ptr }, align 8
+  %arg.tmp119 = alloca { ptr }, align 8
+  %arg.tmp116 = alloca { ptr }, align 8
+  %arg.tmp92 = alloca { ptr }, align 8
+  %arg.tmp90 = alloca { ptr }, align 8
+  %arg.tmp80 = alloca { ptr }, align 8
+  %arg.tmp72 = alloca { ptr }, align 8
+  %arg.tmp63 = alloca { ptr }, align 8
+  %arg.tmp52 = alloca { ptr }, align 8
+  %arg.tmp43 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %r = alloca ptr, align 8
   %l = alloca ptr, align 8
@@ -572850,16 +572860,16 @@ if.then34:                                        ; preds = %lor.end
   br i1 %call36, label %match.case, label %match.next
 
 if.else:                                          ; preds = %lor.end
-  store { ptr } { ptr @.sconst.6657 }, ptr %arg.tmp60, align 1
-  %call61 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp60)
-  br i1 %call61, label %match.case58, label %match.next59
+  store { ptr } { ptr @.sconst.6657 }, ptr %arg.tmp63, align 1
+  %call64 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp63)
+  br i1 %call64, label %match.case61, label %match.next62
 
-if.end35:                                         ; preds = %match.end57, %match.end
-  store { ptr } { ptr @.sconst.6663 }, ptr %arg.tmp87, align 1
-  %call88 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp87)
-  br i1 %call88, label %match.case85, label %match.alt
+if.end35:                                         ; preds = %match.end60, %match.end
+  store { ptr } { ptr @.sconst.6663 }, ptr %arg.tmp90, align 1
+  %call91 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp90)
+  br i1 %call91, label %match.case88, label %match.alt
 
-match.end:                                        ; preds = %match.next41
+match.end:                                        ; preds = %match.next42
   br label %if.end35
 
 match.case:                                       ; preds = %if.then34
@@ -572868,501 +572878,524 @@ match.case:                                       ; preds = %if.then34
   %l37 = load ptr, ptr %l, align 8
   %r38 = load ptr, ptr %r, align 8
   %call39 = call ptr @LLVMBuildFAdd(ptr %builder, ptr %l37, ptr %r38, ptr @.str.6652)
+  %call40 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call39)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call39
+  ret ptr %call40
 
 match.next:                                       ; preds = %if.then34
-  store { ptr } { ptr @.sconst.6653 }, ptr %arg.tmp42, align 1
-  %call43 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp42)
-  br i1 %call43, label %match.case40, label %match.next41
+  store { ptr } { ptr @.sconst.6653 }, ptr %arg.tmp43, align 1
+  %call44 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp43)
+  br i1 %call44, label %match.case41, label %match.next42
 
-match.case40:                                     ; preds = %match.next
-  %load.struct44 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder45 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct44, 13
-  %l46 = load ptr, ptr %l, align 8
-  %r47 = load ptr, ptr %r, align 8
-  %call48 = call ptr @LLVMBuildFSub(ptr %builder45, ptr %l46, ptr %r47, ptr @.str.6654)
+match.case41:                                     ; preds = %match.next
+  %load.struct45 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder46 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct45, 13
+  %l47 = load ptr, ptr %l, align 8
+  %r48 = load ptr, ptr %r, align 8
+  %call49 = call ptr @LLVMBuildFSub(ptr %builder46, ptr %l47, ptr %r48, ptr @.str.6654)
+  %call50 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call49)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call48
+  ret ptr %call50
 
-match.next41:                                     ; preds = %match.next
-  store { ptr } { ptr @.sconst.6655 }, ptr %arg.tmp50, align 1
-  %call51 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp50)
-  br i1 %call51, label %match.case49, label %match.end
+match.next42:                                     ; preds = %match.next
+  store { ptr } { ptr @.sconst.6655 }, ptr %arg.tmp52, align 1
+  %call53 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp52)
+  br i1 %call53, label %match.case51, label %match.end
 
-match.case49:                                     ; preds = %match.next41
-  %load.struct52 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder53 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct52, 13
-  %l54 = load ptr, ptr %l, align 8
-  %r55 = load ptr, ptr %r, align 8
-  %call56 = call ptr @LLVMBuildFMul(ptr %builder53, ptr %l54, ptr %r55, ptr @.str.6656)
+match.case51:                                     ; preds = %match.next42
+  %load.struct54 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder55 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct54, 13
+  %l56 = load ptr, ptr %l, align 8
+  %r57 = load ptr, ptr %r, align 8
+  %call58 = call ptr @LLVMBuildFMul(ptr %builder55, ptr %l56, ptr %r57, ptr @.str.6656)
+  %call59 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call58)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call56
+  ret ptr %call59
 
-match.end57:                                      ; preds = %match.next68
+match.end60:                                      ; preds = %match.next71
   br label %if.end35
 
-match.case58:                                     ; preds = %if.else
-  %load.struct62 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder63 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct62, 13
-  %l64 = load ptr, ptr %l, align 8
-  %r65 = load ptr, ptr %r, align 8
-  %call66 = call ptr @LLVMBuildAdd(ptr %builder63, ptr %l64, ptr %r65, ptr @.str.6658)
+match.case61:                                     ; preds = %if.else
+  %load.struct65 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder66 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct65, 13
+  %l67 = load ptr, ptr %l, align 8
+  %r68 = load ptr, ptr %r, align 8
+  %call69 = call ptr @LLVMBuildAdd(ptr %builder66, ptr %l67, ptr %r68, ptr @.str.6658)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call66
+  ret ptr %call69
 
-match.next59:                                     ; preds = %if.else
-  store { ptr } { ptr @.sconst.6659 }, ptr %arg.tmp69, align 1
-  %call70 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp69)
-  br i1 %call70, label %match.case67, label %match.next68
+match.next62:                                     ; preds = %if.else
+  store { ptr } { ptr @.sconst.6659 }, ptr %arg.tmp72, align 1
+  %call73 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp72)
+  br i1 %call73, label %match.case70, label %match.next71
 
-match.case67:                                     ; preds = %match.next59
-  %load.struct71 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder72 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct71, 13
-  %l73 = load ptr, ptr %l, align 8
-  %r74 = load ptr, ptr %r, align 8
-  %call75 = call ptr @LLVMBuildSub(ptr %builder72, ptr %l73, ptr %r74, ptr @.str.6660)
+match.case70:                                     ; preds = %match.next62
+  %load.struct74 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder75 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct74, 13
+  %l76 = load ptr, ptr %l, align 8
+  %r77 = load ptr, ptr %r, align 8
+  %call78 = call ptr @LLVMBuildSub(ptr %builder75, ptr %l76, ptr %r77, ptr @.str.6660)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call75
+  ret ptr %call78
 
-match.next68:                                     ; preds = %match.next59
-  store { ptr } { ptr @.sconst.6661 }, ptr %arg.tmp77, align 1
-  %call78 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp77)
-  br i1 %call78, label %match.case76, label %match.end57
+match.next71:                                     ; preds = %match.next62
+  store { ptr } { ptr @.sconst.6661 }, ptr %arg.tmp80, align 1
+  %call81 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp80)
+  br i1 %call81, label %match.case79, label %match.end60
 
-match.case76:                                     ; preds = %match.next68
-  %load.struct79 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder80 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct79, 13
-  %l81 = load ptr, ptr %l, align 8
-  %r82 = load ptr, ptr %r, align 8
-  %call83 = call ptr @LLVMBuildMul(ptr %builder80, ptr %l81, ptr %r82, ptr @.str.6662)
+match.case79:                                     ; preds = %match.next71
+  %load.struct82 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder83 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct82, 13
+  %l84 = load ptr, ptr %l, align 8
+  %r85 = load ptr, ptr %r, align 8
+  %call86 = call ptr @LLVMBuildMul(ptr %builder83, ptr %l84, ptr %r85, ptr @.str.6662)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call83
+  ret ptr %call86
 
-match.end84:                                      ; preds = %match.next173
-  br i1 %lor.result, label %if.then196, label %if.else197
+match.end87:                                      ; preds = %match.next177
+  br i1 %lor.result, label %if.then200, label %if.else201
 
-match.case85:                                     ; preds = %match.alt, %if.end35
-  br i1 %lor.result, label %if.then91, label %if.end92
+match.case88:                                     ; preds = %match.alt, %if.end35
+  br i1 %lor.result, label %if.then94, label %if.end95
 
-match.next86:                                     ; preds = %match.alt
-  store { ptr } { ptr @.sconst.6668 }, ptr %arg.tmp112, align 1
-  %call113 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp112)
-  br i1 %call113, label %match.case110, label %match.alt114
+match.next89:                                     ; preds = %match.alt
+  store { ptr } { ptr @.sconst.6668 }, ptr %arg.tmp116, align 1
+  %call117 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp116)
+  br i1 %call117, label %match.case114, label %match.alt118
 
 match.alt:                                        ; preds = %if.end35
-  store { ptr } { ptr @.sconst.6664 }, ptr %arg.tmp89, align 1
-  %call90 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp89)
-  br i1 %call90, label %match.case85, label %match.next86
+  store { ptr } { ptr @.sconst.6664 }, ptr %arg.tmp92, align 1
+  %call93 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp92)
+  br i1 %call93, label %match.case88, label %match.next89
 
-if.then91:                                        ; preds = %match.case85
-  %load.struct93 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder94 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct93, 13
-  %l95 = load ptr, ptr %l, align 8
-  %r96 = load ptr, ptr %r, align 8
-  %call97 = call ptr @LLVMBuildFDiv(ptr %builder94, ptr %l95, ptr %r96, ptr @.str.6665)
+if.then94:                                        ; preds = %match.case88
+  %load.struct96 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder97 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct96, 13
+  %l98 = load ptr, ptr %l, align 8
+  %r99 = load ptr, ptr %r, align 8
+  %call100 = call ptr @LLVMBuildFDiv(ptr %builder97, ptr %l98, ptr %r99, ptr @.str.6665)
+  %call101 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call100)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call97
+  ret ptr %call101
 
-if.end92:                                         ; preds = %match.case85
-  br i1 %call33, label %if.then98, label %if.end99
+if.end95:                                         ; preds = %match.case88
+  br i1 %call33, label %if.then102, label %if.end103
 
-if.then98:                                        ; preds = %if.end92
-  %load.struct100 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder101 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct100, 13
-  %l102 = load ptr, ptr %l, align 8
-  %r103 = load ptr, ptr %r, align 8
-  %call104 = call ptr @LLVMBuildUDiv(ptr %builder101, ptr %l102, ptr %r103, ptr @.str.6666)
+if.then102:                                       ; preds = %if.end95
+  %load.struct104 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder105 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct104, 13
+  %l106 = load ptr, ptr %l, align 8
+  %r107 = load ptr, ptr %r, align 8
+  %call108 = call ptr @LLVMBuildUDiv(ptr %builder105, ptr %l106, ptr %r107, ptr @.str.6666)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call104
+  ret ptr %call108
 
-if.end99:                                         ; preds = %if.end92
-  %load.struct105 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder106 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct105, 13
-  %l107 = load ptr, ptr %l, align 8
-  %r108 = load ptr, ptr %r, align 8
-  %call109 = call ptr @LLVMBuildSDiv(ptr %builder106, ptr %l107, ptr %r108, ptr @.str.6667)
+if.end103:                                        ; preds = %if.end95
+  %load.struct109 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder110 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct109, 13
+  %l111 = load ptr, ptr %l, align 8
+  %r112 = load ptr, ptr %r, align 8
+  %call113 = call ptr @LLVMBuildSDiv(ptr %builder110, ptr %l111, ptr %r112, ptr @.str.6667)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call109
+  ret ptr %call113
 
-match.case110:                                    ; preds = %match.alt114, %match.next86
-  br i1 %lor.result, label %if.then117, label %if.end118
+match.case114:                                    ; preds = %match.alt118, %match.next89
+  br i1 %lor.result, label %if.then121, label %if.end122
 
-match.next111:                                    ; preds = %match.alt114
-  store { ptr } { ptr @.sconst.6673 }, ptr %arg.tmp138, align 1
-  %call139 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp138)
-  br i1 %call139, label %match.case136, label %match.alt140
+match.next115:                                    ; preds = %match.alt118
+  store { ptr } { ptr @.sconst.6673 }, ptr %arg.tmp142, align 1
+  %call143 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp142)
+  br i1 %call143, label %match.case140, label %match.alt144
 
-match.alt114:                                     ; preds = %match.next86
-  store { ptr } { ptr @.sconst.6669 }, ptr %arg.tmp115, align 1
-  %call116 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp115)
-  br i1 %call116, label %match.case110, label %match.next111
+match.alt118:                                     ; preds = %match.next89
+  store { ptr } { ptr @.sconst.6669 }, ptr %arg.tmp119, align 1
+  %call120 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp119)
+  br i1 %call120, label %match.case114, label %match.next115
 
-if.then117:                                       ; preds = %match.case110
-  %load.struct119 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder120 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct119, 13
-  %l121 = load ptr, ptr %l, align 8
-  %r122 = load ptr, ptr %r, align 8
-  %call123 = call ptr @LLVMBuildFRem(ptr %builder120, ptr %l121, ptr %r122, ptr @.str.6670)
+if.then121:                                       ; preds = %match.case114
+  %load.struct123 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder124 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct123, 13
+  %l125 = load ptr, ptr %l, align 8
+  %r126 = load ptr, ptr %r, align 8
+  %call127 = call ptr @LLVMBuildFRem(ptr %builder124, ptr %l125, ptr %r126, ptr @.str.6670)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call123
+  ret ptr %call127
 
-if.end118:                                        ; preds = %match.case110
-  br i1 %call33, label %if.then124, label %if.end125
+if.end122:                                        ; preds = %match.case114
+  br i1 %call33, label %if.then128, label %if.end129
 
-if.then124:                                       ; preds = %if.end118
-  %load.struct126 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder127 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct126, 13
-  %l128 = load ptr, ptr %l, align 8
-  %r129 = load ptr, ptr %r, align 8
-  %call130 = call ptr @LLVMBuildURem(ptr %builder127, ptr %l128, ptr %r129, ptr @.str.6671)
+if.then128:                                       ; preds = %if.end122
+  %load.struct130 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder131 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct130, 13
+  %l132 = load ptr, ptr %l, align 8
+  %r133 = load ptr, ptr %r, align 8
+  %call134 = call ptr @LLVMBuildURem(ptr %builder131, ptr %l132, ptr %r133, ptr @.str.6671)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call130
+  ret ptr %call134
 
-if.end125:                                        ; preds = %if.end118
-  %load.struct131 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder132 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct131, 13
-  %l133 = load ptr, ptr %l, align 8
-  %r134 = load ptr, ptr %r, align 8
-  %call135 = call ptr @LLVMBuildSRem(ptr %builder132, ptr %l133, ptr %r134, ptr @.str.6672)
+if.end129:                                        ; preds = %if.end122
+  %load.struct135 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder136 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct135, 13
+  %l137 = load ptr, ptr %l, align 8
+  %r138 = load ptr, ptr %r, align 8
+  %call139 = call ptr @LLVMBuildSRem(ptr %builder136, ptr %l137, ptr %r138, ptr @.str.6672)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call135
+  ret ptr %call139
 
-match.case136:                                    ; preds = %match.alt140, %match.next111
-  %load.struct143 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder144 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct143, 13
-  %l145 = load ptr, ptr %l, align 8
-  %r146 = load ptr, ptr %r, align 8
-  %call147 = call ptr @LLVMBuildAnd(ptr %builder144, ptr %l145, ptr %r146, ptr @.str.6675)
+match.case140:                                    ; preds = %match.alt144, %match.next115
+  %load.struct147 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder148 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct147, 13
+  %l149 = load ptr, ptr %l, align 8
+  %r150 = load ptr, ptr %r, align 8
+  %call151 = call ptr @LLVMBuildAnd(ptr %builder148, ptr %l149, ptr %r150, ptr @.str.6675)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call147
+  ret ptr %call151
 
-match.next137:                                    ; preds = %match.alt140
-  store { ptr } { ptr @.sconst.6676 }, ptr %arg.tmp150, align 1
-  %call151 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp150)
-  br i1 %call151, label %match.case148, label %match.alt152
+match.next141:                                    ; preds = %match.alt144
+  store { ptr } { ptr @.sconst.6676 }, ptr %arg.tmp154, align 1
+  %call155 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp154)
+  br i1 %call155, label %match.case152, label %match.alt156
 
-match.alt140:                                     ; preds = %match.next111
-  store { ptr } { ptr @.sconst.6674 }, ptr %arg.tmp141, align 1
-  %call142 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp141)
-  br i1 %call142, label %match.case136, label %match.next137
+match.alt144:                                     ; preds = %match.next115
+  store { ptr } { ptr @.sconst.6674 }, ptr %arg.tmp145, align 1
+  %call146 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp145)
+  br i1 %call146, label %match.case140, label %match.next141
 
-match.case148:                                    ; preds = %match.alt152, %match.next137
-  %load.struct155 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder156 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct155, 13
-  %l157 = load ptr, ptr %l, align 8
-  %r158 = load ptr, ptr %r, align 8
-  %call159 = call ptr @LLVMBuildOr(ptr %builder156, ptr %l157, ptr %r158, ptr @.str.6678)
+match.case152:                                    ; preds = %match.alt156, %match.next141
+  %load.struct159 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder160 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct159, 13
+  %l161 = load ptr, ptr %l, align 8
+  %r162 = load ptr, ptr %r, align 8
+  %call163 = call ptr @LLVMBuildOr(ptr %builder160, ptr %l161, ptr %r162, ptr @.str.6678)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call159
+  ret ptr %call163
 
-match.next149:                                    ; preds = %match.alt152
-  store { ptr } { ptr @.sconst.6679 }, ptr %arg.tmp162, align 1
-  %call163 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp162)
-  br i1 %call163, label %match.case160, label %match.alt164
+match.next153:                                    ; preds = %match.alt156
+  store { ptr } { ptr @.sconst.6679 }, ptr %arg.tmp166, align 1
+  %call167 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp166)
+  br i1 %call167, label %match.case164, label %match.alt168
 
-match.alt152:                                     ; preds = %match.next137
-  store { ptr } { ptr @.sconst.6677 }, ptr %arg.tmp153, align 1
-  %call154 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp153)
-  br i1 %call154, label %match.case148, label %match.next149
+match.alt156:                                     ; preds = %match.next141
+  store { ptr } { ptr @.sconst.6677 }, ptr %arg.tmp157, align 1
+  %call158 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp157)
+  br i1 %call158, label %match.case152, label %match.next153
 
-match.case160:                                    ; preds = %match.alt164, %match.next149
-  %load.struct167 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder168 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct167, 13
-  %l169 = load ptr, ptr %l, align 8
-  %r170 = load ptr, ptr %r, align 8
-  %call171 = call ptr @LLVMBuildXor(ptr %builder168, ptr %l169, ptr %r170, ptr @.str.6681)
+match.case164:                                    ; preds = %match.alt168, %match.next153
+  %load.struct171 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder172 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct171, 13
+  %l173 = load ptr, ptr %l, align 8
+  %r174 = load ptr, ptr %r, align 8
+  %call175 = call ptr @LLVMBuildXor(ptr %builder172, ptr %l173, ptr %r174, ptr @.str.6681)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call171
+  ret ptr %call175
 
-match.next161:                                    ; preds = %match.alt164
-  store { ptr } { ptr @.sconst.6682 }, ptr %arg.tmp174, align 1
-  %call175 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp174)
-  br i1 %call175, label %match.case172, label %match.next173
+match.next165:                                    ; preds = %match.alt168
+  store { ptr } { ptr @.sconst.6682 }, ptr %arg.tmp178, align 1
+  %call179 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp178)
+  br i1 %call179, label %match.case176, label %match.next177
 
-match.alt164:                                     ; preds = %match.next149
-  store { ptr } { ptr @.sconst.6680 }, ptr %arg.tmp165, align 1
-  %call166 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp165)
-  br i1 %call166, label %match.case160, label %match.next161
+match.alt168:                                     ; preds = %match.next153
+  store { ptr } { ptr @.sconst.6680 }, ptr %arg.tmp169, align 1
+  %call170 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp169)
+  br i1 %call170, label %match.case164, label %match.next165
 
-match.case172:                                    ; preds = %match.next161
-  %load.struct176 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder177 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct176, 13
-  %l178 = load ptr, ptr %l, align 8
-  %r179 = load ptr, ptr %r, align 8
-  %call180 = call ptr @LLVMBuildShl(ptr %builder177, ptr %l178, ptr %r179, ptr @.str.6683)
+match.case176:                                    ; preds = %match.next165
+  %load.struct180 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder181 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct180, 13
+  %l182 = load ptr, ptr %l, align 8
+  %r183 = load ptr, ptr %r, align 8
+  %call184 = call ptr @LLVMBuildShl(ptr %builder181, ptr %l182, ptr %r183, ptr @.str.6683)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call180
+  ret ptr %call184
 
-match.next173:                                    ; preds = %match.next161
-  store { ptr } { ptr @.sconst.6684 }, ptr %arg.tmp182, align 1
-  %call183 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp182)
-  br i1 %call183, label %match.case181, label %match.end84
+match.next177:                                    ; preds = %match.next165
+  store { ptr } { ptr @.sconst.6684 }, ptr %arg.tmp186, align 1
+  %call187 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp186)
+  br i1 %call187, label %match.case185, label %match.end87
 
-match.case181:                                    ; preds = %match.next173
-  br i1 %call33, label %if.then184, label %if.end185
+match.case185:                                    ; preds = %match.next177
+  br i1 %call33, label %if.then188, label %if.end189
 
-if.then184:                                       ; preds = %match.case181
-  %load.struct186 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder187 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct186, 13
-  %l188 = load ptr, ptr %l, align 8
-  %r189 = load ptr, ptr %r, align 8
-  %call190 = call ptr @LLVMBuildLShr(ptr %builder187, ptr %l188, ptr %r189, ptr @.str.6685)
+if.then188:                                       ; preds = %match.case185
+  %load.struct190 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder191 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct190, 13
+  %l192 = load ptr, ptr %l, align 8
+  %r193 = load ptr, ptr %r, align 8
+  %call194 = call ptr @LLVMBuildLShr(ptr %builder191, ptr %l192, ptr %r193, ptr @.str.6685)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call190
+  ret ptr %call194
 
-if.end185:                                        ; preds = %match.case181
-  %load.struct191 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder192 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct191, 13
-  %l193 = load ptr, ptr %l, align 8
-  %r194 = load ptr, ptr %r, align 8
-  %call195 = call ptr @LLVMBuildAShr(ptr %builder192, ptr %l193, ptr %r194, ptr @.str.6686)
+if.end189:                                        ; preds = %match.case185
+  %load.struct195 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder196 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct195, 13
+  %l197 = load ptr, ptr %l, align 8
+  %r198 = load ptr, ptr %r, align 8
+  %call199 = call ptr @LLVMBuildAShr(ptr %builder196, ptr %l197, ptr %r198, ptr @.str.6686)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call195
+  ret ptr %call199
 
-if.then196:                                       ; preds = %match.end84
+if.then200:                                       ; preds = %match.end87
   store i32 0, ptr %fp, align 1
-  store { ptr } { ptr @.sconst.6687 }, ptr %arg.tmp202, align 1
-  %call203 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp202)
-  br i1 %call203, label %match.case200, label %match.next201
+  store { ptr } { ptr @.sconst.6687 }, ptr %arg.tmp206, align 1
+  %call207 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp206)
+  br i1 %call207, label %match.case204, label %match.next205
 
-if.else197:                                       ; preds = %match.end84
+if.else201:                                       ; preds = %match.end87
   store i32 0, ptr %fp, align 1
-  store { ptr } { ptr @.sconst.6694 }, ptr %arg.tmp241, align 1
-  %call242 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp241)
-  br i1 %call242, label %match.case239, label %match.next240
+  store { ptr } { ptr @.sconst.6694 }, ptr %arg.tmp245, align 1
+  %call246 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp245)
+  br i1 %call246, label %match.case243, label %match.next244
 
-if.end198:                                        ; preds = %if.end294, %if.end231
+if.end202:                                        ; preds = %if.end298, %if.end235
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6705)
-  %call301 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %1)
-  call void @_Z11scaly_eputsP10const_char(ptr %call301)
+  %call305 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %1)
+  call void @_Z11scaly_eputsP10const_char(ptr %call305)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6706)
   call void @exit(i32 14)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-match.end199:                                     ; preds = %match.case225, %match.next221, %match.case220, %match.case215, %match.case210, %match.case205, %match.case200
-  %match.value = phi i32 [ %call204, %match.case200 ], [ %call209, %match.case205 ], [ %call214, %match.case210 ], [ %call219, %match.case215 ], [ %call224, %match.case220 ], [ %call228, %match.case225 ], [ undef, %match.next221 ]
-  %fp229 = load i32, ptr %fp, align 4
-  %ne = icmp ne i32 %fp229, 0
-  br i1 %ne, label %if.then230, label %if.end231
+match.end203:                                     ; preds = %match.case229, %match.next225, %match.case224, %match.case219, %match.case214, %match.case209, %match.case204
+  %match.value = phi i32 [ %call208, %match.case204 ], [ %call213, %match.case209 ], [ %call218, %match.case214 ], [ %call223, %match.case219 ], [ %call228, %match.case224 ], [ %call232, %match.case229 ], [ undef, %match.next225 ]
+  %fp233 = load i32, ptr %fp, align 4
+  %ne = icmp ne i32 %fp233, 0
+  br i1 %ne, label %if.then234, label %if.end235
 
-match.case200:                                    ; preds = %if.then196
-  %call204 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OEQEv()
-  store i32 %call204, ptr %fp, align 1
-  br label %match.end199
+match.case204:                                    ; preds = %if.then200
+  %call208 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OEQEv()
+  store i32 %call208, ptr %fp, align 1
+  br label %match.end203
 
-match.next201:                                    ; preds = %if.then196
-  store { ptr } { ptr @.sconst.6688 }, ptr %arg.tmp207, align 1
-  %call208 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp207)
-  br i1 %call208, label %match.case205, label %match.next206
+match.next205:                                    ; preds = %if.then200
+  store { ptr } { ptr @.sconst.6688 }, ptr %arg.tmp211, align 1
+  %call212 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp211)
+  br i1 %call212, label %match.case209, label %match.next210
 
-match.case205:                                    ; preds = %match.next201
-  %call209 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23UNEEv()
-  store i32 %call209, ptr %fp, align 1
-  br label %match.end199
+match.case209:                                    ; preds = %match.next205
+  %call213 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23UNEEv()
+  store i32 %call213, ptr %fp, align 1
+  br label %match.end203
 
-match.next206:                                    ; preds = %match.next201
-  store { ptr } { ptr @.sconst.6689 }, ptr %arg.tmp212, align 1
-  %call213 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp212)
-  br i1 %call213, label %match.case210, label %match.next211
+match.next210:                                    ; preds = %match.next205
+  store { ptr } { ptr @.sconst.6689 }, ptr %arg.tmp216, align 1
+  %call217 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp216)
+  br i1 %call217, label %match.case214, label %match.next215
 
-match.case210:                                    ; preds = %match.next206
-  %call214 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLTEv()
-  store i32 %call214, ptr %fp, align 1
-  br label %match.end199
+match.case214:                                    ; preds = %match.next210
+  %call218 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLTEv()
+  store i32 %call218, ptr %fp, align 1
+  br label %match.end203
 
-match.next211:                                    ; preds = %match.next206
-  store { ptr } { ptr @.sconst.6690 }, ptr %arg.tmp217, align 1
-  %call218 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp217)
-  br i1 %call218, label %match.case215, label %match.next216
+match.next215:                                    ; preds = %match.next210
+  store { ptr } { ptr @.sconst.6690 }, ptr %arg.tmp221, align 1
+  %call222 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp221)
+  br i1 %call222, label %match.case219, label %match.next220
 
-match.case215:                                    ; preds = %match.next211
-  %call219 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLEEv()
-  store i32 %call219, ptr %fp, align 1
-  br label %match.end199
+match.case219:                                    ; preds = %match.next215
+  %call223 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLEEv()
+  store i32 %call223, ptr %fp, align 1
+  br label %match.end203
 
-match.next216:                                    ; preds = %match.next211
-  store { ptr } { ptr @.sconst.6691 }, ptr %arg.tmp222, align 1
-  %call223 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp222)
-  br i1 %call223, label %match.case220, label %match.next221
-
-match.case220:                                    ; preds = %match.next216
-  %call224 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGTEv()
-  store i32 %call224, ptr %fp, align 1
-  br label %match.end199
-
-match.next221:                                    ; preds = %match.next216
-  store { ptr } { ptr @.sconst.6692 }, ptr %arg.tmp226, align 1
+match.next220:                                    ; preds = %match.next215
+  store { ptr } { ptr @.sconst.6691 }, ptr %arg.tmp226, align 1
   %call227 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp226)
-  br i1 %call227, label %match.case225, label %match.end199
+  br i1 %call227, label %match.case224, label %match.next225
 
-match.case225:                                    ; preds = %match.next221
-  %call228 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGEEv()
+match.case224:                                    ; preds = %match.next220
+  %call228 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGTEv()
   store i32 %call228, ptr %fp, align 1
-  br label %match.end199
+  br label %match.end203
 
-if.then230:                                       ; preds = %match.end199
-  %load.struct232 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder233 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct232, 13
-  %fp234 = load i32, ptr %fp, align 4
-  %l235 = load ptr, ptr %l, align 8
-  %r236 = load ptr, ptr %r, align 8
-  %call237 = call ptr @LLVMBuildFCmp(ptr %builder233, i32 %fp234, ptr %l235, ptr %r236, ptr @.str.6693)
+match.next225:                                    ; preds = %match.next220
+  store { ptr } { ptr @.sconst.6692 }, ptr %arg.tmp230, align 1
+  %call231 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp230)
+  br i1 %call231, label %match.case229, label %match.end203
+
+match.case229:                                    ; preds = %match.next225
+  %call232 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGEEv()
+  store i32 %call232, ptr %fp, align 1
+  br label %match.end203
+
+if.then234:                                       ; preds = %match.end203
+  %load.struct236 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder237 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct236, 13
+  %fp238 = load i32, ptr %fp, align 4
+  %l239 = load ptr, ptr %l, align 8
+  %r240 = load ptr, ptr %r, align 8
+  %call241 = call ptr @LLVMBuildFCmp(ptr %builder237, i32 %fp238, ptr %l239, ptr %r240, ptr @.str.6693)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call237
+  ret ptr %call241
 
-if.end231:                                        ; preds = %match.end199
-  br label %if.end198
+if.end235:                                        ; preds = %match.end203
+  br label %if.end202
 
-match.end238:                                     ; preds = %match.case264, %match.next260, %match.case259, %match.case254, %match.case249, %match.case244, %match.case239
-  %match.value268 = phi i32 [ %call243, %match.case239 ], [ %call248, %match.case244 ], [ %call253, %match.case249 ], [ %call258, %match.case254 ], [ %call263, %match.case259 ], [ %call267, %match.case264 ], [ undef, %match.next260 ]
-  br i1 %call33, label %if.then269, label %if.end270
+match.end242:                                     ; preds = %match.case268, %match.next264, %match.case263, %match.case258, %match.case253, %match.case248, %match.case243
+  %match.value272 = phi i32 [ %call247, %match.case243 ], [ %call252, %match.case248 ], [ %call257, %match.case253 ], [ %call262, %match.case258 ], [ %call267, %match.case263 ], [ %call271, %match.case268 ], [ undef, %match.next264 ]
+  br i1 %call33, label %if.then273, label %if.end274
 
-match.case239:                                    ; preds = %if.else197
-  %call243 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22EQEv()
-  store i32 %call243, ptr %fp, align 1
-  br label %match.end238
+match.case243:                                    ; preds = %if.else201
+  %call247 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22EQEv()
+  store i32 %call247, ptr %fp, align 1
+  br label %match.end242
 
-match.next240:                                    ; preds = %if.else197
-  store { ptr } { ptr @.sconst.6695 }, ptr %arg.tmp246, align 1
-  %call247 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp246)
-  br i1 %call247, label %match.case244, label %match.next245
+match.next244:                                    ; preds = %if.else201
+  store { ptr } { ptr @.sconst.6695 }, ptr %arg.tmp250, align 1
+  %call251 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp250)
+  br i1 %call251, label %match.case248, label %match.next249
 
-match.case244:                                    ; preds = %match.next240
-  %call248 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
-  store i32 %call248, ptr %fp, align 1
-  br label %match.end238
+match.case248:                                    ; preds = %match.next244
+  %call252 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
+  store i32 %call252, ptr %fp, align 1
+  br label %match.end242
 
-match.next245:                                    ; preds = %match.next240
-  store { ptr } { ptr @.sconst.6696 }, ptr %arg.tmp251, align 1
-  %call252 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp251)
-  br i1 %call252, label %match.case249, label %match.next250
+match.next249:                                    ; preds = %match.next244
+  store { ptr } { ptr @.sconst.6696 }, ptr %arg.tmp255, align 1
+  %call256 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp255)
+  br i1 %call256, label %match.case253, label %match.next254
 
-match.case249:                                    ; preds = %match.next245
-  %call253 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLTEv()
-  store i32 %call253, ptr %fp, align 1
-  br label %match.end238
+match.case253:                                    ; preds = %match.next249
+  %call257 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLTEv()
+  store i32 %call257, ptr %fp, align 1
+  br label %match.end242
 
-match.next250:                                    ; preds = %match.next245
-  store { ptr } { ptr @.sconst.6697 }, ptr %arg.tmp256, align 1
-  %call257 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp256)
-  br i1 %call257, label %match.case254, label %match.next255
+match.next254:                                    ; preds = %match.next249
+  store { ptr } { ptr @.sconst.6697 }, ptr %arg.tmp260, align 1
+  %call261 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp260)
+  br i1 %call261, label %match.case258, label %match.next259
 
-match.case254:                                    ; preds = %match.next250
-  %call258 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLEEv()
-  store i32 %call258, ptr %fp, align 1
-  br label %match.end238
+match.case258:                                    ; preds = %match.next254
+  %call262 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLEEv()
+  store i32 %call262, ptr %fp, align 1
+  br label %match.end242
 
-match.next255:                                    ; preds = %match.next250
-  store { ptr } { ptr @.sconst.6698 }, ptr %arg.tmp261, align 1
-  %call262 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp261)
-  br i1 %call262, label %match.case259, label %match.next260
-
-match.case259:                                    ; preds = %match.next255
-  %call263 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGTEv()
-  store i32 %call263, ptr %fp, align 1
-  br label %match.end238
-
-match.next260:                                    ; preds = %match.next255
-  store { ptr } { ptr @.sconst.6699 }, ptr %arg.tmp265, align 1
+match.next259:                                    ; preds = %match.next254
+  store { ptr } { ptr @.sconst.6698 }, ptr %arg.tmp265, align 1
   %call266 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp265)
-  br i1 %call266, label %match.case264, label %match.end238
+  br i1 %call266, label %match.case263, label %match.next264
 
-match.case264:                                    ; preds = %match.next260
-  %call267 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGEEv()
+match.case263:                                    ; preds = %match.next259
+  %call267 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGTEv()
   store i32 %call267, ptr %fp, align 1
-  br label %match.end238
+  br label %match.end242
 
-if.then269:                                       ; preds = %match.end238
-  store { ptr } { ptr @.sconst.6700 }, ptr %arg.tmp274, align 1
-  %call275 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp274)
-  br i1 %call275, label %match.case272, label %match.next273
+match.next264:                                    ; preds = %match.next259
+  store { ptr } { ptr @.sconst.6699 }, ptr %arg.tmp269, align 1
+  %call270 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp269)
+  br i1 %call270, label %match.case268, label %match.end242
 
-if.end270:                                        ; preds = %match.end271, %match.end238
+match.case268:                                    ; preds = %match.next264
+  %call271 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGEEv()
+  store i32 %call271, ptr %fp, align 1
+  br label %match.end242
+
+if.then273:                                       ; preds = %match.end242
+  store { ptr } { ptr @.sconst.6700 }, ptr %arg.tmp278, align 1
+  %call279 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp278)
+  br i1 %call279, label %match.case276, label %match.next277
+
+if.end274:                                        ; preds = %match.end275, %match.end242
   %ip = load i32, ptr %fp, align 4
-  %ne292 = icmp ne i32 %ip, 0
-  br i1 %ne292, label %if.then293, label %if.end294
+  %ne296 = icmp ne i32 %ip, 0
+  br i1 %ne296, label %if.then297, label %if.end298
 
-match.end271:                                     ; preds = %match.case287, %match.next283, %match.case282, %match.case277, %match.case272
-  %match.value291 = phi i32 [ %call276, %match.case272 ], [ %call281, %match.case277 ], [ %call286, %match.case282 ], [ %call290, %match.case287 ], [ undef, %match.next283 ]
-  br label %if.end270
+match.end275:                                     ; preds = %match.case291, %match.next287, %match.case286, %match.case281, %match.case276
+  %match.value295 = phi i32 [ %call280, %match.case276 ], [ %call285, %match.case281 ], [ %call290, %match.case286 ], [ %call294, %match.case291 ], [ undef, %match.next287 ]
+  br label %if.end274
 
-match.case272:                                    ; preds = %if.then269
-  %call276 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULTEv()
-  store i32 %call276, ptr %fp, align 1
-  br label %match.end271
+match.case276:                                    ; preds = %if.then273
+  %call280 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULTEv()
+  store i32 %call280, ptr %fp, align 1
+  br label %match.end275
 
-match.next273:                                    ; preds = %if.then269
-  store { ptr } { ptr @.sconst.6701 }, ptr %arg.tmp279, align 1
-  %call280 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp279)
-  br i1 %call280, label %match.case277, label %match.next278
+match.next277:                                    ; preds = %if.then273
+  store { ptr } { ptr @.sconst.6701 }, ptr %arg.tmp283, align 1
+  %call284 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp283)
+  br i1 %call284, label %match.case281, label %match.next282
 
-match.case277:                                    ; preds = %match.next273
-  %call281 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULEEv()
-  store i32 %call281, ptr %fp, align 1
-  br label %match.end271
+match.case281:                                    ; preds = %match.next277
+  %call285 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULEEv()
+  store i32 %call285, ptr %fp, align 1
+  br label %match.end275
 
-match.next278:                                    ; preds = %match.next273
-  store { ptr } { ptr @.sconst.6702 }, ptr %arg.tmp284, align 1
-  %call285 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp284)
-  br i1 %call285, label %match.case282, label %match.next283
-
-match.case282:                                    ; preds = %match.next278
-  %call286 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGTEv()
-  store i32 %call286, ptr %fp, align 1
-  br label %match.end271
-
-match.next283:                                    ; preds = %match.next278
-  store { ptr } { ptr @.sconst.6703 }, ptr %arg.tmp288, align 1
+match.next282:                                    ; preds = %match.next277
+  store { ptr } { ptr @.sconst.6702 }, ptr %arg.tmp288, align 1
   %call289 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp288)
-  br i1 %call289, label %match.case287, label %match.end271
+  br i1 %call289, label %match.case286, label %match.next287
 
-match.case287:                                    ; preds = %match.next283
-  %call290 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGEEv()
+match.case286:                                    ; preds = %match.next282
+  %call290 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGTEv()
   store i32 %call290, ptr %fp, align 1
-  br label %match.end271
+  br label %match.end275
 
-if.then293:                                       ; preds = %if.end270
-  %load.struct295 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder296 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct295, 13
-  %ip297 = load i32, ptr %fp, align 4
-  %l298 = load ptr, ptr %l, align 8
-  %r299 = load ptr, ptr %r, align 8
-  %call300 = call ptr @LLVMBuildICmp(ptr %builder296, i32 %ip297, ptr %l298, ptr %r299, ptr @.str.6704)
+match.next287:                                    ; preds = %match.next282
+  store { ptr } { ptr @.sconst.6703 }, ptr %arg.tmp292, align 1
+  %call293 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp292)
+  br i1 %call293, label %match.case291, label %match.end275
+
+match.case291:                                    ; preds = %match.next287
+  %call294 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGEEv()
+  store i32 %call294, ptr %fp, align 1
+  br label %match.end275
+
+if.then297:                                       ; preds = %if.end274
+  %load.struct299 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder300 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct299, 13
+  %ip301 = load i32, ptr %fp, align 4
+  %l302 = load ptr, ptr %l, align 8
+  %r303 = load ptr, ptr %r, align 8
+  %call304 = call ptr @LLVMBuildICmp(ptr %builder300, i32 %ip301, ptr %l302, ptr %r303, ptr @.str.6704)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call300
+  ret ptr %call304
 
-if.end294:                                        ; preds = %if.end270
-  br label %if.end198
+if.end298:                                        ; preds = %if.end274
+  br label %if.end202
+}
+
+define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %relaxed_fp = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 86
+  br i1 %relaxed_fp, label %land.rhs, label %if.end
+
+if.then:                                          ; preds = %land.rhs
+  call void @LLVMSetFastMathFlags(ptr %1, i32 1)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %land.rhs, %entry
+  ret ptr %1
+
+land.rhs:                                         ; preds = %entry
+  %call = call i32 @LLVMCanValueUseFastMathFlags(ptr %1)
+  %ne = icmp ne i32 %call, 0
+  br i1 %ne, label %if.then, label %if.end
 }
 
 define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_224emit_intrinsic_binary_opE6StringP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) {
 entry:
   %fn_len = alloca i64, align 8
-  %arg.tmp726 = alloca { ptr }, align 8
-  %arg.tmp689 = alloca { ptr }, align 8
-  %arg.tmp652 = alloca { ptr }, align 8
-  %arg.tmp615 = alloca { ptr }, align 8
-  %arg.tmp578 = alloca { ptr }, align 8
-  %arg.tmp543 = alloca { ptr }, align 8
-  %arg.tmp508 = alloca { ptr }, align 8
-  %arg.tmp491 = alloca { ptr }, align 8
-  %arg.tmp482 = alloca { ptr }, align 8
-  %arg.tmp473 = alloca { ptr }, align 8
-  %arg.tmp464 = alloca { ptr }, align 8
-  %arg.tmp455 = alloca { ptr }, align 8
-  %arg.tmp446 = alloca { ptr }, align 8
-  %arg.tmp437 = alloca { ptr }, align 8
-  %arg.tmp428 = alloca { ptr }, align 8
-  %arg.tmp419 = alloca { ptr }, align 8
-  %arg.tmp410 = alloca { ptr }, align 8
-  %arg.tmp385 = alloca { ptr }, align 8
-  %arg.tmp360 = alloca { ptr }, align 8
-  %arg.tmp335 = alloca { ptr }, align 8
-  %arg.tmp310 = alloca { ptr }, align 8
-  %arg.tmp293 = alloca { ptr }, align 8
-  %arg.tmp276 = alloca { ptr }, align 8
+  %arg.tmp731 = alloca { ptr }, align 8
+  %arg.tmp694 = alloca { ptr }, align 8
+  %arg.tmp657 = alloca { ptr }, align 8
+  %arg.tmp620 = alloca { ptr }, align 8
+  %arg.tmp583 = alloca { ptr }, align 8
+  %arg.tmp548 = alloca { ptr }, align 8
+  %arg.tmp513 = alloca { ptr }, align 8
+  %arg.tmp496 = alloca { ptr }, align 8
+  %arg.tmp487 = alloca { ptr }, align 8
+  %arg.tmp478 = alloca { ptr }, align 8
+  %arg.tmp469 = alloca { ptr }, align 8
+  %arg.tmp460 = alloca { ptr }, align 8
+  %arg.tmp451 = alloca { ptr }, align 8
+  %arg.tmp442 = alloca { ptr }, align 8
+  %arg.tmp433 = alloca { ptr }, align 8
+  %arg.tmp424 = alloca { ptr }, align 8
+  %arg.tmp415 = alloca { ptr }, align 8
+  %arg.tmp390 = alloca { ptr }, align 8
+  %arg.tmp364 = alloca { ptr }, align 8
+  %arg.tmp339 = alloca { ptr }, align 8
+  %arg.tmp313 = alloca { ptr }, align 8
+  %arg.tmp295 = alloca { ptr }, align 8
+  %arg.tmp277 = alloca { ptr }, align 8
   %arg.tmp259 = alloca { ptr }, align 8
   %arg.tmp135 = alloca { ptr }, align 8
   %arg.tmp133 = alloca { ptr }, align 8
@@ -573865,9 +573898,9 @@ if.then261:                                       ; preds = %if.end245
   br i1 %is_float263, label %if.then264, label %if.end265
 
 if.end262:                                        ; preds = %if.end245
-  store { ptr } { ptr @.sconst.6556 }, ptr %arg.tmp276, align 1
-  %call277 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp276)
-  br i1 %call277, label %if.then278, label %if.end279
+  store { ptr } { ptr @.sconst.6556 }, ptr %arg.tmp277, align 1
+  %call278 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp277)
+  br i1 %call278, label %if.then279, label %if.end280
 
 if.then264:                                       ; preds = %if.then261
   %load.struct266 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
@@ -573875,754 +573908,759 @@ if.then264:                                       ; preds = %if.then261
   %l268 = load ptr, ptr %l, align 8
   %r269 = load ptr, ptr %r, align 8
   %call270 = call ptr @LLVMBuildFAdd(ptr %builder267, ptr %l268, ptr %r269, ptr @.str.6554)
+  %call271 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call270)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call270
+  ret ptr %call271
 
 if.end265:                                        ; preds = %if.then261
-  %load.struct271 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder272 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct271, 13
-  %l273 = load ptr, ptr %l, align 8
-  %r274 = load ptr, ptr %r, align 8
-  %call275 = call ptr @LLVMBuildAdd(ptr %builder272, ptr %l273, ptr %r274, ptr @.str.6555)
+  %load.struct272 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder273 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct272, 13
+  %l274 = load ptr, ptr %l, align 8
+  %r275 = load ptr, ptr %r, align 8
+  %call276 = call ptr @LLVMBuildAdd(ptr %builder273, ptr %l274, ptr %r275, ptr @.str.6555)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call275
+  ret ptr %call276
 
-if.then278:                                       ; preds = %if.end262
-  %is_float280 = load i1, ptr %is_float, align 1
-  br i1 %is_float280, label %if.then281, label %if.end282
+if.then279:                                       ; preds = %if.end262
+  %is_float281 = load i1, ptr %is_float, align 1
+  br i1 %is_float281, label %if.then282, label %if.end283
 
-if.end279:                                        ; preds = %if.end262
-  store { ptr } { ptr @.sconst.6559 }, ptr %arg.tmp293, align 1
-  %call294 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp293)
-  br i1 %call294, label %if.then295, label %if.end296
+if.end280:                                        ; preds = %if.end262
+  store { ptr } { ptr @.sconst.6559 }, ptr %arg.tmp295, align 1
+  %call296 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp295)
+  br i1 %call296, label %if.then297, label %if.end298
 
-if.then281:                                       ; preds = %if.then278
-  %load.struct283 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder284 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct283, 13
-  %l285 = load ptr, ptr %l, align 8
-  %r286 = load ptr, ptr %r, align 8
-  %call287 = call ptr @LLVMBuildFSub(ptr %builder284, ptr %l285, ptr %r286, ptr @.str.6557)
+if.then282:                                       ; preds = %if.then279
+  %load.struct284 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder285 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct284, 13
+  %l286 = load ptr, ptr %l, align 8
+  %r287 = load ptr, ptr %r, align 8
+  %call288 = call ptr @LLVMBuildFSub(ptr %builder285, ptr %l286, ptr %r287, ptr @.str.6557)
+  %call289 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call288)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call287
+  ret ptr %call289
 
-if.end282:                                        ; preds = %if.then278
-  %load.struct288 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder289 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct288, 13
-  %l290 = load ptr, ptr %l, align 8
-  %r291 = load ptr, ptr %r, align 8
-  %call292 = call ptr @LLVMBuildSub(ptr %builder289, ptr %l290, ptr %r291, ptr @.str.6558)
+if.end283:                                        ; preds = %if.then279
+  %load.struct290 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder291 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct290, 13
+  %l292 = load ptr, ptr %l, align 8
+  %r293 = load ptr, ptr %r, align 8
+  %call294 = call ptr @LLVMBuildSub(ptr %builder291, ptr %l292, ptr %r293, ptr @.str.6558)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call292
+  ret ptr %call294
 
-if.then295:                                       ; preds = %if.end279
-  %is_float297 = load i1, ptr %is_float, align 1
-  br i1 %is_float297, label %if.then298, label %if.end299
+if.then297:                                       ; preds = %if.end280
+  %is_float299 = load i1, ptr %is_float, align 1
+  br i1 %is_float299, label %if.then300, label %if.end301
 
-if.end296:                                        ; preds = %if.end279
-  store { ptr } { ptr @.sconst.6562 }, ptr %arg.tmp310, align 1
-  %call311 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp310)
-  br i1 %call311, label %if.then312, label %if.end313
+if.end298:                                        ; preds = %if.end280
+  store { ptr } { ptr @.sconst.6562 }, ptr %arg.tmp313, align 1
+  %call314 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp313)
+  br i1 %call314, label %if.then315, label %if.end316
 
-if.then298:                                       ; preds = %if.then295
-  %load.struct300 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder301 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct300, 13
-  %l302 = load ptr, ptr %l, align 8
-  %r303 = load ptr, ptr %r, align 8
-  %call304 = call ptr @LLVMBuildFMul(ptr %builder301, ptr %l302, ptr %r303, ptr @.str.6560)
+if.then300:                                       ; preds = %if.then297
+  %load.struct302 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder303 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct302, 13
+  %l304 = load ptr, ptr %l, align 8
+  %r305 = load ptr, ptr %r, align 8
+  %call306 = call ptr @LLVMBuildFMul(ptr %builder303, ptr %l304, ptr %r305, ptr @.str.6560)
+  %call307 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call306)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call304
+  ret ptr %call307
 
-if.end299:                                        ; preds = %if.then295
-  %load.struct305 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder306 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct305, 13
-  %l307 = load ptr, ptr %l, align 8
-  %r308 = load ptr, ptr %r, align 8
-  %call309 = call ptr @LLVMBuildMul(ptr %builder306, ptr %l307, ptr %r308, ptr @.str.6561)
+if.end301:                                        ; preds = %if.then297
+  %load.struct308 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder309 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct308, 13
+  %l310 = load ptr, ptr %l, align 8
+  %r311 = load ptr, ptr %r, align 8
+  %call312 = call ptr @LLVMBuildMul(ptr %builder309, ptr %l310, ptr %r311, ptr @.str.6561)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call309
+  ret ptr %call312
 
-if.then312:                                       ; preds = %if.end296
-  %is_float314 = load i1, ptr %is_float, align 1
-  br i1 %is_float314, label %if.then315, label %if.end316
+if.then315:                                       ; preds = %if.end298
+  %is_float317 = load i1, ptr %is_float, align 1
+  br i1 %is_float317, label %if.then318, label %if.end319
 
-if.end313:                                        ; preds = %if.end296
-  store { ptr } { ptr @.sconst.6566 }, ptr %arg.tmp335, align 1
-  %call336 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp335)
-  br i1 %call336, label %if.then337, label %if.end338
+if.end316:                                        ; preds = %if.end298
+  store { ptr } { ptr @.sconst.6566 }, ptr %arg.tmp339, align 1
+  %call340 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp339)
+  br i1 %call340, label %if.then341, label %if.end342
 
-if.then315:                                       ; preds = %if.then312
-  %load.struct317 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder318 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct317, 13
-  %l319 = load ptr, ptr %l, align 8
-  %r320 = load ptr, ptr %r, align 8
-  %call321 = call ptr @LLVMBuildFDiv(ptr %builder318, ptr %l319, ptr %r320, ptr @.str.6563)
+if.then318:                                       ; preds = %if.then315
+  %load.struct320 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder321 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct320, 13
+  %l322 = load ptr, ptr %l, align 8
+  %r323 = load ptr, ptr %r, align 8
+  %call324 = call ptr @LLVMBuildFDiv(ptr %builder321, ptr %l322, ptr %r323, ptr @.str.6563)
+  %call325 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call324)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call321
+  ret ptr %call325
 
-if.end316:                                        ; preds = %if.then312
-  %is_signed322 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed322, label %if.then323, label %if.end324
+if.end319:                                        ; preds = %if.then315
+  %is_signed326 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed326, label %if.then327, label %if.end328
 
-if.then323:                                       ; preds = %if.end316
-  %load.struct325 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder326 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct325, 13
-  %l327 = load ptr, ptr %l, align 8
-  %r328 = load ptr, ptr %r, align 8
-  %call329 = call ptr @LLVMBuildSDiv(ptr %builder326, ptr %l327, ptr %r328, ptr @.str.6564)
+if.then327:                                       ; preds = %if.end319
+  %load.struct329 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder330 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct329, 13
+  %l331 = load ptr, ptr %l, align 8
+  %r332 = load ptr, ptr %r, align 8
+  %call333 = call ptr @LLVMBuildSDiv(ptr %builder330, ptr %l331, ptr %r332, ptr @.str.6564)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call329
+  ret ptr %call333
 
-if.end324:                                        ; preds = %if.end316
-  %load.struct330 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder331 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct330, 13
-  %l332 = load ptr, ptr %l, align 8
-  %r333 = load ptr, ptr %r, align 8
-  %call334 = call ptr @LLVMBuildUDiv(ptr %builder331, ptr %l332, ptr %r333, ptr @.str.6565)
+if.end328:                                        ; preds = %if.end319
+  %load.struct334 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder335 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct334, 13
+  %l336 = load ptr, ptr %l, align 8
+  %r337 = load ptr, ptr %r, align 8
+  %call338 = call ptr @LLVMBuildUDiv(ptr %builder335, ptr %l336, ptr %r337, ptr @.str.6565)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call334
+  ret ptr %call338
 
-if.then337:                                       ; preds = %if.end313
-  %is_float339 = load i1, ptr %is_float, align 1
-  br i1 %is_float339, label %if.then340, label %if.end341
+if.then341:                                       ; preds = %if.end316
+  %is_float343 = load i1, ptr %is_float, align 1
+  br i1 %is_float343, label %if.then344, label %if.end345
 
-if.end338:                                        ; preds = %if.end313
-  store { ptr } { ptr @.sconst.6570 }, ptr %arg.tmp360, align 1
-  %call361 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp360)
-  br i1 %call361, label %if.then362, label %if.end363
+if.end342:                                        ; preds = %if.end316
+  store { ptr } { ptr @.sconst.6570 }, ptr %arg.tmp364, align 1
+  %call365 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp364)
+  br i1 %call365, label %if.then366, label %if.end367
 
-if.then340:                                       ; preds = %if.then337
-  %load.struct342 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder343 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct342, 13
-  %l344 = load ptr, ptr %l, align 8
-  %r345 = load ptr, ptr %r, align 8
-  %call346 = call ptr @LLVMBuildFRem(ptr %builder343, ptr %l344, ptr %r345, ptr @.str.6567)
+if.then344:                                       ; preds = %if.then341
+  %load.struct346 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder347 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct346, 13
+  %l348 = load ptr, ptr %l, align 8
+  %r349 = load ptr, ptr %r, align 8
+  %call350 = call ptr @LLVMBuildFRem(ptr %builder347, ptr %l348, ptr %r349, ptr @.str.6567)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call346
+  ret ptr %call350
 
-if.end341:                                        ; preds = %if.then337
-  %is_signed347 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed347, label %if.then348, label %if.end349
+if.end345:                                        ; preds = %if.then341
+  %is_signed351 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed351, label %if.then352, label %if.end353
 
-if.then348:                                       ; preds = %if.end341
-  %load.struct350 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder351 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct350, 13
-  %l352 = load ptr, ptr %l, align 8
-  %r353 = load ptr, ptr %r, align 8
-  %call354 = call ptr @LLVMBuildSRem(ptr %builder351, ptr %l352, ptr %r353, ptr @.str.6568)
+if.then352:                                       ; preds = %if.end345
+  %load.struct354 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder355 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct354, 13
+  %l356 = load ptr, ptr %l, align 8
+  %r357 = load ptr, ptr %r, align 8
+  %call358 = call ptr @LLVMBuildSRem(ptr %builder355, ptr %l356, ptr %r357, ptr @.str.6568)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call354
+  ret ptr %call358
 
-if.end349:                                        ; preds = %if.end341
-  %load.struct355 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder356 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct355, 13
-  %l357 = load ptr, ptr %l, align 8
-  %r358 = load ptr, ptr %r, align 8
-  %call359 = call ptr @LLVMBuildURem(ptr %builder356, ptr %l357, ptr %r358, ptr @.str.6569)
+if.end353:                                        ; preds = %if.end345
+  %load.struct359 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder360 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct359, 13
+  %l361 = load ptr, ptr %l, align 8
+  %r362 = load ptr, ptr %r, align 8
+  %call363 = call ptr @LLVMBuildURem(ptr %builder360, ptr %l361, ptr %r362, ptr @.str.6569)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call359
+  ret ptr %call363
 
-if.then362:                                       ; preds = %if.end338
-  %is_float364 = load i1, ptr %is_float, align 1
-  br i1 %is_float364, label %if.then365, label %if.end366
+if.then366:                                       ; preds = %if.end342
+  %is_float368 = load i1, ptr %is_float, align 1
+  br i1 %is_float368, label %if.then369, label %if.end370
 
-if.end363:                                        ; preds = %if.end338
-  store { ptr } { ptr @.sconst.6574 }, ptr %arg.tmp385, align 1
-  %call386 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp385)
-  br i1 %call386, label %if.then387, label %if.end388
+if.end367:                                        ; preds = %if.end342
+  store { ptr } { ptr @.sconst.6574 }, ptr %arg.tmp390, align 1
+  %call391 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp390)
+  br i1 %call391, label %if.then392, label %if.end393
 
-if.then365:                                       ; preds = %if.then362
-  %load.struct367 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder368 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct367, 13
-  %l369 = load ptr, ptr %l, align 8
-  %r370 = load ptr, ptr %r, align 8
-  %call371 = call ptr @LLVMBuildFDiv(ptr %builder368, ptr %l369, ptr %r370, ptr @.str.6571)
+if.then369:                                       ; preds = %if.then366
+  %load.struct371 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder372 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct371, 13
+  %l373 = load ptr, ptr %l, align 8
+  %r374 = load ptr, ptr %r, align 8
+  %call375 = call ptr @LLVMBuildFDiv(ptr %builder372, ptr %l373, ptr %r374, ptr @.str.6571)
+  %call376 = call ptr @_ZN7EmitterB6scalycB4v0_25relaxEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %call375)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call371
+  ret ptr %call376
 
-if.end366:                                        ; preds = %if.then362
-  %is_signed372 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed372, label %if.then373, label %if.end374
+if.end370:                                        ; preds = %if.then366
+  %is_signed377 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed377, label %if.then378, label %if.end379
 
-if.then373:                                       ; preds = %if.end366
-  %load.struct375 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder376 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct375, 13
-  %l377 = load ptr, ptr %l, align 8
-  %r378 = load ptr, ptr %r, align 8
-  %call379 = call ptr @LLVMBuildSDiv(ptr %builder376, ptr %l377, ptr %r378, ptr @.str.6572)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call379
-
-if.end374:                                        ; preds = %if.end366
+if.then378:                                       ; preds = %if.end370
   %load.struct380 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder381 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct380, 13
   %l382 = load ptr, ptr %l, align 8
   %r383 = load ptr, ptr %r, align 8
-  %call384 = call ptr @LLVMBuildUDiv(ptr %builder381, ptr %l382, ptr %r383, ptr @.str.6573)
+  %call384 = call ptr @LLVMBuildSDiv(ptr %builder381, ptr %l382, ptr %r383, ptr @.str.6572)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr %call384
 
-if.then387:                                       ; preds = %if.end363
-  %is_float389 = load i1, ptr %is_float, align 1
-  br i1 %is_float389, label %if.then390, label %if.end391
-
-if.end388:                                        ; preds = %if.end363
-  store { ptr } { ptr @.sconst.6578 }, ptr %arg.tmp410, align 1
-  %call411 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp410)
-  br i1 %call411, label %if.then412, label %if.end413
-
-if.then390:                                       ; preds = %if.then387
-  %load.struct392 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder393 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct392, 13
-  %l394 = load ptr, ptr %l, align 8
-  %r395 = load ptr, ptr %r, align 8
-  %call396 = call ptr @LLVMBuildFRem(ptr %builder393, ptr %l394, ptr %r395, ptr @.str.6575)
+if.end379:                                        ; preds = %if.end370
+  %load.struct385 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder386 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct385, 13
+  %l387 = load ptr, ptr %l, align 8
+  %r388 = load ptr, ptr %r, align 8
+  %call389 = call ptr @LLVMBuildUDiv(ptr %builder386, ptr %l387, ptr %r388, ptr @.str.6573)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call396
+  ret ptr %call389
 
-if.end391:                                        ; preds = %if.then387
-  %is_signed397 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed397, label %if.then398, label %if.end399
+if.then392:                                       ; preds = %if.end367
+  %is_float394 = load i1, ptr %is_float, align 1
+  br i1 %is_float394, label %if.then395, label %if.end396
 
-if.then398:                                       ; preds = %if.end391
-  %load.struct400 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder401 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct400, 13
-  %l402 = load ptr, ptr %l, align 8
-  %r403 = load ptr, ptr %r, align 8
-  %call404 = call ptr @LLVMBuildSRem(ptr %builder401, ptr %l402, ptr %r403, ptr @.str.6576)
+if.end393:                                        ; preds = %if.end367
+  store { ptr } { ptr @.sconst.6578 }, ptr %arg.tmp415, align 1
+  %call416 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp415)
+  br i1 %call416, label %if.then417, label %if.end418
+
+if.then395:                                       ; preds = %if.then392
+  %load.struct397 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder398 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct397, 13
+  %l399 = load ptr, ptr %l, align 8
+  %r400 = load ptr, ptr %r, align 8
+  %call401 = call ptr @LLVMBuildFRem(ptr %builder398, ptr %l399, ptr %r400, ptr @.str.6575)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call404
+  ret ptr %call401
 
-if.end399:                                        ; preds = %if.end391
+if.end396:                                        ; preds = %if.then392
+  %is_signed402 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed402, label %if.then403, label %if.end404
+
+if.then403:                                       ; preds = %if.end396
   %load.struct405 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder406 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct405, 13
   %l407 = load ptr, ptr %l, align 8
   %r408 = load ptr, ptr %r, align 8
-  %call409 = call ptr @LLVMBuildURem(ptr %builder406, ptr %l407, ptr %r408, ptr @.str.6577)
+  %call409 = call ptr @LLVMBuildSRem(ptr %builder406, ptr %l407, ptr %r408, ptr @.str.6576)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr %call409
 
-if.then412:                                       ; preds = %if.end388
-  %load.struct414 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder415 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct414, 13
-  %l416 = load ptr, ptr %l, align 8
-  %r417 = load ptr, ptr %r, align 8
-  %call418 = call ptr @LLVMBuildAnd(ptr %builder415, ptr %l416, ptr %r417, ptr @.str.6579)
+if.end404:                                        ; preds = %if.end396
+  %load.struct410 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder411 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct410, 13
+  %l412 = load ptr, ptr %l, align 8
+  %r413 = load ptr, ptr %r, align 8
+  %call414 = call ptr @LLVMBuildURem(ptr %builder411, ptr %l412, ptr %r413, ptr @.str.6577)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call418
+  ret ptr %call414
 
-if.end413:                                        ; preds = %if.end388
-  store { ptr } { ptr @.sconst.6580 }, ptr %arg.tmp419, align 1
-  %call420 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp419)
-  br i1 %call420, label %if.then421, label %if.end422
-
-if.then421:                                       ; preds = %if.end413
-  %load.struct423 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder424 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct423, 13
-  %l425 = load ptr, ptr %l, align 8
-  %r426 = load ptr, ptr %r, align 8
-  %call427 = call ptr @LLVMBuildOr(ptr %builder424, ptr %l425, ptr %r426, ptr @.str.6581)
+if.then417:                                       ; preds = %if.end393
+  %load.struct419 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder420 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct419, 13
+  %l421 = load ptr, ptr %l, align 8
+  %r422 = load ptr, ptr %r, align 8
+  %call423 = call ptr @LLVMBuildAnd(ptr %builder420, ptr %l421, ptr %r422, ptr @.str.6579)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call427
+  ret ptr %call423
 
-if.end422:                                        ; preds = %if.end413
-  store { ptr } { ptr @.sconst.6582 }, ptr %arg.tmp428, align 1
-  %call429 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp428)
-  br i1 %call429, label %if.then430, label %if.end431
+if.end418:                                        ; preds = %if.end393
+  store { ptr } { ptr @.sconst.6580 }, ptr %arg.tmp424, align 1
+  %call425 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp424)
+  br i1 %call425, label %if.then426, label %if.end427
 
-if.then430:                                       ; preds = %if.end422
-  %load.struct432 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder433 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct432, 13
-  %l434 = load ptr, ptr %l, align 8
-  %r435 = load ptr, ptr %r, align 8
-  %call436 = call ptr @LLVMBuildAnd(ptr %builder433, ptr %l434, ptr %r435, ptr @.str.6583)
+if.then426:                                       ; preds = %if.end418
+  %load.struct428 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder429 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct428, 13
+  %l430 = load ptr, ptr %l, align 8
+  %r431 = load ptr, ptr %r, align 8
+  %call432 = call ptr @LLVMBuildOr(ptr %builder429, ptr %l430, ptr %r431, ptr @.str.6581)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call436
+  ret ptr %call432
 
-if.end431:                                        ; preds = %if.end422
-  store { ptr } { ptr @.sconst.6584 }, ptr %arg.tmp437, align 1
-  %call438 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp437)
-  br i1 %call438, label %if.then439, label %if.end440
+if.end427:                                        ; preds = %if.end418
+  store { ptr } { ptr @.sconst.6582 }, ptr %arg.tmp433, align 1
+  %call434 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp433)
+  br i1 %call434, label %if.then435, label %if.end436
 
-if.then439:                                       ; preds = %if.end431
-  %load.struct441 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder442 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct441, 13
-  %l443 = load ptr, ptr %l, align 8
-  %r444 = load ptr, ptr %r, align 8
-  %call445 = call ptr @LLVMBuildOr(ptr %builder442, ptr %l443, ptr %r444, ptr @.str.6585)
+if.then435:                                       ; preds = %if.end427
+  %load.struct437 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder438 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct437, 13
+  %l439 = load ptr, ptr %l, align 8
+  %r440 = load ptr, ptr %r, align 8
+  %call441 = call ptr @LLVMBuildAnd(ptr %builder438, ptr %l439, ptr %r440, ptr @.str.6583)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call445
+  ret ptr %call441
 
-if.end440:                                        ; preds = %if.end431
-  store { ptr } { ptr @.sconst.6586 }, ptr %arg.tmp446, align 1
-  %call447 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp446)
-  br i1 %call447, label %if.then448, label %if.end449
+if.end436:                                        ; preds = %if.end427
+  store { ptr } { ptr @.sconst.6584 }, ptr %arg.tmp442, align 1
+  %call443 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp442)
+  br i1 %call443, label %if.then444, label %if.end445
 
-if.then448:                                       ; preds = %if.end440
-  %load.struct450 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder451 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct450, 13
-  %l452 = load ptr, ptr %l, align 8
-  %r453 = load ptr, ptr %r, align 8
-  %call454 = call ptr @LLVMBuildAnd(ptr %builder451, ptr %l452, ptr %r453, ptr @.str.6587)
+if.then444:                                       ; preds = %if.end436
+  %load.struct446 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder447 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct446, 13
+  %l448 = load ptr, ptr %l, align 8
+  %r449 = load ptr, ptr %r, align 8
+  %call450 = call ptr @LLVMBuildOr(ptr %builder447, ptr %l448, ptr %r449, ptr @.str.6585)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call454
+  ret ptr %call450
 
-if.end449:                                        ; preds = %if.end440
-  store { ptr } { ptr @.sconst.6588 }, ptr %arg.tmp455, align 1
-  %call456 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp455)
-  br i1 %call456, label %if.then457, label %if.end458
+if.end445:                                        ; preds = %if.end436
+  store { ptr } { ptr @.sconst.6586 }, ptr %arg.tmp451, align 1
+  %call452 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp451)
+  br i1 %call452, label %if.then453, label %if.end454
 
-if.then457:                                       ; preds = %if.end449
-  %load.struct459 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder460 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct459, 13
-  %l461 = load ptr, ptr %l, align 8
-  %r462 = load ptr, ptr %r, align 8
-  %call463 = call ptr @LLVMBuildOr(ptr %builder460, ptr %l461, ptr %r462, ptr @.str.6589)
+if.then453:                                       ; preds = %if.end445
+  %load.struct455 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder456 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct455, 13
+  %l457 = load ptr, ptr %l, align 8
+  %r458 = load ptr, ptr %r, align 8
+  %call459 = call ptr @LLVMBuildAnd(ptr %builder456, ptr %l457, ptr %r458, ptr @.str.6587)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call463
+  ret ptr %call459
 
-if.end458:                                        ; preds = %if.end449
-  store { ptr } { ptr @.sconst.6590 }, ptr %arg.tmp464, align 1
-  %call465 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp464)
-  br i1 %call465, label %if.then466, label %if.end467
+if.end454:                                        ; preds = %if.end445
+  store { ptr } { ptr @.sconst.6588 }, ptr %arg.tmp460, align 1
+  %call461 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp460)
+  br i1 %call461, label %if.then462, label %if.end463
 
-if.then466:                                       ; preds = %if.end458
-  %load.struct468 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder469 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct468, 13
-  %l470 = load ptr, ptr %l, align 8
-  %r471 = load ptr, ptr %r, align 8
-  %call472 = call ptr @LLVMBuildXor(ptr %builder469, ptr %l470, ptr %r471, ptr @.str.6591)
+if.then462:                                       ; preds = %if.end454
+  %load.struct464 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder465 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct464, 13
+  %l466 = load ptr, ptr %l, align 8
+  %r467 = load ptr, ptr %r, align 8
+  %call468 = call ptr @LLVMBuildOr(ptr %builder465, ptr %l466, ptr %r467, ptr @.str.6589)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call472
+  ret ptr %call468
 
-if.end467:                                        ; preds = %if.end458
-  store { ptr } { ptr @.sconst.6592 }, ptr %arg.tmp473, align 1
-  %call474 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp473)
-  br i1 %call474, label %if.then475, label %if.end476
+if.end463:                                        ; preds = %if.end454
+  store { ptr } { ptr @.sconst.6590 }, ptr %arg.tmp469, align 1
+  %call470 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp469)
+  br i1 %call470, label %if.then471, label %if.end472
 
-if.then475:                                       ; preds = %if.end467
-  %load.struct477 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder478 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct477, 13
-  %l479 = load ptr, ptr %l, align 8
-  %r480 = load ptr, ptr %r, align 8
-  %call481 = call ptr @LLVMBuildXor(ptr %builder478, ptr %l479, ptr %r480, ptr @.str.6593)
+if.then471:                                       ; preds = %if.end463
+  %load.struct473 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder474 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct473, 13
+  %l475 = load ptr, ptr %l, align 8
+  %r476 = load ptr, ptr %r, align 8
+  %call477 = call ptr @LLVMBuildXor(ptr %builder474, ptr %l475, ptr %r476, ptr @.str.6591)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call481
+  ret ptr %call477
 
-if.end476:                                        ; preds = %if.end467
-  store { ptr } { ptr @.sconst.6594 }, ptr %arg.tmp482, align 1
-  %call483 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp482)
-  br i1 %call483, label %if.then484, label %if.end485
+if.end472:                                        ; preds = %if.end463
+  store { ptr } { ptr @.sconst.6592 }, ptr %arg.tmp478, align 1
+  %call479 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp478)
+  br i1 %call479, label %if.then480, label %if.end481
 
-if.then484:                                       ; preds = %if.end476
-  %load.struct486 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder487 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct486, 13
-  %l488 = load ptr, ptr %l, align 8
-  %r489 = load ptr, ptr %r, align 8
-  %call490 = call ptr @LLVMBuildShl(ptr %builder487, ptr %l488, ptr %r489, ptr @.str.6595)
+if.then480:                                       ; preds = %if.end472
+  %load.struct482 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder483 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct482, 13
+  %l484 = load ptr, ptr %l, align 8
+  %r485 = load ptr, ptr %r, align 8
+  %call486 = call ptr @LLVMBuildXor(ptr %builder483, ptr %l484, ptr %r485, ptr @.str.6593)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call490
+  ret ptr %call486
 
-if.end485:                                        ; preds = %if.end476
-  store { ptr } { ptr @.sconst.6596 }, ptr %arg.tmp491, align 1
-  %call492 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp491)
-  br i1 %call492, label %if.then493, label %if.end494
+if.end481:                                        ; preds = %if.end472
+  store { ptr } { ptr @.sconst.6594 }, ptr %arg.tmp487, align 1
+  %call488 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp487)
+  br i1 %call488, label %if.then489, label %if.end490
 
-if.then493:                                       ; preds = %if.end485
-  %is_signed495 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed495, label %if.then496, label %if.end497
-
-if.end494:                                        ; preds = %if.end485
-  store { ptr } { ptr @.sconst.6599 }, ptr %arg.tmp508, align 1
-  %call509 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp508)
-  br i1 %call509, label %if.then510, label %if.end511
-
-if.then496:                                       ; preds = %if.then493
-  %load.struct498 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder499 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct498, 13
-  %l500 = load ptr, ptr %l, align 8
-  %r501 = load ptr, ptr %r, align 8
-  %call502 = call ptr @LLVMBuildAShr(ptr %builder499, ptr %l500, ptr %r501, ptr @.str.6597)
+if.then489:                                       ; preds = %if.end481
+  %load.struct491 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder492 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct491, 13
+  %l493 = load ptr, ptr %l, align 8
+  %r494 = load ptr, ptr %r, align 8
+  %call495 = call ptr @LLVMBuildShl(ptr %builder492, ptr %l493, ptr %r494, ptr @.str.6595)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call502
+  ret ptr %call495
 
-if.end497:                                        ; preds = %if.then493
+if.end490:                                        ; preds = %if.end481
+  store { ptr } { ptr @.sconst.6596 }, ptr %arg.tmp496, align 1
+  %call497 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp496)
+  br i1 %call497, label %if.then498, label %if.end499
+
+if.then498:                                       ; preds = %if.end490
+  %is_signed500 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed500, label %if.then501, label %if.end502
+
+if.end499:                                        ; preds = %if.end490
+  store { ptr } { ptr @.sconst.6599 }, ptr %arg.tmp513, align 1
+  %call514 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp513)
+  br i1 %call514, label %if.then515, label %if.end516
+
+if.then501:                                       ; preds = %if.then498
   %load.struct503 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder504 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct503, 13
   %l505 = load ptr, ptr %l, align 8
   %r506 = load ptr, ptr %r, align 8
-  %call507 = call ptr @LLVMBuildLShr(ptr %builder504, ptr %l505, ptr %r506, ptr @.str.6598)
+  %call507 = call ptr @LLVMBuildAShr(ptr %builder504, ptr %l505, ptr %r506, ptr @.str.6597)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr %call507
 
-if.then510:                                       ; preds = %if.end494
-  %is_float512 = load i1, ptr %is_float, align 1
-  br i1 %is_float512, label %if.then513, label %if.end514
-
-if.end511:                                        ; preds = %if.end494
-  store { ptr } { ptr @.sconst.6606 }, ptr %arg.tmp543, align 1
-  %call544 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp543)
-  br i1 %call544, label %if.then545, label %if.end546
-
-if.then513:                                       ; preds = %if.then510
-  %load.struct515 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder516 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct515, 13
-  %call517 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OEQEv()
-  %l518 = load ptr, ptr %l, align 8
-  %r519 = load ptr, ptr %r, align 8
-  %call520 = call ptr @LLVMBuildFCmp(ptr %builder516, i32 %call517, ptr %l518, ptr %r519, ptr @.str.6600)
+if.end502:                                        ; preds = %if.then498
+  %load.struct508 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder509 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct508, 13
+  %l510 = load ptr, ptr %l, align 8
+  %r511 = load ptr, ptr %r, align 8
+  %call512 = call ptr @LLVMBuildLShr(ptr %builder509, ptr %l510, ptr %r511, ptr @.str.6598)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call520
+  ret ptr %call512
 
-if.end514:                                        ; preds = %if.then510
-  %l521 = load ptr, ptr %l, align 8
-  %call522 = call ptr @LLVMTypeOf(ptr %l521)
-  %call523 = call i32 @LLVMGetTypeKind(ptr %call522)
+if.then515:                                       ; preds = %if.end499
+  %is_float517 = load i1, ptr %is_float, align 1
+  br i1 %is_float517, label %if.then518, label %if.end519
+
+if.end516:                                        ; preds = %if.end499
+  store { ptr } { ptr @.sconst.6606 }, ptr %arg.tmp548, align 1
+  %call549 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp548)
+  br i1 %call549, label %if.then550, label %if.end551
+
+if.then518:                                       ; preds = %if.then515
+  %load.struct520 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder521 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct520, 13
+  %call522 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OEQEv()
+  %l523 = load ptr, ptr %l, align 8
   %r524 = load ptr, ptr %r, align 8
-  %call525 = call ptr @LLVMTypeOf(ptr %r524)
-  %call526 = call i32 @LLVMGetTypeKind(ptr %call525)
-  %ne527 = icmp ne i32 %call523, %call526
-  br i1 %ne527, label %if.then528, label %if.end529
+  %call525 = call ptr @LLVMBuildFCmp(ptr %builder521, i32 %call522, ptr %l523, ptr %r524, ptr @.str.6600)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call525
 
-if.then528:                                       ; preds = %if.end514
+if.end519:                                        ; preds = %if.then515
+  %l526 = load ptr, ptr %l, align 8
+  %call527 = call ptr @LLVMTypeOf(ptr %l526)
+  %call528 = call i32 @LLVMGetTypeKind(ptr %call527)
+  %r529 = load ptr, ptr %r, align 8
+  %call530 = call ptr @LLVMTypeOf(ptr %r529)
+  %call531 = call i32 @LLVMGetTypeKind(ptr %call530)
+  %ne532 = icmp ne i32 %call528, %call531
+  br i1 %ne532, label %if.then533, label %if.end534
+
+if.then533:                                       ; preds = %if.end519
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6601)
-  %call530 = call ptr @_ZN7EmitterB6scalycB4v0_222current_function_labelEv(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr %call530)
+  %call535 = call ptr @_ZN7EmitterB6scalycB4v0_222current_function_labelEv(ptr %0)
+  call void @_Z11scaly_eputsP10const_char(ptr %call535)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6602)
-  %l531 = load ptr, ptr %l, align 8
-  %call532 = call ptr @LLVMTypeOf(ptr %l531)
-  %call533 = call ptr @LLVMPrintTypeToString(ptr %call532)
-  call void @_Z11scaly_eputsP10const_char(ptr %call533)
+  %l536 = load ptr, ptr %l, align 8
+  %call537 = call ptr @LLVMTypeOf(ptr %l536)
+  %call538 = call ptr @LLVMPrintTypeToString(ptr %call537)
+  call void @_Z11scaly_eputsP10const_char(ptr %call538)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6603)
-  %r534 = load ptr, ptr %r, align 8
-  %call535 = call ptr @LLVMTypeOf(ptr %r534)
-  %call536 = call ptr @LLVMPrintTypeToString(ptr %call535)
-  call void @_Z11scaly_eputsP10const_char(ptr %call536)
+  %r539 = load ptr, ptr %r, align 8
+  %call540 = call ptr @LLVMTypeOf(ptr %r539)
+  %call541 = call ptr @LLVMPrintTypeToString(ptr %call540)
+  call void @_Z11scaly_eputsP10const_char(ptr %call541)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6604)
-  call void @LLVMDisposeMessage(ptr %call533)
-  call void @LLVMDisposeMessage(ptr %call536)
+  call void @LLVMDisposeMessage(ptr %call538)
+  call void @LLVMDisposeMessage(ptr %call541)
   call void @exit(i32 14)
-  br label %if.end529
+  br label %if.end534
 
-if.end529:                                        ; preds = %if.then528, %if.end514
-  %load.struct537 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder538 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct537, 13
-  %call539 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22EQEv()
-  %l540 = load ptr, ptr %l, align 8
-  %r541 = load ptr, ptr %r, align 8
-  %call542 = call ptr @LLVMBuildICmp(ptr %builder538, i32 %call539, ptr %l540, ptr %r541, ptr @.str.6605)
+if.end534:                                        ; preds = %if.then533, %if.end519
+  %load.struct542 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder543 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct542, 13
+  %call544 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22EQEv()
+  %l545 = load ptr, ptr %l, align 8
+  %r546 = load ptr, ptr %r, align 8
+  %call547 = call ptr @LLVMBuildICmp(ptr %builder543, i32 %call544, ptr %l545, ptr %r546, ptr @.str.6605)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call542
+  ret ptr %call547
 
-if.then545:                                       ; preds = %if.end511
-  %is_float547 = load i1, ptr %is_float, align 1
-  br i1 %is_float547, label %if.then548, label %if.end549
+if.then550:                                       ; preds = %if.end516
+  %is_float552 = load i1, ptr %is_float, align 1
+  br i1 %is_float552, label %if.then553, label %if.end554
 
-if.end546:                                        ; preds = %if.end511
-  store { ptr } { ptr @.sconst.6613 }, ptr %arg.tmp578, align 1
-  %call579 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp578)
-  br i1 %call579, label %if.then580, label %if.end581
+if.end551:                                        ; preds = %if.end516
+  store { ptr } { ptr @.sconst.6613 }, ptr %arg.tmp583, align 1
+  %call584 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp583)
+  br i1 %call584, label %if.then585, label %if.end586
 
-if.then548:                                       ; preds = %if.then545
-  %load.struct550 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder551 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct550, 13
-  %call552 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23ONEEv()
-  %l553 = load ptr, ptr %l, align 8
-  %r554 = load ptr, ptr %r, align 8
-  %call555 = call ptr @LLVMBuildFCmp(ptr %builder551, i32 %call552, ptr %l553, ptr %r554, ptr @.str.6607)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call555
-
-if.end549:                                        ; preds = %if.then545
-  %l556 = load ptr, ptr %l, align 8
-  %call557 = call ptr @LLVMTypeOf(ptr %l556)
-  %call558 = call i32 @LLVMGetTypeKind(ptr %call557)
+if.then553:                                       ; preds = %if.then550
+  %load.struct555 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder556 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct555, 13
+  %call557 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23ONEEv()
+  %l558 = load ptr, ptr %l, align 8
   %r559 = load ptr, ptr %r, align 8
-  %call560 = call ptr @LLVMTypeOf(ptr %r559)
-  %call561 = call i32 @LLVMGetTypeKind(ptr %call560)
-  %ne562 = icmp ne i32 %call558, %call561
-  br i1 %ne562, label %if.then563, label %if.end564
+  %call560 = call ptr @LLVMBuildFCmp(ptr %builder556, i32 %call557, ptr %l558, ptr %r559, ptr @.str.6607)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call560
 
-if.then563:                                       ; preds = %if.end549
+if.end554:                                        ; preds = %if.then550
+  %l561 = load ptr, ptr %l, align 8
+  %call562 = call ptr @LLVMTypeOf(ptr %l561)
+  %call563 = call i32 @LLVMGetTypeKind(ptr %call562)
+  %r564 = load ptr, ptr %r, align 8
+  %call565 = call ptr @LLVMTypeOf(ptr %r564)
+  %call566 = call i32 @LLVMGetTypeKind(ptr %call565)
+  %ne567 = icmp ne i32 %call563, %call566
+  br i1 %ne567, label %if.then568, label %if.end569
+
+if.then568:                                       ; preds = %if.end554
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6608)
-  %call565 = call ptr @_ZN7EmitterB6scalycB4v0_222current_function_labelEv(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr %call565)
+  %call570 = call ptr @_ZN7EmitterB6scalycB4v0_222current_function_labelEv(ptr %0)
+  call void @_Z11scaly_eputsP10const_char(ptr %call570)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6609)
-  %l566 = load ptr, ptr %l, align 8
-  %call567 = call ptr @LLVMTypeOf(ptr %l566)
-  %call568 = call ptr @LLVMPrintTypeToString(ptr %call567)
-  call void @_Z11scaly_eputsP10const_char(ptr %call568)
+  %l571 = load ptr, ptr %l, align 8
+  %call572 = call ptr @LLVMTypeOf(ptr %l571)
+  %call573 = call ptr @LLVMPrintTypeToString(ptr %call572)
+  call void @_Z11scaly_eputsP10const_char(ptr %call573)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6610)
-  %r569 = load ptr, ptr %r, align 8
-  %call570 = call ptr @LLVMTypeOf(ptr %r569)
-  %call571 = call ptr @LLVMPrintTypeToString(ptr %call570)
-  call void @_Z11scaly_eputsP10const_char(ptr %call571)
+  %r574 = load ptr, ptr %r, align 8
+  %call575 = call ptr @LLVMTypeOf(ptr %r574)
+  %call576 = call ptr @LLVMPrintTypeToString(ptr %call575)
+  call void @_Z11scaly_eputsP10const_char(ptr %call576)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6611)
-  call void @LLVMDisposeMessage(ptr %call568)
-  call void @LLVMDisposeMessage(ptr %call571)
+  call void @LLVMDisposeMessage(ptr %call573)
+  call void @LLVMDisposeMessage(ptr %call576)
   call void @exit(i32 14)
-  br label %if.end564
+  br label %if.end569
 
-if.end564:                                        ; preds = %if.then563, %if.end549
-  %load.struct572 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder573 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct572, 13
-  %call574 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
-  %l575 = load ptr, ptr %l, align 8
-  %r576 = load ptr, ptr %r, align 8
-  %call577 = call ptr @LLVMBuildICmp(ptr %builder573, i32 %call574, ptr %l575, ptr %r576, ptr @.str.6612)
+if.end569:                                        ; preds = %if.then568, %if.end554
+  %load.struct577 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder578 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct577, 13
+  %call579 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
+  %l580 = load ptr, ptr %l, align 8
+  %r581 = load ptr, ptr %r, align 8
+  %call582 = call ptr @LLVMBuildICmp(ptr %builder578, i32 %call579, ptr %l580, ptr %r581, ptr @.str.6612)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call577
+  ret ptr %call582
 
-if.then580:                                       ; preds = %if.end546
-  %is_float582 = load i1, ptr %is_float, align 1
-  br i1 %is_float582, label %if.then583, label %if.end584
+if.then585:                                       ; preds = %if.end551
+  %is_float587 = load i1, ptr %is_float, align 1
+  br i1 %is_float587, label %if.then588, label %if.end589
 
-if.end581:                                        ; preds = %if.end546
-  store { ptr } { ptr @.sconst.6617 }, ptr %arg.tmp615, align 1
-  %call616 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp615)
-  br i1 %call616, label %if.then617, label %if.end618
+if.end586:                                        ; preds = %if.end551
+  store { ptr } { ptr @.sconst.6617 }, ptr %arg.tmp620, align 1
+  %call621 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp620)
+  br i1 %call621, label %if.then622, label %if.end623
 
-if.then583:                                       ; preds = %if.then580
-  %load.struct585 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder586 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct585, 13
-  %call587 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLTEv()
-  %l588 = load ptr, ptr %l, align 8
-  %r589 = load ptr, ptr %r, align 8
-  %call590 = call ptr @LLVMBuildFCmp(ptr %builder586, i32 %call587, ptr %l588, ptr %r589, ptr @.str.6614)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call590
-
-if.end584:                                        ; preds = %if.then580
-  %l591 = load ptr, ptr %l, align 8
-  %call592 = call ptr @LLVMTypeOf(ptr %l591)
-  %call593 = call i32 @LLVMGetTypeKind(ptr %call592)
+if.then588:                                       ; preds = %if.then585
+  %load.struct590 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder591 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct590, 13
+  %call592 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLTEv()
+  %l593 = load ptr, ptr %l, align 8
   %r594 = load ptr, ptr %r, align 8
-  %call595 = call ptr @LLVMTypeOf(ptr %r594)
-  %call596 = call i32 @LLVMGetTypeKind(ptr %call595)
-  %ne597 = icmp ne i32 %call593, %call596
-  br i1 %ne597, label %if.then598, label %if.end599
+  %call595 = call ptr @LLVMBuildFCmp(ptr %builder591, i32 %call592, ptr %l593, ptr %r594, ptr @.str.6614)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call595
 
-if.then598:                                       ; preds = %if.end584
+if.end589:                                        ; preds = %if.then585
+  %l596 = load ptr, ptr %l, align 8
+  %call597 = call ptr @LLVMTypeOf(ptr %l596)
+  %call598 = call i32 @LLVMGetTypeKind(ptr %call597)
+  %r599 = load ptr, ptr %r, align 8
+  %call600 = call ptr @LLVMTypeOf(ptr %r599)
+  %call601 = call i32 @LLVMGetTypeKind(ptr %call600)
+  %ne602 = icmp ne i32 %call598, %call601
+  br i1 %ne602, label %if.then603, label %if.end604
+
+if.then603:                                       ; preds = %if.end589
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.end599:                                        ; preds = %if.end584
-  %is_signed600 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed600, label %if.then601, label %if.end602
+if.end604:                                        ; preds = %if.end589
+  %is_signed605 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed605, label %if.then606, label %if.end607
 
-if.then601:                                       ; preds = %if.end599
-  %load.struct603 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder604 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct603, 13
-  %call605 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLTEv()
-  %l606 = load ptr, ptr %l, align 8
-  %r607 = load ptr, ptr %r, align 8
-  %call608 = call ptr @LLVMBuildICmp(ptr %builder604, i32 %call605, ptr %l606, ptr %r607, ptr @.str.6615)
+if.then606:                                       ; preds = %if.end604
+  %load.struct608 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder609 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct608, 13
+  %call610 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLTEv()
+  %l611 = load ptr, ptr %l, align 8
+  %r612 = load ptr, ptr %r, align 8
+  %call613 = call ptr @LLVMBuildICmp(ptr %builder609, i32 %call610, ptr %l611, ptr %r612, ptr @.str.6615)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call608
+  ret ptr %call613
 
-if.end602:                                        ; preds = %if.end599
-  %load.struct609 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder610 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct609, 13
-  %call611 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULTEv()
-  %l612 = load ptr, ptr %l, align 8
-  %r613 = load ptr, ptr %r, align 8
-  %call614 = call ptr @LLVMBuildICmp(ptr %builder610, i32 %call611, ptr %l612, ptr %r613, ptr @.str.6616)
+if.end607:                                        ; preds = %if.end604
+  %load.struct614 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder615 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct614, 13
+  %call616 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULTEv()
+  %l617 = load ptr, ptr %l, align 8
+  %r618 = load ptr, ptr %r, align 8
+  %call619 = call ptr @LLVMBuildICmp(ptr %builder615, i32 %call616, ptr %l617, ptr %r618, ptr @.str.6616)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call614
+  ret ptr %call619
 
-if.then617:                                       ; preds = %if.end581
-  %is_float619 = load i1, ptr %is_float, align 1
-  br i1 %is_float619, label %if.then620, label %if.end621
+if.then622:                                       ; preds = %if.end586
+  %is_float624 = load i1, ptr %is_float, align 1
+  br i1 %is_float624, label %if.then625, label %if.end626
 
-if.end618:                                        ; preds = %if.end581
-  store { ptr } { ptr @.sconst.6621 }, ptr %arg.tmp652, align 1
-  %call653 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp652)
-  br i1 %call653, label %if.then654, label %if.end655
+if.end623:                                        ; preds = %if.end586
+  store { ptr } { ptr @.sconst.6621 }, ptr %arg.tmp657, align 1
+  %call658 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp657)
+  br i1 %call658, label %if.then659, label %if.end660
 
-if.then620:                                       ; preds = %if.then617
-  %load.struct622 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder623 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct622, 13
-  %call624 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLEEv()
-  %l625 = load ptr, ptr %l, align 8
-  %r626 = load ptr, ptr %r, align 8
-  %call627 = call ptr @LLVMBuildFCmp(ptr %builder623, i32 %call624, ptr %l625, ptr %r626, ptr @.str.6618)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call627
-
-if.end621:                                        ; preds = %if.then617
-  %l628 = load ptr, ptr %l, align 8
-  %call629 = call ptr @LLVMTypeOf(ptr %l628)
-  %call630 = call i32 @LLVMGetTypeKind(ptr %call629)
+if.then625:                                       ; preds = %if.then622
+  %load.struct627 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder628 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct627, 13
+  %call629 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OLEEv()
+  %l630 = load ptr, ptr %l, align 8
   %r631 = load ptr, ptr %r, align 8
-  %call632 = call ptr @LLVMTypeOf(ptr %r631)
-  %call633 = call i32 @LLVMGetTypeKind(ptr %call632)
-  %ne634 = icmp ne i32 %call630, %call633
-  br i1 %ne634, label %if.then635, label %if.end636
+  %call632 = call ptr @LLVMBuildFCmp(ptr %builder628, i32 %call629, ptr %l630, ptr %r631, ptr @.str.6618)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call632
 
-if.then635:                                       ; preds = %if.end621
+if.end626:                                        ; preds = %if.then622
+  %l633 = load ptr, ptr %l, align 8
+  %call634 = call ptr @LLVMTypeOf(ptr %l633)
+  %call635 = call i32 @LLVMGetTypeKind(ptr %call634)
+  %r636 = load ptr, ptr %r, align 8
+  %call637 = call ptr @LLVMTypeOf(ptr %r636)
+  %call638 = call i32 @LLVMGetTypeKind(ptr %call637)
+  %ne639 = icmp ne i32 %call635, %call638
+  br i1 %ne639, label %if.then640, label %if.end641
+
+if.then640:                                       ; preds = %if.end626
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.end636:                                        ; preds = %if.end621
-  %is_signed637 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed637, label %if.then638, label %if.end639
+if.end641:                                        ; preds = %if.end626
+  %is_signed642 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed642, label %if.then643, label %if.end644
 
-if.then638:                                       ; preds = %if.end636
-  %load.struct640 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder641 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct640, 13
-  %call642 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLEEv()
-  %l643 = load ptr, ptr %l, align 8
-  %r644 = load ptr, ptr %r, align 8
-  %call645 = call ptr @LLVMBuildICmp(ptr %builder641, i32 %call642, ptr %l643, ptr %r644, ptr @.str.6619)
+if.then643:                                       ; preds = %if.end641
+  %load.struct645 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder646 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct645, 13
+  %call647 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SLEEv()
+  %l648 = load ptr, ptr %l, align 8
+  %r649 = load ptr, ptr %r, align 8
+  %call650 = call ptr @LLVMBuildICmp(ptr %builder646, i32 %call647, ptr %l648, ptr %r649, ptr @.str.6619)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call645
+  ret ptr %call650
 
-if.end639:                                        ; preds = %if.end636
-  %load.struct646 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder647 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct646, 13
-  %call648 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULEEv()
-  %l649 = load ptr, ptr %l, align 8
-  %r650 = load ptr, ptr %r, align 8
-  %call651 = call ptr @LLVMBuildICmp(ptr %builder647, i32 %call648, ptr %l649, ptr %r650, ptr @.str.6620)
+if.end644:                                        ; preds = %if.end641
+  %load.struct651 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder652 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct651, 13
+  %call653 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23ULEEv()
+  %l654 = load ptr, ptr %l, align 8
+  %r655 = load ptr, ptr %r, align 8
+  %call656 = call ptr @LLVMBuildICmp(ptr %builder652, i32 %call653, ptr %l654, ptr %r655, ptr @.str.6620)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call651
+  ret ptr %call656
 
-if.then654:                                       ; preds = %if.end618
-  %is_float656 = load i1, ptr %is_float, align 1
-  br i1 %is_float656, label %if.then657, label %if.end658
+if.then659:                                       ; preds = %if.end623
+  %is_float661 = load i1, ptr %is_float, align 1
+  br i1 %is_float661, label %if.then662, label %if.end663
 
-if.end655:                                        ; preds = %if.end618
-  store { ptr } { ptr @.sconst.6625 }, ptr %arg.tmp689, align 1
-  %call690 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp689)
-  br i1 %call690, label %if.then691, label %if.end692
+if.end660:                                        ; preds = %if.end623
+  store { ptr } { ptr @.sconst.6625 }, ptr %arg.tmp694, align 1
+  %call695 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp694)
+  br i1 %call695, label %if.then696, label %if.end697
 
-if.then657:                                       ; preds = %if.then654
-  %load.struct659 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder660 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct659, 13
-  %call661 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGTEv()
-  %l662 = load ptr, ptr %l, align 8
-  %r663 = load ptr, ptr %r, align 8
-  %call664 = call ptr @LLVMBuildFCmp(ptr %builder660, i32 %call661, ptr %l662, ptr %r663, ptr @.str.6622)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call664
-
-if.end658:                                        ; preds = %if.then654
-  %l665 = load ptr, ptr %l, align 8
-  %call666 = call ptr @LLVMTypeOf(ptr %l665)
-  %call667 = call i32 @LLVMGetTypeKind(ptr %call666)
+if.then662:                                       ; preds = %if.then659
+  %load.struct664 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder665 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct664, 13
+  %call666 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGTEv()
+  %l667 = load ptr, ptr %l, align 8
   %r668 = load ptr, ptr %r, align 8
-  %call669 = call ptr @LLVMTypeOf(ptr %r668)
-  %call670 = call i32 @LLVMGetTypeKind(ptr %call669)
-  %ne671 = icmp ne i32 %call667, %call670
-  br i1 %ne671, label %if.then672, label %if.end673
+  %call669 = call ptr @LLVMBuildFCmp(ptr %builder665, i32 %call666, ptr %l667, ptr %r668, ptr @.str.6622)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call669
 
-if.then672:                                       ; preds = %if.end658
+if.end663:                                        ; preds = %if.then659
+  %l670 = load ptr, ptr %l, align 8
+  %call671 = call ptr @LLVMTypeOf(ptr %l670)
+  %call672 = call i32 @LLVMGetTypeKind(ptr %call671)
+  %r673 = load ptr, ptr %r, align 8
+  %call674 = call ptr @LLVMTypeOf(ptr %r673)
+  %call675 = call i32 @LLVMGetTypeKind(ptr %call674)
+  %ne676 = icmp ne i32 %call672, %call675
+  br i1 %ne676, label %if.then677, label %if.end678
+
+if.then677:                                       ; preds = %if.end663
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.end673:                                        ; preds = %if.end658
-  %is_signed674 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed674, label %if.then675, label %if.end676
+if.end678:                                        ; preds = %if.end663
+  %is_signed679 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed679, label %if.then680, label %if.end681
 
-if.then675:                                       ; preds = %if.end673
-  %load.struct677 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder678 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct677, 13
-  %call679 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGTEv()
-  %l680 = load ptr, ptr %l, align 8
-  %r681 = load ptr, ptr %r, align 8
-  %call682 = call ptr @LLVMBuildICmp(ptr %builder678, i32 %call679, ptr %l680, ptr %r681, ptr @.str.6623)
+if.then680:                                       ; preds = %if.end678
+  %load.struct682 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder683 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct682, 13
+  %call684 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGTEv()
+  %l685 = load ptr, ptr %l, align 8
+  %r686 = load ptr, ptr %r, align 8
+  %call687 = call ptr @LLVMBuildICmp(ptr %builder683, i32 %call684, ptr %l685, ptr %r686, ptr @.str.6623)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call682
+  ret ptr %call687
 
-if.end676:                                        ; preds = %if.end673
-  %load.struct683 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder684 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct683, 13
-  %call685 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGTEv()
-  %l686 = load ptr, ptr %l, align 8
-  %r687 = load ptr, ptr %r, align 8
-  %call688 = call ptr @LLVMBuildICmp(ptr %builder684, i32 %call685, ptr %l686, ptr %r687, ptr @.str.6624)
+if.end681:                                        ; preds = %if.end678
+  %load.struct688 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder689 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct688, 13
+  %call690 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGTEv()
+  %l691 = load ptr, ptr %l, align 8
+  %r692 = load ptr, ptr %r, align 8
+  %call693 = call ptr @LLVMBuildICmp(ptr %builder689, i32 %call690, ptr %l691, ptr %r692, ptr @.str.6624)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call688
+  ret ptr %call693
 
-if.then691:                                       ; preds = %if.end655
-  %is_float693 = load i1, ptr %is_float, align 1
-  br i1 %is_float693, label %if.then694, label %if.end695
+if.then696:                                       ; preds = %if.end660
+  %is_float698 = load i1, ptr %is_float, align 1
+  br i1 %is_float698, label %if.then699, label %if.end700
 
-if.end692:                                        ; preds = %if.end655
-  store { ptr } { ptr @.sconst.6629 }, ptr %arg.tmp726, align 1
-  %call727 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp726)
-  br i1 %call727, label %if.then728, label %if.end729
+if.end697:                                        ; preds = %if.end660
+  store { ptr } { ptr @.sconst.6629 }, ptr %arg.tmp731, align 1
+  %call732 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %arg.tmp731)
+  br i1 %call732, label %if.then733, label %if.end734
 
-if.then694:                                       ; preds = %if.then691
-  %load.struct696 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder697 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct696, 13
-  %call698 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGEEv()
-  %l699 = load ptr, ptr %l, align 8
-  %r700 = load ptr, ptr %r, align 8
-  %call701 = call ptr @LLVMBuildFCmp(ptr %builder697, i32 %call698, ptr %l699, ptr %r700, ptr @.str.6626)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call701
-
-if.end695:                                        ; preds = %if.then691
-  %l702 = load ptr, ptr %l, align 8
-  %call703 = call ptr @LLVMTypeOf(ptr %l702)
-  %call704 = call i32 @LLVMGetTypeKind(ptr %call703)
+if.then699:                                       ; preds = %if.then696
+  %load.struct701 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder702 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct701, 13
+  %call703 = call i32 @_ZN17LLVMRealPredicateB6scalycB4v0_23OGEEv()
+  %l704 = load ptr, ptr %l, align 8
   %r705 = load ptr, ptr %r, align 8
-  %call706 = call ptr @LLVMTypeOf(ptr %r705)
-  %call707 = call i32 @LLVMGetTypeKind(ptr %call706)
-  %ne708 = icmp ne i32 %call704, %call707
-  br i1 %ne708, label %if.then709, label %if.end710
+  %call706 = call ptr @LLVMBuildFCmp(ptr %builder702, i32 %call703, ptr %l704, ptr %r705, ptr @.str.6626)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call706
 
-if.then709:                                       ; preds = %if.end695
+if.end700:                                        ; preds = %if.then696
+  %l707 = load ptr, ptr %l, align 8
+  %call708 = call ptr @LLVMTypeOf(ptr %l707)
+  %call709 = call i32 @LLVMGetTypeKind(ptr %call708)
+  %r710 = load ptr, ptr %r, align 8
+  %call711 = call ptr @LLVMTypeOf(ptr %r710)
+  %call712 = call i32 @LLVMGetTypeKind(ptr %call711)
+  %ne713 = icmp ne i32 %call709, %call712
+  br i1 %ne713, label %if.then714, label %if.end715
+
+if.then714:                                       ; preds = %if.end700
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.end710:                                        ; preds = %if.end695
-  %is_signed711 = load i1, ptr %is_signed, align 1
-  br i1 %is_signed711, label %if.then712, label %if.end713
+if.end715:                                        ; preds = %if.end700
+  %is_signed716 = load i1, ptr %is_signed, align 1
+  br i1 %is_signed716, label %if.then717, label %if.end718
 
-if.then712:                                       ; preds = %if.end710
-  %load.struct714 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder715 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct714, 13
-  %call716 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGEEv()
-  %l717 = load ptr, ptr %l, align 8
-  %r718 = load ptr, ptr %r, align 8
-  %call719 = call ptr @LLVMBuildICmp(ptr %builder715, i32 %call716, ptr %l717, ptr %r718, ptr @.str.6627)
+if.then717:                                       ; preds = %if.end715
+  %load.struct719 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder720 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct719, 13
+  %call721 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23SGEEv()
+  %l722 = load ptr, ptr %l, align 8
+  %r723 = load ptr, ptr %r, align 8
+  %call724 = call ptr @LLVMBuildICmp(ptr %builder720, i32 %call721, ptr %l722, ptr %r723, ptr @.str.6627)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call719
+  ret ptr %call724
 
-if.end713:                                        ; preds = %if.end710
-  %load.struct720 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder721 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct720, 13
-  %call722 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGEEv()
-  %l723 = load ptr, ptr %l, align 8
-  %r724 = load ptr, ptr %r, align 8
-  %call725 = call ptr @LLVMBuildICmp(ptr %builder721, i32 %call722, ptr %l723, ptr %r724, ptr @.str.6628)
+if.end718:                                        ; preds = %if.end715
+  %load.struct725 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder726 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct725, 13
+  %call727 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_23UGEEv()
+  %l728 = load ptr, ptr %l, align 8
+  %r729 = load ptr, ptr %r, align 8
+  %call730 = call ptr @LLVMBuildICmp(ptr %builder726, i32 %call727, ptr %l728, ptr %r729, ptr @.str.6628)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call725
+  ret ptr %call730
 
-if.then728:                                       ; preds = %if.end692
+if.then733:                                       ; preds = %if.end697
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.end729:                                        ; preds = %if.end692
+if.end734:                                        ; preds = %if.end697
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6630)
-  %call730 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %1)
-  call void @_Z11scaly_eputsP10const_char(ptr %call730)
-  %load.struct731 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %current_function = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct731, 40
-  %ne732 = icmp ne ptr %current_function, null
-  br i1 %ne732, label %if.then733, label %if.end734
+  %call735 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %1)
+  call void @_Z11scaly_eputsP10const_char(ptr %call735)
+  %load.struct736 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %current_function = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct736, 40
+  %ne737 = icmp ne ptr %current_function, null
+  br i1 %ne737, label %if.then738, label %if.end739
 
-if.then733:                                       ; preds = %if.end729
+if.then738:                                       ; preds = %if.end734
   store i64 0, ptr %fn_len, align 1
-  %load.struct735 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %current_function736 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct735, 40
-  %call737 = call ptr @LLVMGetValueName2(ptr %current_function736, ptr %fn_len)
+  %load.struct740 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %current_function741 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct740, 40
+  %call742 = call ptr @LLVMGetValueName2(ptr %current_function741, ptr %fn_len)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6631)
-  call void @_Z11scaly_eputsP10const_char(ptr %call737)
-  br label %if.end734
+  call void @_Z11scaly_eputsP10const_char(ptr %call742)
+  br label %if.end739
 
-if.end734:                                        ; preds = %if.then733, %if.end729
+if.end739:                                        ; preds = %if.then738, %if.end734
   call void @_Z11scaly_eputsP10const_char(ptr @.str.6632)
   call void @exit(i32 14)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -583119,7 +583157,7 @@ if.end322:                                        ; preds = %if.then321, %while.
   br label %while.cond312
 
 if.then342:                                       ; preds = %while.exit314
-  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
+  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
   store ptr %call334, ptr %broken_join, align 8
   br label %if.end343
 
@@ -585134,7 +585172,7 @@ if.end902:                                        ; preds = %if.then901, %while.
   br label %while.cond892
 
 if.then924:                                       ; preds = %while.exit894
-  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
+  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
   store ptr %call914, ptr %broken_join, align 8
   br label %if.end925
 
@@ -585238,35 +585276,54 @@ if.end29:                                         ; preds = %while.exit7
 
 define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_28emit_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1) {
 entry:
-  %call = call i1 @_ZN7EmitterB6scalycB4v0_211promote_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  br i1 %call, label %if.then, label %if.end
+  %load.struct = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
+  %is_relaxed = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct, 11
+  br i1 %is_relaxed, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %config = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 0
+if.then:                                          ; preds = %land.rhs
+  %relaxed_fp2 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  store i1 true, ptr %relaxed_fp2, align 1
+  %call = call ptr @_ZN7EmitterB6scalycB4v0_28emit_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  %relaxed_fp3 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  store i1 false, ptr %relaxed_fp3, align 1
+  ret ptr %call
+
+if.end:                                           ; preds = %land.rhs, %entry
+  %call4 = call i1 @_ZN7EmitterB6scalycB4v0_211promote_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  br i1 %call4, label %if.then5, label %if.end6
+
+land.rhs:                                         ; preds = %entry
+  %load.struct1 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %relaxed_fp = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct1, 86
+  %eq = icmp eq i1 %relaxed_fp, false
+  br i1 %eq, label %if.then, label %if.end
+
+if.then5:                                         ; preds = %if.end
+  %load.struct7 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %config = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct7, 0
   %gpu = extractvalue %_ZN7Emitter13EmitterConfigB6scalycB4v0_2E %config, 9
-  br i1 %gpu, label %if.then1, label %if.end2
+  br i1 %gpu, label %if.then8, label %if.end9
 
-if.end:                                           ; preds = %entry
-  %load.struct5 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
-  %is_iterator_loop = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct5, 4
-  br i1 %is_iterator_loop, label %if.then6, label %if.end7
+if.end6:                                          ; preds = %if.end
+  %load.struct12 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
+  %is_iterator_loop = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct12, 4
+  br i1 %is_iterator_loop, label %if.then13, label %if.end14
 
-if.then1:                                         ; preds = %if.then
-  %call3 = call ptr @_ZN7EmitterB6scalycB4v0_212emit_gpu_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  ret ptr %call3
+if.then8:                                         ; preds = %if.then5
+  %call10 = call ptr @_ZN7EmitterB6scalycB4v0_212emit_gpu_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  ret ptr %call10
 
-if.end2:                                          ; preds = %if.then
-  %call4 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  ret ptr %call4
+if.end9:                                          ; preds = %if.then5
+  %call11 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  ret ptr %call11
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_for_iteratorE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  ret ptr %call8
+if.then13:                                        ; preds = %if.end6
+  %call15 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_for_iteratorE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  ret ptr %call15
 
-if.end7:                                          ; preds = %if.end
-  %call9 = call ptr @_ZN7EmitterB6scalycB4v0_222emit_for_integer_rangeE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  ret ptr %call9
+if.end14:                                         ; preds = %if.end6
+  %call16 = call ptr @_ZN7EmitterB6scalycB4v0_222emit_for_integer_rangeE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  ret ptr %call16
 }
 
 define linkonce_odr i64 @_ZN7EmitterB6scalycB4v0_28gpu_hostEv(ptr %0) {
@@ -604459,7 +604516,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.end4, %entry
   %load.struct12 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_preset = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct12, 98
+  %fj_preset = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct12, 99
   %ne13 = icmp ne ptr %fj_preset, null
   br i1 %ne13, label %if.then14, label %if.else
 
@@ -604515,9 +604572,9 @@ choose.when:                                      ; preds = %if.then3
 
 if.then14:                                        ; preds = %if.end
   %load.struct16 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fj_preset17 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct16, 98
+  %fj_preset17 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct16, 99
   store ptr %fj_preset17, ptr %value, align 1
-  %fj_preset18 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
+  %fj_preset18 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
   store ptr null, ptr %fj_preset18, align 8
   br label %if.end15
 
@@ -607322,54 +607379,56 @@ frame.forced433:                                  ; preds = %frame.force432, %fr
   call void @_ZN6StringC1Ev(ptr %fj_self)
   %fj_seen = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 85
   store i1 false, ptr %fj_seen, align 1
-  %fj_name = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  %relaxed_fp = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 86
+  store i1 false, ptr %relaxed_fp, align 1
+  %fj_name = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 87
   call void @_ZN6StringC1Ev(ptr %fj_name)
-  %fj_file = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 87
+  %fj_file = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
   call void @_ZN6StringC1Ev(ptr %fj_file)
-  %fork_files = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
+  %fork_files = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
   %tuple.field440 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_files, i32 0, i32 0
   store i64 0, ptr %tuple.field440, align 8
   %tuple.field441 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_files, i32 0, i32 1
   store i64 0, ptr %tuple.field441, align 8
   %tuple.field442 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_files, i32 0, i32 2
   store ptr null, ptr %tuple.field442, align 8
-  %fork_offsets = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
+  %fork_offsets = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
   %tuple.field443 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %fork_offsets, i32 0, i32 0
   store i64 0, ptr %tuple.field443, align 8
   %tuple.field444 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %fork_offsets, i32 0, i32 1
   store i64 0, ptr %tuple.field444, align 8
   %tuple.field445 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %fork_offsets, i32 0, i32 2
   store ptr null, ptr %tuple.field445, align 8
-  %fork_texts = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
+  %fork_texts = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 91
   %tuple.field446 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_texts, i32 0, i32 0
   store i64 0, ptr %tuple.field446, align 8
   %tuple.field447 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_texts, i32 0, i32 1
   store i64 0, ptr %tuple.field447, align 8
   %tuple.field448 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %fork_texts, i32 0, i32 2
   store ptr null, ptr %tuple.field448, align 8
-  %main_ir = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 91
+  %main_ir = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 92
   call void @_ZN6StringC1Ev(ptr %main_ir)
-  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 92
+  %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 93
   store i64 0, ptr %run_ns, align 8
-  %fj_seq_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 93
+  %fj_seq_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
   store ptr null, ptr %fj_seq_fn, align 8
-  %fj_fj_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 94
+  %fj_fj_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
   store ptr null, ptr %fj_fj_fn, align 8
-  %fj_task_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 95
+  %fj_task_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 96
   store ptr null, ptr %fj_task_fn, align 8
-  %fj_depth = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 96
+  %fj_depth = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
   store ptr null, ptr %fj_depth, align 8
-  %fj_ctx = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 97
+  %fj_ctx = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
   store ptr null, ptr %fj_ctx, align 8
-  %fj_preset = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 98
+  %fj_preset = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
   store ptr null, ptr %fj_preset, align 8
-  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 99
+  %broken_join = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
   store ptr null, ptr %broken_join, align 8
-  %store_effects = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 100
+  %store_effects = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
   call void @_ZN12StoreEffectsB6scalycB4v0_2C1Ev(ptr %store_effects)
-  %stack_vectors = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 101
+  %stack_vectors = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 102
   call void @_ZN12StackVectorsB6scalycB4v0_2C1Ev(ptr %stack_vectors)
-  %stack_vectors_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 102
+  %stack_vectors_fn = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 103
   store ptr null, ptr %stack_vectors_fn, align 8
   %own_page449 = call ptr @_Z3getPv(ptr %0)
   store ptr %own_page449, ptr %wrapped_frame450, align 8
@@ -668128,12 +668187,12 @@ frame.forced169:                                  ; preds = %frame.force168, %if
   %struct.region172 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page171, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %emitter173 = load ptr, ptr %emitter, align 8
   %load.struct174 = load %_Z7EmitterB6scalycB4v0_2, ptr %emitter173, align 8
-  %main_ir = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct174, 91
+  %main_ir = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct174, 92
   store { ptr } %main_ir, ptr %arg.tmp175, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region172, ptr %arg.tmp175)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %7, ptr %struct.region172)
   %base.deref176 = load ptr, ptr %emitter, align 8
-  %field.inplace177 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %base.deref176, i32 0, i32 92
+  %field.inplace177 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %base.deref176, i32 0, i32 93
   %field.val178 = load i64, ptr %field.inplace177, align 8
   call void @_ZN5ArrayIiE3addEi(ptr %8, i64 %field.val178)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -674830,7 +674889,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %fork_files = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 88
+  %fork_files = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 89
   %length = extractvalue %_Z5ArrayI6StringE %fork_files, 0
   %eq = icmp eq i64 %length, 0
   br i1 %eq, label %if.then, label %if.end
@@ -674854,7 +674913,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store { ptr } { ptr @.sconst.9812 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
-  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
+  %field.inplace = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
   %field.inplace2 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %field.inplace, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace2, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
@@ -674865,9 +674924,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result4)
   call void @_ZN7Console7printlnEP10const_char(ptr %call)
   store { ptr } { ptr @.sconst.9814 }, ptr %arg.tmp, align 1
-  %addr.gep = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 88
-  %addr.gep5 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
-  %addr.gep6 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
+  %addr.gep = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 89
+  %addr.gep5 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 90
+  %addr.gep6 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 91
   call void @_ZN3cliB6scalycB4v0_213print_locatedE6StringR5ArrayI6StringER5ArrayImER5ArrayI6StringE(ptr %arg.tmp, ptr %addr.gep, ptr %addr.gep5, ptr %addr.gep6)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
