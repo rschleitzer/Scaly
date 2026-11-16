@@ -945,6 +945,40 @@ int scaly_eio_random(void* buf, unsigned long long len)
 
 #define SC_MCAST_GROUP "239.255.83.67"
 
+/* The IPv4 addresses of the interfaces that are up and can multicast,
+ * the loopback left out: at most `cap`, their count (rule a). Windows
+ * joins a group and sends a datagram to it on ONE interface, and with
+ * INADDR_ANY that one is its own choice: on an arm64 VM with a single
+ * bridged adapter (2026-11-16) the datagrams never reached the LAN and
+ * the LAN's never reached the helper -- named, the adapter works. So the
+ * group is joined and every datagram sent on each of them. */
+static int sc_mcast_interfaces(unsigned long* out, int cap)
+{
+    INTERFACE_INFO list[32];
+    DWORD bytes = 0;
+    int i, count, n = 0;
+    SOCKET s;
+    scaly_ws_start();
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (s == INVALID_SOCKET)
+        return 0;
+    if (WSAIoctl(s, SIO_GET_INTERFACE_LIST, NULL, 0, list, sizeof list, &bytes, NULL, NULL) == SOCKET_ERROR) {
+        closesocket(s);
+        return 0;
+    }
+    closesocket(s);
+    count = (int)(bytes / sizeof(INTERFACE_INFO));
+    for (i = 0; i < count && n < cap; i++) {
+        u_long f = list[i].iiFlags;
+        if (!(f & IFF_UP) || (f & IFF_LOOPBACK) || !(f & IFF_MULTICAST))
+            continue;
+        if (list[i].iiAddress.Address.sa_family != AF_INET)
+            continue;
+        out[n++] = list[i].iiAddress.AddressIn.sin_addr.s_addr;
+    }
+    return n;
+}
+
 int scaly_eio_mcast_listen(int port, int local_only)
 {
     struct sockaddr_in a;
@@ -972,9 +1006,18 @@ int scaly_eio_mcast_listen(int port, int local_only)
     if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
         joined = 1;
     if (!local_only) {
-        m.imr_interface.s_addr = htonl(INADDR_ANY);
-        if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
-            joined = 1;
+        unsigned long ifs[16];
+        int k, n = sc_mcast_interfaces(ifs, 16);
+        for (k = 0; k < n; k++) {
+            m.imr_interface.s_addr = ifs[k];
+            if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
+                joined = 1;
+        }
+        if (n == 0) {
+            m.imr_interface.s_addr = htonl(INADDR_ANY);
+            if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&m, sizeof m) != SOCKET_ERROR)
+                joined = 1;
+        }
     }
     if (!joined || scaly_eio_set_nonblocking((int)(intptr_t)s) < 0) {
         closesocket(s);
@@ -1011,9 +1054,18 @@ long long scaly_eio_mcast_send(const void* buf, unsigned long long len, int port
 {
     long long r = sc_mcast_send_on(buf, len, port, htonl(INADDR_LOOPBACK));
     if (!local_only) {
-        long long r2 = sc_mcast_send_on(buf, len, port, htonl(INADDR_ANY));
-        if (r2 > r)
-            r = r2;
+        unsigned long ifs[16];
+        int k, n = sc_mcast_interfaces(ifs, 16);
+        for (k = 0; k < n; k++) {
+            long long r2 = sc_mcast_send_on(buf, len, port, ifs[k]);
+            if (r2 > r)
+                r = r2;
+        }
+        if (n == 0) {
+            long long r2 = sc_mcast_send_on(buf, len, port, htonl(INADDR_ANY));
+            if (r2 > r)
+                r = r2;
+        }
     }
     return r;
 }
