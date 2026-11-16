@@ -68,13 +68,13 @@ var out Vector[float](8)
 layernorm_f32(x, gamma, beta, out, 2, 4, 0.00001)
 
 let p out.data
-if (p[0] > 0.0 - 1.3427) = false
+if (p[0] > ((0.0 - 1.3427) as float)) = false
     ok := false
-if (p[0] < 0.0 - 1.3406) = false
+if (p[0] < ((0.0 - 1.3406) as float)) = false
     ok := false
-if (p[1] > 0.0 - 0.4478) = false
+if (p[1] > ((0.0 - 0.4478) as float)) = false
     ok := false
-if (p[1] < 0.0 - 0.4466) = false
+if (p[1] < ((0.0 - 0.4466) as float)) = false
     ok := false
 if (p[2] > 0.4466) = false
     ok := false
@@ -88,7 +88,7 @@ if (p[3] < 1.3427) = false
 ; Constant row: |value| must be tiny.
 if (p[4] > 0.001)
     ok := false
-if (p[4] < 0.0 - 0.001)
+if (p[4] < ((0.0 - 0.001) as float))
     ok := false
 
 ; gamma=2, beta=1 rescales: p3 * 2 + 1.
@@ -109,7 +109,7 @@ let got p2[3]
 let diff got - want
 if (diff > 0.001)
     ok := false
-if (diff < 0.0 - 0.001)
+if (diff < ((0.0 - 0.001) as float))
     ok := false
 
 if ok

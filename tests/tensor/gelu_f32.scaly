@@ -45,7 +45,7 @@ let p out.data
 ; gelu(0) = 0 exactly.
 if (p[0] > 0.000001)
     ok := false
-if (p[0] < 0.0 - 0.000001)
+if (p[0] < ((0.0 - 0.000001) as float))
     ok := false
 ; gelu(1) ~ 0.841192
 if (p[1] > 0.8405) = false
@@ -53,9 +53,9 @@ if (p[1] > 0.8405) = false
 if (p[1] < 0.8419) = false
     ok := false
 ; gelu(-1) ~ -0.158808
-if (p[2] > 0.0 - 0.1595) = false
+if (p[2] > ((0.0 - 0.1595) as float)) = false
     ok := false
-if (p[2] < 0.0 - 0.1581) = false
+if (p[2] < ((0.0 - 0.1581) as float)) = false
     ok := false
 ; gelu(2) ~ 1.954598
 if (p[3] > 1.9535) = false
@@ -63,9 +63,9 @@ if (p[3] > 1.9535) = false
 if (p[3] < 1.9557) = false
     ok := false
 ; gelu(-2) ~ -0.045402
-if (p[4] > 0.0 - 0.0465) = false
+if (p[4] > ((0.0 - 0.0465) as float)) = false
     ok := false
-if (p[4] < 0.0 - 0.0443) = false
+if (p[4] < ((0.0 - 0.0443) as float)) = false
     ok := false
 ; gelu(3) ~ 2.996363
 if (p[5] > 2.9948) = false
