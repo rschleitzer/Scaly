@@ -1,0 +1,16 @@
+; The IR of a light parallel loop's chunk: the block's end, the inner loop
+; back to the body, and the copy of the record it puts into.
+; expect-ir: %parfor.blk.end = select i1 %parfor.blk.short, i64 %parfor.blk.far, i64 %parfor.hi
+; expect-ir: br i1 %parfor.blk.more, label %parfor.chunk.body, label %parfor.chunk.cond
+; expect-ir: %parfor.rec = load %_Z6VectorI3f64E, ptr %out, align 8
+
+procedure twice(a: Slice[f64], mutable out: Vector[f64])
+{
+    for i in out.length
+        out.put(i, a[i] * 2.0)
+}
+
+var a Vector[f64](8)
+var out Vector[f64](8)
+twice(a.as_slice(), out)
+print "`out[0]`"

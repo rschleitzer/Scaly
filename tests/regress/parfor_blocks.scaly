@@ -1,0 +1,87 @@
+; A light parallel loop runs each chunk in blocks of 256 rounds (the poll
+; and the bound once per block), on copies of the Vector and Slice records
+; it reads and puts into: what LLVM vectorizes. Every round still runs once,
+; whatever the length -- around a block, around a chunk --, and a sum and a
+; put give what the same loop gives one round after the other.
+;
+; Expected: PASS
+
+function seq_dot(a: Slice[f64], b: Slice[f64]) returns f64
+{
+    var s 0.0
+    var i: size_t 0
+    while i < a.length
+    {
+        s := s + a[i] * b[i]
+        i := i + 1
+    }
+    s
+}
+
+function par_dot(a: Slice[f64], b: Slice[f64]) returns f64
+{
+    var s 0.0
+    for i in a.length
+        s := s + a[i] * b[i]
+    s
+}
+
+procedure par_axpy(a: Slice[f64], b: Slice[f64], mutable out: Vector[f64])
+{
+    for i in out.length
+        out.put(i, a[i] * 2.5 + b[i])
+}
+
+function check(n: size_t) returns bool
+{
+    var a Vector[f64](n)
+    var b Vector[f64](n)
+    var out Vector[f64](n)
+    var k: size_t 0
+    while k < n
+    {
+        a.put(k, ((k % 1000) as f64) / 1000.0 - 0.5)
+        b.put(k, ((k % 997) as f64) / 997.0)
+        k := k + 1
+    }
+    var round 0
+    while round < 3
+    {
+        if par_dot(a.as_slice(), b.as_slice()) <> seq_dot(a.as_slice(), b.as_slice())
+            return false
+        par_axpy(a.as_slice(), b.as_slice(), out)
+        var j: size_t 0
+        while j < n
+        {
+            if out[j] <> a[j] * 2.5 + b[j]
+                return false
+            j := j + 1
+        }
+        round := round + 1
+    }
+    true
+}
+
+var sizes Vector[size_t](9)
+sizes.put(0, 1)
+sizes.put(1, 255)
+sizes.put(2, 256)
+sizes.put(3, 257)
+sizes.put(4, 511)
+sizes.put(5, 1000)
+sizes.put(6, 4099)
+sizes.put(7, 100003)
+sizes.put(8, 2000001)
+var ok true
+var q: size_t 0
+while q < sizes.length
+{
+    if check(sizes[q]) = false
+    {
+        print "FAIL `sizes[q]`"
+        ok := false
+    }
+    q := q + 1
+}
+if ok
+    print "PASS"

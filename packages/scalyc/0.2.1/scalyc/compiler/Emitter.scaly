@@ -47,6 +47,12 @@ function fflush(stream: pointer[void]) returns i32 extern
 ; where there is none
 procedure scaly_macos_version(mutable buf: pointer[void], cap: size_t) returns size_t extern
 
+; A parallel loop's chunk: a body of at most PARFOR_LIGHT static weight
+; (parfor_weight_action#) runs in blocks of PARFOR_BLOCK rounds, its poll
+; and its bound once per block (emit_parallel_for#).
+define PARFOR_LIGHT size_t 128
+define PARFOR_BLOCK size_t 256
+
 define Emitter
 {
     ; ============================================================================
@@ -20460,6 +20466,24 @@ define Emitter
             parfor_cap_types.add t
         }
 
+        ; The record type of a capture the cell holds by its address that a
+        ; chunk may copy (emit_parallel_for#): a Vector or a Slice. Null for
+        ; anything else -- an Array (its buffer word is not its record's
+        ; last), a record of the program, a value in the cell.
+        procedure parfor_record_copy_type(mutable this, t: PlannedType, mutable slot_ty: LLVMTypeRef) returns LLVMTypeRef
+        {
+            if LLVMGetTypeKind(slot_ty) <> LLVMTypeKind.Pointer()
+                return null
+            var c t
+            if (c.name = "ref" or c.name = "pointer") and c.generics <> null and c.generics.length = 1
+                c := c.generics[0]
+            if c.name <> "Vector" and c.name <> "Slice"
+                return null
+            if c.generics = null or c.generics.length <> 1
+                return null
+            map_type(c)
+        }
+
         ; `out.put(i, v)` in a scanned body: noted against `out` as a put at
         ; exactly the loop's counter or as one anywhere else.
         procedure parfor_note_put(mutable this, call: PlannedCall)
@@ -21430,11 +21454,14 @@ define Emitter
             LLVMConstReal(ty, neg_zero)
         }
 
+        ; The fold of the rounds' partials, in index order -- under `relaxed`
+        ; regrouped (relax#): one loop over every partial, so it vectorizes
+        ; and its bits do not depend on how many workers ran the rounds.
         procedure fp_combine(mutable this, op: int, mutable acc: LLVMValueRef, mutable part: LLVMValueRef) returns LLVMValueRef
         {
             if op = 21
-                return LLVMBuildFMul(builder, acc, part, "parfor.fp.mul")
-            LLVMBuildFAdd(builder, acc, part, "parfor.fp.add")
+                return this.relax(LLVMBuildFMul(builder, acc, part, "parfor.fp.mul"))
+            this.relax(LLVMBuildFAdd(builder, acc, part, "parfor.fp.add"))
         }
 
         ; Inline iteration start: every floating-point reduction's name now
@@ -21783,7 +21810,24 @@ define Emitter
                     define_variable(nm, cap_slot)
                 }
                 if rebuild_slot = 0
-                    define_variable(nm, cap_val)
+                {
+                    ; A Vector or Slice the cell holds by its address: the
+                    ; rounds read it or put into it (TaskPlanner), neither
+                    ; changes its record, so the chunk works on a copy of
+                    ; the record. Its length and data then stay in registers
+                    ; -- read through the address, every round loaded them
+                    ; again behind each store, and no loop of the driver
+                    ; vectorized.
+                    let copy_ty this.parfor_record_copy_type(cap_types[ci], slot_ty)
+                    if copy_ty <> null
+                    {
+                        let rec_copy LLVMBuildAlloca(builder, copy_ty, nm.c_data())
+                        LLVMBuildStore(builder, LLVMBuildLoad2(builder, copy_ty, cap_val, "parfor.rec"), rec_copy)
+                        define_variable(nm, rec_copy)
+                    }
+                    else
+                        define_variable(nm, cap_val)
+                }
                 ci := ci + 1
             }
 
@@ -21835,6 +21879,23 @@ define Emitter
             ; out, which would read the flag once and never again.
             let iv_slot LLVMBuildAlloca(builder, i64_ty, "parfor.iv.slot")
             LLVMBuildStore(builder, chunk_lo, iv_slot)
+            ; A light body (its static weight at most PARFOR_LIGHT) runs its
+            ; chunk in blocks of PARFOR_BLOCK rounds: the poll and the bound
+            ; once per block, an inner loop of rounds alone, which LLVM can
+            ; vectorize -- the poll on a second path in every round kept any
+            ; loop of the driver scalar. A guarded wave then stops at most a
+            ; block later, a block of light rounds; a heavy body keeps its
+            ; poll in every round.
+            var blocked false
+            var blk_end_slot: LLVMValueRef null
+            if for_expr.is_iterator_loop = false
+            {
+                if parfor_weight_action(for_expr.body) <= PARFOR_LIGHT
+                {
+                    blocked := true
+                    blk_end_slot := LLVMBuildAlloca(builder, i64_ty, "parfor.blk.end.slot")
+                }
+            }
             let ck_cond create_block("parfor.chunk.cond")
             let ck_body create_block("parfor.chunk.body")
             let ck_inc create_block("parfor.chunk.inc")
@@ -21843,6 +21904,10 @@ define Emitter
 
             let ck_guard create_block("parfor.chunk.guard")
             let ck_poll create_block("parfor.chunk.poll")
+            ; blocked: where a block of rounds begins (its end, then the body)
+            var ck_into ck_body
+            if blocked
+                ck_into := create_block("parfor.chunk.block")
 
             LLVMPositionBuilderAtEnd(builder, ck_cond)
             let iv LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv")
@@ -21852,7 +21917,7 @@ define Emitter
             ; Unguarded (cancel word null): straight into the body.
             LLVMPositionBuilderAtEnd(builder, ck_guard)
             let ck_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), cancel_ptr, LLVMConstPointerNull(ptr_ty), "parfor.cancel.off")
-            LLVMBuildCondBr(builder, ck_null, ck_body, ck_poll)
+            LLVMBuildCondBr(builder, ck_null, ck_into, ck_poll)
 
             ; Guarded: one monotonic load. Nonzero means a sibling recorded
             ; the wave's first fault, so this chunk stops where it stands —
@@ -21864,7 +21929,18 @@ define Emitter
             LLVMSetOrdering(ck_flag, 2)
             LLVMSetAlignment(ck_flag, 8)
             let ck_live LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), ck_flag, LLVMConstInt(i64_ty, 0, 0), "parfor.cancel.live")
-            LLVMBuildCondBr(builder, ck_live, ck_body, pf_ret_block)
+            LLVMBuildCondBr(builder, ck_live, ck_into, pf_ret_block)
+
+            ; blocked: the block's end, min(iv + PARFOR_BLOCK, hi)
+            if blocked
+            {
+                LLVMPositionBuilderAtEnd(builder, ck_into)
+                let blk_far LLVMBuildAdd(builder, iv, LLVMConstInt(i64_ty, PARFOR_BLOCK, 0), "parfor.blk.far")
+                let blk_short LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), blk_far, chunk_hi, "parfor.blk.short")
+                let blk_end LLVMBuildSelect(builder, blk_short, blk_far, chunk_hi, "parfor.blk.end")
+                LLVMBuildStore(builder, blk_end, blk_end_slot)
+                LLVMBuildBr(builder, ck_body)
+            }
 
             ; Per-iteration element binding. Iterator: load the element
             ; pointer from the drained flat array (the collection outlives
@@ -21873,6 +21949,10 @@ define Emitter
             ; index value, rebuilt in its source width.
             LLVMPositionBuilderAtEnd(builder, ck_body)
             var pf_loop_bind iv
+            ; blocked: the inner loop comes back here, not through the head
+            if blocked
+                pf_loop_bind := LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv.b")
+            let iv_round pf_loop_bind
             if for_expr.is_iterator_loop
             {
                 var ev_idx Vector[LLVMValueRef](1)
@@ -21890,7 +21970,7 @@ define Emitter
             {
                 let iw LLVMGetIntTypeWidth(index_ty)
                 if iw < 64
-                    pf_loop_bind := LLVMBuildTrunc(builder, iv, index_ty, for_expr.identifier.c_data())
+                    pf_loop_bind := LLVMBuildTrunc(builder, iv_round, index_ty, for_expr.identifier.c_data())
             }
             define_variable(for_expr.identifier, pf_loop_bind)
             debug_declare_loop_variable(for_expr, pf_loop_bind)
@@ -21933,7 +22013,14 @@ define Emitter
             let iv_one LLVMConstInt(i64_ty, 1, 0)
             let iv_next LLVMBuildAdd(builder, iv_cur, iv_one, "parfor.iv.next")
             LLVMBuildStore(builder, iv_next, iv_slot)
-            LLVMBuildBr(builder, ck_cond)
+            if blocked
+            {
+                let blk_end_now LLVMBuildLoad2(builder, i64_ty, blk_end_slot, "parfor.blk.end.now")
+                let blk_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), iv_next, blk_end_now, "parfor.blk.more")
+                LLVMBuildCondBr(builder, blk_more, ck_body, ck_cond)
+            }
+            else
+                LLVMBuildBr(builder, ck_cond)
 
             ; Epilogue: release the task's local region (one region per
             ; CHUNK — no-op when the body never allocated), return null.
