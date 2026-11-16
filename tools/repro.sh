@@ -59,6 +59,26 @@ repro_tar_gz() {
   return $rc
 }
 
+# <zip> <dir> <entries...>: a .zip of the entries below <dir>, by Windows'
+# own tar (bsdtar: the suffix makes it a zip; Git Bash's tar cannot), in
+# byte order of their names, with one time. A zip keeps that time as DOS
+# time, in the zone of the machine that packs it: TZ=UTC0 for the C runtime,
+# so that a rebuild elsewhere writes the same bytes.
+repro_zip() {
+  local zip="$1" dir="$2"; shift 2
+  repro_normalize "$dir" "$@"
+  local list; list="$(mktemp)"
+  ( cd "$dir" && find "$@" | LC_ALL=C sort ) > "$list"
+  local abs; abs="$(cd "$(dirname "$zip")" && pwd)/$(basename "$zip")"
+  rm -f "$abs"
+  local wtar; wtar="$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe"
+  ( cd "$dir" && TZ=UTC0 "$wtar" -a -c -n --uid 0 --gid 0 --uname root --gname root \
+      -f "$(cygpath -w "$abs")" -T "$(cygpath -w "$list")" )
+  local rc=$?
+  rm -f "$list"
+  return $rc
+}
+
 # <out.a> <in.a>: the archive again, its members in the same order, with
 # llvm-ar's deterministic header (time, owner and mode zero) -- the system's
 # ar writes the time each member was made.
@@ -127,8 +147,9 @@ repro_buildinfo() {
         [ -n "${SCALY_BUILD_IMAGE:-}" ] && echo "image $SCALY_BUILD_IMAGE"
         ;;
       MINGW*|MSYS*|CYGWIN*)
-        echo "msvc ${VCToolsVersion:-unknown}"
-        echo "sdk ${WindowsSDKVersion:-unknown}"
+        # read off LIB: set by tools/win-env.sh, or by the developer prompt
+        echo "msvc $(printf '%s' "${LIB:-}" | grep -o 'MSVC.[0-9][0-9.]*' | head -1 | sed 's/^MSVC.//')"
+        echo "sdk $(printf '%s' "${LIB:-}" | grep -o '[\\/]Lib[\\/]10\.[0-9.]*' | head -1 | sed 's/^.Lib.//')"
         ;;
     esac
     if [ "$profile" = none ]; then echo "profile none"

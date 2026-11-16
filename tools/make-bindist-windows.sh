@@ -52,6 +52,7 @@ case "$(uname -s)" in
 esac
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
+. tools/repro.sh
 VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 case "$SCALY_WIN_TRIPLE" in
@@ -75,7 +76,7 @@ for p in scalyc scaly scalyls; do
   [ -f "$STAGE/libexec/$p.exe" ] || { echo "make-bindist-windows: FAIL — $p.exe was not built"; exit 1; }
 done
 rm -f "$STAGE"/libexec/*.def "$STAGE/build.log"
-cp "$(cygpath -u "${TMP:-${TEMP:-/tmp}}")/libscaly.lib" "$STAGE/lib/libscaly.lib"
+repro_ar "$STAGE/lib/libscaly.lib" "$(cygpath -u "${TMP:-${TEMP:-/tmp}}")/libscaly.lib" "$(command -v llvm-ar)"
 
 # 2. the compiler and the tool again, from the sources, with the profile
 MADE=""
@@ -129,6 +130,11 @@ EOF
   mv "$PGO/scaly.exe" "$STAGE/libexec/scaly.exe"
   rm -rf "$PGO"
   if [ -n "$MADE" ]; then BUILT="with a profile$MADE"; else BUILT="with the profile $PROFILE"; fi
+  # the profile is an input of what is handed out: kept beside it
+  mkdir -p "$OUT"
+  KEPT="$OUT/scaly-$VERSION-windows-$ARCH.profdata"
+  [ "$PROFILE" -ef "$KEPT" ] || cp "$PROFILE" "$KEPT"
+  PROFILE="$KEPT"
 else
   echo "make-bindist-windows: NOTE — SCALY_PGO_PROFILE=none: the programs are the seed recipe's, about 10 % slower on the compiler's own work"
   BUILT="without a profile"
@@ -156,9 +162,7 @@ deps=$(for p in scalyc scaly scalyls; do llvm-objdump -p "$STAGE/libexec/$p.exe"
 cp LICENSE THIRD-PARTY-LICENSES.txt "$STAGE/"
 
 mkdir -p "$OUT"
-rm -f "$ZIP"
-# Windows' own tar (bsdtar) writes a zip by the name's suffix; Git Bash's does not
-ZIP_W="$(cygpath -w "$(cd "$OUT" && pwd)/$(basename "$ZIP")")"
-( cd "$STAGE" && "$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe" -a -c -f "$ZIP_W" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages ) \
+repro_buildinfo "$ZIP.buildinfo" "$VERSION" "windows-$ARCH" "$PROFILE" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages
+repro_zip "$ZIP" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages \
   || { echo "make-bindist-windows: FAIL — the zip"; exit 1; }
 echo "make-bindist-windows: OK -> $ZIP ($(du -h "$ZIP" | cut -f1)), $BUILT"
