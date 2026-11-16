@@ -91,6 +91,7 @@ struct Chart;
 struct Chart;
 struct NodeDown;
 struct ClusterJob;
+struct KeepSet;
 struct ClusterResult;
 struct ClusterJobCall;
 struct ClusterOfferCall;
@@ -2084,6 +2085,87 @@ struct NodeDown
 };
 #endif
 
+#ifndef SCALY_TYPE_VectorIterator_Luint64__t_R
+#define SCALY_TYPE_VectorIterator_Luint64__t_R
+template <> struct VectorIterator<uint64_t>
+{
+    Vector<uint64_t>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_Luint64__t_R
+#define SCALY_TYPE_Slice_Luint64__t_R
+template <> struct Slice<uint64_t>
+{
+    uint64_t length;
+    uint64_t* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_Luint64__t_R
+#define SCALY_TYPE_SliceIterator_Luint64__t_R
+template <> struct SliceIterator<uint64_t>
+{
+    Slice<uint64_t> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_Luint64__t_R
+#define SCALY_TYPE_ArrayIterator_Luint64__t_R
+template <> struct ArrayIterator<uint64_t>
+{
+    Array<uint64_t>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_Luint64__t_R
+#define SCALY_TYPE_Array_Luint64__t_R
+template <> struct Array<uint64_t>
+{
+    uint64_t length;
+    uint64_t capacity;
+    uint64_t* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_Luint64__t_R
+#define SCALY_TYPE_Node_Luint64__t_R
+template <> struct Node<uint64_t>
+{
+    uint64_t element;
+    Node<uint64_t>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_Luint64__t_R
+#define SCALY_TYPE_ListIterator_Luint64__t_R
+template <> struct ListIterator<uint64_t>
+{
+    Node<uint64_t>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_Luint64__t_R
+#define SCALY_TYPE_List_Luint64__t_R
+template <> struct List<uint64_t>
+{
+    Node<uint64_t>* head;
+    Node<uint64_t>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_Luint64__t_R
+#define SCALY_TYPE_Vector_Luint64__t_R
+template <> struct Vector<uint64_t>
+{
+    uint64_t length;
+    uint64_t* data;
+};
+#endif
+
 #ifndef SCALY_TYPE_VectorIterator_LVector_Luint8__t_R_R
 #define SCALY_TYPE_VectorIterator_LVector_Luint8__t_R_R
 template <> struct VectorIterator<Vector<uint8_t>>
@@ -2173,9 +2255,24 @@ struct ClusterJob
     uint64_t offer;
     int64_t lo;
     int64_t hi;
-    bool cached;
+    Vector<uint64_t> keys;
     Vector<uint8_t> cell;
     Vector<Vector<uint8_t>> inputs;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z7KeepSet
+#define SCALY_TYPE__Z7KeepSet
+struct KeepSet
+{
+    Page* home;
+    uint64_t* k0;
+    uint64_t* k1;
+    uint64_t* lens;
+    uint8_t** data;
+    Page** pages;
+    uint64_t count;
+    uint64_t total;
 };
 #endif
 
@@ -2196,7 +2293,7 @@ struct ClusterJobCall
 {
     Page* rp;
     ClusterJob* job;
-    ClusterJob* src;
+    Vector<uint8_t>* ins;
     ClusterResult* res;
 };
 #endif
@@ -2339,32 +2436,6 @@ template <> struct Vector<HelperFound>
 {
     uint64_t length;
     HelperFound* data;
-};
-#endif
-
-#ifndef SCALY_TYPE_Node_Luint64__t_R
-#define SCALY_TYPE_Node_Luint64__t_R
-template <> struct Node<uint64_t>
-{
-    uint64_t element;
-    Node<uint64_t>* next;
-};
-#endif
-
-#ifndef SCALY_TYPE_ListIterator_Luint64__t_R
-#define SCALY_TYPE_ListIterator_Luint64__t_R
-template <> struct ListIterator<uint64_t>
-{
-    Node<uint64_t>* current;
-};
-#endif
-
-#ifndef SCALY_TYPE_List_Luint64__t_R
-#define SCALY_TYPE_List_Luint64__t_R
-template <> struct List<uint64_t>
-{
-    Node<uint64_t>* head;
-    Node<uint64_t>* tail;
 };
 #endif
 
@@ -3234,7 +3305,15 @@ bool Hmac_same(Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN4Hmac4sameE5SliceI2u8E5
 extern "C" uint64_t scaly_build_stamp();
 extern "C" uint64_t scaly_build_traits();
 bool cluster_traits_fit(uint64_t, uint64_t) asm("_Z18cluster_traits_fit3u643u64");
-ClusterResult* Cluster_run_job(Page*, ClusterJob*, ClusterJob*) asm("_ZN7Cluster7run_jobER4PageR10ClusterJobP10ClusterJob");
+KeepSet* keep_new() asm("_Z8keep_newv");
+int64_t keep_find(KeepSet*, uint64_t, uint64_t) asm("_Z9keep_findP7KeepSet3u643u64");
+int64_t keep_add(KeepSet*, uint64_t, uint64_t, uint64_t, uint8_t*, Page*) asm("_Z8keep_addP7KeepSet3u643u64mP2u8P4Page");
+bool keep_named(uint64_t*, uint64_t, uint64_t, uint64_t) asm("_Z10keep_namedP3u64m3u643u64");
+void keep_drop(KeepSet*, uint64_t) asm("_Z9keep_dropP7KeepSetm");
+void keep_trim(KeepSet*, uint64_t*, uint64_t) asm("_Z9keep_trimP7KeepSetP3u64m");
+void keep_free(KeepSet*) asm("_Z9keep_freeP7KeepSet");
+scaly_tuple<uint64_t, uint64_t> content_key(uint8_t*, uint64_t) asm("_Z11content_keyP2u8m");
+ClusterResult* Cluster_run_job(Page*, ClusterJob*, Vector<uint8_t>*) asm("_ZN7Cluster7run_jobER4PageR10ClusterJobP6VectorI2u8E");
 int64_t cluster_job_guarded(void*) asm("_Z19cluster_job_guardedPv");
 int64_t cluster_offer_guarded(void*) asm("_Z21cluster_offer_guardedPv");
 void Cluster_search() asm("_ZN7Cluster6searchEv");
@@ -3294,9 +3373,13 @@ bool Cluster_serves(NodePeer*, void*) asm("_ZN7Cluster6servesER8NodePeerPv");
 uint8_t* Cluster_capture_record(void*, void*, uint64_t) asm("_ZN7Cluster14capture_recordEPvPvm");
 bool Cluster_travels_out(int64_t) asm("_ZN7Cluster11travels_outE3i64");
 scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(uint8_t*, int64_t) asm("_ZN7Cluster9buffer_ofEP2u83i64");
+uint64_t Cluster_row_width(void*, void*, int64_t) asm("_ZN7Cluster9row_widthEPvPv3i64");
 bool Cluster_read_only(int64_t) asm("_ZN7Cluster9read_onlyE3i64");
 scaly_tuple<uint64_t, uint64_t> Cluster_weight(void*, void*) asm("_ZN7Cluster6weightEPvPv");
-uint64_t Cluster_send_job(NodePeer*, void*, void*, uint64_t, int64_t, int64_t, bool) asm("_ZN7Cluster8send_jobEP8NodePeerPvPv3u643i643i64b");
+scaly_tuple<uint8_t*, uint64_t> Cluster_read_part(void*, void*, uint64_t) asm("_ZN7Cluster9read_partEPvPvm");
+uint64_t* Cluster_offer_keys(void*, void*, Page*) asm("_ZN7Cluster10offer_keysEPvPvR4Page");
+uint64_t Cluster_unsent_bytes(void*, void*, uint64_t*, KeepSet*) asm("_ZN7Cluster12unsent_bytesEPvPvP3u64P7KeepSet");
+uint64_t Cluster_send_job(NodePeer*, void*, void*, uint64_t, int64_t, int64_t, uint64_t*, KeepSet*) asm("_ZN7Cluster8send_jobEP8NodePeerPvPv3u643i643i64P3u64P7KeepSet");
 void Cluster_take_result(void*, void*, ClusterResult*) asm("_ZN7Cluster11take_resultEPvPvR13ClusterResult");
 void Cluster_fix_parts(ReceivedRegion*, void*, uint64_t) asm("_ZN7Cluster9fix_partsER14ReceivedRegionPvm");
 void Cluster_fix_job(ReceivedRegion*, ClusterJob*) asm("_ZN7Cluster7fix_jobER14ReceivedRegionR10ClusterJob");
@@ -3477,7 +3560,7 @@ thread_local int64_t* tcp_current_serve asm("tcp_current_serve") = (int64_t*)(nu
 thread_local int64_t drawings_shown asm("drawings_shown") = 0LL;
 static const uint32_t SHA256_K[] = { (uint32_t)(1116352408ULL), (uint32_t)(1899447441ULL), (uint32_t)(3049323471ULL), (uint32_t)(3921009573ULL), (uint32_t)(961987163ULL), (uint32_t)(1508970993ULL), (uint32_t)(2453635748ULL), (uint32_t)(2870763221ULL), (uint32_t)(3624381080ULL), (uint32_t)(310598401ULL), (uint32_t)(607225278ULL), (uint32_t)(1426881987ULL), (uint32_t)(1925078388ULL), (uint32_t)(2162078206ULL), (uint32_t)(2614888103ULL), (uint32_t)(3248222580ULL), (uint32_t)(3835390401ULL), (uint32_t)(4022224774ULL), (uint32_t)(264347078ULL), (uint32_t)(604807628ULL), (uint32_t)(770255983ULL), (uint32_t)(1249150122ULL), (uint32_t)(1555081692ULL), (uint32_t)(1996064986ULL), (uint32_t)(2554220882ULL), (uint32_t)(2821834349ULL), (uint32_t)(2952996808ULL), (uint32_t)(3210313671ULL), (uint32_t)(3336571891ULL), (uint32_t)(3584528711ULL), (uint32_t)(113926993ULL), (uint32_t)(338241895ULL), (uint32_t)(666307205ULL), (uint32_t)(773529912ULL), (uint32_t)(1294757372ULL), (uint32_t)(1396182291ULL), (uint32_t)(1695183700ULL), (uint32_t)(1986661051ULL), (uint32_t)(2177026350ULL), (uint32_t)(2456956037ULL), (uint32_t)(2730485921ULL), (uint32_t)(2820302411ULL), (uint32_t)(3259730800ULL), (uint32_t)(3345764771ULL), (uint32_t)(3516065817ULL), (uint32_t)(3600352804ULL), (uint32_t)(4094571909ULL), (uint32_t)(275423344ULL), (uint32_t)(430227734ULL), (uint32_t)(506948616ULL), (uint32_t)(659060556ULL), (uint32_t)(883997877ULL), (uint32_t)(958139571ULL), (uint32_t)(1322822218ULL), (uint32_t)(1537002063ULL), (uint32_t)(1747873779ULL), (uint32_t)(1955562222ULL), (uint32_t)(2024104815ULL), (uint32_t)(2227730452ULL), (uint32_t)(2361852424ULL), (uint32_t)(2428436474ULL), (uint32_t)(2756734187ULL), (uint32_t)(3204031479ULL), (uint32_t)(3329325298ULL) };
 static const uint64_t NODE_WIRE_MAGIC = 4922239063177642835ULL;
-static const uint64_t NODE_PROTO_VERSION = (uint64_t)(3LL);
+static const uint64_t NODE_PROTO_VERSION = (uint64_t)(4LL);
 static const uint64_t NODE_FRAME_DATA = (uint64_t)(1LL);
 static const uint64_t NODE_FRAME_HEARTBEAT = (uint64_t)(2LL);
 static const uint64_t NODE_FRAME_BYE = (uint64_t)(3LL);
@@ -3500,6 +3583,9 @@ static const int64_t CLUSTER_LATENCIES = 50LL;
 static const int64_t CLUSTER_BYTE_NS = 10LL;
 static const int64_t CLUSTER_SEARCH_AGAIN_NS = 10000000000LL;
 static const int64_t HELPER_SEARCH_MS = 2500LL;
+static const uint64_t CLUSTER_KEEP_BYTES = (uint64_t)(536870912LL);
+static const uint64_t CLUSTER_KEEP_COUNT = (uint64_t)(1024LL);
+static const uint64_t CLUSTER_KEEP_MOST = (uint64_t)(4096LL);
 void** cluster_table asm("cluster_table") = (void**)(nullptr);
 uint64_t cluster_table_count asm("cluster_table_count") = (uint64_t)(0LL);
 double* cluster_loop_round asm("cluster_loop_round") = (double*)(nullptr);
@@ -3520,6 +3606,7 @@ thread_local bool cluster_home asm("cluster_home") = false;
 int64_t* cluster_peer_cores asm("cluster_peer_cores") = (int64_t*)(nullptr);
 double* cluster_peer_lat asm("cluster_peer_lat") = (double*)(nullptr);
 double* cluster_peer_factor asm("cluster_peer_factor") = (double*)(nullptr);
+KeepSet** cluster_peer_keep asm("cluster_peer_keep") = (KeepSet**)(nullptr);
 uint64_t cluster_search asm("cluster_search") = (uint64_t)(0LL);
 int64_t cluster_search_done_at asm("cluster_search_done_at") = 0LL;
 const char** cluster_found_hosts asm("cluster_found_hosts") = (const char**)(nullptr);
@@ -3663,8 +3750,6 @@ void Array_append12(Array<uint8_t>&, Slice<uint8_t>&) asm("_ZN5ArrayIcE6appendE5
 void Array_init24(Array<uint8_t>&, uint64_t) asm("_ZN5ArrayIcEC1Em");
 void Vector_init59(Vector<uint8_t>&, Array<uint8_t>&) asm("_ZN6VectorIcEC1E5ArrayIcE");
 void Vector_init60(Vector<uint8_t>&, List<uint8_t>&) asm("_ZN6VectorIcEC1E4ListIcE");
-void Array_add44(Array<uint64_t>&, uint64_t) asm("_ZN5ArrayImE3addEm");
-void Array_add47(Array<double>&, double) asm("_ZN5ArrayI3f64E3addE3f64");
 template <class T1> static T1 Array2(Array<T1>&, uint64_t);
 void Vector_init82(Vector<uint32_t>&, uint64_t) asm("_ZN6VectorI3u32EC1Em");
 void Vector_init83(Vector<uint32_t>&, Vector<uint32_t>&) asm("_ZN6VectorI3u32EC1E6VectorI3u32E");
@@ -3681,19 +3766,19 @@ void Vector_init84(Vector<uint32_t>&, Array<uint32_t>&) asm("_ZN6VectorI3u32EC1E
 void Vector_init85(Vector<uint32_t>&, List<uint32_t>&) asm("_ZN6VectorI3u32EC1E4ListI3u32E");
 template <class T1> static T1 Vector6(Vector<T1>&, uint64_t);
 template <class T1> static T1 Vector9(Vector<T1>&, uint64_t);
-void Vector_init97(Vector<float>&, uint64_t) asm("_ZN6VectorIfEC1Em");
-void Vector_init98(Vector<float>&, Vector<float>&) asm("_ZN6VectorIfEC1E6VectorIfE");
-void Array_add59(Array<float>&, float) asm("_ZN5ArrayIfE3addEf");
-void Array_add60(Array<float>&, Vector<float>&) asm("_ZN5ArrayIfE3addE6VectorIfE");
-void Array_add61(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE3addE5SliceIfE");
-void Array_add_run20(Array<float>&, uint64_t, float*) asm("_ZN5ArrayIfE7add_runEmPf");
-Slice<float> Array_extend20(Array<float>&, uint64_t) asm("_ZN5ArrayIfE6extendEm");
-void Array_grow_to20(Array<float>&, uint64_t) asm("_ZN5ArrayIfE7grow_toEm");
-void Array_reallocate20(Array<float>&) asm("_ZN5ArrayIfE10reallocateEv");
-void Array_append20(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE6appendE5SliceIfE");
-void Array_init40(Array<float>&, uint64_t) asm("_ZN5ArrayIfEC1Em");
-void Vector_init99(Vector<float>&, Array<float>&) asm("_ZN6VectorIfEC1E5ArrayIfE");
-void Vector_init100(Vector<float>&, List<float>&) asm("_ZN6VectorIfEC1E4ListIfE");
+void Vector_init102(Vector<float>&, uint64_t) asm("_ZN6VectorIfEC1Em");
+void Vector_init103(Vector<float>&, Vector<float>&) asm("_ZN6VectorIfEC1E6VectorIfE");
+void Array_add62(Array<float>&, float) asm("_ZN5ArrayIfE3addEf");
+void Array_add63(Array<float>&, Vector<float>&) asm("_ZN5ArrayIfE3addE6VectorIfE");
+void Array_add64(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE3addE5SliceIfE");
+void Array_add_run21(Array<float>&, uint64_t, float*) asm("_ZN5ArrayIfE7add_runEmPf");
+Slice<float> Array_extend21(Array<float>&, uint64_t) asm("_ZN5ArrayIfE6extendEm");
+void Array_grow_to21(Array<float>&, uint64_t) asm("_ZN5ArrayIfE7grow_toEm");
+void Array_reallocate21(Array<float>&) asm("_ZN5ArrayIfE10reallocateEv");
+void Array_append21(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE6appendE5SliceIfE");
+void Array_init42(Array<float>&, uint64_t) asm("_ZN5ArrayIfEC1Em");
+void Vector_init104(Vector<float>&, Array<float>&) asm("_ZN6VectorIfEC1E5ArrayIfE");
+void Vector_init105(Vector<float>&, List<float>&) asm("_ZN6VectorIfEC1E4ListIfE");
 
 
 // packages/scaly/0.2.1/scaly/memory/PageList.scaly
@@ -6011,7 +6096,7 @@ template <class T> static void Array_add(Array<T>& scaly_self, T item)
     {
         Array_reallocate<T>(*(this_));
     }
-    T* location = ((this_->buffer) + (T)(this_->length));
+    T* location = ((this_->buffer) + (int64_t)(this_->length));
     (*(location)) = item;
     this_->length = (this_->length + 1ULL);
 }
@@ -12604,19 +12689,6 @@ __attribute__((weak)) int64_t TcpListener_port(TcpListener& scaly_self)
     return ((int64_t)(Io_local_port(this_->fd)));
 }
 
-// packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add44(Array<uint64_t>& scaly_self, uint64_t item)
-{
-    Array<uint64_t>* this_ = &scaly_self;
-    if (((((this_->buffer) == (nullptr))) ? true : ((this_->length == this_->capacity))))
-    {
-        Array_reallocate<uint64_t>(*(this_));
-    }
-    uint64_t* location = ((this_->buffer) + (int64_t)(this_->length));
-    (*(location)) = item;
-    this_->length = (this_->length + 1ULL);
-}
-
 // packages/scaly/0.2.1/scaly/os/Tcp.scaly
 __attribute__((weak)) void TcpListener_serve(TcpListener& scaly_self, void* handler)
 {
@@ -12639,7 +12711,7 @@ __attribute__((weak)) void TcpListener_serve(TcpListener& scaly_self, void* hand
     int64_t i = 1LL;
     while ((i < n))
     {
-        Array_add44((*threads), Thread_spawn(((void*)&tcp_serve_thread), ((void*)(cell))));
+        Array_add<uint64_t>((*threads), Thread_spawn(((void*)&tcp_serve_thread), ((void*)(cell))));
         i = (i + 1LL);
     }
     tcp_serve_thread(((void*)(cell)));
@@ -12974,19 +13046,6 @@ __attribute__((weak)) void Drawing_init(Drawing& scaly_self, int64_t width, int6
     this_->parts = (*({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; }));
 }
 
-// packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add47(Array<double>& scaly_self, double item)
-{
-    Array<double>* this_ = &scaly_self;
-    if (((((this_->buffer) == (nullptr))) ? true : ((this_->length == this_->capacity))))
-    {
-        Array_reallocate<double>(*(this_));
-    }
-    double* location = ((this_->buffer) + (int64_t)(this_->length));
-    (*(location)) = item;
-    this_->length = (this_->length + 1ULL);
-}
-
 // packages/scaly/0.2.1/scaly/draw.scaly
 __attribute__((weak)) void Chart_add(Chart& scaly_self, double value)
 {
@@ -12994,10 +13053,10 @@ __attribute__((weak)) void Chart_add(Chart& scaly_self, double value)
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (((this_->starts).length == 0ULL))
     {
-        Array_add44(this_->starts, 0ULL);
+        Array_add<uint64_t>(this_->starts, 0ULL);
         Array_add7<String>(this_->names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
     }
-    Array_add47(this_->values, value);
+    Array_add<double>(this_->values, value);
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
@@ -13016,7 +13075,7 @@ __attribute__((weak)) void Chart_series(Chart& scaly_self, String& name)
         Array_put3<String>(this_->names, 0ULL, name);
         return;
     }
-    Array_add44(this_->starts, (this_->values).length);
+    Array_add<uint64_t>(this_->starts, (this_->values).length);
     Array_add7<String>(this_->names, name);
 }
 
@@ -13656,10 +13715,156 @@ __attribute__((weak)) bool cluster_traits_fit(uint64_t mine, uint64_t theirs)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) KeepSet* keep_new()
+{
+    Page* p = Page_allocate_page();
+    uint64_t n = 4096ULL;
+    uint64_t* k0 = ((uint64_t*)(Page_allocate(*(p), (n * 8ULL), 8ULL)));
+    uint64_t* k1 = ((uint64_t*)(Page_allocate(*(p), (n * 8ULL), 8ULL)));
+    uint64_t* lens = ((uint64_t*)(Page_allocate(*(p), (n * 8ULL), 8ULL)));
+    uint8_t** data = ((uint8_t**)(Page_allocate(*(p), (n * 8ULL), 8ULL)));
+    Page** pages = ((Page**)(Page_allocate(*(p), (n * 8ULL), 8ULL)));
+    return ((KeepSet*)((&((*({ KeepSet* scaly_t2 = (KeepSet*)scaly_rt_allocate((void*)(p), sizeof(KeepSet), alignof(KeepSet)); *scaly_t2 = KeepSet{((Page*)(p)), k0, k1, lens, data, pages, 0ULL, 0ULL}; scaly_t2; }))))));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) int64_t keep_find(KeepSet* ks, uint64_t a, uint64_t b)
+{
+    uint64_t i = 0ULL;
+    while ((i < ks->count))
+    {
+        if ((((*(((ks->k0) + (int64_t)(i)))) == a) ? ((*(((ks->k1) + (int64_t)(i)))) == b) : false))
+        {
+            return ((int64_t)(i));
+        }
+        i = (i + 1ULL);
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) int64_t keep_add(KeepSet* ks, uint64_t a, uint64_t b, uint64_t len, uint8_t* data, Page* page)
+{
+    uint64_t i = ks->count;
+    if ((i >= 4096ULL))
+    {
+        return (0LL - 1LL);
+    }
+    (*(((ks->k0) + (int64_t)(i)))) = a;
+    (*(((ks->k1) + (int64_t)(i)))) = b;
+    (*(((ks->lens) + (int64_t)(i)))) = len;
+    (*(((ks->data) + (int64_t)(i)))) = data;
+    (*(((ks->pages) + (int64_t)(i)))) = page;
+    ks->count = (i + 1ULL);
+    ks->total = (ks->total + len);
+    return ((int64_t)(i));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) bool keep_named(uint64_t* used, uint64_t n, uint64_t a, uint64_t b)
+{
+    uint64_t i = 0ULL;
+    while ((i < n))
+    {
+        if ((((*(((used) + (int64_t)((i * 2ULL))))) == a) ? ((*(((used) + (int64_t)(((i * 2ULL) + 1ULL))))) == b) : false))
+        {
+            return true;
+        }
+        i = (i + 1ULL);
+    }
+    return false;
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) void keep_drop(KeepSet* ks, uint64_t i)
+{
+    Page* pg = (*(((ks->pages) + (int64_t)(i))));
+    if (((pg) != (nullptr)))
+    {
+        Page* pr = ((Page*)(pg));
+        Page_deallocate_extensions(*(pr));
+        Page_release_page(pr);
+    }
+    ks->total = (ks->total - (*(((ks->lens) + (int64_t)(i)))));
+    uint64_t k = i;
+    while (((k + 1ULL) < ks->count))
+    {
+        (*(((ks->k0) + (int64_t)(k)))) = (*(((ks->k0) + (int64_t)((k + 1ULL)))));
+        (*(((ks->k1) + (int64_t)(k)))) = (*(((ks->k1) + (int64_t)((k + 1ULL)))));
+        (*(((ks->lens) + (int64_t)(k)))) = (*(((ks->lens) + (int64_t)((k + 1ULL)))));
+        (*(((ks->data) + (int64_t)(k)))) = (*(((ks->data) + (int64_t)((k + 1ULL)))));
+        (*(((ks->pages) + (int64_t)(k)))) = (*(((ks->pages) + (int64_t)((k + 1ULL)))));
+        k = (k + 1ULL);
+    }
+    ks->count = (ks->count - 1ULL);
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) void keep_trim(KeepSet* ks, uint64_t* used, uint64_t n)
+{
+    uint64_t i = 0ULL;
+    while (((((ks->total > 536870912ULL) ? true : (ks->count > 1024ULL))) ? (i < ks->count) : false))
+    {
+        if (keep_named(used, n, (*(((ks->k0) + (int64_t)(i)))), (*(((ks->k1) + (int64_t)(i))))))
+        {
+            i = (i + 1ULL);
+        }
+        else
+        {
+            keep_drop(ks, i);
+        }
+    }
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) void keep_free(KeepSet* ks)
+{
+    while ((ks->count > 0ULL))
+    {
+        keep_drop(ks, (ks->count - 1ULL));
+    }
+    Page* home = ((Page*)(ks->home));
+    Page_deallocate_extensions(*(home));
+    Page_release_page(home);
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) scaly_tuple<uint64_t, uint64_t> content_key(uint8_t* data, uint64_t len)
+{
+    uint64_t a = (14695981039346656037ULL ^ (((uint64_t)(len))));
+    uint64_t b = (11400714819323198485ULL + (((uint64_t)(len))));
+    uint64_t words = (len / 8ULL);
+    uint64_t i = 0ULL;
+    uint64_t w = 0ULL;
+    while ((i <= words))
+    {
+        w = 0ULL;
+        if ((i < words))
+        {
+            memcpy(((void*)((&(w)))), ((void*)((((((uint64_t)(data))) + (i * 8ULL))))), ((size_t)(8LL)));
+        }
+        else
+        {
+            if ((len > (words * 8ULL)))
+            {
+                memcpy(((void*)((&(w)))), ((void*)((((((uint64_t)(data))) + (i * 8ULL))))), ((size_t)(((len - (words * 8ULL))))));
+            }
+        }
+        a = (((a ^ w)) * 1099511628211ULL);
+        b = (b + (w * 14029467366897019727ULL));
+        b = ((((((uint64_t)((uint64_t)(b) << (uint64_t)(31LL)))) | (((uint64_t)((uint64_t)(b) >> (uint64_t)(33LL)))))) * 11400714819323198485ULL);
+        i = (i + 1ULL);
+    }
+    a = (((a ^ (((uint64_t)((uint64_t)(a) >> (uint64_t)(29LL)))))) * 13787848793156543929ULL);
+    b = (((b ^ (((uint64_t)((uint64_t)(b) >> (uint64_t)(32LL)))))) * 10723151780598845931ULL);
+    return scaly_tuple<uint64_t, uint64_t>{(a ^ (((uint64_t)((uint64_t)(a) >> (uint64_t)(31LL))))), (b ^ (((uint64_t)((uint64_t)(b) >> (uint64_t)(29LL)))))};
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) int64_t cluster_job_guarded(void* arg)
 {
     ClusterJobCall* c = ((ClusterJobCall*)(arg));
-    c->res = ((ClusterResult*)(Cluster_run_job(c->rp, ((ClusterJob*)(c->job)), c->src)));
+    c->res = ((ClusterResult*)(Cluster_run_job(c->rp, ((ClusterJob*)(c->job)), c->ins)));
     return 0LL;
 }
 
@@ -13934,7 +14139,7 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
     uint8_t pre[32] {};
     uint64_t* pw = ((uint64_t*)(pre));
     (*(((pw) + (int64_t)(0LL)))) = 4922239063177642835ULL;
-    (*(((pw) + (int64_t)(1LL)))) = 3ULL;
+    (*(((pw) + (int64_t)(1LL)))) = 4ULL;
     (*(((pw) + (int64_t)(2LL)))) = scaly_build_stamp();
     (*(((pw) + (int64_t)(3LL)))) = scaly_build_traits();
     if (((Io_tcp_write_all(fd, ((void*)(pre)), 32ULL)) == (false)))
@@ -13964,10 +14169,10 @@ __attribute__((weak)) NodePeer* Cluster_setup(scaly_frame* scaly_rp, int32_t fd,
         return (NodePeer*)(nullptr);
     }
     uint64_t proto = (*(((iw) + (int64_t)(1LL))));
-    if ((proto != 3ULL))
+    if ((proto != 4ULL))
     {
         scaly_eputs(((const char*)"node: connect refused - protocol version mismatch: local "));
-        scaly_eputi(((int64_t)(3ULL)));
+        scaly_eputi(((int64_t)(4ULL)));
         scaly_eputs(((const char*)" peer "));
         scaly_eputi(((int64_t)(proto)));
         scaly_eputnl();
@@ -14115,7 +14320,7 @@ __attribute__((weak)) void Cluster_fill_datagram(Slice<uint8_t>& out, uint64_t k
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     Cluster_put_word(out, 0ULL, kind);
-    Cluster_put_word(out, 1ULL, 3ULL);
+    Cluster_put_word(out, 1ULL, 4ULL);
     Cluster_put_word(out, 2ULL, scaly_build_stamp());
     Cluster_put_word(out, 3ULL, id);
     Cluster_put_word(out, 4ULL, ((uint64_t)(port)));
@@ -14143,7 +14348,7 @@ __attribute__((weak)) bool Cluster_datagram_ok(Slice<uint8_t>& d, uint64_t kind,
     {
         return false;
     }
-    if ((((Cluster_word_at(d, 0ULL) != kind) ? true : (Cluster_word_at(d, 1ULL) != 3ULL)) ? true : (Cluster_word_at(d, 2ULL) != scaly_build_stamp())))
+    if ((((Cluster_word_at(d, 0ULL) != kind) ? true : (Cluster_word_at(d, 1ULL) != 4ULL)) ? true : (Cluster_word_at(d, 2ULL) != scaly_build_stamp())))
     {
         return false;
     }
@@ -14715,6 +14920,7 @@ __attribute__((weak)) void Cluster_connect_found()
         cluster_peer_cores = ((int64_t*)(Page_allocate(*(p), (256ULL * 8ULL), 8ULL)));
         cluster_peer_lat = ((double*)(Page_allocate(*(p), (256ULL * 8ULL), 8ULL)));
         cluster_peer_factor = ((double*)(Page_allocate(*(p), (256ULL * 8ULL), 8ULL)));
+        cluster_peer_keep = ((KeepSet**)(Page_allocate(*(p), (256ULL * 8ULL), 8ULL)));
     }
     if (cluster_peers_asked)
     {
@@ -14733,6 +14939,7 @@ __attribute__((weak)) void Cluster_connect_found()
             (*(((cluster_peer_cores) + (int64_t)(k)))) = (((*(((cluster_found_cores) + (int64_t)(i)))) > 0LL) ? (*(((cluster_found_cores) + (int64_t)(i)))) : 1LL);
             (*(((cluster_peer_lat) + (int64_t)(k)))) = ((double)((double)((((double)(((scaly_eio_now_ns() - t0)))))) / (double)(((double)2))));
             (*(((cluster_peer_factor) + (int64_t)(k)))) = ((double)1);
+            (*(((cluster_peer_keep) + (int64_t)(k)))) = keep_new();
             cluster_peer_count = (k + 1ULL);
         }
         i = (i + 1ULL);
@@ -14746,6 +14953,7 @@ __attribute__((weak)) void Cluster_drop_peers()
     while ((k < cluster_peer_count))
     {
         Cluster_disconnect(((NodePeer*)((*(((cluster_peers) + (int64_t)(k)))))));
+        keep_free((*(((cluster_peer_keep) + (int64_t)(k)))));
         k = (k + 1ULL);
     }
     cluster_peer_count = 0ULL;
@@ -14869,6 +15077,51 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint8_t*> Cluster_buffer_of(uint8_t*
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) uint64_t Cluster_row_width(void* desc, void* cell, int64_t kind)
+{
+    if ((((kind & 256LL)) == 0LL))
+    {
+        return 1ULL;
+    }
+    int64_t at = ((int64_t)((int64_t)(kind) >> (uint64_t)(16LL)));
+    if ((((kind & 512LL)) == 0LL))
+    {
+        return ((uint64_t)(at));
+    }
+    uint64_t c = ((uint64_t)(at));
+    uint64_t p = ((((uint64_t)(cell))) + (((uint64_t)(Cluster_desc_word(desc, (6ULL + (c * 3ULL)))))));
+    int64_t bytes = Cluster_desc_word(desc, (8ULL + (c * 3ULL)));
+    int64_t w = 0LL;
+    if ((bytes == 8LL))
+    {
+        w = (*((((((int64_t*)(p)))) + (int64_t)(0LL))));
+    }
+    else
+    {
+        if ((bytes == 4LL))
+        {
+            w = ((int64_t)((*((((((int32_t*)(p)))) + (int64_t)(0LL))))));
+        }
+        else
+        {
+            if ((bytes == 2LL))
+            {
+                w = ((int64_t)((*((((((int16_t*)(p)))) + (int64_t)(0LL))))));
+            }
+            else
+            {
+                w = ((int64_t)((*((((((int8_t*)(p)))) + (int64_t)(0LL))))));
+            }
+        }
+    }
+    if ((w < 0LL))
+    {
+        return 0ULL;
+    }
+    return ((uint64_t)(w));
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) bool Cluster_read_only(int64_t kind)
 {
     int64_t base = (kind & 15LL);
@@ -14908,7 +15161,7 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(void* desc,
             {
                 if (((base == 4LL) ? true : (base == 5LL)))
                 {
-                    per_round = (per_round + elem);
+                    per_round = (per_round + (elem * Cluster_row_width(desc, cell, kind)));
                 }
             }
         }
@@ -14918,7 +15171,65 @@ __attribute__((weak)) scaly_tuple<uint64_t, uint64_t> Cluster_weight(void* desc,
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
-__attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void* cell, uint64_t offer, int64_t lo, int64_t hi, bool cached)
+__attribute__((weak)) scaly_tuple<uint8_t*, uint64_t> Cluster_read_part(void* desc, void* cell, uint64_t c)
+{
+    int64_t kind = Cluster_desc_word(desc, (7ULL + (c * 3ULL)));
+    uint64_t elem = ((uint64_t)(Cluster_desc_word(desc, (8ULL + (c * 3ULL)))));
+    uint8_t* rec = Cluster_capture_record(desc, cell, c);
+    if ((kind == 17LL))
+    {
+        return scaly_tuple<uint8_t*, uint64_t>{rec, elem};
+    }
+    scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(rec, kind);
+    return scaly_tuple<uint8_t*, uint64_t>{(b)._1, ((b)._0 * elem)};
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) uint64_t* Cluster_offer_keys(void* desc, void* cell, Page* sp)
+{
+    uint64_t ncap = Cluster_capture_count(desc);
+    uint64_t* keys = ((uint64_t*)(Page_allocate(*(sp), (((ncap + 1ULL)) * 16ULL), 8ULL)));
+    uint64_t c = 0ULL;
+    while ((c < ncap))
+    {
+        (*(((keys) + (int64_t)((c * 2ULL))))) = 0ULL;
+        (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL))))) = 0ULL;
+        int64_t kind = Cluster_desc_word(desc, (7ULL + (c * 3ULL)));
+        if ((Cluster_travels_out(kind) ? Cluster_read_only(kind) : false))
+        {
+            scaly_tuple<uint8_t*, uint64_t> part = Cluster_read_part(desc, cell, c);
+            scaly_tuple<uint64_t, uint64_t> k = content_key((part)._0, (part)._1);
+            (*(((keys) + (int64_t)((c * 2ULL))))) = (k)._0;
+            (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL))))) = (k)._1;
+        }
+        c = (c + 1ULL);
+    }
+    return keys;
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) uint64_t Cluster_unsent_bytes(void* desc, void* cell, uint64_t* keys, KeepSet* keep)
+{
+    uint64_t ncap = Cluster_capture_count(desc);
+    uint64_t bytes = 0ULL;
+    uint64_t c = 0ULL;
+    while ((c < ncap))
+    {
+        int64_t kind = Cluster_desc_word(desc, (7ULL + (c * 3ULL)));
+        if ((Cluster_travels_out(kind) ? Cluster_read_only(kind) : false))
+        {
+            if ((keep_find(keep, (*(((keys) + (int64_t)((c * 2ULL))))), (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL)))))) < 0LL))
+            {
+                bytes = (bytes + (Cluster_read_part(desc, cell, c))._1);
+            }
+        }
+        c = (c + 1ULL);
+    }
+    return bytes;
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void* cell, uint64_t offer, int64_t lo, int64_t hi, uint64_t* keys, KeepSet* keep)
 {
     uint64_t size = ((uint64_t)(Cluster_desc_word(desc, 1ULL)));
     uint64_t ncap = Cluster_capture_count(desc);
@@ -14933,19 +15244,26 @@ __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void
         c = (c + 1ULL);
     }
     Page* mp = Page_allocate_page();
-    ClusterJob* job = (&((*({ ClusterJob* scaly_t1 = (ClusterJob*)scaly_rt_allocate((void*)(mp), sizeof(ClusterJob), alignof(ClusterJob)); *scaly_t1 = ClusterJob{((uint64_t)(Cluster_desc_word(desc, 0ULL))), offer, lo, hi, cached, (*({ Vector<uint8_t>* scaly_t2 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t2 = Vector<uint8_t>{}; Vector_init52((*scaly_t2), 0ULL); scaly_t2; })), (*({ Vector<Vector<uint8_t>>* scaly_t3 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t3 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t3), 0ULL); scaly_t3; }))}; scaly_t1; }))));
-    Vector<uint8_t>* cv = ({ Vector<uint8_t>* scaly_t4 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t4 = Vector<uint8_t>{}; Vector_init52((*scaly_t4), size); scaly_t4; });
+    ClusterJob* job = (&((*({ ClusterJob* scaly_t1 = (ClusterJob*)scaly_rt_allocate((void*)(mp), sizeof(ClusterJob), alignof(ClusterJob)); *scaly_t1 = ClusterJob{((uint64_t)(Cluster_desc_word(desc, 0ULL))), offer, lo, hi, (*({ Vector<uint64_t>* scaly_t2 = (Vector<uint64_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t2 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t2), 0ULL); scaly_t2; })), (*({ Vector<uint8_t>* scaly_t3 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t3 = Vector<uint8_t>{}; Vector_init52((*scaly_t3), 0ULL); scaly_t3; })), (*({ Vector<Vector<uint8_t>>* scaly_t4 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t4 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t4), 0ULL); scaly_t4; }))}; scaly_t1; }))));
+    Vector<uint8_t>* cv = ({ Vector<uint8_t>* scaly_t5 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t5 = Vector<uint8_t>{}; Vector_init52((*scaly_t5), size); scaly_t5; });
     memcpy(((void*)(((*cv)).data)), cell, ((size_t)(size)));
-    Vector<Vector<uint8_t>>* ins = ({ Vector<Vector<uint8_t>>* scaly_t5 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t5 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t5), nin); scaly_t5; });
+    Vector<Vector<uint8_t>>* ins = ({ Vector<Vector<uint8_t>>* scaly_t6 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t6 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t6), nin); scaly_t6; });
+    Vector<uint64_t>* kv = ({ Vector<uint64_t>* scaly_t7 = (Vector<uint64_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t7 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t7), (nin * 2ULL)); scaly_t7; });
     uint64_t sent = size;
     uint64_t j = 0ULL;
     c = 0ULL;
     while ((c < ncap))
     {
         int64_t kind = Cluster_desc_word(desc, (7ULL + (c * 3ULL)));
-        if (((Cluster_travels_out(kind) ? cached : false) ? Cluster_read_only(kind) : false))
+        bool fresh = (Cluster_read_only(kind) ? (keep_find(keep, (*(((keys) + (int64_t)((c * 2ULL))))), (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL)))))) < 0LL) : false);
+        if (Cluster_travels_out(kind))
         {
-            Vector_put3<Vector<uint8_t>>((*ins), j, scaly_lvalue((*({ Vector<uint8_t>* scaly_t6 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t6 = Vector<uint8_t>{}; Vector_init52((*scaly_t6), 0ULL); scaly_t6; }))));
+            Vector_put<uint64_t>((*kv), (j * 2ULL), (*(((keys) + (int64_t)((c * 2ULL))))));
+            Vector_put<uint64_t>((*kv), ((j * 2ULL) + 1ULL), (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL))))));
+        }
+        if (((Cluster_travels_out(kind) ? Cluster_read_only(kind) : false) ? ((fresh) == (false)) : false))
+        {
+            Vector_put3<Vector<uint8_t>>((*ins), j, scaly_lvalue((*({ Vector<uint8_t>* scaly_t8 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t8 = Vector<uint8_t>{}; Vector_init52((*scaly_t8), 0ULL); scaly_t8; }))));
             j = (j + 1ULL);
         }
         else
@@ -14964,19 +15282,26 @@ __attribute__((weak)) uint64_t Cluster_send_job(NodePeer* peer, void* desc, void
                     bytes = ((b)._0 * elem);
                     if (((base == 4LL) ? true : (base == 5LL)))
                     {
-                        from = ((uint8_t*)((((((uint64_t)((b)._1))) + ((((uint64_t)(lo))) * elem)))));
-                        bytes = ((((uint64_t)(((hi - lo))))) * elem);
+                        uint64_t row = (elem * Cluster_row_width(desc, cell, kind));
+                        from = ((uint8_t*)((((((uint64_t)((b)._1))) + ((((uint64_t)(lo))) * row)))));
+                        bytes = ((((uint64_t)(((hi - lo))))) * row);
                     }
                 }
-                Vector<uint8_t>* bv = ({ Vector<uint8_t>* scaly_t7 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t7 = Vector<uint8_t>{}; Vector_init52((*scaly_t7), bytes); scaly_t7; });
+                Vector<uint8_t>* bv = ({ Vector<uint8_t>* scaly_t9 = (Vector<uint8_t>*)scaly_rt_allocate((void*)(mp), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t9 = Vector<uint8_t>{}; Vector_init52((*scaly_t9), bytes); scaly_t9; });
                 memcpy(((void*)(((*bv)).data)), ((void*)(from)), ((size_t)(bytes)));
                 Vector_put3<Vector<uint8_t>>((*ins), j, (*bv));
                 sent = (sent + bytes);
+                if (fresh)
+                {
+                    keep_add(keep, (*(((keys) + (int64_t)((c * 2ULL))))), (*(((keys) + (int64_t)(((c * 2ULL) + 1ULL))))), bytes, ((uint8_t*)(nullptr)), ((Page*)(nullptr)));
+                }
                 j = (j + 1ULL);
             }
         }
         c = (c + 1ULL);
     }
+    keep_trim(keep, ((*kv)).data, nin);
+    job->keys = (*kv);
     job->cell = (*cv);
     job->inputs = (*ins);
     Cluster_send(peer, 900ULL, ((void*)(job)));
@@ -14998,7 +15323,8 @@ __attribute__((weak)) void Cluster_take_result(void* desc, void* cell, ClusterRe
             uint64_t elem = ((uint64_t)(Cluster_desc_word(desc, (8ULL + (c * 3ULL)))));
             scaly_tuple<uint64_t, uint8_t*> b = Cluster_buffer_of(Cluster_capture_record(desc, cell, c), kind);
             Vector<uint8_t> part = Vector9<Vector<uint8_t>>(res->outputs, j);
-            void* at = ((void*)((((((uint64_t)((b)._1))) + ((((uint64_t)(res->lo))) * elem)))));
+            uint64_t row = (elem * Cluster_row_width(desc, cell, kind));
+            void* at = ((void*)((((((uint64_t)((b)._1))) + ((((uint64_t)(res->lo))) * row)))));
             memcpy(at, ((void*)((part).data)), ((size_t)((part).length)));
             j = (j + 1ULL);
         }
@@ -15009,6 +15335,7 @@ __attribute__((weak)) void Cluster_take_result(void* desc, void* cell, ClusterRe
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void Cluster_fix_job(ReceivedRegion* rr, ClusterJob* job)
 {
+    ReceivedRegion_fix(*(rr), ((void*)((&((job->keys).data)))));
     ReceivedRegion_fix(*(rr), ((void*)((&((job->cell).data)))));
     Cluster_fix_parts(rr, ((void*)((&((job->inputs).data)))), (job->inputs).length);
 }
@@ -15036,9 +15363,9 @@ __attribute__((weak)) void Cluster_fix_parts(ReceivedRegion* rr, void* slot, uin
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void Cluster_serve(NodePeer* peer)
 {
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     Channel* ch = Cluster_channel(peer, 900ULL);
-    ReceivedRegion* kept = (ReceivedRegion*)(nullptr);
-    ClusterJob* kept_job = (ClusterJob*)(nullptr);
+    KeepSet* store = keep_new();
     for (;;)
     {
         void* raw = Channel_receive(ch);
@@ -15050,19 +15377,40 @@ __attribute__((weak)) void Cluster_serve(NodePeer* peer)
         ClusterJob* job = ((ClusterJob*)(rr->root));
         Cluster_fix_job(rr, ((ClusterJob*)(job)));
         Page* rp = Page_allocate_page();
-        ClusterJob* src = job;
-        if (job->cached)
+        uint64_t n = (job->inputs).length;
+        Vector<uint8_t>* ins = ((Vector<uint8_t>*)(Page_allocate(*(rp), (((n + 1ULL)) * 16ULL), 8ULL)));
+        uint64_t j = 0ULL;
+        while ((j < n))
         {
-            if ((((kept_job) != (nullptr)) ? (kept_job->offer == job->offer) : false))
+            uint64_t a = Vector9<uint64_t>(job->keys, (j * 2ULL));
+            uint64_t b = Vector9<uint64_t>(job->keys, ((j * 2ULL) + 1ULL));
+            Vector<uint8_t> part = Vector9<Vector<uint8_t>>(job->inputs, j);
+            if (((a == 0ULL) ? (b == 0ULL) : false))
             {
-                src = kept_job;
+                (*(((ins) + (int64_t)(j)))) = part;
             }
             else
             {
-                src = (ClusterJob*)(nullptr);
+                int64_t at = keep_find(store, a, b);
+                if ((at < 0LL))
+                {
+                    Page* pg = Page_allocate_page();
+                    uint8_t* copy = ((uint8_t*)(Page_allocate(*(pg), ((part).length + 1ULL), 16ULL)));
+                    memcpy(((void*)(copy)), ((void*)((part).data)), ((size_t)((part).length)));
+                    at = keep_add(store, a, b, (part).length, copy, ((Page*)(pg)));
+                }
+                if ((at >= 0LL))
+                {
+                    (*(((ins) + (int64_t)(j)))) = (*({ Vector<uint8_t>* scaly_t1 = (Vector<uint8_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint8_t>), alignof(Vector<uint8_t>)); *scaly_t1 = Vector<uint8_t>{(*(((store->lens) + (int64_t)(((uint64_t)(at)))))), (*(((store->data) + (int64_t)(((uint64_t)(at))))))}; scaly_t1; }));
+                }
+                else
+                {
+                    (*(((ins) + (int64_t)(j)))) = part;
+                }
             }
+            j = (j + 1ULL);
         }
-        ClusterJobCall call = ClusterJobCall{rp, job, src, ((ClusterResult*)(nullptr))};
+        ClusterJobCall call = ClusterJobCall{rp, job, ins, ((ClusterResult*)(nullptr))};
         int32_t caught = (int32_t)0ULL;
         Region_run_guarded(((void*)&cluster_job_guarded), ((void*)((&(call)))), (&(caught)));
         ClusterResult* res = (call).res;
@@ -15081,28 +15429,12 @@ __attribute__((weak)) void Cluster_serve(NodePeer* peer)
             res = ((ClusterResult*)(Cluster_not_ok(((ClusterJob*)(job)))));
         }
         Cluster_send(peer, 901ULL, ((void*)(res)));
+        keep_trim(store, (job->keys).data, n);
         Page_deallocate_extensions(*(rp));
         Page_release_page(rp);
-        if (job->cached)
-        {
-            Cluster_dispose_message(rr);
-        }
-        else
-        {
-            ReceivedRegion* old = kept;
-            if (((old) != (nullptr)))
-            {
-                Cluster_dispose_message(old);
-            }
-            kept = rr;
-            kept_job = job;
-        }
+        Cluster_dispose_message(rr);
     }
-    ReceivedRegion* last = kept;
-    if (((last) != (nullptr)))
-    {
-        Cluster_dispose_message(last);
-    }
+    keep_free(store);
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
@@ -15113,11 +15445,11 @@ __attribute__((weak)) ClusterResult* Cluster_not_ok(ClusterJob* job)
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly
-__attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, ClusterJob* src)
+__attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, Vector<uint8_t>* ins)
 {
     Page* ap = Page_allocate_page();
     void* desc = Cluster_find_loop(job->hash);
-    if ((((desc) == (nullptr)) ? true : ((src) == (nullptr))))
+    if ((((desc) == (nullptr)) ? true : ((ins) == (nullptr))))
     {
         return (&((*({ ClusterResult* scaly_t1 = (ClusterResult*)scaly_rt_allocate((void*)(ap), sizeof(ClusterResult), alignof(ClusterResult)); *scaly_t1 = ClusterResult{job->lo, job->hi, false, (*({ Vector<Vector<uint8_t>>* scaly_t2 = (Vector<Vector<uint8_t>>*)scaly_rt_allocate((void*)(ap), sizeof(Vector<Vector<uint8_t>>), alignof(Vector<Vector<uint8_t>>)); *scaly_t2 = Vector<Vector<uint8_t>>{}; Vector_init3<Vector<uint8_t>>((*scaly_t2), 0ULL); scaly_t2; }))}; scaly_t1; }))));
     }
@@ -15156,7 +15488,7 @@ __attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, 
         uint64_t elem = ((uint64_t)(Cluster_desc_word(desc, (8ULL + (c * 3ULL)))));
         if ((kind == 17LL))
         {
-            Vector<uint8_t> part = Vector9<Vector<uint8_t>>(src->inputs, j);
+            Vector<uint8_t> part = (*(((ins) + (int64_t)(j))));
             (*((((((uint8_t**)((((((uint64_t)(cell))) + off)))))) + (int64_t)(0LL)))) = (part).data;
             j = (j + 1ULL);
         }
@@ -15174,14 +15506,15 @@ __attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, 
                 uint64_t data = 0ULL;
                 if (((base == 2LL) ? true : (base == 3LL)))
                 {
-                    Vector<uint8_t> part = Vector9<Vector<uint8_t>>(src->inputs, j);
+                    Vector<uint8_t> part = (*(((ins) + (int64_t)(j))));
                     length = ((part).length / elem);
                     data = ((uint64_t)((part).data));
                     j = (j + 1ULL);
                 }
                 else
                 {
-                    uint64_t bytes = ((((uint64_t)(((hi - lo))))) * elem);
+                    uint64_t w = Cluster_row_width(desc, cell, kind);
+                    uint64_t bytes = (((((uint64_t)(((hi - lo))))) * w) * elem);
                     uint8_t* buf = ((uint8_t*)(Page_allocate(*(rp), (bytes + 1ULL), 16ULL)));
                     Vector<uint8_t> part = Vector9<Vector<uint8_t>>(job->inputs, j);
                     memcpy(((void*)(buf)), ((void*)((part).data)), ((size_t)(bytes)));
@@ -15189,12 +15522,12 @@ __attribute__((weak)) ClusterResult* Cluster_run_job(Page* rp, ClusterJob* job, 
                     (*(((bufs) + (int64_t)(o)))) = buf;
                     (*(((lens) + (int64_t)(o)))) = bytes;
                     o = (o + 1ULL);
-                    length = ((uint64_t)(hi));
+                    length = ((((uint64_t)(hi))) * w);
                     if ((((kind & 16LL)) == 0LL))
                     {
                         length = (*(((rec) + (int64_t)(0LL))));
                     }
-                    data = ((((uint64_t)(buf))) - ((((uint64_t)(lo))) * elem));
+                    data = ((((uint64_t)(buf))) - (((((uint64_t)(lo))) * w) * elem));
                 }
                 (*(((rec) + (int64_t)(0LL)))) = length;
                 if (((base == 3LL) ? true : (base == 5LL)))
@@ -15633,7 +15966,7 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
     int64_t* queue = ((int64_t*)(Page_allocate(*(qp), ((((uint64_t)(stretches))) * 8ULL), 8ULL)));
     int64_t* busy = ((int64_t*)(Page_allocate(*(qp), (n * 8ULL), 8ULL)));
     uint8_t* live = ((uint8_t*)(Page_allocate(*(qp), n, 1ULL)));
-    uint8_t* full = ((uint8_t*)(Page_allocate(*(qp), n, 1ULL)));
+    uint64_t* keys = Cluster_offer_keys(desc, cell, qp);
     int64_t q = 0LL;
     while ((q < stretches))
     {
@@ -15652,7 +15985,6 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
         {
             serving = (serving + 1ULL);
         }
-        (*(((full) + (int64_t)(k)))) = (uint8_t)0ULL;
         k = (k + 1ULL);
     }
     if ((serving == 0ULL))
@@ -15667,6 +15999,7 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
     }
     int64_t done = 0LL;
     bool ok = true;
+    uint64_t sent = 0ULL;
     for (;;)
     {
         k = 0ULL;
@@ -15682,8 +16015,7 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
                     hi = count;
                 }
                 Cluster_trace_stretch(lo, hi, ((int64_t)(((k + 1ULL)))));
-                Cluster_send_job((*(((cluster_peers) + (int64_t)(k)))), desc, cell, offer, lo, hi, ((*(((full) + (int64_t)(k)))) == (uint8_t)1ULL));
-                (*(((full) + (int64_t)(k)))) = (uint8_t)1ULL;
+                sent = (sent + Cluster_send_job((*(((cluster_peers) + (int64_t)(k)))), desc, cell, offer, lo, hi, keys, (*(((cluster_peer_keep) + (int64_t)(k))))));
                 (*(((busy) + (int64_t)(k)))) = lo;
             }
             k = (k + 1ULL);
@@ -15773,6 +16105,10 @@ __attribute__((weak)) int32_t cluster_offer_forced(void* desc, void* cell, int64
             scaly_eputs(((const char*)" helpers, none left: this machine runs them"));
         }
         scaly_eputnl();
+        scaly_eputs(((const char*)"cluster: "));
+        scaly_eputi(((int64_t)(sent)));
+        scaly_eputs(((const char*)" bytes sent"));
+        scaly_eputnl();
     }
     if (ok)
     {
@@ -15821,6 +16157,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
     }
     int64_t fair = (((left + (((int64_t)(n))))) / (((((int64_t)(n))) + 1LL)));
     Page* sp = Page_allocate_page();
+    uint64_t* keys = Cluster_offer_keys(desc, cell, sp);
     int64_t* stretch = ((int64_t*)(Page_allocate(*(sp), (n * 8ULL), 8ULL)));
     uint8_t* takes = ((uint8_t*)(Page_allocate(*(sp), n, 1ULL)));
     double rate = ((double)((double)((((double)(cores)))) / (double)(round)));
@@ -15845,7 +16182,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
         }
         (*(((stretch) + (int64_t)(k)))) = s;
         double each = ((double)((double)(((double)((double)(lat) + (double)(((double)((double)((((double)(((((((uint64_t)(s))) * (w)._1) * 2ULL)))))) * (double)(byte_ns))))))) + (double)(((double)((double)((((double)(s)))) * (double)(per))))));
-        double first = ((double)((double)(each) + (double)(((double)((double)((((double)((w)._0)))) * (double)(byte_ns))))));
+        double first = ((double)((double)(each) + (double)(((double)((double)((((double)(Cluster_unsent_bytes(desc, cell, keys, (*(((cluster_peer_keep) + (int64_t)(k))))))))) * (double)(byte_ns))))));
         if (Cluster_tracing())
         {
             scaly_eputs(((const char*)"cluster: helper "));
@@ -15925,7 +16262,6 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
     int64_t* busy_hi = ((int64_t*)(Page_allocate(*(sp), (n * 8ULL), 8ULL)));
     int64_t* sent_at = ((int64_t*)(Page_allocate(*(sp), (n * 8ULL), 8ULL)));
     uint64_t* sent_bytes = ((uint64_t*)(Page_allocate(*(sp), (n * 8ULL), 8ULL)));
-    uint8_t* full = ((uint8_t*)(Page_allocate(*(sp), n, 1ULL)));
     int64_t* back_lo = ((int64_t*)(Page_allocate(*(sp), ((n * 8ULL) + 8ULL), 8ULL)));
     int64_t* back_hi = ((int64_t*)(Page_allocate(*(sp), ((n * 8ULL) + 8ULL), 8ULL)));
     double* took_sum = ((double*)(Page_allocate(*(sp), (n * 8ULL), 8ULL)));
@@ -15935,7 +16271,6 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
     while ((k < n))
     {
         (*(((busy_lo) + (int64_t)(k)))) = (0LL - 1LL);
-        (*(((full) + (int64_t)(k)))) = (uint8_t)0ULL;
         (*(((took_sum) + (int64_t)(k)))) = ((double)0);
         (*(((rounds_sum) + (int64_t)(k)))) = ((double)0);
         k = (k + 1ULL);
@@ -16004,8 +16339,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
                 {
                     Cluster_trace_stretch(lo, hi, ((int64_t)(((k + 1ULL)))));
                     (*(((sent_at) + (int64_t)(k)))) = scaly_eio_now_ns();
-                    (*(((sent_bytes) + (int64_t)(k)))) = Cluster_send_job((*(((cluster_peers) + (int64_t)(k)))), desc, cell, offer, lo, hi, ((*(((full) + (int64_t)(k)))) == (uint8_t)1ULL));
-                    (*(((full) + (int64_t)(k)))) = (uint8_t)1ULL;
+                    (*(((sent_bytes) + (int64_t)(k)))) = Cluster_send_job((*(((cluster_peers) + (int64_t)(k)))), desc, cell, offer, lo, hi, keys, (*(((cluster_peer_keep) + (int64_t)(k)))));
                     (*(((busy_lo) + (int64_t)(k)))) = lo;
                     (*(((busy_hi) + (int64_t)(k)))) = hi;
                 }
@@ -16224,7 +16558,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init97(Vector<float>& scaly_self, uint64_t len)
+__attribute__((weak)) void Vector_init102(Vector<float>& scaly_self, uint64_t len)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -16241,7 +16575,7 @@ __attribute__((weak)) void Vector_init97(Vector<float>& scaly_self, uint64_t len
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init98(Vector<float>& scaly_self, Vector<float>& other)
+__attribute__((weak)) void Vector_init103(Vector<float>& scaly_self, Vector<float>& other)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -16258,12 +16592,12 @@ __attribute__((weak)) void Vector_init98(Vector<float>& scaly_self, Vector<float
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add59(Array<float>& scaly_self, float item)
+__attribute__((weak)) void Array_add62(Array<float>& scaly_self, float item)
 {
     Array<float>* this_ = &scaly_self;
     if (((((this_->buffer) == (nullptr))) ? true : ((this_->length == this_->capacity))))
     {
-        Array_reallocate20(*(this_));
+        Array_reallocate21(*(this_));
     }
     float* location = ((this_->buffer) + (int64_t)(this_->length));
     (*(location)) = item;
@@ -16271,21 +16605,21 @@ __attribute__((weak)) void Array_add59(Array<float>& scaly_self, float item)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add60(Array<float>& scaly_self, Vector<float>& items)
+__attribute__((weak)) void Array_add63(Array<float>& scaly_self, Vector<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run20(*(this_), (items).length, (items).data);
+    Array_add_run21(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add61(Array<float>& scaly_self, Slice<float>& items)
+__attribute__((weak)) void Array_add64(Array<float>& scaly_self, Slice<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run20(*(this_), (items).length, (items).data);
+    Array_add_run21(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add_run20(Array<float>& scaly_self, uint64_t n, float* items_data)
+__attribute__((weak)) void Array_add_run21(Array<float>& scaly_self, uint64_t n, float* items_data)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t new_length = (this_->length + n);
@@ -16295,7 +16629,7 @@ __attribute__((weak)) void Array_add_run20(Array<float>& scaly_self, uint64_t n,
     }
     if (((((this_->buffer) == (nullptr))) ? true : ((new_length > this_->capacity))))
     {
-        Array_grow_to20(*(this_), new_length);
+        Array_grow_to21(*(this_), new_length);
     }
     if ((n > 0ULL))
     {
@@ -16305,7 +16639,7 @@ __attribute__((weak)) void Array_add_run20(Array<float>& scaly_self, uint64_t n,
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) Slice<float> Array_extend20(Array<float>& scaly_self, uint64_t n)
+__attribute__((weak)) Slice<float> Array_extend21(Array<float>& scaly_self, uint64_t n)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t at = this_->length;
@@ -16316,18 +16650,18 @@ __attribute__((weak)) Slice<float> Array_extend20(Array<float>& scaly_self, uint
     }
     if (((((this_->buffer) == (nullptr))) ? true : ((new_length > this_->capacity))))
     {
-        Array_grow_to20(*(this_), new_length);
+        Array_grow_to21(*(this_), new_length);
     }
     this_->length = new_length;
     return Slice<float>{n, ((this_->buffer) + (int64_t)(at))};
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_grow_to20(Array<float>& scaly_self, uint64_t new_length)
+__attribute__((weak)) void Array_grow_to21(Array<float>& scaly_self, uint64_t new_length)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t size = ((uint64_t)sizeof(float));
-    Array_reallocate20(*(this_));
+    Array_reallocate21(*(this_));
     if ((new_length > this_->capacity))
     {
         Page* own_page = Page_get((void*)(this_));
@@ -16355,7 +16689,7 @@ __attribute__((weak)) void Array_grow_to20(Array<float>& scaly_self, uint64_t ne
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_reallocate20(Array<float>& scaly_self)
+__attribute__((weak)) void Array_reallocate21(Array<float>& scaly_self)
 {
     Array<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -16410,14 +16744,14 @@ __attribute__((weak)) void Array_reallocate20(Array<float>& scaly_self)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_append20(Array<float>& scaly_self, Slice<float>& items)
+__attribute__((weak)) void Array_append21(Array<float>& scaly_self, Slice<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run20(*(this_), (items).length, (items).data);
+    Array_add_run21(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_init40(Array<float>& scaly_self, uint64_t size)
+__attribute__((weak)) void Array_init42(Array<float>& scaly_self, uint64_t size)
 {
     Array<float>* this_ = &scaly_self;
     this_->length = 0ULL;
@@ -16439,7 +16773,7 @@ __attribute__((weak)) void Array_init40(Array<float>& scaly_self, uint64_t size)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init99(Vector<float>& scaly_self, Array<float>& array)
+__attribute__((weak)) void Vector_init104(Vector<float>& scaly_self, Array<float>& array)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -16456,7 +16790,7 @@ __attribute__((weak)) void Vector_init99(Vector<float>& scaly_self, Array<float>
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init100(Vector<float>& scaly_self, List<float>& list)
+__attribute__((weak)) void Vector_init105(Vector<float>& scaly_self, List<float>& list)
 {
     Vector<float>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
@@ -16741,8 +17075,8 @@ __attribute__((weak)) int64_t Tape_add_node(scaly_frame* scaly_rp, Tape& scaly_s
     Tape* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
     TapeNode node = ({ TapeNode scaly_t1{}; TapeNode_init(scaly_t1, kind, in_a, in_b, in_c, r, n); scaly_t1; });
-    Vector<float>* v = ({ Vector<float>* scaly_t2 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t2 = Vector<float>{}; Vector_init97((*scaly_t2), ((uint64_t)(((r * n))))); scaly_t2; });
-    Vector<float>* g = ({ Vector<float>* scaly_t3 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t3 = Vector<float>{}; Vector_init97((*scaly_t3), ((uint64_t)(((r * n))))); scaly_t3; });
+    Vector<float>* v = ({ Vector<float>* scaly_t2 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t2 = Vector<float>{}; Vector_init102((*scaly_t2), ((uint64_t)(((r * n))))); scaly_t2; });
+    Vector<float>* g = ({ Vector<float>* scaly_t3 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t3 = Vector<float>{}; Vector_init102((*scaly_t3), ((uint64_t)(((r * n))))); scaly_t3; });
     (node).value = (*v);
     (node).grad = (*g);
     int64_t id = ((int64_t)(Array_get_length<TapeNode>(this_->nodes)));
@@ -16890,7 +17224,7 @@ __attribute__((weak)) int64_t Tape_wsum(scaly_frame* scaly_rp, Tape& scaly_self,
     Tape* this_ = &scaly_self;
     int64_t id = Tape_add_node(scaly_rp, *(this_), 6LL, x, (0LL - 1LL), (0LL - 1LL), 1LL, 1LL);
     Page* own_page = Page_get((void*)(this_));
-    Vector<float>* ws = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init98((*scaly_t1), w); scaly_t1; });
+    Vector<float>* ws = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init103((*scaly_t1), w); scaly_t1; });
     TapeNode* node = Array_at<TapeNode>(this_->nodes, id);
     node->aux = (*ws);
     Tape_run_node(*(this_), id);
@@ -16952,7 +17286,7 @@ __attribute__((weak)) int64_t Tape_attention_windowed(scaly_frame* scaly_rp, Tap
     int64_t d = nq->cols;
     int64_t id = Tape_add_node(scaly_rp, *(this_), 8LL, q, k, v, t, d);
     Page* own_page = Page_get((void*)(this_));
-    Vector<float>* scratch = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init97((*scaly_t1), ((uint64_t)(((((2LL * hs) * t) * win))))); scaly_t1; });
+    Vector<float>* scratch = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init102((*scaly_t1), ((uint64_t)(((((2LL * hs) * t) * win))))); scaly_t1; });
     TapeNode* node = Array_at<TapeNode>(this_->nodes, id);
     node->aux = (*scratch);
     node->heads = hs;
@@ -17029,7 +17363,7 @@ __attribute__((weak)) void Tape_adam_step(Tape& scaly_self, int64_t id, float lr
     int64_t auxlen = ((int64_t)((node->aux).length));
     if ((auxlen < (total * 2LL)))
     {
-        Vector<float>* mv = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init97((*scaly_t1), ((uint64_t)(((total * 2LL))))); scaly_t1; });
+        Vector<float>* mv = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init102((*scaly_t1), ((uint64_t)(((total * 2LL))))); scaly_t1; });
         node->aux = (*mv);
     }
     float* vp = (node->value).data;

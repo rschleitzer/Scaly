@@ -18691,7 +18691,11 @@ LLVMOpaqueValue* Emitter_emit_for_iterator(Emitter&, PlannedFor&) asm("_ZN7Emitt
 void Emitter_parfor_add_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_216parfor_add_localE6String");
 bool Emitter_parfor_is_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_215parfor_is_localE6String");
 void Emitter_parfor_add_capture(Emitter&, String&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_218parfor_add_captureE6String11PlannedTypeB6scalycB4v0_2");
+String Emitter_parfor_row_width(scaly_frame*, Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_216parfor_row_widthEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 void Emitter_parfor_note_put(Emitter&, PlannedCall&) asm("_ZN7EmitterB6scalycB4v0_215parfor_note_putE11PlannedCallB6scalycB4v0_2");
+String Emitter_parfor_row_product(scaly_frame*, Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_218parfor_row_productEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
+bool Emitter_parfor_row_rest(Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_215parfor_row_restE14PlannedOperandB6scalycB4v0_2");
+String Emitter_parfor_row_factor(scaly_frame*, Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_217parfor_row_factorEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 bool Emitter_parfor_is_counter(Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_217parfor_is_counterE14PlannedOperandB6scalycB4v0_2");
 void Emitter_parfor_scan_operands(Emitter&, Vector<PlannedOperand>*) asm("_ZN7EmitterB6scalycB4v0_220parfor_scan_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
 void Emitter_parfor_scan_statement_ref(Emitter&, PlannedStatement*) asm("_ZN7EmitterB6scalycB4v0_225parfor_scan_statement_refE6OptionIR16PlannedStatementB6scalycB4v0_2E");
@@ -18716,6 +18720,7 @@ LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter&, PlannedFor&, LLVMOpaqueVal
 LLVMOpaqueValue* Emitter_emit_cluster_offer(Emitter&, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_218emit_cluster_offerEP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2");
 bool Emitter_llvm_type_is_plain(Emitter&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_218llvm_type_is_plainEP14LLVMOpaqueTypeB6scalycB4v0_2");
+uint64_t Emitter_cluster_row_bits(Emitter&, String&, Array<String>&, Vector<LLVMOpaqueType*>&) asm("_ZN7EmitterB6scalycB4v0_216cluster_row_bitsE6String5ArrayI6StringE6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E");
 bool Emitter_reaches_mul_add(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_215reaches_mul_addEP15LLVMOpaqueValueB6scalycB4v0_2");
 void Emitter_mark_cluster_loops(Emitter&) asm("_ZN7EmitterB6scalycB4v0_218mark_cluster_loopsEv");
 LLVMOpaqueValue* Emitter_emit_while(Emitter&, PlannedWhile&) asm("_ZN7EmitterB6scalycB4v0_210emit_whileE12PlannedWhileB6scalycB4v0_2");
@@ -159641,9 +159646,12 @@ __attribute__((weak)) void Emitter_parfor_note_put(Emitter& scaly_self, PlannedC
         }
         scaly_t2;
     });
-            if ((((members) == (false)) ? Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(((PlannedOperand*)(idx_ptr)))))) : false))
+            if (((members) == (false)))
             {
-                text = ({
+                PlannedOperand* idx = ((PlannedOperand*)(idx_ptr));
+                if (Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(idx)))))
+                {
+                    text = ({
         String scaly_t4{};
         {
             StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
@@ -159653,14 +159661,253 @@ __attribute__((weak)) void Emitter_parfor_note_put(Emitter& scaly_self, PlannedC
         }
         scaly_t4;
     });
+                }
+                else
+                {
+                    String w = Emitter_parfor_row_width(&scaly_local.f, *(this_), scaly_lvalue((*(idx))));
+                    if ((String_get_length(w) > 0ULL))
+                    {
+                        text = ({
+        String scaly_t6{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
+            StringBuilder_append((*isb$), ((uint8_t)'#'));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            StringBuilder_append((*isb$), ((uint8_t)'#'));
+            StringBuilder_append2((*isb$), scaly_lvalue((w)));
+            scaly_t6 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t6;
+    });
+                    }
+                }
             }
-            Array_add<String>(*(this_->parfor_uses), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), text); scaly_t6; }))));
+            Array_add<String>(*(this_->parfor_uses), scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), text); scaly_t8; }))));
         }
         else
         {
             0LL;
         }
     }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) String Emitter_parfor_row_width(scaly_frame* scaly_rp, Emitter& scaly_self, PlannedOperand& op)
+{
+    Emitter* this_ = &scaly_self;
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; }));
+    }
+    {
+        auto&& scaly_t2 = (op).expr;
+        if (scaly_t2.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t2);
+            if (((((as_expr).value) != (nullptr)) ? TaskPlanner_cast_same(scaly_lvalue(((*((as_expr).value)))), (as_expr).target_type) : false))
+            {
+                return Emitter_parfor_row_width(scaly_rp, *(this_), scaly_lvalue((*({ PlannedOperand* scaly_t3 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t3 = ((*((as_expr).value))); scaly_t3; }))));
+            }
+        }
+        else if (scaly_t2.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t2);
+            if (TaskPlanner_is_grouping(tp))
+            {
+                PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+                PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+                PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+                if (((in_ptr) != (nullptr)))
+                {
+                    return Emitter_parfor_row_width(scaly_rp, *(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))));
+                }
+            }
+        }
+        else if (scaly_t2.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t2);
+            if (((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001+"})) ? TaskPlanner_is_integer_binary(call) : false) ? (TaskPlanner_int_bits((op).result_type) == 64LL) : false))
+            {
+                PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+                PlannedOperand* b_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+                PlannedOperand* a = ((PlannedOperand*)(a_ptr));
+                PlannedOperand* b = ((PlannedOperand*)(b_ptr));
+                String wa = Emitter_parfor_row_product(scaly_rp, *(this_), scaly_lvalue((*(a))));
+                if (((String_get_length(wa) > 0ULL) ? Emitter_parfor_row_rest(*(this_), scaly_lvalue((*(b)))) : false))
+                {
+                    return wa;
+                }
+                String wb = Emitter_parfor_row_product(scaly_rp, *(this_), scaly_lvalue((*(b))));
+                if (((String_get_length(wb) > 0ULL) ? Emitter_parfor_row_rest(*(this_), scaly_lvalue((*(a)))) : false))
+                {
+                    return wb;
+                }
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init3((*scaly_t5)); scaly_t5; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) String Emitter_parfor_row_product(scaly_frame* scaly_rp, Emitter& scaly_self, PlannedOperand& op)
+{
+    Emitter* this_ = &scaly_self;
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init3((*scaly_t1)); scaly_t1; }));
+    }
+    {
+        auto&& scaly_t2 = (op).expr;
+        if (scaly_t2.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t2);
+            if (((((as_expr).value) != (nullptr)) ? TaskPlanner_cast_same(scaly_lvalue(((*((as_expr).value)))), (as_expr).target_type) : false))
+            {
+                return Emitter_parfor_row_product(scaly_rp, *(this_), scaly_lvalue((*({ PlannedOperand* scaly_t3 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t3 = ((*((as_expr).value))); scaly_t3; }))));
+            }
+        }
+        else if (scaly_t2.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t2);
+            if (TaskPlanner_is_grouping(tp))
+            {
+                PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+                PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+                PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+                if (((in_ptr) != (nullptr)))
+                {
+                    return Emitter_parfor_row_product(scaly_rp, *(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))));
+                }
+            }
+        }
+        else if (scaly_t2.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t2);
+            if (((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001*"})) ? TaskPlanner_is_integer_binary(call) : false) ? (TaskPlanner_int_bits((op).result_type) == 64LL) : false))
+            {
+                PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+                PlannedOperand* b_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+                PlannedOperand* a = ((PlannedOperand*)(a_ptr));
+                PlannedOperand* b = ((PlannedOperand*)(b_ptr));
+                if (Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(a)))))
+                {
+                    return Emitter_parfor_row_factor(scaly_rp, *(this_), scaly_lvalue((*(b))));
+                }
+                if (Emitter_parfor_is_counter(*(this_), scaly_lvalue((*(b)))))
+                {
+                    return Emitter_parfor_row_factor(scaly_rp, *(this_), scaly_lvalue((*(a))));
+                }
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init3((*scaly_t5)); scaly_t5; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) String Emitter_parfor_row_factor(scaly_frame* scaly_rp, Emitter& scaly_self, PlannedOperand& op)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    int64_t n = TaskPlanner_small_literal(op);
+    if ((n > 0LL))
+    {
+        return ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append((*isb$), ((uint8_t)'L'));
+            StringBuilder_append5((*isb$), (n));
+            scaly_t1 = StringBuilder_to_string(scaly_rp, (*isb$));
+        }
+        scaly_t1;
+    });
+    }
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init3((*scaly_t3)); scaly_t3; }));
+    }
+    {
+        auto&& scaly_t4 = (op).expr;
+        if (scaly_t4.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t4);
+            if ((((Emitter_parfor_is_local(*(this_), (v).name)) == (false)) ? (TaskPlanner_int_bits((op).result_type) > 0LL) : false))
+            {
+                return ({
+        String scaly_t5{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t6 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t6 = StringBuilder{}; StringBuilder_init((*scaly_t6)); scaly_t6; });
+            StringBuilder_append((*isb$), ((uint8_t)'C'));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            scaly_t5 = StringBuilder_to_string(scaly_rp, (*isb$));
+        }
+        scaly_t5;
+    });
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init3((*scaly_t8)); scaly_t8; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) bool Emitter_parfor_row_rest(Emitter& scaly_self, PlannedOperand& op)
+{
+    Emitter* this_ = &scaly_self;
+    if ((TaskPlanner_small_literal(op) >= 0LL))
+    {
+        return true;
+    }
+    if (((((op).member_access) != (nullptr)) ? ((op).member_access->length > 0ULL) : false))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            return ((Emitter_parfor_is_counter(*(this_), op)) == (false));
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t1);
+            if (((((as_expr).value) != (nullptr)) ? TaskPlanner_cast_keeps(scaly_lvalue(((*((as_expr).value)))), (as_expr).target_type) : false))
+            {
+                return Emitter_parfor_row_rest(*(this_), scaly_lvalue(((*((as_expr).value)))));
+            }
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t1);
+            if (TaskPlanner_is_grouping(tp))
+            {
+                PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+                PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+                PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+                if (((in_ptr) != (nullptr)))
+                {
+                    return Emitter_parfor_row_rest(*(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))));
+                }
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return false;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -162137,26 +162384,39 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
             t = Vector11<PlannedType>(*((t).generics), 0ULL);
         }
         uint64_t puts = 0ULL;
+        uint64_t rows = 0ULL;
+        String* row_form = ({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init3((*scaly_t5)); scaly_t5; });
         uint64_t uses = 0ULL;
         String at_counter = ({
-        String scaly_t5{};
+        String scaly_t6{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t6 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t6 = StringBuilder{}; StringBuilder_init((*scaly_t6)); scaly_t6; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
             StringBuilder_append((*isb$), ((uint8_t)'='));
             StringBuilder_append2((*isb$), scaly_lvalue((nm)));
-            scaly_t5 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t6 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t5;
+        scaly_t6;
     });
         String elsewhere = ({
-        String scaly_t7{};
+        String scaly_t8{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t8 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t8 = StringBuilder{}; StringBuilder_init((*scaly_t8)); scaly_t8; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t9 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t9 = StringBuilder{}; StringBuilder_init((*scaly_t9)); scaly_t9; });
             StringBuilder_append((*isb$), ((uint8_t)'!'));
             StringBuilder_append2((*isb$), scaly_lvalue((nm)));
-            scaly_t7 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t8 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t7;
+        scaly_t8;
+    });
+        String in_rows = ({
+        String scaly_t10{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t11 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t11 = StringBuilder{}; StringBuilder_init((*scaly_t11)); scaly_t11; });
+            StringBuilder_append((*isb$), ((uint8_t)'#'));
+            StringBuilder_append2((*isb$), scaly_lvalue((nm)));
+            StringBuilder_append((*isb$), ((uint8_t)'#'));
+            scaly_t10 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t10;
     });
         uint64_t u = 0ULL;
         while ((u < (cap_uses).length))
@@ -162174,9 +162434,24 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
             {
                 return (LLVMOpaqueValue*)(nullptr);
             }
+            if (String_starts_with(use_text, in_rows))
+            {
+                String form = String_substring(&scaly_local.f, use_text, String_get_length(in_rows), (String_get_length(use_text) - String_get_length(in_rows)));
+                if (((rows > 0ULL) ? (!(String_equals(form, (*row_form)))) : false))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+                (*row_form) = form;
+                rows = (rows + 1ULL);
+            }
             u = (u + 1ULL);
         }
-        if (((puts > 0ULL) ? (puts != uses) : false))
+        if (((puts > 0ULL) ? (rows > 0ULL) : false))
+        {
+            return (LLVMOpaqueValue*)(nullptr);
+        }
+        uint64_t writes = (puts + rows);
+        if (((writes > 0ULL) ? (writes != uses) : false))
         {
             return (LLVMOpaqueValue*)(nullptr);
         }
@@ -162202,9 +162477,18 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
                 kind = 3ULL;
                 record_bytes = 24ULL;
             }
-            if ((puts > 0ULL))
+            if ((writes > 0ULL))
             {
                 kind = (kind + 2ULL);
+            }
+            if ((rows > 0ULL))
+            {
+                uint64_t row_bits = Emitter_cluster_row_bits(*(this_), (*row_form), cap_names, cap_slot_tys);
+                if ((row_bits == 0ULL))
+                {
+                    return (LLVMOpaqueValue*)(nullptr);
+                }
+                kind = (kind + row_bits);
             }
             if (is_addr)
             {
@@ -162222,7 +162506,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
         {
             if (is_addr)
             {
-                if ((puts > 0ULL))
+                if ((writes > 0ULL))
                 {
                     return (LLVMOpaqueValue*)(nullptr);
                 }
@@ -162240,7 +162524,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
             }
             else
             {
-                if (((puts > 0ULL) ? true : ((Emitter_llvm_type_is_plain(*(this_), slot_ty)) == (false))))
+                if (((writes > 0ULL) ? true : ((Emitter_llvm_type_is_plain(*(this_), slot_ty)) == (false))))
                 {
                     return (LLVMOpaqueValue*)(nullptr);
                 }
@@ -162255,11 +162539,11 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
     }
     uint64_t nwords = (6ULL + (ncap * 3ULL));
     LLVMOpaqueType* arr_ty = LLVMArrayType2(i64_ty, nwords);
-    Vector<LLVMOpaqueType*>* desc_tys = ({ Vector<LLVMOpaqueType*>* scaly_t9 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t9 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t9), 2ULL); scaly_t9; });
+    Vector<LLVMOpaqueType*>* desc_tys = ({ Vector<LLVMOpaqueType*>* scaly_t12 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t12 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t12), 2ULL); scaly_t12; });
     Vector_put62<LLVMOpaqueType*>((*desc_tys), 0ULL, ptr_ty);
     Vector_put62<LLVMOpaqueType*>((*desc_tys), 1ULL, arr_ty);
     LLVMOpaqueType* desc_ty = LLVMStructTypeInContext(this_->context, ((*desc_tys)).data, (uint32_t)2ULL, (int32_t)0ULL);
-    Vector<LLVMOpaqueValue*>* desc_vals = ({ Vector<LLVMOpaqueValue*>* scaly_t10 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t10 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t10), 2ULL); scaly_t10; });
+    Vector<LLVMOpaqueValue*>* desc_vals = ({ Vector<LLVMOpaqueValue*>* scaly_t13 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t13 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t13), 2ULL); scaly_t13; });
     Vector_put62<LLVMOpaqueValue*>((*desc_vals), 0ULL, task_fn);
     Vector_put62<LLVMOpaqueValue*>((*desc_vals), 1ULL, LLVMConstArray2(i64_ty, ((*words)).data, nwords));
     LLVMOpaqueValue* desc = LLVMAddGlobal(this_->llvm_module, desc_ty, ((const char*)"cluster.loop"));
@@ -162268,6 +162552,63 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_cluster_descriptor(Emitter& scaly
     LLVMSetInitializer(desc, LLVMConstStructInContext(this_->context, ((*desc_vals)).data, (uint32_t)2ULL, (int32_t)0ULL));
     Array_add182<LLVMOpaqueValue*>(*(this_->cluster_loops), desc);
     return desc;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) uint64_t Emitter_cluster_row_bits(Emitter& scaly_self, String& form, Array<String>& cap_names, Vector<LLVMOpaqueType*>& cap_slot_tys)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    uint64_t n = String_get_length(form);
+    if ((n < 2ULL))
+    {
+        return 0ULL;
+    }
+    String rest = String_substring(&scaly_local.f, form, 1ULL, (n - 1ULL));
+    if ((String_get(form, 0ULL) == (uint8_t)76ULL))
+    {
+        uint64_t w = 0ULL;
+        uint64_t i = 0ULL;
+        while ((i < String_get_length(rest)))
+        {
+            uint8_t ch = String_get(rest, i);
+            if (((ch < (uint8_t)48ULL) ? true : (ch > (uint8_t)57ULL)))
+            {
+                return 0ULL;
+            }
+            w = ((w * 10ULL) + (((uint64_t)((((uint8_t)(ch - (uint8_t)48ULL)))))));
+            i = (i + 1ULL);
+        }
+        if (((w == 0ULL) ? true : (w >= 2147483647ULL)))
+        {
+            return 0ULL;
+        }
+        return (256ULL + (((uint64_t)((uint64_t)(w) << (uint64_t)(16LL)))));
+    }
+    if ((String_get(form, 0ULL) != (uint8_t)67ULL))
+    {
+        return 0ULL;
+    }
+    uint64_t c = 0ULL;
+    while ((c < (cap_names).length))
+    {
+        if (String_equals(scaly_lvalue(Array5(cap_names, c)), rest))
+        {
+            LLVMOpaqueType* ty = Vector26<LLVMOpaqueType*>(cap_slot_tys, c);
+            if (((int64_t)LLVMGetTypeKind(ty) != LLVMTypeKind_Integer()))
+            {
+                return 0ULL;
+            }
+            uint32_t bits = LLVMGetIntTypeWidth(ty);
+            if (((((bits != (uint32_t)8ULL) ? (bits != (uint32_t)16ULL) : false) ? (bits != (uint32_t)32ULL) : false) ? (bits != (uint32_t)64ULL) : false))
+            {
+                return 0ULL;
+            }
+            return (768ULL + (((uint64_t)((uint64_t)(c) << (uint64_t)(16LL)))));
+        }
+        c = (c + 1ULL);
+    }
+    return 0ULL;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
