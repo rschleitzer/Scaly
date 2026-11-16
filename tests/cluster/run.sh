@@ -383,7 +383,16 @@ else
   weigh_check small "$OUT/cluster_${t}_small.log" "!^cluster: "
   # the light loop was weighed against the helpers, not merely left alone
   if grep -q "rounds stay here (.*ms, no helper would end\|rounds stay here (.*ms, with helpers" "$OUT/cluster_${t}_light.log"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, light: never weighed against the helpers"); fi
-  kill $W1 $W2 2>/dev/null; wait $W1 $W2 2>/dev/null
+  # named: a helper on a port of its own (SCALY_CLUSTER_PORT), and a
+  # coordinator that names it (SCALY_CLUSTER_HELPERS) takes it alone, without
+  # a search -- the two above are there and stay unused
+  NP=$((40000 + RANDOM % 20000))
+  SCALY_CLUSTER_PORT=$NP SCALY_CLUSTER_TRACE=1 "$WB" --scaly-helper > "$OUT/cluster_${t}_h3.log" 2>&1 & W3=$!
+  wait_marker "$OUT/cluster_${t}_h3.log" "^helper: ready, port $NP"
+  SCALY_CLUSTER=on SCALY_CLUSTER_HELPERS="127.0.0.1:$NP" SCALY_CLUSTER_TRACE=1 "$WB" heavy > "$OUT/cluster_${t}_named.log" 2>&1
+  weigh_check heavy "$OUT/cluster_${t}_named.log" "on 1 helpers, all there"
+  if grep -q "^helper: rounds" "$OUT/cluster_${t}_h3.log"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, named: the named helper ran no rounds"); fi
+  kill $W1 $W2 $W3 2>/dev/null; wait $W1 $W2 $W3 2>/dev/null
 fi
 
 # ---- mixed processors: the same program built for arm64 and for x86_64 has

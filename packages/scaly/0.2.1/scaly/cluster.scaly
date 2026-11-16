@@ -38,7 +38,8 @@
 ; Helpers and rounds. A program started with --scaly-helper is a helper
 ; (scaly_helper_main: it announces itself to the helpers' multicast group
 ; and serves coordinators); Helpers.find# is how a coordinator finds those
-; of its own build. Built with `scalyc --cluster`, a parallel `for` whose
+; of its own build -- or SCALY_CLUSTER_HELPERS names them, `host:port`, each
+; started with SCALY_CLUSTER_PORT (Helpers.named#). Built with `scalyc --cluster`, a parallel `for` whose
 ; captures can travel has a descriptor (scaly_cluster_register), and the
 ; driver asks scaly_cluster_offer# at its gates, with what a round cost:
 ; where helpers are there and would end the loop a quarter sooner, its
@@ -168,6 +169,12 @@ define CLUSTER_LATENCIES i64 50
 define CLUSTER_BYTE_NS i64 10
 ; A search that found nobody is made again after this long.
 define CLUSTER_SEARCH_AGAIN_NS i64 10000000000
+; How long a search listens for helpers: longer than the two seconds
+; between a helper's announcements, so that one whose group the ask does
+; not reach is found all the same -- a VM behind a bridge sends to the
+; group but receives nothing from it (2026-11-16). It ends 150 ms after
+; the last new helper, so helpers that answer the ask cost no more.
+define HELPER_SEARCH_MS int 2500
 
 ; A stretch of rounds for a helper: the loop, the offer it belongs to, the
 ; rounds, the cell as the coordinator filled it, and every buffer the
@@ -215,6 +222,8 @@ shared cluster_peers_asked: bool false
 ; the key as Cluster.key# read it the first time (NUL-terminated)
 shared cluster_key_read: bool false
 shared cluster_key_text: pointer[const_char] null
+shared cluster_named_read: bool false
+shared cluster_named_text: pointer[const_char] null
 ; One offer at a time, and none in a helper: a loop inside a loop's rounds
 ; -- on a worker of this machine or in a helper -- runs where its rounds
 ; run (1 while an offer is under way, 2 for good in a helper).
@@ -388,6 +397,59 @@ define Cluster
 
     procedure local_port(fd: i32) returns i32
         Io.local_port(fd)
+
+    ; SCALY_CLUSTER_HELPERS names the helpers instead of searching for
+    ; them (Helpers.named#), read once and kept for key#'s reason; "" where
+    ; it is not set.
+    procedure named() returns String
+    {
+        if cluster_named_read
+            return String(cluster_named_text)
+        var s String()
+        let v getenv("SCALY_CLUSTER_HELPERS")
+        if v <> null
+            s := String(v)
+        let p Page.allocate_page()
+        let n s.get_length()
+        let text p.allocate(n + 1, 1) as pointer[u8]
+        if n > 0
+            memcpy(text as pointer[void], s.c_data() as pointer[void], n as c_size)
+        text[n] := 0
+        cluster_named_text := text as pointer[const_char]
+        cluster_named_read := true
+        s
+    }
+
+    ; SCALY_CLUSTER_PORT: the port a helper listens on, where a coordinator
+    ; names it; 0 (an ephemeral port) where it is not set or no port.
+    procedure helper_port() returns i32
+    {
+        let v getenv("SCALY_CLUSTER_PORT")
+        if v = null
+            return 0
+        Cluster.port_number(String(v))
+    }
+
+    ; A port written in decimal, 1 to 65535; 0 for anything else.
+    function port_number(s: String) returns i32
+    {
+        let n s.get_length()
+        if n = 0 or n > 5
+            return 0
+        var v 0
+        var i: size_t 0
+        while i < n
+        {
+            let c s.get(i) as u8
+            if c < 48 or c > 57
+                return 0
+            v := v * 10 + ((c - 48) as int)
+            i := i + 1
+        }
+        if v > 65535
+            return 0
+        v as i32
+    }
 
     ; Accept one peer: TCP accept, then the frozen-preamble handshake.
     ; Returns null when the connect was refused (mismatch — already
@@ -1180,7 +1242,17 @@ define Cluster
     ; own for the thread that connects them (cluster_search becomes 2).
     procedure search()
     {
-        let found Helpers.find(1000)
+        let t0 scaly_eio_now_ns()
+        let found Helpers.wanted(Cluster.named())
+        if Cluster.tracing()
+        {
+            scaly_eputs "cluster: "
+            scaly_eputi(found.length as i64)
+            scaly_eputs " helpers found in "
+            scaly_eputi((scaly_eio_now_ns() - t0) / 1000000)
+            scaly_eputs " ms"
+            scaly_eputnl()
+        }
         let p Page.allocate_page()
         let n found.length
         let hosts p.allocate((n + 1) * 8, 8) as pointer[pointer[const_char]]
@@ -1264,6 +1336,7 @@ define Cluster
             }
             ; read here: the search's thread may not read files (key#)
             Cluster.key()
+            Cluster.named()
             Thread.spawn(&cluster_search_entry, null as pointer[void])
         }
         if scaly_atomic_load_u64(&cluster_search) <> 2
@@ -1797,7 +1870,7 @@ procedure scaly_helper_main()
         Scheduler.create(page)
     let key Cluster.key()
     let local_only: i32 if key.get_length() = 0: 1 else 0
-    let lfd Cluster.listen(0)
+    let lfd Cluster.listen(Cluster.helper_port())
     if lfd < (0 as i32)
     {
         scaly_eputs "helper: cannot listen"
@@ -1843,6 +1916,45 @@ define Helpers
     ; The helpers of this program that answer within `ms` milliseconds,
     ; each once -- and no longer than 150 milliseconds after the last new
     ; one: a helper answers an ask at once, so they come together.
+    ; The helpers SCALY_CLUSTER_HELPERS names, `host:port` (a helper
+    ; started with SCALY_CLUSTER_PORT=port) separated by commas, in place of
+    ; a search: where the group cannot reach them, or there is none. An
+    ; entry without a port that is a number is left out; the cores of a
+    ; named helper are not known: 0.
+    procedure named(text: String) returns Vector[HelperFound]
+    {
+        var found List[HelperFound]()
+        let n text.get_length()
+        var start: size_t 0
+        while start < n
+        {
+            var stop n
+            let comma text.index_of(44, start)
+            if comma >= 0
+                stop := comma as size_t
+            let entry text.substring(start, stop - start)
+            let colon entry.last_index_of(58)
+            if colon > 0
+            {
+                let after (colon + 1) as size_t
+                let port Cluster.port_number(entry.substring(after, entry.get_length() - after))
+                if port > 0
+                    found.add(HelperFound(entry.substring(0, colon as size_t), port, 0, 0))
+            }
+            start := stop + 1
+        }
+        Vector[HelperFound](found)
+    }
+
+    ; The helpers a coordinator takes: those SCALY_CLUSTER_HELPERS names
+    ; (`named`), else those that answer a search.
+    procedure wanted(named: String) returns Vector[HelperFound]
+    {
+        if named.get_length() > 0
+            return Helpers.named(named)
+        Helpers.find(HELPER_SEARCH_MS)
+    }
+
     procedure find(ms: int) returns Vector[HelperFound]
     {
         let key Cluster.key()

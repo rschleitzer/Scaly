@@ -1581,6 +1581,20 @@ href="scaling-gpu.htm#scaling-gpu-where"
       coordinator lets go; without it a helper serves one coordinator after
       the other until it is stopped.</p
 ><p
+>A coordinator finds its helpers by asking on a multicast group of
+      the local network, and a helper also announces itself there every
+      two seconds. Where a network passes no multicast to a machine — a
+      virtual machine behind a bridge often hears nothing — the helpers
+      are named instead: a helper started with
+      <code
+>SCALY_CLUSTER_PORT=47801</code
+> listens on that port, and a
+      coordinator started with
+      <code
+>SCALY_CLUSTER_HELPERS=192.168.1.20:47801,192.168.1.21:47801</code
+>
+      takes exactly those and does not search.</p
+><p
 >A helper that goes — its connection closed, or silent past the
       heartbeat — gives its stretch back, and another runs it; with none
       left, the coordinator runs the rest. The rounds are pure, so the
