@@ -6,11 +6,11 @@
 #      https://scaly.io/downloads (or <dir>); the profile checked against
 #      the SHA-256 in the buildinfo
 #   2. the commit the buildinfo names, in a worktree of this checkout
-#   3. this machine's tools against the buildinfo's: a difference is said,
-#      and the rebuild goes on (an archive is the same bytes only where the
-#      tools are the same; where they are not, it says how far it got)
-#   4. the build script of the archive's system there, with that profile
+#   3. the build script of the archive's system there, with that profile
 #      and the commit's time
+#   4. the tools the rebuild was made with against those in the buildinfo:
+#      a difference is said (an archive is the same bytes only where the
+#      tools are the same; where they are not, it says how far it got)
 #   5. the bytes: the same archive -- or, file by file, what differs
 #
 # <system> is this machine's by default (darwin-arm64, linux-x86_64, ...);
@@ -77,25 +77,24 @@ fi
 git -C "$ROOT" cat-file -e "$COMMIT^{commit}" 2>/dev/null || git -C "$ROOT" fetch -q origin "$COMMIT" 2>/dev/null
 git -C "$ROOT" worktree add -q --detach "$TREE" "$COMMIT" || { echo "verify: commit $COMMIT is not in this checkout"; exit 2; }
 
-# 3. the tools: what the rebuild will be made with, against what made it
-( cd "$TREE" && . tools/repro.sh && source tools/llvm-env.sh > /dev/null 2>&1
-  repro_buildinfo "$WORK/here.buildinfo" "$VERSION" "$SYSTEM" "$PROFILE" "$TREE" LICENSE )
-same_tools=1
-for k in llvm clang ld sdk brew rpm os msvc; do
-  a="$(sed -n "s/^$k //p" "$INFO" | head -1)"
-  b="$(sed -n "s/^$k //p" "$WORK/here.buildinfo" | head -1)"
-  [ -z "$a" ] && continue
-  if [ "$a" != "$b" ]; then
-    echo "verify: NOTE -- $k differs: made with '$a', here '$b'"
-    same_tools=0
-  fi
-done
-[ "$same_tools" = 1 ] && echo "verify: the tools are the ones it was made with"
-
-# 4. the rebuild
+# 3. the rebuild
 echo "verify: rebuilding (tools/$(basename "$SCRIPT"))"
 ( cd "$TREE" && SOURCE_DATE_EPOCH="$EPOCH" SCALY_PGO_PROFILE="$PROFILE" "$SCRIPT" "$VERSION" "$WORK/made" ) > "$WORK/build.log" 2>&1 \
   || { tail -15 "$WORK/build.log"; echo "verify: the rebuild failed"; exit 2; }
+
+# 4. the tools the rebuild was made with -- its own buildinfo, written where
+# it was made (here, or in the container) -- against those that made it
+same_tools=1
+for k in llvm clang ld sdk brew rpm os image msvc; do
+  a="$(sed -n "s/^$k //p" "$INFO" | head -1)"
+  b="$(sed -n "s/^$k //p" "$WORK/made/$ARCHIVE.buildinfo" | head -1)"
+  [ -z "$a" ] && continue
+  if [ "$a" != "$b" ]; then
+    echo "verify: NOTE -- $k differs: made with '$a', rebuilt with '$b'"
+    same_tools=0
+  fi
+done
+[ "$same_tools" = 1 ] && echo "verify: rebuilt with the tools it was made with"
 
 # 5. the bytes
 if cmp -s "$WORK/got/$ARCHIVE" "$WORK/made/$ARCHIVE"; then
