@@ -11,7 +11,8 @@
 # $SCALY_TRUST_IMAGE and runs itself there.
 set -e
 cd "$(dirname "$0")/.."
-IMAGE="${SCALY_TRUST_IMAGE:-almalinux:9}"
+. tools/alma-pin.sh
+IMAGE="${SCALY_TRUST_IMAGE:-$ALMA_IMAGE}"
 
 if [ "${SCALY_IN_TRUST:-0}" != 1 ]; then
   command -v docker >/dev/null 2>&1 || { echo "trust/check-gcc.sh: FAIL — no docker"; exit 1; }
@@ -26,9 +27,8 @@ fi
 # --- in the container ---------------------------------------------------------
 say() { echo "trust/check-gcc.sh: $*"; }
 say "$(grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"')"
-dnf -q -y install dnf-plugins-core > /dev/null
-dnf config-manager --set-enabled crb
-dnf -q -y install gcc-c++ llvm-devel diffutils which findutils file make python3 perl-Digest-SHA > /dev/null
+alma_pin
+dnf -q -y install gcc-c++ "llvm-$ALMA_LLVM" "llvm-devel-$ALMA_LLVM" diffutils which findutils file make python3 perl-Digest-SHA > /dev/null
 if rpm -q clang > /dev/null 2>&1 || command -v clang > /dev/null 2>&1; then
   say "FAIL — clang is installed in the container"; exit 1
 fi

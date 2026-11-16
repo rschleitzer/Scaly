@@ -28,7 +28,8 @@ set -e
 cd "$(dirname "$0")/.."
 VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
-IMAGE="${SCALY_FLOOR_IMAGE:-almalinux:9}"
+. tools/alma-pin.sh
+IMAGE="${SCALY_FLOOR_IMAGE:-$ALMA_IMAGE}"
 GLIBC_FLOOR=2.35   # with RHEL 9's 2.34, which carries _dl_find_object (above)
 ZSTD_VERSION=1.5.7
 ZSTD_SHA256=eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3
@@ -65,12 +66,11 @@ fi
 # --- in the container ---------------------------------------------------------
 say() { echo "make-bindist-linux: $*"; }
 say "$(grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"'), $(ldd --version | head -1)"
-dnf -q -y install dnf-plugins-core > /dev/null
-dnf config-manager --set-enabled crb
+alma_pin
 # clang brings gcc-toolset's libstdc++ (the C++ runtime LLVM is built against);
 # compiler-rt the profile runtime tools/make-profile.sh needs
-dnf -q -y install clang lld llvm-devel llvm-static compiler-rt libstdc++-static \
-  zlib-static python3 diffutils which findutils file make > /dev/null
+dnf -q -y install "clang-$ALMA_LLVM" "lld-$ALMA_LLVM" "llvm-$ALMA_LLVM" "llvm-devel-$ALMA_LLVM" "llvm-static-$ALMA_LLVM" \
+  "compiler-rt-$ALMA_LLVM" libstdc++-static zlib-static python3 diffutils which findutils file make > /dev/null
 
 # Zstandard's static library, where clang -print-file-name finds it
 if [ ! -f "$(clang -print-file-name=libzstd.a)" ]; then
