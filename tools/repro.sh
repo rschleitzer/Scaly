@@ -59,21 +59,47 @@ repro_tar_gz() {
   return $rc
 }
 
-# <zip> <dir> <entries...>: a .zip of the entries below <dir>, by Windows'
-# own tar (bsdtar: the suffix makes it a zip; Git Bash's tar cannot), in
-# byte order of their names, with one time. A zip keeps that time as DOS
-# time, in the zone of the machine that packs it: TZ=UTC0 for the C runtime,
-# so that a rebuild elsewhere writes the same bytes.
+# A path as a native program wants it: Windows' spelling under Git Bash.
+repro_native_path() {
+  if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi
+}
+
+# <zip> <dir> <entries...>: a .zip of the entries below <dir>, in byte
+# order of their names, every entry with the commit's time and fixed modes
+# and nothing else. Written by Python's zipfile, which writes only what it
+# is told: Windows' tar.exe added a second time of its own to every entry
+# (measured 2026-11-16: two packings of one directory differed there).
 repro_zip() {
   local zip="$1" dir="$2"; shift 2
-  repro_normalize "$dir" "$@"
   local list; list="$(mktemp)"
   ( cd "$dir" && find "$@" | LC_ALL=C sort ) > "$list"
   local abs; abs="$(cd "$(dirname "$zip")" && pwd)/$(basename "$zip")"
   rm -f "$abs"
-  local wtar; wtar="$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe"
-  ( cd "$dir" && TZ=UTC0 "$wtar" -a -c -n --uid 0 --gid 0 --uname root --gname root \
-      -f "$(cygpath -w "$abs")" -T "$(cygpath -w "$list")" )
+  local py; py="$(command -v python3 || command -v python)"
+  [ -n "$py" ] || { echo "repro: no python for the zip" >&2; rm -f "$list"; return 1; }
+  "$py" - "$(repro_native_path "$dir")" "$(repro_native_path "$list")" "$(repro_native_path "$abs")" "$(repro_epoch)" <<'PY'
+import os, sys, time, zipfile
+root, listing, out, epoch = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+stamp = time.gmtime(max(epoch, 315532800))[:6]          # a zip counts from 1980
+names = [l.rstrip('\r\n') for l in open(listing, encoding='utf-8') if l.strip()]
+with zipfile.ZipFile(out, 'w') as z:
+    for n in names:
+        path = os.path.join(root, n)
+        arc = n.replace('\\', '/')
+        if os.path.isdir(path):
+            info = zipfile.ZipInfo(arc.rstrip('/') + '/', stamp)
+            info.external_attr = (0o40755 << 16) | 0x10
+            info.create_system = 3
+            z.writestr(info, b'')
+        else:
+            info = zipfile.ZipInfo(arc, stamp)
+            mode = 0o755 if arc.endswith('.exe') else 0o644
+            info.external_attr = (0o100000 | mode) << 16
+            info.create_system = 3
+            info.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, 'rb') as f:
+                z.writestr(info, f.read(), compresslevel=9)
+PY
   local rc=$?
   rm -f "$list"
   return $rc
