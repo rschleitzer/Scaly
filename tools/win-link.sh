@@ -55,10 +55,11 @@ shift
 
 args=(clang --target=$T)
 [ "$LTO" = 1 ] && args+=(-O2 -fuse-ld=lld -flto=full)
-# /Brepro: the image's time stamp a hash of its contents, not the clock --
+# -Brepro: the image's time stamp a hash of its contents, not the clock --
 # linked twice, a program is the same bytes (tools/repro.sh); link.exe and
-# lld-link both take it
-args+=(-Wl,/Brepro)
+# lld-link both take it. With `-`, not `/`: Git Bash makes a Windows path
+# of an argument that begins with a slash (C:/Program Files/Git/Brepro).
+args+=(-Wl,-Brepro)
 args+=("$@")
 # The code page resource: every program linked here reads and writes file
 # names, arguments and the environment as UTF-8, which is what a Scaly string

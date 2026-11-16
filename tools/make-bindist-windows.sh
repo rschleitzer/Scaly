@@ -53,9 +53,6 @@ esac
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
 . tools/repro.sh
-# every object clang writes for what is handed out (libscaly.lib, the
-# packages' _native objects) with the time stamp 0, not the clock
-export CCC_OVERRIDE_OPTIONS="+-mno-incremental-linker-compatible"
 VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 case "$SCALY_WIN_TRIPLE" in
@@ -159,6 +156,9 @@ rm -rf "$STAGE/home"
 deps=$(for p in scalyc scaly scalyls; do llvm-objdump -p "$STAGE/libexec/$p.exe" | sed -n 's/^ *DLL Name: //p'; done \
        | sort -u | grep -viE '^(KERNEL32|ADVAPI32|SHELL32|ole32|OLEAUT32|ntdll|WS2_32|api-ms-win-crt-[a-z0-9-]*)\.dll$' || true)
 [ -z "$deps" ] || { echo "make-bindist-windows: FAIL — the programs still load:"; echo "$deps"; exit 1; }
+
+# the packages' native objects carry the clock in their COFF header
+find "$STAGE/packages" -type f \( -name '*.o' -o -name '*.obj' \) | while read -r o; do repro_coff_untime "$o"; done
 
 # Our license and those of what is linked in (LLVM and others) travel with
 # the programs: an archive taken without the installer carries them too.

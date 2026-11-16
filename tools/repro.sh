@@ -79,6 +79,17 @@ repro_zip() {
   return $rc
 }
 
+# <object>: a COFF object's time stamp (bytes 4 to 7 of its header) set
+# to 0. clang writes the clock there for Windows, and nothing reads it;
+# llc and the assembler already write 0. Anything else -- a Mach-O or ELF
+# object, LLVM bitcode, a big-object COFF file -- is left as it is.
+repro_coff_untime() {
+  local m; m="$(od -An -tx1 -N2 "$1" 2>/dev/null | tr -d ' \n')"
+  case "$m" in
+    6486|64aa|4c01) printf '\000\000\000\000' | dd of="$1" bs=1 seek=4 count=4 conv=notrunc 2>/dev/null ;;
+  esac
+}
+
 # <out.a> <in.a>: the archive again, its members in the same order, with
 # llvm-ar's deterministic header (time, owner and mode zero) -- the system's
 # ar writes the time each member was made.
@@ -90,7 +101,8 @@ repro_ar() {
   local members; members="$("$ar" t "$in")" || { rm -rf "$tmp"; return 1; }
   local inabs; inabs="$(cd "$(dirname "$in")" && pwd)/$(basename "$in")"
   local outabs; outabs="$(cd "$(dirname "$out")" && pwd)/$(basename "$out")"
-  ( cd "$tmp" && "$ar" x "$inabs" && rm -f "$outabs" && "$ar" rcsD "$outabs" $members )
+  ( cd "$tmp" && "$ar" x "$inabs" && for m in $members; do repro_coff_untime "$m"; done \
+      && rm -f "$outabs" && "$ar" rcsD "$outabs" $members )
   local rc=$?
   rm -rf "$tmp"
   return $rc
