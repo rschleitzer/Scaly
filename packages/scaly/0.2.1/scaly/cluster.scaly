@@ -202,6 +202,32 @@ define ClusterResult
     var outputs: Vector[Vector[u8]]
 )
 
+; A helper's stretch as one call with a catch point around it
+; (cluster_job_guarded): what run_job takes, and its answer.
+define ClusterJobCall
+(
+    rp: ref[Page]
+    job: pointer[ClusterJob]
+    src: pointer[ClusterJob]
+    var res: pointer[ClusterResult]
+)
+
+; The offer as one call with a catch point around it
+; (cluster_offer_guarded): its arguments, and its answer. The descriptor
+; and the cell go as addresses: the record is written (its answer), and
+; what it points at is the offer's to write, not the record's.
+define ClusterOfferCall
+(
+    desc: size_t
+    cell: size_t
+    count: int
+    done: int
+    per1k: int
+    workers: int
+    mode: int
+    var answer: i32
+)
+
 ; The loops of this program a helper can run (scaly_cluster_register), and
 ; the helpers a coordinator holds connections to (Cluster.helpers#).
 shared cluster_table: pointer[pointer[void]] null
@@ -287,6 +313,25 @@ define NodePeer
 )
 
 ; The search for helpers, on a thread of its own (Cluster.ready#).
+; A helper's stretch under Region.run_guarded: a round's fault -- an index
+; out of bounds, say -- ends the stretch and not the helper, which answers
+; "not ok" (Cluster.serve#); the coordinator then runs the stretch itself
+; and meets the fault where the loop would have met it.
+procedure cluster_job_guarded(mutable arg: pointer[void]) returns i64
+{
+    let c arg as ref[ClusterJobCall]
+    c.res := Cluster.run_job(c.rp, c.job as ref[ClusterJob], c.src) as pointer[ClusterResult]
+    0
+}
+
+; The offer under Region.run_guarded (scaly_cluster_offer#).
+procedure cluster_offer_guarded(mutable arg: pointer[void]) returns i64
+{
+    let c arg as ref[ClusterOfferCall]
+    c.answer := cluster_offer_locked(c.desc as pointer[void], c.cell as pointer[void], c.count, c.done, c.per1k, c.workers, c.mode)
+    0
+}
+
 procedure cluster_search_entry(mutable arg: pointer[void]) returns pointer[void]
 {
     Cluster.search()
@@ -1312,6 +1357,25 @@ define Cluster
         }
     }
 
+    ; After an offer a fault ended (scaly_cluster_offer#): its stretches may
+    ; still be under way on the helpers, and their answers would be read as
+    ; those of the next offer's stretches -- a stretch then counted done that
+    ; never ran (measured 2026-11-16: one pass of four lost round 4321's
+    ; fault, and its results). So the helpers are let go, what they still
+    ; send dies with the connections, and the next offer searches again.
+    procedure drop_peers()
+    {
+        var k: size_t 0
+        while k < cluster_peer_count
+        {
+            Cluster.disconnect(cluster_peers[k] as ref[NodePeer])
+            k := k + 1
+        }
+        cluster_peer_count := 0
+        cluster_peers_asked := false
+        scaly_atomic_cas_u64(&cluster_search, 2 as u64, 0 as u64)
+    }
+
     ; Are helpers there for an offer whose rounds would take this machine
     ; `local_ns`? The first such offer begins the search on a thread of its
     ; own and waits for it a sixteenth of that at most (a second at most);
@@ -1596,7 +1660,24 @@ define Cluster
                 else
                     src := null
             }
-            let res Cluster.run_job(rp, job as ref[ClusterJob], src)
+            var call ClusterJobCall(rp, job, src, null as pointer[ClusterResult])
+            var caught: i32 0
+            Region.run_guarded(&cluster_job_guarded, &call as pointer[void], &caught)
+            var res call.res
+            if caught <> 0 or res = null
+            {
+                if Cluster.tracing()
+                {
+                    scaly_eputs "helper: rounds "
+                    scaly_eputi(job.lo)
+                    scaly_eputs " to "
+                    scaly_eputi(job.hi)
+                    scaly_eputs " failed: "
+                    scaly_eputs(Region.panic_what())
+                    scaly_eputnl()
+                }
+                res := Cluster.not_ok(job as ref[ClusterJob]) as pointer[ClusterResult]
+            }
             Cluster.send(peer, CLUSTER_RESULT, res as pointer[void])
             rp.deallocate_extensions()
             Page.release_page(rp)
@@ -1614,6 +1695,14 @@ define Cluster
         let last: ref[ReceivedRegion]? kept
         if last <> null
             Cluster.dispose_message(last)
+    }
+
+    ; The answer "not ok" to a stretch, on a page of its own: the
+    ; coordinator runs the stretch itself.
+    procedure not_ok(job: ref[ClusterJob]) returns ref[ClusterResult]
+    {
+        let ap Page.allocate_page()
+        &ClusterResult^ap(job.lo, job.hi, false, Vector[Vector[u8]]^ap(0))
     }
 
     ; One stretch, here: the cell built again -- its plain values as the
@@ -2096,6 +2185,36 @@ procedure scaly_cluster_offer(desc: pointer[void], cell: pointer[void], count: i
     if scaly_atomic_cas_u64(&cluster_offering, 0 as u64, 1 as u64) <> 0
         return 0
     cluster_offers := cluster_offers + 1
+    ; A fault in a stretch this machine runs (TaskGroup.wait raises it
+    ; again) must not leave the lock set: every later offer would be
+    ; refused, silently. Where the program has a catch point the offer runs
+    ; under one of its own, lets the helpers go (drop_peers#), gives the lock
+    ; back and raises the fault again, unchanged; without one the fault ends
+    ; the process as it would without a cluster, its message with it.
+    var call ClusterOfferCall(desc as size_t, cell as size_t, count, done, per1k, workers, mode, 0)
+    var caught: i32 0
+    if Region.catch_active()
+        Region.run_guarded(&cluster_offer_guarded, &call as pointer[void], &caught)
+    else
+        cluster_offer_guarded(&call as pointer[void])
+    if caught <> 0
+    {
+        let kind scaly_panic_last_kind()
+        let what scaly_panic_last_what()
+        let index scaly_panic_last_index() as size_t
+        let length scaly_panic_last_length() as size_t
+        let code scaly_panic_last_code()
+        Cluster.drop_peers()
+        scaly_atomic_store_u64(&cluster_offering, 0 as u64)
+        scaly_panic_reraise(kind, what, index, length, code)
+    }
+    scaly_atomic_store_u64(&cluster_offering, 0 as u64)
+    call.answer
+}
+
+; The offer behind the lock (scaly_cluster_offer#).
+procedure cluster_offer_locked(desc: pointer[void], cell: pointer[void], count: int, done: int, per1k: int, workers: int, mode: int) returns i32
+{
     var answer: i32 0
     if mode = 1
         answer := cluster_offer_forced(desc, cell, count)
@@ -2118,7 +2237,6 @@ procedure scaly_cluster_offer(desc: pointer[void], cell: pointer[void], count: i
             cluster_loop_kept_cores[k as size_t] := if workers > 0: workers else 1
         }
     }
-    scaly_atomic_store_u64(&cluster_offering, 0 as u64)
     answer
 }
 

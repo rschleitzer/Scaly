@@ -1,0 +1,73 @@
+; Faults in a loop whose rounds go to other machines. Built with --cluster;
+; round 4321 of `heavy` reads past the end of a vector.
+;
+;   h  no catch point, SCALY_CLUSTER=on and a helper: the helper that runs
+;      the round answers "not ok" and lives on, the coordinator runs the
+;      stretch itself and ends with the bounds trap (exit 15), as it would
+;      without a cluster
+;   c  four passes, each under a catch point, the cost model deciding,
+;      with helpers: every pass is caught -- none loses the stretch with
+;      round 4321 to an answer of the pass before --, and a fault in a
+;      stretch this machine ran leaves no lock behind: the helpers are let
+;      go and searched for again
+;
+; Expected c: caught 4
+
+function spin(x: f64, n: int) returns f64
+{
+    var s x
+    var k 0
+    while k < n
+    {
+        s := s * 0.999 + 0.5 / (1.0 + (k as f64))
+        k := k + 1
+    }
+    s
+}
+
+procedure heavy(mutable out: Vector[f64], probe: Slice[f64])
+{
+    for i in out.length
+    {
+        var at: size_t 0
+        if i = 4321
+            at := 7
+        out.put(i, spin((i as f64) / 1000.0, 100000) + probe[at])
+    }
+}
+
+procedure one_pass(arg: pointer[void]) returns i64
+{
+    var out Vector[f64](8000)
+    var probe Vector[f64](1)
+    probe.put(0, 1.0)
+    heavy(out, probe.as_slice())
+    0
+}
+
+let args os.arguments()
+var which: u8 0
+if args.length > 0
+{
+    let first: Slice[u8] args[0]
+    which := first[0]
+}
+if which = ("h" as char) as u8
+{
+    one_pass(null as pointer[void])
+    print "not reached"
+}
+if which = ("c" as char) as u8
+{
+    var caught_passes 0
+    var pass 0
+    while pass < 4
+    {
+        var caught: i32 0
+        Region.run_guarded(&one_pass, null as pointer[void], &caught)
+        if caught <> 0
+            caught_passes := caught_passes + 1
+        pass := pass + 1
+    }
+    print "caught `caught_passes`"
+}

@@ -13,6 +13,15 @@ STAGE=${1:-$SCALY_STAGE_DEFAULT}
 # the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
 SCALY=$(tools/scaly-of.sh "$STAGE")
 OUT=${TMPDIR:-/tmp}
+# A node reads ~/.scaly/cluster.key where SCALY_CLUSTER_KEY is not set, and
+# with a key every program of this suite would leave the loopback (and meet
+# the machine's firewall: a search then waits for an announcement instead
+# of an answer). The key cases set their own; the programs run with a HOME
+# of their own, the build cache where it was.
+export SCALY_CACHE="${SCALY_CACHE:-$HOME/.scaly/cache}"
+CLUSTER_HOME=$(mktemp -d)
+export HOME="$CLUSTER_HOME"
+trap 'rm -rf "$CLUSTER_HOME"' EXIT
 
 # Every program is built with the stage binary's `build` command: the runtime
 # comes out of the build cache.
@@ -393,6 +402,39 @@ else
   weigh_check heavy "$OUT/cluster_${t}_named.log" "on 1 helpers, all there"
   if grep -q "^helper: rounds" "$OUT/cluster_${t}_h3.log"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, named: the named helper ran no rounds"); fi
   kill $W1 $W2 $W3 2>/dev/null; wait $W1 $W2 $W3 2>/dev/null
+fi
+
+# ---- faults: round 4321 reads past the end of a vector. A helper that runs
+# it answers "not ok" and lives on; the coordinator runs the stretch itself
+# and ends as it would without a cluster (exit 15, the trap's message).
+# Under a catch point, the cost model deciding, every pass is caught, and a
+# fault in a stretch run here leaves no lock behind (it left one, and no
+# pass after it was offered): the coordinator lets its helpers go -- their
+# answers still under way would be read as those of the next pass, which
+# then lost a stretch -- and searches again. ----
+t=faults
+FB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$FB"
+if ! "$STAGE" --cluster -O2 -o "$FB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  SCALY_CLUSTER_TRACE=1 "$FB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & F1=$!
+  SCALY_CLUSTER_TRACE=1 "$FB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & F2=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$FB" h > "$OUT/cluster_${t}_h.log" 2>&1; rc=$?
+  ok=1
+  [ "$rc" = 15 ] || ok=0
+  grep -q "index out of bounds" "$OUT/cluster_${t}_h.log" || ok=0
+  cat "$OUT/cluster_${t}_h1.log" "$OUT/cluster_${t}_h2.log" | grep -q "^helper: rounds .* failed" || ok=0
+  sleep 0.5
+  kill -0 $F1 2>/dev/null && kill -0 $F2 2>/dev/null || ok=0
+  if [ $ok = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, h: rc $rc '$(tr '\n' '|' < "$OUT/cluster_${t}_h.log" | tail -c 300)'"); fi
+  SCALY_CLUSTER_TRACE=1 "$FB" c > "$OUT/cluster_${t}_c.log" 2>&1
+  want=$(sed -n 's/^; Expected c: //p' tests/cluster/$t.scaly)
+  got=$(scaly_lf < "$OUT/cluster_${t}_c.log" | grep -v '^cluster: ')
+  searches=$(grep -c "^cluster: looking for helpers" "$OUT/cluster_${t}_c.log")
+  if [ "$got" = "$want" ] && [ "$searches" -ge 2 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, c: '$got', $searches searches"); fi
+  kill $F1 $F2 2>/dev/null; wait $F1 $F2 2>/dev/null
 fi
 
 # ---- mixed processors: the same program built for arm64 and for x86_64 has
