@@ -1842,9 +1842,10 @@ href="#scaling-machines-build"
       compiler for an arm64 Mac, an x86_64 Linux server or an arm64 Linux
       board has one stamp, and their nodes form one cluster: on all of
       them a record is laid out alike — 64-bit pointers, little-endian —,
-      and the nodes tell each other so when they connect. A build for
-      WebAssembly, with pointers of four bytes, joins only its own kind,
-      and a build for Windows has a stamp of its own for now.</p
+      and the nodes tell each other so when they connect. A Windows PC
+      joins them too: what its linker needs on top is left out of the
+      stamp. A build for WebAssembly, with pointers of four bytes, joins
+      only its own kind.</p
 ></section
 ><section
 id="scaling-machines-bits"

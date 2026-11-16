@@ -53,8 +53,8 @@
 ; across arbitrarily different builds so mismatched binaries cleanly
 ; refuse instead of misparsing each other (rule 10). The stamp is the
 ; program's scaly_build_stamp() (the Emitter's FNV-1a-64 of the
-; pre-stamp module IR, without its target lines -- the same program has
-; the same stamp on every 64-bit target but Windows); a mismatch refuses
+; pre-stamp module IR, without its target lines and COFF's comdats -- the
+; same program has the same stamp on every 64-bit target); a mismatch refuses
 ; the connection loudly with both stamps in the error. From protocol 3 a
 ; fourth word follows, read only after the frozen three: the build's
 ; traits (scaly_build_traits#), which must fit (cluster_traits_fit#).

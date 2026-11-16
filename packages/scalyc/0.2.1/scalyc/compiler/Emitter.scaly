@@ -9048,6 +9048,46 @@ define Emitter
             false
         }
 
+        ; COFF requires a comdat for every linkonce_odr definition (see
+        ; set_linkonce_odr#), and the printed IR shows it twice: a line
+        ; `$name = comdat any` after a blank line per comdat, and ` comdat`
+        ; on the definition (`, comdat` on a global, `comdat($c)` where the
+        ; comdat is named apart). The stamp leaves both out, so that a
+        ; Windows build hashes as the same program built for ELF or Mach-O,
+        ; which print neither: the bytes of the comdat word at i, else 0.
+        function comdat_bytes(this, text: pointer[char], i: size_t) returns size_t
+        {
+            var j i
+            if this.text_byte(text, j) = 44
+                j := j + 1
+            if this.text_byte(text, j) <> 32
+                return 0
+            let word "comdat"
+            var k: size_t 0
+            while k < 6
+            {
+                if this.text_byte(text, j + 1 + k) <> (word.as_slice()[k] as u8)
+                    return 0
+                k := k + 1
+            }
+            j := j + 7
+            let after this.text_byte(text, j)
+            if after = 40
+            {
+                while this.text_byte(text, j) <> 41 and this.text_byte(text, j) <> 0
+                    j := j + 1
+                if this.text_byte(text, j) = 0
+                    return 0
+                return j + 1 - i
+            }
+            if after = 32 or after = 10 or after = 44
+                return j - i
+            0
+        }
+
+        function text_byte(this, text: pointer[char], i: size_t) returns u8
+            (*(((text as size_t) + i) as pointer[char])) as u8
+
         procedure emit_build_stamp(mutable this)
         {
             let existing LLVMGetNamedFunction(llvm_module, "scaly_build_stamp" as pointer[const_char])
@@ -9377,13 +9417,34 @@ define Emitter
             var i: size_t 0
             var line_begin true
             var skipping false
+            ; the blank line LLVM prints before each comdat line, taken as
+            ; the one after it (comdat_bytes#)
+            var after_comdat false
             repeat
             {
                 let b (*(((text as size_t) + i) as pointer[char])) as u8
                 if b = 0
                     break
                 if line_begin
-                    skipping := stamp_line_skipped(text, i)
+                {
+                    if after_comdat and b = 10
+                        skipping := true
+                    else
+                        skipping := stamp_line_skipped(text, i)
+                    after_comdat := b = 36
+                    if after_comdat
+                        skipping := true
+                }
+                if skipping = false and (b = 32 or b = 44)
+                {
+                    let n this.comdat_bytes(text, i)
+                    if n > 0
+                    {
+                        i := i + n
+                        line_begin := false
+                        continue
+                    }
+                }
                 if skipping = false
                     hash := (hash xor (b as u64)) * 0x100000001b3
                 if b = 10
