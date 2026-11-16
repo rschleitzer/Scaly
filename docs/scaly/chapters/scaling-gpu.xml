@@ -326,7 +326,9 @@ gpu-plan: relaxed.scaly:9:9: kernel (metal, webgpu): out loose; calls half</scre
       matrix times a vector — runs on the processor's vector units, eight
       times as fast on one core; the functions the body calls keep their
       order. The last bits of such a sum may then differ from the same
-      loop without the word, as a regrouped sum does. Under Metal a relaxed
+      loop without the word, as a regrouped sum does — and a sum the loop
+      itself reduces, from one run to the next, where the driver splits
+      the loop elsewhere. Under Metal a relaxed
       loop computes as before: Metal rounds as the processor does whether
       it has to or not. Where a card of the looser kind computed it, a point on the
       edge of the Mandelbrot set may come out the other way — one
