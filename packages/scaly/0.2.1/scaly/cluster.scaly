@@ -102,7 +102,7 @@ function cluster_traits_fit(mine: u64, theirs: u64) returns bool
 ; "SCALYNOD", little-endian.
 define NODE_WIRE_MAGIC u64 0x444f4e594c414353
 ; 2 (2026-11-13): after the preamble, the key's handshake (Cluster.prove#)
-define NODE_PROTO_VERSION u64 3
+define NODE_PROTO_VERSION u64 4
 
 define NODE_FRAME_DATA u64 1
 define NODE_FRAME_HEARTBEAT u64 2
@@ -151,7 +151,10 @@ define HELPER_CHANNEL u64 900
 ; one they put into at their counter, both (length, data) -- a Vector or a
 ; Slice --, 3 and 5 the same as an Array (length, capacity, buffer), `bytes`
 ; an element's; +16 where the cell holds the buffer record's address, not
-; the record. The hash names the loop the same in every build of the program.
+; the record; +256 for one they put into in rows of w slots (round i puts
+; into i*w .. i*w+w), w from bit 16 on, or +512 and the capture holding w
+; from bit 16 on (row_width#). The hash names the loop the same in every
+; build of the program.
 define CLUSTER_RESULT u64 901
 define CLUSTER_TABLE_MOST size_t 4096
 define CLUSTER_PEERS_MOST size_t 256
@@ -177,9 +180,11 @@ define CLUSTER_SEARCH_AGAIN_NS i64 10000000000
 define HELPER_SEARCH_MS int 2500
 
 ; A stretch of rounds for a helper: the loop, the offer it belongs to, the
-; rounds, the cell as the coordinator filled it, and every buffer the
-; rounds read, whole -- or, `cached`, none of them: the helper keeps them
-; from the first stretch of the offer. Like every message it is the FIRST
+; rounds, the cell as the coordinator filled it, and for every capture
+; that travels beside the cell its bytes -- a buffer the rounds read only
+; where the helper does not keep it yet, named by its content in `keys`
+; (two words per capture, zero for a buffer the rounds write: KeepSet).
+; Like every message it is the FIRST
 ; object on its page (Cluster.send sends the region from the page the
 ; message lies on), so its parts are given to it after it is made.
 define ClusterJob
@@ -188,9 +193,36 @@ define ClusterJob
     offer: u64
     lo: i64
     hi: i64
-    cached: bool
+    var keys: Vector[u64]
     var cell: Vector[u8]
     var inputs: Vector[Vector[u8]]
+)
+
+; What a helper keeps of the buffers the rounds read, beyond one stretch
+; and one offer: the next stretch -- of this offer, or of the next, the
+; next step of a training -- names a buffer by its content and brings it
+; only where the helper does not have it. The coordinator keeps the same
+; set for each helper, built by the same rule from the same stretches in
+; the same order (one connection carries them in order), so the two agree
+; without asking: a buffer is taken in where its key is not in the set,
+; and after each stretch the oldest go -- never one the stretch named --
+; until the set holds at most CLUSTER_KEEP_BYTES in CLUSTER_KEEP_COUNT
+; buffers. The coordinator's sets hold keys and lengths, a helper's the
+; bytes too, each on a page of its own.
+define CLUSTER_KEEP_BYTES size_t 536870912
+define CLUSTER_KEEP_COUNT size_t 1024
+define CLUSTER_KEEP_MOST size_t 4096
+
+define KeepSet
+(
+    home: pointer[Page]
+    k0: pointer[u64]
+    k1: pointer[u64]
+    lens: pointer[size_t]
+    data: pointer[pointer[u8]]
+    pages: pointer[pointer[Page]]
+    var count: size_t
+    var total: size_t
 )
 
 ; What a helper's rounds put: one stretch per buffer they write, lo to hi.
@@ -208,7 +240,7 @@ define ClusterJobCall
 (
     rp: ref[Page]
     job: pointer[ClusterJob]
-    src: pointer[ClusterJob]
+    ins: pointer[Vector[u8]]
     var res: pointer[ClusterResult]
 )
 
@@ -265,6 +297,9 @@ mutable cluster_home: bool false
 shared cluster_peer_cores: pointer[i64] null
 shared cluster_peer_lat: pointer[f64] null
 shared cluster_peer_factor: pointer[f64] null
+; What each helper keeps of the buffers the rounds read, as this machine
+; follows it (KeepSet).
+shared cluster_peer_keep: pointer[pointer[KeepSet]] null
 ; The search for helpers runs on a thread of its own (0 not begun, 1
 ; under way, 2 done); what it found waits here until an offer connects it.
 shared atomic cluster_search: u64 0
@@ -313,6 +348,138 @@ define NodePeer
 )
 
 ; The search for helpers, on a thread of its own (Cluster.ready#).
+; A new, empty KeepSet on a page of its own.
+procedure keep_new() returns pointer[KeepSet]
+{
+    let p Page.allocate_page()
+    let n CLUSTER_KEEP_MOST
+    let k0 p.allocate(n * 8, 8) as pointer[u64]
+    let k1 p.allocate(n * 8, 8) as pointer[u64]
+    let lens p.allocate(n * 8, 8) as pointer[size_t]
+    let data p.allocate(n * 8, 8) as pointer[pointer[u8]]
+    let pages p.allocate(n * 8, 8) as pointer[pointer[Page]]
+    &KeepSet^p(p as pointer[Page], k0, k1, lens, data, pages, 0, 0) as pointer[KeepSet]
+}
+
+; Where the set holds the buffer of this key; -1 where it does not.
+function keep_find(ks: pointer[KeepSet], a: u64, b: u64) returns i64
+{
+    var i: size_t 0
+    while i < ks.count
+    {
+        if ks.k0[i] = a and ks.k1[i] = b
+            return i as i64
+        i := i + 1
+    }
+    0 - 1
+}
+
+; A buffer taken in, last: its key, its length, and on a helper its bytes
+; on a page of their own.
+procedure keep_add(mutable ks: pointer[KeepSet], a: u64, b: u64, len: size_t, data: pointer[u8], page: pointer[Page]) returns i64
+{
+    let i ks.count
+    if i >= CLUSTER_KEEP_MOST
+        return 0 - 1
+    ks.k0[i] := a
+    ks.k1[i] := b
+    ks.lens[i] := len
+    ks.data[i] := data
+    ks.pages[i] := page
+    ks.count := i + 1
+    ks.total := ks.total + len
+    i as i64
+}
+
+; Is this key one of the stretch's (pairs of words, `n` of them)?
+function keep_named(used: pointer[u64], n: size_t, a: u64, b: u64) returns bool
+{
+    var i: size_t 0
+    while i < n
+    {
+        if used[i * 2] = a and used[i * 2 + 1] = b
+            return true
+        i := i + 1
+    }
+    false
+}
+
+; The buffer at i let go: its page, and its place.
+procedure keep_drop(mutable ks: pointer[KeepSet], i: size_t)
+{
+    let pg ks.pages[i]
+    if pg <> null
+    {
+        let pr pg as ref[Page]
+        pr.deallocate_extensions()
+        Page.release_page(pr)
+    }
+    ks.total := ks.total - ks.lens[i]
+    var k i
+    while k + 1 < ks.count
+    {
+        ks.k0[k] := ks.k0[k + 1]
+        ks.k1[k] := ks.k1[k + 1]
+        ks.lens[k] := ks.lens[k + 1]
+        ks.data[k] := ks.data[k + 1]
+        ks.pages[k] := ks.pages[k + 1]
+        k := k + 1
+    }
+    ks.count := ks.count - 1
+}
+
+; After a stretch: the oldest go, never one it named, until the set is
+; within its bounds.
+procedure keep_trim(mutable ks: pointer[KeepSet], used: pointer[u64], n: size_t)
+{
+    var i: size_t 0
+    while (ks.total > CLUSTER_KEEP_BYTES or ks.count > CLUSTER_KEEP_COUNT) and i < ks.count
+    {
+        if keep_named(used, n, ks.k0[i], ks.k1[i])
+            i := i + 1
+        else
+            keep_drop(ks, i)
+    }
+}
+
+; The whole set let go.
+procedure keep_free(mutable ks: pointer[KeepSet])
+{
+    while ks.count > 0
+        keep_drop(ks, ks.count - 1)
+    let home ks.home as ref[Page]
+    home.deallocate_extensions()
+    Page.release_page(home)
+}
+
+; A buffer's content as two words: its length, then every eight bytes (the
+; tail filled with zeros) mixed into two lanes. A name for what the
+; program computed, not a guard against a peer who chose the bytes -- the
+; cluster's key keeps strangers out.
+procedure content_key(data: pointer[u8], len: size_t) returns (a: u64, b: u64)
+{
+    var a: u64 0xcbf29ce484222325 xor (len as u64)
+    var b: u64 0x9e3779b97f4a7c15 + (len as u64)
+    let words len / 8
+    var i: size_t 0
+    var w: u64 0
+    while i <= words
+    {
+        w := 0
+        if i < words
+            memcpy(&w as pointer[void], ((data as size_t) + i * 8) as pointer[void], 8 as c_size)
+        else if len > words * 8
+            memcpy(&w as pointer[void], ((data as size_t) + i * 8) as pointer[void], (len - words * 8) as c_size)
+        a := (a xor w) * 0x100000001b3
+        b := b + w * 0xc2b2ae3d27d4eb4f
+        b := ((b << 31) | (b >> 33)) * 0x9e3779b97f4a7c15
+        i := i + 1
+    }
+    a := (a xor (a >> 29)) * 0xbf58476d1ce4e5b9
+    b := (b xor (b >> 32)) * 0x94d049bb133111eb
+    (a: a xor (a >> 31), b: b xor (b >> 29))
+}
+
 ; A helper's stretch under Region.run_guarded: a round's fault -- an index
 ; out of bounds, say -- ends the stretch and not the helper, which answers
 ; "not ok" (Cluster.serve#); the coordinator then runs the stretch itself
@@ -320,7 +487,7 @@ define NodePeer
 procedure cluster_job_guarded(mutable arg: pointer[void]) returns i64
 {
     let c arg as ref[ClusterJobCall]
-    c.res := Cluster.run_job(c.rp, c.job as ref[ClusterJob], c.src) as pointer[ClusterResult]
+    c.res := Cluster.run_job(c.rp, c.job as ref[ClusterJob], c.ins) as pointer[ClusterResult]
     0
 }
 
@@ -1335,6 +1502,7 @@ define Cluster
             cluster_peer_cores := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[i64]
             cluster_peer_lat := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[f64]
             cluster_peer_factor := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[f64]
+            cluster_peer_keep := p.allocate(CLUSTER_PEERS_MOST * 8, 8) as pointer[pointer[KeepSet]]
         }
         if cluster_peers_asked
             return
@@ -1351,6 +1519,7 @@ define Cluster
                 cluster_peer_cores[k] := if cluster_found_cores[i] > 0: cluster_found_cores[i] else 1
                 cluster_peer_lat[k] := ((scaly_eio_now_ns() - t0) as f64) / 2.0
                 cluster_peer_factor[k] := 1.0
+                cluster_peer_keep[k] := keep_new()
                 cluster_peer_count := k + 1
             }
             i := i + 1
@@ -1369,6 +1538,7 @@ define Cluster
         while k < cluster_peer_count
         {
             Cluster.disconnect(cluster_peers[k] as ref[NodePeer])
+            keep_free(cluster_peer_keep[k])
             k := k + 1
         }
         cluster_peer_count := 0
@@ -1549,10 +1719,68 @@ define Cluster
         (read: read, per_round: per_round)
     }
 
-    ; A stretch for a helper: the cell, every buffer the rounds read (none,
-    ; `cached`, where the helper has them from this offer's first stretch),
-    ; and the stretch of every one they put into. Answers the bytes sent.
-    procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], offer: u64, lo: i64, hi: i64, cached: bool) returns size_t
+    ; The bytes a capture the rounds read brings: a record behind an
+    ; address, or a buffer's elements.
+    function read_part(desc: pointer[void], cell: pointer[void], c: size_t) returns (data: pointer[u8], bytes: size_t)
+    {
+        let kind Cluster.desc_word(desc, 7 + c * 3)
+        let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
+        let rec Cluster.capture_record(desc, cell, c)
+        if kind = 17
+            return (data: rec, bytes: elem)
+        let b Cluster.buffer_of(rec, kind)
+        (data: b.data, bytes: b.length * elem)
+    }
+
+    ; The content keys of the buffers the rounds read, two words per
+    ; capture (zero for the others), once per offer, on `sp`.
+    procedure offer_keys(desc: pointer[void], cell: pointer[void], sp: ref[Page]) returns pointer[u64]
+    {
+        let ncap Cluster.capture_count(desc)
+        let keys sp.allocate((ncap + 1) * 16, 8) as pointer[u64]
+        var c: size_t 0
+        while c < ncap
+        {
+            keys[c * 2] := 0
+            keys[c * 2 + 1] := 0
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            if Cluster.travels_out(kind) and Cluster.read_only(kind)
+            {
+                let part Cluster.read_part(desc, cell, c)
+                let k content_key(part.data, part.bytes)
+                keys[c * 2] := k.a
+                keys[c * 2 + 1] := k.b
+            }
+            c := c + 1
+        }
+        keys
+    }
+
+    ; What of the buffers the rounds read a helper does not keep yet: the
+    ; bytes its first stretch of this offer must bring.
+    procedure unsent_bytes(desc: pointer[void], cell: pointer[void], keys: pointer[u64], keep: pointer[KeepSet]) returns size_t
+    {
+        let ncap Cluster.capture_count(desc)
+        var bytes: size_t 0
+        var c: size_t 0
+        while c < ncap
+        {
+            let kind Cluster.desc_word(desc, 7 + c * 3)
+            if Cluster.travels_out(kind) and Cluster.read_only(kind)
+            {
+                if keep_find(keep, keys[c * 2], keys[c * 2 + 1]) < 0
+                    bytes := bytes + Cluster.read_part(desc, cell, c).bytes
+            }
+            c := c + 1
+        }
+        bytes
+    }
+
+    ; A stretch for a helper: the cell, every buffer the rounds read that
+    ; the helper does not keep yet (`keep`, this machine's copy of its set,
+    ; taken along), and the stretch of every one they put into. Answers
+    ; the bytes sent.
+    procedure send_job(mutable peer: pointer[NodePeer], desc: pointer[void], cell: pointer[void], offer: u64, lo: i64, hi: i64, keys: pointer[u64], mutable keep: pointer[KeepSet]) returns size_t
     {
         let size Cluster.desc_word(desc, 1) as size_t
         let ncap Cluster.capture_count(desc)
@@ -1565,18 +1793,26 @@ define Cluster
             c := c + 1
         }
         let mp Page.allocate_page()
-        let job &ClusterJob^mp(Cluster.desc_word(desc, 0) as u64, offer, lo, hi, cached, Vector[u8]^mp(0), Vector[Vector[u8]]^mp(0))
+        let job &ClusterJob^mp(Cluster.desc_word(desc, 0) as u64, offer, lo, hi, Vector[u64]^mp(0), Vector[u8]^mp(0), Vector[Vector[u8]]^mp(0))
         var cv Vector[u8]^mp(size)
         memcpy(cv.data as pointer[void], cell, size as c_size)
         var ins Vector[Vector[u8]]^mp(nin)
+        var kv Vector[u64]^mp(nin * 2)
         var sent size
         var j: size_t 0
         c := 0
         while c < ncap
         {
             let kind Cluster.desc_word(desc, 7 + c * 3)
-            if Cluster.travels_out(kind) and cached and Cluster.read_only(kind)
+            let fresh Cluster.read_only(kind) and keep_find(keep, keys[c * 2], keys[c * 2 + 1]) < 0
+            if Cluster.travels_out(kind)
             {
+                kv.put(j * 2, keys[c * 2])
+                kv.put(j * 2 + 1, keys[c * 2 + 1])
+            }
+            if Cluster.travels_out(kind) and Cluster.read_only(kind) and fresh = false
+            {
+                ; the helper keeps it: named, not sent
                 ins.put(j, Vector[u8]^mp(0))
                 j := j + 1
             }
@@ -1603,10 +1839,14 @@ define Cluster
                 memcpy(bv.data as pointer[void], from as pointer[void], bytes as c_size)
                 ins.put(j, bv)
                 sent := sent + bytes
+                if fresh
+                    keep_add(keep, keys[c * 2], keys[c * 2 + 1], bytes, null as pointer[u8], null as pointer[Page])
                 j := j + 1
             }
             c := c + 1
         }
+        keep_trim(keep, kv.data, nin)
+        job.keys := kv
         job.cell := cv
         job.inputs := ins
         Cluster.send(peer, HELPER_CHANNEL, job as pointer[void])
@@ -1643,6 +1883,7 @@ define Cluster
     ; compiler from. A job has two levels of buffers, a result one.
     procedure fix_job(rr: ref[ReceivedRegion], mutable job: ref[ClusterJob])
     {
+        rr.fix(&job.keys.data as pointer[void])
         rr.fix(&job.cell.data as pointer[void])
         Cluster.fix_parts(rr, &job.inputs.data as pointer[void], job.inputs.length)
     }
@@ -1667,13 +1908,12 @@ define Cluster
     }
 
     ; A helper's side: every stretch a coordinator sends is run and answered,
-    ; until the coordinator lets go. The last stretch that brought what the
-    ; rounds read is kept: the later stretches of its offer come without.
+    ; until the coordinator lets go. What the rounds read is kept by its
+    ; content (KeepSet): a later stretch names it and comes without it.
     procedure serve(mutable peer: pointer[NodePeer])
     {
         let ch Cluster.channel(peer, HELPER_CHANNEL)
-        var kept: ref[ReceivedRegion]? null
-        var kept_job: pointer[ClusterJob] null
+        let store keep_new()
         repeat
         {
             let raw Channel.receive(ch)
@@ -1683,15 +1923,35 @@ define Cluster
             let job rr.root as pointer[ClusterJob]
             Cluster.fix_job(rr, job as ref[ClusterJob])
             let rp Page.allocate_page()
-            var src job
-            if job.cached
+            ; what the rounds read: as the stretch brought it, or as kept
+            let n job.inputs.length
+            let ins rp.allocate((n + 1) * 16, 8) as pointer[Vector[u8]]
+            var j: size_t 0
+            while j < n
             {
-                if kept_job <> null and kept_job.offer = job.offer
-                    src := kept_job
+                let a job.keys[j * 2]
+                let b job.keys[j * 2 + 1]
+                let part job.inputs[j]
+                if a = 0 and b = 0
+                    ins[j] := part
                 else
-                    src := null
+                {
+                    var at keep_find(store, a, b)
+                    if at < 0
+                    {
+                        let pg Page.allocate_page()
+                        let copy pg.allocate(part.length + 1, 16) as pointer[u8]
+                        memcpy(copy as pointer[void], part.data as pointer[void], part.length as c_size)
+                        at := keep_add(store, a, b, part.length, copy, pg as pointer[Page])
+                    }
+                    if at >= 0
+                        ins[j] := Vector[u8](store.lens[at as size_t], store.data[at as size_t])
+                    else
+                        ins[j] := part
+                }
+                j := j + 1
             }
-            var call ClusterJobCall(rp, job, src, null as pointer[ClusterResult])
+            var call ClusterJobCall(rp, job, ins, null as pointer[ClusterResult])
             var caught: i32 0
             Region.run_guarded(&cluster_job_guarded, &call as pointer[void], &caught)
             var res call.res
@@ -1710,22 +1970,12 @@ define Cluster
                 res := Cluster.not_ok(job as ref[ClusterJob]) as pointer[ClusterResult]
             }
             Cluster.send(peer, CLUSTER_RESULT, res as pointer[void])
+            keep_trim(store, job.keys.data, n)
             rp.deallocate_extensions()
             Page.release_page(rp)
-            if job.cached
-                Cluster.dispose_message(rr)
-            else
-            {
-                let old: ref[ReceivedRegion]? kept
-                if old <> null
-                    Cluster.dispose_message(old)
-                kept := rr
-                kept_job := job
-            }
+            Cluster.dispose_message(rr)
         }
-        let last: ref[ReceivedRegion]? kept
-        if last <> null
-            Cluster.dispose_message(last)
+        keep_free(store)
     }
 
     ; The answer "not ok" to a stretch, on a page of its own: the
@@ -1741,15 +1991,16 @@ define Cluster
     ; with the stretch, a written one at a buffer of the stretch's own, set
     ; so that the round's counter indexes it as it indexes the
     ; coordinator's --, then the loop's own task function, and what it put.
-    ; What the rounds read comes from `src`: the job itself, or the one of
-    ; its offer that brought it (null: none did -- not ok).
-    procedure run_job(rp: ref[Page], job: ref[ClusterJob], src: pointer[ClusterJob]) returns ref[ClusterResult]
+    ; What the rounds read comes from `ins`, one buffer per capture that
+    ; travels beside the cell: as the stretch brought it, or as the helper
+    ; kept it (serve#).
+    procedure run_job(rp: ref[Page], job: ref[ClusterJob], ins: pointer[Vector[u8]]) returns ref[ClusterResult]
     {
         ; the answer on a page of its own, first on it; rp holds the
         ; stretch's scratch and is given back after the answer went
         let ap Page.allocate_page()
         let desc Cluster.find_loop(job.hash)
-        if desc = null or src = null
+        if desc = null or ins = null
             return &ClusterResult^ap(job.lo, job.hi, false, Vector[Vector[u8]]^ap(0))
         let res &ClusterResult^ap(job.lo, job.hi, true, Vector[Vector[u8]]^ap(0))
         let task (desc as pointer[pointer[void]])[0]
@@ -1785,7 +2036,7 @@ define Cluster
             if kind = 17
             {
                 ; the record came beside the cell: the cell points at it
-                let part src.inputs[j]
+                let part ins[j]
                 (((cell as size_t) + off) as pointer[pointer[u8]])[0] := part.data
                 j := j + 1
             }
@@ -1802,7 +2053,7 @@ define Cluster
                 var data: size_t 0
                 if base = 2 or base = 3
                 {
-                    let part src.inputs[j]
+                    let part ins[j]
                     length := part.length / elem
                     data := part.data as size_t
                     j := j + 1
@@ -2295,7 +2546,7 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
     let queue qp.allocate((stretches as size_t) * 8, 8) as pointer[i64]
     let busy qp.allocate(n * 8, 8) as pointer[i64]
     let live qp.allocate(n, 1) as pointer[u8]
-    let full qp.allocate(n, 1) as pointer[u8]
+    let keys Cluster.offer_keys(desc, cell, qp)
     var q: i64 0
     while q < stretches
     {
@@ -2312,7 +2563,6 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
         live[k] := if peer.alive and Cluster.serves(peer as ref[NodePeer], desc): (1 as u8) else 0
         if live[k] = 1
             serving := serving + 1
-        full[k] := 0
         k := k + 1
     }
     if serving = 0
@@ -2327,6 +2577,7 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
     }
     var done: i64 0
     var ok true
+    var sent: size_t 0
     repeat
     {
         ; every live helper without a stretch gets the next
@@ -2341,8 +2592,7 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
                 if hi > count
                     hi := count
                 Cluster.trace_stretch(lo, hi, (k + 1) as i64)
-                Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, full[k] = 1)
-                full[k] := 1
+                sent := sent + Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, keys, cluster_peer_keep[k])
                 busy[k] := lo
             }
             k := k + 1
@@ -2421,6 +2671,9 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
             scaly_eputs " helpers, all there"
         else
             scaly_eputs " helpers, none left: this machine runs them"
+        scaly_eputs " ("
+        scaly_eputi(sent as i64)
+        scaly_eputs " bytes sent)"
         scaly_eputnl()
     }
     if ok: 1 else 0
@@ -2474,6 +2727,7 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
         share := 1
     let fair (left + (n as i64)) / ((n as i64) + 1)
     let sp Page.allocate_page()
+    let keys Cluster.offer_keys(desc, cell, sp)
     let stretch sp.allocate(n * 8, 8) as pointer[i64]
     let takes sp.allocate(n, 1) as pointer[u8]
     var rate (cores as f64) / round
@@ -2495,7 +2749,8 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
             s := fair
         stretch[k] := s
         let each lat + (((s as size_t) * w.per_round * 2) as f64) * byte_ns + (s as f64) * per
-        let first each + (w.read as f64) * byte_ns
+        ; what it does not keep yet of what the rounds read comes first
+        let first each + (Cluster.unsent_bytes(desc, cell, keys, cluster_peer_keep[k]) as f64) * byte_ns
         if Cluster.tracing()
         {
             scaly_eputs "cluster: helper "
@@ -2574,7 +2829,6 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
     let busy_hi sp.allocate(n * 8, 8) as pointer[i64]
     let sent_at sp.allocate(n * 8, 8) as pointer[i64]
     let sent_bytes sp.allocate(n * 8, 8) as pointer[size_t]
-    let full sp.allocate(n, 1) as pointer[u8]
     let back_lo sp.allocate(n * 8 + 8, 8) as pointer[i64]
     let back_hi sp.allocate(n * 8 + 8, 8) as pointer[i64]
     ; per helper, over this offer: what its stretches took beyond latency
@@ -2586,7 +2840,6 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
     while k < n
     {
         busy_lo[k] := 0 - 1
-        full[k] := 0
         took_sum[k] := 0.0
         rounds_sum[k] := 0.0
         k := k + 1
@@ -2651,8 +2904,7 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
                 {
                     Cluster.trace_stretch(lo, hi, (k + 1) as i64)
                     sent_at[k] := scaly_eio_now_ns()
-                    sent_bytes[k] := Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, full[k] = 1)
-                    full[k] := 1
+                    sent_bytes[k] := Cluster.send_job(cluster_peers[k], desc, cell, offer, lo, hi, keys, cluster_peer_keep[k])
                     busy_lo[k] := lo
                     busy_hi[k] := hi
                 }

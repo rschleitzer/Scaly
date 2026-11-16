@@ -460,6 +460,45 @@ else
   kill $R1 $R2 2>/dev/null; wait $R1 $R2 2>/dev/null
 fi
 
+# ---- kept buffers: a helper keeps what the rounds read by its content,
+# beyond one offer, and this machine follows its set. keep: three passes
+# over a buffer of 4 MB send it once, the later ones only name it, and a
+# changed buffer travels again. keepmany: 1100 contents, then 100 still
+# kept (only named), then 100 let go (sent again) -- the two sets let the
+# oldest go by one rule, so the rounds read what they read alone. ----
+t=keep
+KB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$KB"
+if ! "$STAGE" --cluster -O2 -o "$KB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  SCALY_CLUSTER_TRACE=1 "$KB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & K1=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready"
+  want=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$KB" > "$OUT/cluster_${t}.log" 2>&1
+  got=$(scaly_lf < "$OUT/cluster_${t}.log" | grep -v '^cluster: ')
+  sent=$(grep 'all there' "$OUT/cluster_${t}.log" | sed 's/.*(\([0-9]*\) bytes sent)/\1/' | tr '\n' ' ')
+  set -- $sent
+  if [ "$got" = "$want" ] && [ $# = 4 ] && [ "$1" -gt 4194304 ] && [ "$2" -lt 65536 ] && [ "$3" -lt 65536 ] && [ "$4" -gt 4194304 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t: '$got', sent $sent"); fi
+  kill $K1 2>/dev/null; wait $K1 2>/dev/null
+fi
+t=keepmany
+KB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$KB"
+if ! "$STAGE" --cluster -O2 -o "$KB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  SCALY_CLUSTER_TRACE=1 "$KB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & K1=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready"
+  want=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$KB" > "$OUT/cluster_${t}.log" 2>&1
+  got=$(scaly_lf < "$OUT/cluster_${t}.log" | grep -v '^cluster: ')
+  phases=$(grep 'all there' "$OUT/cluster_${t}.log" | sed 's/.*(\([0-9]*\) bytes sent)/\1/' | awk '{ph=(NR>1200)?3:((NR>1100)?2:1); s[ph]+=$1; c[ph]++} END {print c[1], c[2], c[3], s[1]/c[1], s[2]/c[2], s[3]/c[3]}')
+  set -- $phases
+  if [ "$got" = "$want" ] && [ "$1" = 1100 ] && [ "$2" = 100 ] && [ "$3" = 100 ] && [ "${5%.*}" -lt "${4%.*}" ] && [ "${6%.*}" = "${4%.*}" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t: '$got', phases $phases"); fi
+  kill $K1 2>/dev/null; wait $K1 2>/dev/null
+fi
+
 # ---- mixed processors: the same program built for arm64 and for x86_64 has
 # the same build stamp; an arm64 coordinator takes x86_64 helpers (under
 # Rosetta). A loop whose rounds call mul_add goes only to a helper of this

@@ -1,0 +1,55 @@
+; Kept buffers: a loop that reads a buffer of 4 MB runs in three passes,
+; each its own offer. The helper keeps what the rounds read by its
+; content: the first pass sends it, the later ones name it and send only
+; the cell and the stretches of what the rounds put -- and where the
+; buffer changes between passes, it travels again. Built with --cluster.
+;
+; Expected: 3 passes 399495080 changed 401495080
+
+procedure pass(table: Slice[i64], mutable out: Vector[i64])
+{
+    for i in out.length
+    {
+        var s: i64 0
+        var k: size_t 0
+        while k < 2000
+        {
+            s := s + table[(i * 977 + k * 131) % table.length]
+            k := k + 1
+        }
+        out.put(i, s)
+    }
+}
+
+function total(v: Vector[i64]) returns i64
+{
+    var s: i64 0
+    var k: size_t 0
+    while k < v.length
+    {
+        s := s + v[k]
+        k := k + 1
+    }
+    s
+}
+
+let n: size_t 524288
+var table Vector[i64](n)
+var k: size_t 0
+while k < n
+{
+    table.put(k, (k % 1000) as i64)
+    k := k + 1
+}
+var out Vector[i64](400)
+var sum: i64 0
+var p 0
+while p < 3
+{
+    pass(table.as_slice(), out)
+    sum := total(out)
+    p := p + 1
+}
+table.put(0, 1000000)
+pass(table.as_slice(), out)
+print "3 passes `sum` changed `total(out)`"

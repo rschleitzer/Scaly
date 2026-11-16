@@ -1546,11 +1546,28 @@ $ SCALY_CLUSTER=on ./primes
       records of numbers, vectors, slices and arrays of them read whole,
       and those they <code
 >put</code
-> into at the counter. A reduction, a
+> into at the counter — or in a row of
+      their own, <code
+>out.put(i * w + c, x)</code
+> with <code
+>c</code
+>
+      counted below <code
+>w</code
+>, as a round of a training puts the
+      gradient of its example. A reduction, a
       value a round keeps, a string or a reference keeps the loop on this
       machine — nothing is said, it runs as before. The count of this
       program is such a reduction, and so it is added up here, after the
       loop that went out.</p
+><p
+>What the rounds read is sent once. A helper keeps it by its
+      content, and the next stretch — of this loop, or of the next loop
+      that reads the same bytes, the next step of a training over the same
+      data — only names it; what changed travels again. The coordinator
+      follows what each helper keeps by the same rule, so the two agree
+      without asking, and a helper lets the oldest go beyond half a
+      gigabyte.</p
 ><p
 >Whether a loop goes out is measured as the driver measures the
       cores and the card (<a

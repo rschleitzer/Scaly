@@ -1,0 +1,49 @@
+; Many kept buffers: 1300 passes, each its own offer, each reading a small
+; buffer whose content follows the pass -- 1100 contents, then the last
+; hundred of them again (still kept: only named), then the first hundred
+; again (let go: sent again). The helper's set and this machine's copy of
+; it let the oldest go by the same rule once they hold 1024, so the
+; rounds read what they read alone. Built with --cluster.
+;
+; Expected: 972244000
+
+procedure pass(table: Slice[i64], mutable out: Vector[i64])
+{
+    for i in out.length
+        out.put(i, table[i % table.length] * ((i as i64) + 1))
+}
+
+function total(v: Vector[i64]) returns i64
+{
+    var s: i64 0
+    var k: size_t 0
+    while k < v.length
+    {
+        s := s + v[k]
+        k := k + 1
+    }
+    s
+}
+
+var table Vector[i64](8)
+var out Vector[i64](16)
+var sum: i64 0
+var p 0
+while p < 1300
+{
+    var v p as i64
+    if p >= 1100 and p < 1200
+        v := (p - 100) as i64
+    if p >= 1200
+        v := (p - 1200) as i64
+    var k: size_t 0
+    while k < table.length
+    {
+        table.put(k, v * 10 + (k as i64))
+        k := k + 1
+    }
+    pass(table.as_slice(), out)
+    sum := sum + total(out)
+    p := p + 1
+}
+print "`sum`"
