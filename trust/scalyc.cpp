@@ -18523,6 +18523,8 @@ bool Emitter_emit(Emitter&, Plan&, String&) asm("_ZN7EmitterB6scalycB4v0_24emitE
 LLVMOpaqueType* Emitter_first_call_type(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_215first_call_typeEP15LLVMOpaqueValueB6scalycB4v0_2");
 void Emitter_ensure_free_page_get(Emitter&) asm("_ZN7EmitterB6scalycB4v0_220ensure_free_page_getEv");
 bool Emitter_stamp_line_skipped(Emitter&, uint8_t*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_218stamp_line_skippedEPcm");
+uint8_t Emitter_text_byte(Emitter&, uint8_t*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_29text_byteEPcm");
+uint64_t Emitter_comdat_bytes(Emitter&, uint8_t*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_212comdat_bytesEPcm");
 uint64_t Emitter_module_text_hash(Emitter&) asm("_ZN7EmitterB6scalycB4v0_216module_text_hashEv");
 void Emitter_emit_build_stamp(Emitter&) asm("_ZN7EmitterB6scalycB4v0_216emit_build_stampEv");
 void Emitter_define_float_helper(Emitter&, String&, bool, bool) asm("_ZN7EmitterB6scalycB4v0_219define_float_helperE6Stringbb");
@@ -148555,6 +148557,57 @@ __attribute__((weak)) bool Emitter_stamp_line_skipped(Emitter& scaly_self, uint8
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) uint64_t Emitter_comdat_bytes(Emitter& scaly_self, uint8_t* text, uint64_t i)
+{
+    Emitter* this_ = &scaly_self;
+    uint64_t j = i;
+    if ((Emitter_text_byte(*(this_), text, j) == (uint8_t)44ULL))
+    {
+        j = (j + 1ULL);
+    }
+    if ((Emitter_text_byte(*(this_), text, j) != (uint8_t)32ULL))
+    {
+        return 0ULL;
+    }
+    String word = String{(uint8_t*)"\006comdat"};
+    uint64_t k = 0ULL;
+    while ((k < 6ULL))
+    {
+        if ((Emitter_text_byte(*(this_), text, ((j + 1ULL) + k)) != (((uint8_t)(Slice4<uint8_t>(scaly_lvalue(String_as_slice(word)), k))))))
+        {
+            return 0ULL;
+        }
+        k = (k + 1ULL);
+    }
+    j = (j + 7ULL);
+    uint8_t after = Emitter_text_byte(*(this_), text, j);
+    if ((after == (uint8_t)40ULL))
+    {
+        while (((Emitter_text_byte(*(this_), text, j) != (uint8_t)41ULL) ? (Emitter_text_byte(*(this_), text, j) != (uint8_t)0ULL) : false))
+        {
+            j = (j + 1ULL);
+        }
+        if ((Emitter_text_byte(*(this_), text, j) == (uint8_t)0ULL))
+        {
+            return 0ULL;
+        }
+        return ((j + 1ULL) - i);
+    }
+    if ((((after == (uint8_t)32ULL) ? true : (after == (uint8_t)10ULL)) ? true : (after == (uint8_t)44ULL)))
+    {
+        return (j - i);
+    }
+    return 0ULL;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) uint8_t Emitter_text_byte(Emitter& scaly_self, uint8_t* text, uint64_t i)
+{
+    Emitter* this_ = &scaly_self;
+    return ((uint8_t)(((*(((uint8_t*)((((((uint64_t)(text))) + i)))))))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) void Emitter_emit_build_stamp(Emitter& scaly_self)
 {
     Emitter* this_ = &scaly_self;
@@ -148907,6 +148960,7 @@ __attribute__((weak)) uint64_t Emitter_module_text_hash(Emitter& scaly_self)
     uint64_t i = 0ULL;
     bool line_begin = true;
     bool skipping = false;
+    bool after_comdat = false;
     for (;;)
     {
         uint8_t b = ((uint8_t)(((*(((uint8_t*)((((((uint64_t)(text))) + i)))))))));
@@ -148916,7 +148970,29 @@ __attribute__((weak)) uint64_t Emitter_module_text_hash(Emitter& scaly_self)
         }
         if (line_begin)
         {
-            skipping = Emitter_stamp_line_skipped(*(this_), text, i);
+            if ((after_comdat ? (b == (uint8_t)10ULL) : false))
+            {
+                skipping = true;
+            }
+            else
+            {
+                skipping = Emitter_stamp_line_skipped(*(this_), text, i);
+            }
+            after_comdat = (b == (uint8_t)36ULL);
+            if (after_comdat)
+            {
+                skipping = true;
+            }
+        }
+        if ((((skipping) == (false)) ? (((b == (uint8_t)32ULL) ? true : (b == (uint8_t)44ULL))) : false))
+        {
+            uint64_t n = Emitter_comdat_bytes(*(this_), text, i);
+            if ((n > 0ULL))
+            {
+                i = (i + n);
+                line_begin = false;
+                continue;
+            }
         }
         if (((skipping) == (false)))
         {
