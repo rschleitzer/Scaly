@@ -100,9 +100,15 @@ repro_buildinfo() {
     echo "system $system"
     # a tree with changes is not its commit: said, so that nobody rebuilds
     # the commit and wonders
-    local dirty=""
-    [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ] && dirty=" dirty"
-    echo "commit $(git rev-parse HEAD 2>/dev/null || echo unknown)$dirty"
+    # (in a container without the repository the host says it:
+    # SCALY_BUILD_COMMIT)
+    if [ -n "${SCALY_BUILD_COMMIT:-}" ]; then
+      echo "commit $SCALY_BUILD_COMMIT"
+    else
+      local dirty=""
+      [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ] && dirty=" dirty"
+      echo "commit $(git rev-parse HEAD 2>/dev/null || echo unknown)$dirty"
+    fi
     echo "epoch $(repro_epoch)"
     local cfg; cfg="$(repro_llvm_tool llvm-config)"
     [ -n "$cfg" ] && echo "llvm $("$cfg" --version)"
@@ -116,8 +122,9 @@ repro_buildinfo() {
       Linux)
         local lld; lld="$(repro_llvm_tool ld.lld)"
         [ -n "$lld" ] && echo "ld $("$lld" --version | head -1)"
-        command -v rpm >/dev/null 2>&1 && echo "rpm $(rpm -q llvm-static llvm-devel gcc-toolset-13-gcc libstdc++-static zlib-devel 2>/dev/null | grep -v 'not installed' | tr '\n' ' ')"
+        command -v rpm >/dev/null 2>&1 && echo "rpm $(rpm -q clang lld llvm llvm-static llvm-devel compiler-rt libstdc++-static zlib-static glibc-devel gcc 2>/dev/null | grep -v 'not installed' | tr '\n' ' ')"
         [ -f /etc/os-release ] && echo "os $(. /etc/os-release && echo "$PRETTY_NAME")"
+        [ -n "${SCALY_BUILD_IMAGE:-}" ] && echo "image $SCALY_BUILD_IMAGE"
         ;;
       MINGW*|MSYS*|CYGWIN*)
         echo "msvc ${VCToolsVersion:-unknown}"

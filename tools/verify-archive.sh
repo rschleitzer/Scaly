@@ -63,6 +63,9 @@ INFO="$WORK/got/$ARCHIVE.buildinfo"
 field() { sed -n "s/^$1 //p" "$INFO" | head -1; }
 COMMIT="$(field commit)"; EPOCH="$(field epoch)"; PROF_SUM="$(field profile)"
 echo "verify: $ARCHIVE, commit $COMMIT"
+case "$COMMIT" in
+  *dirty) echo "verify: made from a tree with changes beyond its commit -- no commit makes it again"; exit 2 ;;
+esac
 PROFILE=none
 if [ "$PROF_SUM" != none ]; then
   fetch "scaly-$VERSION-$SYSTEM.profdata" || { echo "verify: no scaly-$VERSION-$SYSTEM.profdata"; exit 2; }

@@ -37,10 +37,27 @@ if [ "${SCALY_IN_FLOOR:-0}" != 1 ]; then
   command -v docker >/dev/null 2>&1 || { echo "make-bindist-linux: FAIL — no docker"; exit 1; }
   mkdir -p "$OUT"
   OUT_ABS="$(cd "$OUT" && pwd)"
+  # what the archive's buildinfo says and the container cannot know: the
+  # commit (the tree goes in without .git), its time, and the image
+  . tools/repro.sh
+  dirty=""
+  [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ] && dirty=" dirty"
+  docker pull -q "$IMAGE" > /dev/null 2>&1 || true
+  export SCALY_BUILD_COMMIT="$(git rev-parse HEAD)$dirty"
+  export SOURCE_DATE_EPOCH="$(repro_epoch)"
+  export SCALY_BUILD_IMAGE="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE" 2>/dev/null || echo "$IMAGE")"
+  # a profile named here is a file of THIS machine: it goes in through /out,
+  # under the name it is handed out with
+  sys="linux-$(uname -m | sed 's/^arm64$/aarch64/')"
+  if [ -n "${SCALY_PGO_PROFILE:-}" ] && [ "$SCALY_PGO_PROFILE" != none ]; then
+    [ "$SCALY_PGO_PROFILE" -ef "$OUT_ABS/scaly-$VERSION-$sys.profdata" ] || cp "$SCALY_PGO_PROFILE" "$OUT_ABS/scaly-$VERSION-$sys.profdata"
+    SCALY_PGO_PROFILE="/out/scaly-$VERSION-$sys.profdata"
+  fi
   git ls-files -z --cached --others --exclude-standard \
     | xargs -0 sh -c 'for f; do [ -e "$f" ] && printf "%s\0" "$f"; done' _ \
     | tar --null -T - -cf - \
-    | docker run --rm -i -e SCALY_IN_FLOOR=1 -e SCALY_PGO_PROFILE -v "$OUT_ABS:/out" "$IMAGE" \
+    | docker run --rm -i -e SCALY_IN_FLOOR=1 -e SCALY_PGO_PROFILE -e SCALY_BUILD_COMMIT -e SOURCE_DATE_EPOCH -e SCALY_BUILD_IMAGE \
+        -v "$OUT_ABS:/out" "$IMAGE" \
         bash -c 'set -e; mkdir /src; cd /src; tar -xf -; tools/make-bindist-linux.sh "$0" /out' "$VERSION"
   exit
 fi
