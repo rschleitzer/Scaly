@@ -74,8 +74,8 @@ find "$STAGE" \( -name '.DS_Store' -o -name '*.o' -o -name '__pycache__' \) -pru
 mkdir -p "$OUT"
 # COPYFILE_DISABLE: macOS tar otherwise adds an AppleDouble `._name` beside
 # every file that carries an extended attribute.
-COPYFILE_DISABLE=1 tar --no-xattrs -czf "$TARBALL" -C "$STAGE" . 2>/dev/null \
-  || COPYFILE_DISABLE=1 tar -czf "$TARBALL" -C "$STAGE" .
+. tools/repro.sh
+repro_tar_gz "$TARBALL" "$STAGE" . || { echo "make-dist: FAIL — the tarball"; exit 1; }
 
 SIZE=$(du -h "$TARBALL" | cut -f1)
 echo "make-dist: OK -> $TARBALL ($SIZE)"

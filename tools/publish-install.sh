@@ -66,7 +66,8 @@ if [ -n "$RUN" ]; then
     || { echo "publish-install: FAIL — release run $RUN did not succeed"; exit 1; }
   gh release download "v$VERSION" -D "$FETCH" || { echo "publish-install: FAIL — gh release download v$VERSION"; exit 1; }
   mkdir -p dist
-  find "$FETCH" -type f \( -name "scaly-$VERSION-*.tar.gz" -o -name "scaly-$VERSION-*.zip" \) -exec cp {} dist/ \;
+  find "$FETCH" -type f \( -name "scaly-$VERSION-*.tar.gz" -o -name "scaly-$VERSION-*.zip" \
+    -o -name "scaly-$VERSION-*.buildinfo" -o -name "scaly-$VERSION-*.profdata" \) -exec cp {} dist/ \;
   RUN_SHA="$(gh run view "$RUN" --json headSha --jq .headSha 2>/dev/null || true)"
   if [ -n "$RUN_SHA" ] && [ "$RUN_SHA" != "$(git rev-parse HEAD)" ]; then
     echo "publish-install: NOTE — the run built commit ${RUN_SHA:0:9}, this tree is $(git rev-parse --short=9 HEAD):"
@@ -106,6 +107,16 @@ done
 for sys in windows-arm64 windows-x86_64; do
   if [ -f "dist/scaly-$VERSION-$sys.zip" ]; then BINARIES+=("dist/scaly-$VERSION-$sys.zip"); else MISSING="$MISSING $sys"; fi
 done
+# beside each archive what rebuilds it (tools/verify-archive.sh): its
+# buildinfo, and the PGO profile that names
+EXTRAS=()
+for b in "${BINARIES[@]}"; do
+  if [ -f "$b.buildinfo" ]; then EXTRAS+=("$b.buildinfo"); else MISSING="$MISSING $(basename "$b").buildinfo"; continue; fi
+  if ! grep -q '^profile none$' "$b.buildinfo"; then
+    p="dist/$(basename "$b" | sed 's/\.tar\.gz$//; s/\.zip$//').profdata"
+    if [ -f "$p" ]; then EXTRAS+=("$p"); else MISSING="$MISSING $(basename "$p")"; fi
+  fi
+done
 if [ -n "$MISSING" ]; then
   echo "publish-install: missing in dist/:$MISSING"
   if [ "$PARTIAL" != 1 ]; then
@@ -126,7 +137,7 @@ fi
 
 # What a careful reader checks: SHA256SUMS of the seven files, in the form
 # `shasum -a 256 -c` reads.
-( cd dist && shasum -a 256 "scaly-$VERSION.tar.gz" $(for b in "${BINARIES[@]}"; do basename "$b"; done) | sed 's/ \*/  /' > SHA256SUMS )
+( cd dist && shasum -a 256 "scaly-$VERSION.tar.gz" $(for b in "${BINARIES[@]}" "${EXTRAS[@]}"; do basename "$b"; done) | sed 's/ \*/  /' > SHA256SUMS )
 # upload <file> <key> <content-type>
 PATHS=()
 upload() {
@@ -152,6 +163,12 @@ for b in "${BINARIES[@]}"; do
   case "$b" in
     *.zip) upload "$b" "downloads/$(basename "$b")" 'application/zip' ;;
     *)     upload "$b" "downloads/$(basename "$b")" 'application/gzip' ;;
+  esac
+done
+for e in "${EXTRAS[@]}"; do
+  case "$e" in
+    *.buildinfo) upload "$e" "downloads/$(basename "$e")" 'text/plain; charset=utf-8' ;;
+    *)           upload "$e" "downloads/$(basename "$e")" 'application/octet-stream' ;;
   esac
 done
 # the pointer after the archives it names, and the installers LAST: they read

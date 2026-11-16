@@ -189,7 +189,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-${{ matrix.system }}.tar.gz" --repo "${{ github.repository }}" --clobber
+        # with what rebuilds it (tools/verify-archive.sh): its buildinfo and its profile
+        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-${{ matrix.system }}.tar.gz" "dist/scaly-$RELEASE_VERSION-${{ matrix.system }}.tar.gz.buildinfo" "dist/scaly-$RELEASE_VERSION-${{ matrix.system }}.profdata" --repo "${{ github.repository }}" --clobber
 
   windows:
     name: windows-${{ matrix.arch }}
@@ -300,4 +301,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-windows-${{ matrix.arch }}.zip" --repo "${{ github.repository }}" --clobber
+        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-windows-${{ matrix.arch }}.zip" "dist/scaly-$RELEASE_VERSION-windows-${{ matrix.arch }}.zip.buildinfo" "dist/scaly-$RELEASE_VERSION-windows-${{ matrix.arch }}.profdata" --repo "${{ github.repository }}" --clobber
