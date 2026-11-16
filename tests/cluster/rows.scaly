@@ -1,0 +1,64 @@
+; Rows: a round puts a row of w slots, `out.put(i * w + c, ...)` with c
+; counted below w -- the TaskPlanner proves the rows of two rounds apart,
+; so a stretch of rounds lo..hi puts into slots lo*w..hi*w, and that span
+; travels back. Built with --cluster, both loops go to the helpers (w a
+; literal, and w a parameter whose value is in the cell) and print what
+; they print alone.
+;
+; Expected: literal 149911366 parameter 404362983
+
+function spin(x: int, n: int) returns int
+{
+    var s x
+    var k 0
+    while k < n
+    {
+        s := (s * 31 + k) % 1000003
+        k := k + 1
+    }
+    s
+}
+
+procedure literal_rows(mutable out: Vector[int])
+{
+    for i in out.length / 3
+    {
+        var c 0
+        while c < 3
+        {
+            out.put(i * 3 + (c as size_t), spin((i as int) * 7 + c, 2000))
+            c := c + 1
+        }
+    }
+}
+
+procedure parameter_rows(mutable out: Vector[int], w: int)
+{
+    for i in (out.length as int) / w
+    {
+        var c 0
+        while c < w
+        {
+            out.put((i * w + c) as size_t, spin(i * 11 + c, 2000))
+            c := c + 1
+        }
+    }
+}
+
+function total(v: Vector[int]) returns int
+{
+    var s 0
+    var k: size_t 0
+    while k < v.length
+    {
+        s := s + v[k]
+        k := k + 1
+    }
+    s
+}
+
+var a Vector[int](3 * 100)
+literal_rows(a)
+var b Vector[int](5 * 160)
+parameter_rows(b, 5)
+print "literal `total(a)` parameter `total(b)`"

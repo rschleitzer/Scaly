@@ -20448,12 +20448,163 @@ define Emitter
                     let members recv.member_access <> null and recv.member_access.length > 0
                     ; on this emitter's page: the array outlives this routine
                     var text "!`v.name`"
-                    if members = false and parfor_is_counter(idx_ptr.unwrap())
-                        text := "=`v.name`"
+                    if members = false
+                    {
+                        let idx idx_ptr.unwrap()
+                        if parfor_is_counter(idx)
+                            text := "=`v.name`"
+                        else
+                        {
+                            let w this.parfor_row_width(idx)
+                            if w.get_length() > 0
+                                text := "#`v.name`#`w`"
+                        }
+                    }
                     parfor_uses.add(String^this(text))
                 }
                 else
                     0
+        }
+
+        ; `counter * w + x`, the index of a put that writes a row of w slots
+        ; per round -- the TaskPlanner proved x below w, so the rows of two
+        ; rounds lie apart and a stretch of rounds puts into one span:
+        ; "L<w>" for a literal w, "C<name>" for an integer from outside the
+        ; loop, "" for any other index. Groupings and casts from 64 to 64
+        ; bits set aside; x a literal or a name other than the counter.
+        function parfor_row_width(this, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null and op.member_access.length > 0
+                return String()
+            choose op.expr
+                when as_expr: As
+                {
+                    if as_expr.value <> null and TaskPlanner.TaskPlanner.cast_same((*as_expr.value), as_expr.target_type)
+                        return this.parfor_row_width((*as_expr.value))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.TaskPlanner.is_grouping(tp)
+                    {
+                        let c_ptr tp.components.get 0
+                        let c c_ptr.unwrap()
+                        let in_ptr c.value.get 0
+                        if in_ptr <> null
+                            return this.parfor_row_width(in_ptr.unwrap())
+                    }
+                }
+                when call: Call
+                {
+                    if call.name = "+" and TaskPlanner.TaskPlanner.is_integer_binary(call) and TaskPlanner.TaskPlanner.int_bits(op.result_type) = 64
+                    {
+                        let a_ptr call.args.get 0
+                        let b_ptr call.args.get 1
+                        let a a_ptr.unwrap()
+                        let b b_ptr.unwrap()
+                        let wa this.parfor_row_product(a)
+                        if wa.get_length() > 0 and this.parfor_row_rest(b)
+                            return wa
+                        let wb this.parfor_row_product(b)
+                        if wb.get_length() > 0 and this.parfor_row_rest(a)
+                            return wb
+                    }
+                }
+                else
+                    0
+            String()
+        }
+
+        ; `counter * w` (either way round), under groupings and 64-bit
+        ; casts: w as parfor_row_width# names it, else "".
+        function parfor_row_product(this, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null and op.member_access.length > 0
+                return String()
+            choose op.expr
+                when as_expr: As
+                {
+                    if as_expr.value <> null and TaskPlanner.TaskPlanner.cast_same((*as_expr.value), as_expr.target_type)
+                        return this.parfor_row_product((*as_expr.value))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.TaskPlanner.is_grouping(tp)
+                    {
+                        let c_ptr tp.components.get 0
+                        let c c_ptr.unwrap()
+                        let in_ptr c.value.get 0
+                        if in_ptr <> null
+                            return this.parfor_row_product(in_ptr.unwrap())
+                    }
+                }
+                when call: Call
+                {
+                    if call.name = "*" and TaskPlanner.TaskPlanner.is_integer_binary(call) and TaskPlanner.TaskPlanner.int_bits(op.result_type) = 64
+                    {
+                        let a_ptr call.args.get 0
+                        let b_ptr call.args.get 1
+                        let a a_ptr.unwrap()
+                        let b b_ptr.unwrap()
+                        if parfor_is_counter(a)
+                            return this.parfor_row_factor(b)
+                        if parfor_is_counter(b)
+                            return this.parfor_row_factor(a)
+                    }
+                }
+                else
+                    0
+            String()
+        }
+
+        ; The w of a row: a literal above zero, or an integer named from
+        ; outside the loop (a capture: its value is in the cell).
+        function parfor_row_factor(this, op: PlannedOperand) returns String
+        {
+            let n TaskPlanner.TaskPlanner.small_literal(op)
+            if n > 0
+                return "L`n`"
+            if op.member_access <> null and op.member_access.length > 0
+                return String()
+            choose op.expr
+                when v: Variable
+                {
+                    if parfor_is_local(v.name) = false and TaskPlanner.TaskPlanner.int_bits(op.result_type) > 0
+                        return "C`v.name`"
+                }
+                else
+                    0
+            String()
+        }
+
+        ; The x of a row: a literal, or a name other than the counter.
+        function parfor_row_rest(this, op: PlannedOperand) returns bool
+        {
+            if TaskPlanner.TaskPlanner.small_literal(op) >= 0
+                return true
+            if op.member_access <> null and op.member_access.length > 0
+                return false
+            choose op.expr
+                when v: Variable
+                    return parfor_is_counter(op) = false
+                when as_expr: As
+                {
+                    if as_expr.value <> null and TaskPlanner.TaskPlanner.cast_keeps((*as_expr.value), as_expr.target_type)
+                        return this.parfor_row_rest((*as_expr.value))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.TaskPlanner.is_grouping(tp)
+                    {
+                        let c_ptr tp.components.get 0
+                        let c c_ptr.unwrap()
+                        let in_ptr c.value.get 0
+                        if in_ptr <> null
+                            return this.parfor_row_rest(in_ptr.unwrap())
+                    }
+                }
+                else
+                    0
+            false
         }
 
         ; The scanned loop's own counter (the first name the scan bound, not
@@ -23088,9 +23239,12 @@ define Emitter
                 if (t.name = "ref" or t.name = "pointer") and t.generics <> null and t.generics.length = 1
                     t := t.generics[0]
                 var puts: size_t 0
+                var rows: size_t 0
+                var row_form String()
                 var uses: size_t 0
                 let at_counter "=`nm`"
                 let elsewhere "!`nm`"
+                let in_rows "#`nm`#"
                 var u: size_t 0
                 while u < cap_uses.length
                 {
@@ -23101,11 +23255,23 @@ define Emitter
                         puts := puts + 1
                     if use_text = elsewhere
                         return null
+                    if use_text.starts_with(in_rows)
+                    {
+                        ; every row put of one buffer with the same w
+                        let form use_text.substring(in_rows.get_length(), use_text.get_length() - in_rows.get_length())
+                        if rows > 0 and form <> row_form
+                            return null
+                        row_form := form
+                        rows := rows + 1
+                    }
                     u := u + 1
                 }
-                ; a put's receiver is a use of its own: written only by puts,
-                ; or not written at all
-                if puts > 0 and puts <> uses
+                ; a put's receiver is a use of its own: written only by puts
+                ; of one form (at the counter, or in rows), or not written
+                if puts > 0 and rows > 0
+                    return null
+                let writes puts + rows
+                if writes > 0 and writes <> uses
                     return null
                 var kind: size_t 0
                 var bytes: size_t 0
@@ -23125,8 +23291,15 @@ define Emitter
                         kind := 3
                         record_bytes := 24
                     }
-                    if puts > 0
+                    if writes > 0
                         kind := kind + 2
+                    if rows > 0
+                    {
+                        let row_bits this.cluster_row_bits(row_form, cap_names, cap_slot_tys)
+                        if row_bits = 0
+                            return null
+                        kind := kind + row_bits
+                    }
                     if is_addr
                         kind := kind + 16
                     else
@@ -23139,7 +23312,7 @@ define Emitter
                 {
                     ; a record the cell holds by its address (a parameter):
                     ; its bytes travel, and the helper's cell points at them
-                    if puts > 0
+                    if writes > 0
                         return null
                     let rec_ty map_type(t)
                     if this.llvm_type_is_plain(rec_ty) = false
@@ -23151,7 +23324,7 @@ define Emitter
                 }
                 else
                 {
-                    if puts > 0 or this.llvm_type_is_plain(slot_ty) = false
+                    if writes > 0 or this.llvm_type_is_plain(slot_ty) = false
                         return null
                     kind := 1
                     bytes := llvm_type_abi_size(slot_ty)
@@ -23176,6 +23349,52 @@ define Emitter
             LLVMSetInitializer(desc, LLVMConstStructInContext(context, desc_vals.data, 2, 0))
             cluster_loops.add desc
             desc
+        }
+
+        ; The kind bits of a buffer written in rows (parfor_row_width#):
+        ; bit 8, and its w from bit 16 on -- the literal, or with bit 9 the
+        ; capture that holds it (an integer of whole bytes); 0 where w is
+        ; neither.
+        procedure cluster_row_bits(this, form: String, cap_names: Array[String], mutable cap_slot_tys: Vector[LLVMTypeRef]) returns size_t
+        {
+            let n form.get_length()
+            if n < 2
+                return 0
+            let rest form.substring(1, n - 1)
+            if form.get(0) = 76
+            {
+                var w: size_t 0
+                var i: size_t 0
+                while i < rest.get_length()
+                {
+                    let ch rest.get(i)
+                    if ch < 48 or ch > 57
+                        return 0
+                    w := w * 10 + ((ch - 48) as size_t)
+                    i := i + 1
+                }
+                if w = 0 or w >= 0x7fffffff
+                    return 0
+                return 256 + (w << 16)
+            }
+            if form.get(0) <> 67
+                return 0
+            var c: size_t 0
+            while c < cap_names.length
+            {
+                if cap_names[c] = rest
+                {
+                    let ty cap_slot_tys[c]
+                    if LLVMGetTypeKind(ty) <> LLVMTypeKind.Integer()
+                        return 0
+                    let bits LLVMGetIntTypeWidth(ty)
+                    if bits <> 8 and bits <> 16 and bits <> 32 and bits <> 64
+                        return 0
+                    return 256 + 512 + (c << 16)
+                }
+                c := c + 1
+            }
+            0
         }
 
         ; Numbers, and arrays and records of numbers: bytes that mean the

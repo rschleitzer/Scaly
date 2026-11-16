@@ -1489,6 +1489,35 @@ define Cluster
         (length: words[0], data: (words[1] as pointer[u8]))
     }
 
+    ; The slots one round puts into, of a buffer written in rows (bit 8 of
+    ; its kind; the compiler's cluster_row_bits#): w from bit 16 on, the
+    ; number itself, or with bit 9 the capture whose value it is -- read
+    ; from the cell, as the rounds read it. 1 for a buffer written at the
+    ; counter. A stretch of rounds lo..hi puts into slots lo*w..hi*w.
+    procedure row_width(desc: pointer[void], cell: pointer[void], kind: i64) returns size_t
+    {
+        if (kind & 256) = 0
+            return 1
+        let at kind >> 16
+        if (kind & 512) = 0
+            return at as size_t
+        let c at as size_t
+        let p (cell as size_t) + (Cluster.desc_word(desc, 6 + c * 3) as size_t)
+        let bytes Cluster.desc_word(desc, 8 + c * 3)
+        var w: i64 0
+        if bytes = 8
+            w := (p as pointer[i64])[0]
+        else if bytes = 4
+            w := (p as pointer[i32])[0] as i64
+        else if bytes = 2
+            w := (p as pointer[i16])[0] as i64
+        else
+            w := (p as pointer[i8])[0] as i64
+        if w < 0
+            return 0
+        w as size_t
+    }
+
     ; Is a capture of this kind one the rounds only read (a record behind
     ; an address, a whole buffer)? A helper keeps those for the offer.
     function read_only(kind: i64) returns bool
@@ -1514,7 +1543,7 @@ define Cluster
             else if base = 2 or base = 3
                 read := read + Cluster.buffer_of(Cluster.capture_record(desc, cell, c), kind).length * elem
             else if base = 4 or base = 5
-                per_round := per_round + elem
+                per_round := per_round + elem * Cluster.row_width(desc, cell, kind)
             c := c + 1
         }
         (read: read, per_round: per_round)
@@ -1565,8 +1594,9 @@ define Cluster
                     bytes := b.length * elem
                     if base = 4 or base = 5
                     {
-                        from := ((b.data as size_t) + (lo as size_t) * elem) as pointer[u8]
-                        bytes := ((hi - lo) as size_t) * elem
+                        let row elem * Cluster.row_width(desc, cell, kind)
+                        from := ((b.data as size_t) + (lo as size_t) * row) as pointer[u8]
+                        bytes := ((hi - lo) as size_t) * row
                     }
                 }
                 var bv Vector[u8]^mp(bytes)
@@ -1598,7 +1628,8 @@ define Cluster
                 let elem Cluster.desc_word(desc, 8 + c * 3) as size_t
                 let b Cluster.buffer_of(Cluster.capture_record(desc, cell, c), kind)
                 let part res.outputs[j]
-                let at ((b.data as size_t) + (res.lo as size_t) * elem) as pointer[void]
+                let row elem * Cluster.row_width(desc, cell, kind)
+                let at ((b.data as size_t) + (res.lo as size_t) * row) as pointer[void]
                 memcpy(at, part.data as pointer[void], part.length as c_size)
                 j := j + 1
             }
@@ -1779,8 +1810,9 @@ define Cluster
                 else
                 {
                     ; the stretch as the coordinator has it: what no round
-                    ; puts goes back unchanged
-                    let bytes ((hi - lo) as size_t) * elem
+                    ; puts goes back unchanged; rows of w slots a round
+                    let w Cluster.row_width(desc, cell, kind)
+                    let bytes ((hi - lo) as size_t) * w * elem
                     let buf rp.allocate(bytes + 1, 16) as pointer[u8]
                     let part job.inputs[j]
                     memcpy(buf as pointer[void], part.data as pointer[void], bytes as c_size)
@@ -1788,10 +1820,10 @@ define Cluster
                     bufs[o] := buf
                     lens[o] := bytes
                     o := o + 1
-                    length := hi as size_t
+                    length := (hi as size_t) * w
                     if (kind & 16) = 0
                         length := rec[0]
-                    data := (buf as size_t) - (lo as size_t) * elem
+                    data := (buf as size_t) - (lo as size_t) * w * elem
                 }
                 rec[0] := length
                 if base = 3 or base = 5

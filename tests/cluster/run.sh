@@ -437,6 +437,29 @@ else
   kill $F1 $F2 2>/dev/null; wait $F1 $F2 2>/dev/null
 fi
 
+# ---- rows: a round that puts a row of w slots (`out.put(i * w + c, ...)`,
+# c counted below w) travels -- w a literal, and w a parameter read from the
+# cell; the span lo*w..hi*w comes back. Both loops go to the helpers and
+# print what they print alone. ----
+t=rows
+RWB="$OUT/cluster_$t$SCALY_EXE"
+rm -f "$RWB"
+if ! "$STAGE" --cluster -O2 -o "$RWB" tests/cluster/$t.scaly >"$OUT/cluster_${t}_build.log" 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  want=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
+  got=$(SCALY_CLUSTER=off "$RWB" 2>&1 | scaly_lf)
+  if [ "$got" = "$want" ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, alone: '$got'"); fi
+  SCALY_CLUSTER_TRACE=1 "$RWB" --scaly-helper > "$OUT/cluster_${t}_h1.log" 2>&1 & R1=$!
+  SCALY_CLUSTER_TRACE=1 "$RWB" --scaly-helper > "$OUT/cluster_${t}_h2.log" 2>&1 & R2=$!
+  wait_marker "$OUT/cluster_${t}_h1.log" "^helper: ready" && wait_marker "$OUT/cluster_${t}_h2.log" "^helper: ready"
+  SCALY_CLUSTER=on SCALY_CLUSTER_TRACE=1 "$RWB" > "$OUT/cluster_${t}.log" 2>&1
+  got=$(scaly_lf < "$OUT/cluster_${t}.log" | grep -v '^cluster: ')
+  out=$(grep -c "^cluster: .* rounds in .* on 2 helpers, all there" "$OUT/cluster_${t}.log")
+  if [ "$got" = "$want" ] && [ "$out" = 2 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, forced: '$got', $out loops out"); fi
+  kill $R1 $R2 2>/dev/null; wait $R1 $R2 2>/dev/null
+fi
+
 # ---- mixed processors: the same program built for arm64 and for x86_64 has
 # the same build stamp; an arm64 coordinator takes x86_64 helpers (under
 # Rosetta). A loop whose rounds call mul_add goes only to a helper of this
