@@ -18695,6 +18695,7 @@ LLVMOpaqueValue* Emitter_emit_for_iterator(Emitter&, PlannedFor&) asm("_ZN7Emitt
 void Emitter_parfor_add_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_216parfor_add_localE6String");
 bool Emitter_parfor_is_local(Emitter&, String&) asm("_ZN7EmitterB6scalycB4v0_215parfor_is_localE6String");
 void Emitter_parfor_add_capture(Emitter&, String&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_218parfor_add_captureE6String11PlannedTypeB6scalycB4v0_2");
+LLVMOpaqueType* Emitter_parfor_record_copy_type(Emitter&, PlannedType&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_223parfor_record_copy_typeE11PlannedTypeB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
 String Emitter_parfor_row_width(scaly_frame*, Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_216parfor_row_widthEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 void Emitter_parfor_note_put(Emitter&, PlannedCall&) asm("_ZN7EmitterB6scalycB4v0_215parfor_note_putE11PlannedCallB6scalycB4v0_2");
 String Emitter_parfor_row_product(scaly_frame*, Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_218parfor_row_productEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
@@ -19145,6 +19146,8 @@ static const uint64_t WC_PARAMS = 6917529027641081855ULL;
 static const uint64_t PART_INSTRUCTIONS = (uint64_t)(150000LL);
 static const uint64_t MAX_PARTS = (uint64_t)(8LL);
 uint64_t wasm_sjlj_given asm("_Z15wasm_sjlj_givenB6scalycB4v0_2") = (uint64_t)(0LL);
+static const uint64_t PARFOR_LIGHT = (uint64_t)(128LL);
+static const uint64_t PARFOR_BLOCK = (uint64_t)(256LL);
 static const uint64_t TUPLE_MOST = (uint64_t)(8LL);
 static const int64_t HISTORY_KEPT = 1000LL;
 static const int64_t REPL_SLOTS = 4096LL;
@@ -159636,6 +159639,30 @@ __attribute__((weak)) void Emitter_parfor_add_capture(Emitter& scaly_self, Strin
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) LLVMOpaqueType* Emitter_parfor_record_copy_type(Emitter& scaly_self, PlannedType& t, LLVMOpaqueType* slot_ty)
+{
+    Emitter* this_ = &scaly_self;
+    if (((int64_t)LLVMGetTypeKind(slot_ty) != LLVMTypeKind_Pointer()))
+    {
+        return (LLVMOpaqueType*)(nullptr);
+    }
+    PlannedType c = t;
+    if (((((String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\003ref"})) ? true : String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\007pointer"})))) ? (((c).generics) != (nullptr)) : false) ? ((c).generics->length == 1ULL) : false))
+    {
+        c = Vector11<PlannedType>(*((c).generics), 0ULL);
+    }
+    if (((!(String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\006Vector"})))) ? (!(String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\005Slice"})))) : false))
+    {
+        return (LLVMOpaqueType*)(nullptr);
+    }
+    if (((((c).generics) == (nullptr)) ? true : ((c).generics->length != 1ULL)))
+    {
+        return (LLVMOpaqueType*)(nullptr);
+    }
+    return Emitter_map_type(*(this_), c);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) void Emitter_parfor_note_put(Emitter& scaly_self, PlannedCall& call)
 {
     Emitter* this_ = &scaly_self;
@@ -160931,9 +160958,9 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_fp_combine(Emitter& scaly_self, i
     Emitter* this_ = &scaly_self;
     if ((op == 21LL))
     {
-        return LLVMBuildFMul(this_->builder, acc, part, ((const char*)"parfor.fp.mul"));
+        return Emitter_relax(*(this_), LLVMBuildFMul(this_->builder, acc, part, ((const char*)"parfor.fp.mul")));
     }
-    return LLVMBuildFAdd(this_->builder, acc, part, ((const char*)"parfor.fp.add"));
+    return Emitter_relax(*(this_), LLVMBuildFAdd(this_->builder, acc, part, ((const char*)"parfor.fp.add")));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -161241,7 +161268,17 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         }
         if ((rebuild_slot == 0ULL))
         {
-            Emitter_define_variable(*(this_), nm, cap_val);
+            LLVMOpaqueType* copy_ty = Emitter_parfor_record_copy_type(*(this_), scaly_lvalue(Array26((*cap_types), ci)), slot_ty);
+            if (((copy_ty) != (nullptr)))
+            {
+                LLVMOpaqueValue* rec_copy = LLVMBuildAlloca(this_->builder, copy_ty, String_c_data(nm));
+                LLVMBuildStore(this_->builder, LLVMBuildLoad2(this_->builder, copy_ty, cap_val, ((const char*)"parfor.rec")), rec_copy);
+                Emitter_define_variable(*(this_), nm, rec_copy);
+            }
+            else
+            {
+                Emitter_define_variable(*(this_), nm, cap_val);
+            }
         }
         ci = (ci + 1ULL);
     }
@@ -161276,6 +161313,16 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     }
     LLVMOpaqueValue* iv_slot = LLVMBuildAlloca(this_->builder, i64_ty, ((const char*)"parfor.iv.slot"));
     LLVMBuildStore(this_->builder, chunk_lo, iv_slot);
+    bool blocked = false;
+    LLVMOpaqueValue* blk_end_slot = (LLVMOpaqueValue*)(nullptr);
+    if ((((for_expr).is_iterator_loop) == (false)))
+    {
+        if ((Emitter_parfor_weight_action(*(this_), (for_expr).body) <= 128ULL))
+        {
+            blocked = true;
+            blk_end_slot = LLVMBuildAlloca(this_->builder, i64_ty, ((const char*)"parfor.blk.end.slot"));
+        }
+    }
     LLVMOpaqueBasicBlock* ck_cond = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\021parfor.chunk.cond"}));
     LLVMOpaqueBasicBlock* ck_body = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\021parfor.chunk.body"}));
     LLVMOpaqueBasicBlock* ck_inc = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\020parfor.chunk.inc"}));
@@ -161283,21 +161330,40 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMBuildBr(this_->builder, ck_cond);
     LLVMOpaqueBasicBlock* ck_guard = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\022parfor.chunk.guard"}));
     LLVMOpaqueBasicBlock* ck_poll = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\021parfor.chunk.poll"}));
+    LLVMOpaqueBasicBlock* ck_into = ck_body;
+    if (blocked)
+    {
+        ck_into = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\022parfor.chunk.block"}));
+    }
     LLVMPositionBuilderAtEnd(this_->builder, ck_cond);
     LLVMOpaqueValue* iv = LLVMBuildLoad2(this_->builder, i64_ty, iv_slot, ((const char*)"parfor.iv"));
     LLVMOpaqueValue* ck_more = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), iv, chunk_hi, ((const char*)"parfor.chunk.more"));
     LLVMBuildCondBr(this_->builder, ck_more, ck_guard, pf_ret_block);
     LLVMPositionBuilderAtEnd(this_->builder, ck_guard);
     LLVMOpaqueValue* ck_null = LLVMBuildICmp(this_->builder, LLVMIntPredicate_EQ(), cancel_ptr, LLVMConstPointerNull(ptr_ty), ((const char*)"parfor.cancel.off"));
-    LLVMBuildCondBr(this_->builder, ck_null, ck_body, ck_poll);
+    LLVMBuildCondBr(this_->builder, ck_null, ck_into, ck_poll);
     LLVMPositionBuilderAtEnd(this_->builder, ck_poll);
     LLVMOpaqueValue* ck_flag = LLVMBuildLoad2(this_->builder, i64_ty, cancel_ptr, ((const char*)"parfor.cancel.flag"));
     LLVMSetOrdering(ck_flag, (int32_t)2ULL);
     LLVMSetAlignment(ck_flag, (uint32_t)8ULL);
     LLVMOpaqueValue* ck_live = LLVMBuildICmp(this_->builder, LLVMIntPredicate_EQ(), ck_flag, LLVMConstInt(i64_ty, 0ULL, (int32_t)0ULL), ((const char*)"parfor.cancel.live"));
-    LLVMBuildCondBr(this_->builder, ck_live, ck_body, pf_ret_block);
+    LLVMBuildCondBr(this_->builder, ck_live, ck_into, pf_ret_block);
+    if (blocked)
+    {
+        LLVMPositionBuilderAtEnd(this_->builder, ck_into);
+        LLVMOpaqueValue* blk_far = LLVMBuildAdd(this_->builder, iv, LLVMConstInt(i64_ty, 256ULL, (int32_t)0ULL), ((const char*)"parfor.blk.far"));
+        LLVMOpaqueValue* blk_short = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), blk_far, chunk_hi, ((const char*)"parfor.blk.short"));
+        LLVMOpaqueValue* blk_end = LLVMBuildSelect(this_->builder, blk_short, blk_far, chunk_hi, ((const char*)"parfor.blk.end"));
+        LLVMBuildStore(this_->builder, blk_end, blk_end_slot);
+        LLVMBuildBr(this_->builder, ck_body);
+    }
     LLVMPositionBuilderAtEnd(this_->builder, ck_body);
     LLVMOpaqueValue* pf_loop_bind = iv;
+    if (blocked)
+    {
+        pf_loop_bind = LLVMBuildLoad2(this_->builder, i64_ty, iv_slot, ((const char*)"parfor.iv.b"));
+    }
+    LLVMOpaqueValue* iv_round = pf_loop_bind;
     if ((for_expr).is_iterator_loop)
     {
         Vector<LLVMOpaqueValue*>* ev_idx = ({ Vector<LLVMOpaqueValue*>* scaly_t15 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t15 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t15), 1ULL); scaly_t15; });
@@ -161316,7 +161382,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         uint32_t iw = LLVMGetIntTypeWidth(index_ty);
         if ((iw < (uint32_t)64ULL))
         {
-            pf_loop_bind = LLVMBuildTrunc(this_->builder, iv, index_ty, String_c_data((for_expr).identifier));
+            pf_loop_bind = LLVMBuildTrunc(this_->builder, iv_round, index_ty, String_c_data((for_expr).identifier));
         }
     }
     Emitter_define_variable(*(this_), (for_expr).identifier, pf_loop_bind);
@@ -161360,7 +161426,16 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* iv_one = LLVMConstInt(i64_ty, 1ULL, (int32_t)0ULL);
     LLVMOpaqueValue* iv_next = LLVMBuildAdd(this_->builder, iv_cur, iv_one, ((const char*)"parfor.iv.next"));
     LLVMBuildStore(this_->builder, iv_next, iv_slot);
-    LLVMBuildBr(this_->builder, ck_cond);
+    if (blocked)
+    {
+        LLVMOpaqueValue* blk_end_now = LLVMBuildLoad2(this_->builder, i64_ty, blk_end_slot, ((const char*)"parfor.blk.end.now"));
+        LLVMOpaqueValue* blk_more = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), iv_next, blk_end_now, ((const char*)"parfor.blk.more"));
+        LLVMBuildCondBr(this_->builder, blk_more, ck_body, ck_cond);
+    }
+    else
+    {
+        LLVMBuildBr(this_->builder, ck_cond);
+    }
     LLVMPositionBuilderAtEnd(this_->builder, pf_ret_block);
     rk = 0ULL;
     while ((rk < n_red))
