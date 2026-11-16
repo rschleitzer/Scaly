@@ -33,7 +33,11 @@ done
 [ -n "$VERSION" ] || { echo "usage: tools/verify-archive.sh <version> [system] [--from <dir>]"; exit 2; }
 if [ -z "$SYSTEM" ]; then
   case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*) SYSTEM="windows-$( [ "$(uname -m)" = aarch64 ] || [ "${PROCESSOR_ARCHITECTURE:-}" = ARM64 ] && echo arm64 || echo x86_64)" ;;
+    # the toolchain decides, as for make-bindist-windows.sh: Git Bash on an
+    # arm64 machine is an x64 program, `uname -m` says x86_64 there
+    MINGW*|MSYS*|CYGWIN*)
+      . tools/win-env.sh > /dev/null 2>&1
+      case "${SCALY_WIN_TRIPLE:-}" in aarch64*) SYSTEM=windows-arm64 ;; *) SYSTEM=windows-x86_64 ;; esac ;;
     *) SYSTEM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" ;;
   esac
 fi
