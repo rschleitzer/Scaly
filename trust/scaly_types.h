@@ -59,6 +59,8 @@ struct Chart;
 struct NodeDown;
 struct ClusterJob;
 struct ClusterResult;
+struct ClusterJobCall;
+struct ClusterOfferCall;
 struct HelperFound;
 struct HelperState;
 struct NodePeer;
@@ -2152,6 +2154,32 @@ struct ClusterResult
     int64_t hi;
     bool ok;
     Vector<Vector<uint8_t>> outputs;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z14ClusterJobCall
+#define SCALY_TYPE__Z14ClusterJobCall
+struct ClusterJobCall
+{
+    Page* rp;
+    ClusterJob* job;
+    ClusterJob* src;
+    ClusterResult* res;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z16ClusterOfferCall
+#define SCALY_TYPE__Z16ClusterOfferCall
+struct ClusterOfferCall
+{
+    uint64_t desc;
+    uint64_t cell;
+    int64_t count;
+    int64_t done;
+    int64_t per1k;
+    int64_t workers;
+    int64_t mode;
+    int32_t answer;
 };
 #endif
 
