@@ -55,6 +55,10 @@ shift
 
 args=(clang --target=$T)
 [ "$LTO" = 1 ] && args+=(-O2 -fuse-ld=lld -flto=full)
+# /Brepro: the image's time stamp a hash of its contents, not the clock --
+# linked twice, a program is the same bytes (tools/repro.sh); link.exe and
+# lld-link both take it
+args+=(-Wl,/Brepro)
 args+=("$@")
 # The code page resource: every program linked here reads and writes file
 # names, arguments and the environment as UTF-8, which is what a Scaly string

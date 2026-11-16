@@ -53,6 +53,9 @@ esac
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
 . tools/repro.sh
+# every object clang writes for what is handed out (libscaly.lib, the
+# packages' _native objects) with the time stamp 0, not the clock
+export CCC_OVERRIDE_OPTIONS="+-mno-incremental-linker-compatible"
 VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 case "$SCALY_WIN_TRIPLE" in
