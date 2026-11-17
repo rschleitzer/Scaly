@@ -17196,7 +17196,12 @@ bool Planner_tuple_stores_build(Planner&, Function&, String*, Operand&) asm("_ZN
 String Planner_called_name(scaly_frame*, Operand&) asm("_ZN7PlannerB6scalycB4v0_211called_nameEPN4scaly6memory4PageE7OperandB6scalycB4v0_2");
 uint64_t Planner_store_callee_mask(Planner&, Function&, String*, Operand&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_217store_callee_maskE8FunctionB6scalycB4v0_26OptionIR6StringE7OperandB6scalycB4v0_2m");
 uint64_t Planner_members_store_mask(Planner&, Concept&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_218members_store_maskE7ConceptB6scalycB4v0_26Stringm");
+int64_t Planner_namespace_store_mask(Planner&, Function&, String*, Vector<String>&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_220namespace_store_maskE8FunctionB6scalycB4v0_26OptionIR6StringE6VectorI6StringE6Stringm");
 bool Planner_store_key_names(String&, String&) asm("_ZN7PlannerB6scalycB4v0_215store_key_namesE6String6String");
+bool Planner_store_scope_binds(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_217store_scope_bindsE6String");
+bool Planner_function_has_parameter(Function&, String&) asm("_ZN7PlannerB6scalycB4v0_222function_has_parameterE8FunctionB6scalycB4v0_26String");
+String* Planner_ret_page_property_type_last(Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_227ret_page_property_type_lastE7PlannerB6scalycB4v0_26String6String");
+bool Planner_members_declare_function(Vector<Member>&, String&) asm("_ZN7PlannerB6scalycB4v0_224members_declare_functionE6VectorI6MemberB6scalycB4v0_2E6String");
 uint64_t Planner_member_list_store_mask(Planner&, Vector<Member>&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_222member_list_store_maskE6VectorI6MemberB6scalycB4v0_2E6Stringm");
 bool Planner_linked_says(Function&, Slice<uint8_t>&) asm("_ZN7PlannerB6scalycB4v0_211linked_saysE8FunctionB6scalycB4v0_25SliceIcE");
 bool Planner_takes_explicit_page_arg(Function&) asm("_ZN7PlannerB6scalycB4v0_223takes_explicit_page_argE8FunctionB6scalycB4v0_2");
@@ -17286,7 +17291,6 @@ String* Planner_ret_page_type_last_name(Type&) asm("_ZN7PlannerB6scalycB4v0_223r
 String* Planner_ret_page_param_type_last(Function&, String&) asm("_ZN7PlannerB6scalycB4v0_224ret_page_param_type_lastE8FunctionB6scalycB4v0_26String");
 bool Planner_ret_page_local_binds(Vector<Statement>&, String&) asm("_ZN7PlannerB6scalycB4v0_220ret_page_local_bindsE6VectorI9StatementB6scalycB4v0_2E6String");
 String* Planner_ret_page_local_type_last(Vector<Statement>&, String&) asm("_ZN7PlannerB6scalycB4v0_224ret_page_local_type_lastE6VectorI9StatementB6scalycB4v0_2E6String");
-String* Planner_ret_page_property_type_last(Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_227ret_page_property_type_lastE7PlannerB6scalycB4v0_26String6String");
 String* Planner_ret_page_walk_props_all(Planner&, String*, Vector<String>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_223ret_page_walk_props_allE7PlannerB6scalycB4v0_26OptionIR6StringE6VectorI6StringEm");
 String* Planner_ret_page_walk_to_concept(Planner&, String*, Vector<String>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_224ret_page_walk_to_conceptE7PlannerB6scalycB4v0_26OptionIR6StringE6VectorI6StringEm");
 String* Planner_ret_page_members_return_type(Planner&, Vector<Member>&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_228ret_page_members_return_typeE7PlannerB6scalycB4v0_26VectorI6MemberB6scalycB4v0_2E6Stringm");
@@ -101474,6 +101478,11 @@ __attribute__((weak)) uint64_t Planner_store_callee_mask(Planner& scaly_self, Fu
             return Planner_members_store_mask(*(this_), scaly_lvalue(((*(rc)))), method, argc);
         }
     }
+    int64_t ns_mask = Planner_namespace_store_mask(*(this_), f, owner, (*path), method, argc);
+    if ((ns_mask >= 0LL))
+    {
+        return ((uint64_t)(ns_mask));
+    }
     uint64_t si = 0ULL;
     while ((si < this_->store_page_names->length))
     {
@@ -101489,6 +101498,162 @@ __attribute__((weak)) uint64_t Planner_store_callee_mask(Planner& scaly_self, Fu
         si = (si + 1ULL);
     }
     return m;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) int64_t Planner_namespace_store_mask(Planner& scaly_self, Function& f, String* owner, Vector<String>& path, String& method, uint64_t argc)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((path).length < 2ULL))
+    {
+        return (0LL - 1LL);
+    }
+    String* s0p = Vector_get<String>(path, 0ULL);
+    if (((s0p) == (nullptr)))
+    {
+        return (0LL - 1LL);
+    }
+    String s0 = ((*(s0p)));
+    if (((String_equals(s0, scaly_lvalue(String{(uint8_t*)"\004this"})) ? true : Planner_store_scope_binds(*(this_), s0)) ? true : Planner_function_has_parameter(f, s0)))
+    {
+        return (0LL - 1LL);
+    }
+    if ((((owner) != (nullptr)) ? ((Planner_ret_page_property_type_last(*(this_), scaly_lvalue(((*(owner)))), s0)) != (nullptr)) : false))
+    {
+        return (0LL - 1LL);
+    }
+    StringBuilder* written = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    uint64_t i = 0ULL;
+    while (((i + 1ULL) < (path).length))
+    {
+        String* sp = Vector_get<String>(path, i);
+        if (((sp) == (nullptr)))
+        {
+            return (0LL - 1LL);
+        }
+        if ((i > 0ULL))
+        {
+            StringBuilder_append((*written), ((uint8_t)'.'));
+        }
+        StringBuilder_append2((*written), scaly_lvalue(((*(sp)))));
+        i = (i + 1ULL);
+    }
+    String qualifier = StringBuilder_to_string(&scaly_local.f, (*written));
+    Concept* nsc = Planner_resolved_ns_concept(*(this_), qualifier);
+    if (((nsc) == (nullptr)))
+    {
+        String* lp = Vector_get<String>(path, ((path).length - 2ULL));
+        if (((lp) == (nullptr)))
+        {
+            return (0LL - 1LL);
+        }
+        nsc = Planner_lookup_namespace_concept(*(this_), scaly_lvalue(((*(lp)))));
+    }
+    if (((nsc) == (nullptr)))
+    {
+        return (0LL - 1LL);
+    }
+    {
+        auto&& scaly_t2 = ((*({ Concept* scaly_t3 = (Concept*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Concept), alignof(Concept)); *scaly_t3 = ((*(nsc))); scaly_t3; }))).definition;
+        if (scaly_t2.tag == 2)
+        {
+            Namespace ns = scaly_payload<Namespace>(scaly_t2);
+            if (Planner_members_declare_function((ns).members, method))
+            {
+                return ((int64_t)(Planner_member_list_store_mask(*(this_), (ns).members, method, argc)));
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_store_scope_binds(Planner& scaly_self, String& name)
+{
+    Planner* this_ = &scaly_self;
+    uint64_t i = 0ULL;
+    while ((i < this_->store_scope->length))
+    {
+        Statement* sp = Array_get<Statement>(*(this_->store_scope), i);
+        i = (i + 1ULL);
+        if (((sp) == (nullptr)))
+        {
+            continue;
+        }
+        {
+            auto&& scaly_t1 = ((*(sp)));
+            if (scaly_t1.tag == 1)
+            {
+                Binding bd = scaly_payload<Binding>(scaly_t1);
+                if ((((((bd).item).name) != (nullptr)) ? String_equals(scaly_lvalue(((*(((bd).item).name)))), name) : false))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                0LL;
+            }
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_function_has_parameter(Function& f, String& name)
+{
+    uint64_t i = 0ULL;
+    while ((i < ((f).input).length))
+    {
+        Item* ip = Vector_get<Item>((f).input, i);
+        i = (i + 1ULL);
+        if (((ip) == (nullptr)))
+        {
+            continue;
+        }
+        Item item = ((*(ip)));
+        if (((((item).name) != (nullptr)) ? String_equals(scaly_lvalue(((*((item).name)))), name) : false))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_members_declare_function(Vector<Member>& members, String& method)
+{
+    uint64_t i = 0ULL;
+    while ((i < (members).length))
+    {
+        Member* mp = Vector_get<Member>(members, i);
+        i = (i + 1ULL);
+        if (((mp) == (nullptr)))
+        {
+            continue;
+        }
+        {
+            auto&& scaly_t1 = ((*(mp)));
+            if (scaly_t1.tag == 3)
+            {
+                Function cf = scaly_payload<Function>(scaly_t1);
+                if (String_equals((cf).name, method))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                0LL;
+            }
+        }
+    }
+    return false;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly

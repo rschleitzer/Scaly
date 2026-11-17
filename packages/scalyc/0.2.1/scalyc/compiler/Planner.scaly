@@ -62082,6 +62082,16 @@ define Planner
                 if rc <> null and this.concept_has_member((*rc), method)
                     return this.members_store_mask((*rc), method, argc)
             }
+            ; a call through a namespace (`scope.operation(out, x)`): the
+            ; routines of that name the namespace itself declares, as the
+            ; planner resolves the call (call_arm_namespace#) -- unless the
+            ; first name is the receiver, a local, a parameter or a property,
+            ; which shadow a namespace. Until 2026-11-17 such a call fell to
+            ; the name-keyed fallback below, and a `scope.operation` took the
+            ; mask of `Planner.operation` too.
+            let ns_mask this.namespace_store_mask(f, owner, path, method, argc)
+            if ns_mask >= 0
+                return ns_mask as u64
             ; a receiver this pre-pass cannot type (a `when` binding, an
             ; untyped local), or one it types to a concept without that member
             ; (a namespace named like its structure -- `define Emitter {
@@ -62102,6 +62112,118 @@ define Planner
                 si := si + 1
             }
             m
+        }
+
+        ; namespace_store_mask#: the store mask of `qualifier.method(argc)` where
+        ; the qualifier (`path` but its last name) is a namespace declaring a
+        ; routine of that name; -1 where it is not one, or where its first name
+        ; is `this`, a local the walk has passed, a parameter or a property of
+        ; the owner -- the planner's order, a name of the routine first.
+        procedure namespace_store_mask(mutable this: Planner, f: Function, owner: ref[String]?, path: Vector[String], method: String, argc: size_t) returns i64
+        {
+            if path.length < 2
+                return 0 - 1
+            let s0p path.get 0
+            if s0p = null
+                return 0 - 1
+            let s0 (*s0p)
+            if s0 = "this" or this.store_scope_binds(s0) or Planner.function_has_parameter(f, s0)
+                return 0 - 1
+            if owner <> null and Planner.ret_page_property_type_last(this, (*owner), s0) <> null
+                return 0 - 1
+            var written StringBuilder()
+            var i: size_t 0
+            while i + 1 < path.length
+            {
+                let sp path.get i
+                if sp = null
+                    return 0 - 1
+                if i > 0
+                    written.append("." as char)
+                written.append((*sp))
+                i := i + 1
+            }
+            let qualifier written.to_string()
+            var nsc: ref[Concept]? this.resolved_ns_concept(qualifier)
+            if nsc = null
+            {
+                let lp path.get(path.length - 2)
+                if lp = null
+                    return 0 - 1
+                nsc := this.lookup_namespace_concept((*lp))
+            }
+            if nsc = null
+                return 0 - 1
+            choose (*nsc).definition
+                when ns: Namespace
+                {
+                    if Planner.members_declare_function(ns.members, method)
+                        return this.member_list_store_mask(ns.members, method, argc) as i64
+                }
+                else
+                    0
+            0 - 1
+        }
+
+        ; is `name` bound by a binding the store walk has passed?
+        function store_scope_binds(this: Planner, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < store_scope.length
+            {
+                let sp store_scope.get i
+                i := i + 1
+                if sp = null
+                    continue
+                choose (*sp)
+                    when bd: Binding
+                    {
+                        if bd.item.name <> null and (*bd.item.name) = name
+                            return true
+                    }
+                    else
+                        0
+            }
+            false
+        }
+
+        ; does `f` take a parameter named `name`?
+        function function_has_parameter(f: Function, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < f.input.length
+            {
+                let ip f.input.get i
+                i := i + 1
+                if ip = null
+                    continue
+                let item (*ip)
+                if item.name <> null and (*item.name) = name
+                    return true
+            }
+            false
+        }
+
+        ; do these members declare a routine named `method`?
+        function members_declare_function(members: Vector[Member], method: String) returns bool
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let mp members.get i
+                i := i + 1
+                if mp = null
+                    continue
+                choose (*mp)
+                    when cf: Function
+                    {
+                        if cf.name = method
+                            return true
+                    }
+                    else
+                        0
+            }
+            false
         }
 
         ; is `key` (`name@start`, store_key#) a key of a routine named `name`?

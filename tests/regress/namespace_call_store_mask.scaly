@@ -1,0 +1,36 @@
+; A call through a namespace stores what THAT namespace's routine stores.
+;
+; R8 gives a routine the caller page where it hands its own state to a
+; position a callee stores a built value into. Its pre-pass did not resolve
+; a namespace call (`scope.operation(out, n)`) and took every storing routine
+; of that NAME: `Shelf.operation` stores a String it builds into its
+; argument, so `walk` got a caller page it never uses -- the safe direction,
+; but a hidden parameter, another symbol and values living longer on the
+; caller's page. Planner.namespace_store_mask# asks the namespace's own
+; routines, as the planner resolves the call (call_arm_namespace#).
+;
+; expect-ir: define linkonce_odr i64 @_Z4walk5ArrayI6StringEi(ptr %0, i64 %1)
+
+define Shelf
+(
+    var names: Array[String]
+)
+{
+    procedure operation(mutable this, mutable into: Array[String], n: int)
+    {
+        into.add(String("item"))
+    }
+}
+
+define scope
+{
+    function operation(out: Array[String], n: int) returns int
+        (out.length as int) + n
+}
+
+procedure walk(out: Array[String], n: int) returns int
+    scope.operation(out, n)
+
+var a Array[String]()
+a.add(String("one"))
+print "`walk(a, 41)`"
