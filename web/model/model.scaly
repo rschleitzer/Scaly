@@ -1,0 +1,68 @@
+; The model (web/model/index.html): one function made up by hand,
+;
+;   f(x, y) = cos(pi (x² + y²) / c)
+;
+; as a colouring of the plane from -6 to 6, and the page moves c. The
+; program keeps what the page shows in ONE vector of numbers, the board,
+; and says before its loop where the board lies in its memory; the page
+; reads the picture straight out of that memory and writes c into the
+; board's head, where the program finds it on its next round.
+;
+; The head of the board:
+;
+;    0  a counter the page raises after it wrote c   (the page writes)
+;    1  c                                            (the page writes)
+;   32  the counter of slot 0 the program has taken in
+;   33  a counter raised with each picture
+;
+; From slot 64 on the picture, SIZE x SIZE numbers between -1 and 1, row
+; by row from the top.
+
+define SIZE int 400
+define HEAD int 64
+define BOARD int 160064      ; HEAD + SIZE * SIZE
+
+; Where cell k of SIZE lies on the plane, from -6 to 6.
+function place(k: int) returns f64
+{
+    ((k as f64) + 0.5) * 12.0 / (SIZE as f64) - 6.0
+}
+
+function model(x: f64, y: f64, c: f64) returns f64
+{
+    cos(3.141592653589793 * (x * x + y * y) / c)
+}
+
+; The picture for c, into the board: a round of the `for` for each of its
+; points, on all cores.
+procedure picture(mutable board: Vector[f64], c: f64)
+{
+    for p in SIZE * SIZE
+        board.put(HEAD + p, model(place(p % SIZE), 0.0 - place(p / SIZE), c))
+}
+
+var board Vector[f64](BOARD)
+var k 0
+while k < BOARD
+{
+    board.put(k, 0.0)
+    k := k + 1
+}
+board.put(1, 72.0)
+print "board at `board.as_bytes().data as size_t`"
+var taken 0.0 - 1.0
+repeat
+{
+    if board[0] <> taken
+    {
+        taken := board[0]
+        var c board[1]
+        if c < 0.1
+            c := 0.1
+        picture(board, c)
+        board.put(32, taken)
+        board.put(33, board[33] + 1.0)
+    }
+    else
+        Scheduler.sleep(10)
+}

@@ -515,15 +515,93 @@ width="0.1667em"
       Punkten, die rechts orange und links blau sind, die zweite zu einer
       orangen Scheibe in einem blauen Ring.</p
 ><p
->Maschinelles Lernen denkt sich die Funktion nicht aus. Es legt die <em
+>Maschinelles Lernen hingegen denkt sich die Formel nicht aus. Es
+      legt nur ihre allgemeine <em
 >Form</em
-> der Funktion fest und lässt Zahlen
-      darin offen, und ein Programm findet die Zahlen aus Beispielen,
-      Punkten, deren Sorte bekannt ist. Dieses Finden nennt dieses Buch
-      <em
+> fest, eine Formel
+      mit offenen Zahlen, den <em
+>Parametern</em
+>. Im zweiten
+      Beispiel könnte die 72 eine solche offene Zahl sein,
+      <math
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>π</mi
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>c</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
+>, und <math
+><mi
+>c</mi
+></math
+> gäbe an, wie groß die orange Scheibe ist. Welche
+      Werte die Parameter bekommen, findet ein Programm aus Beispielen
+      heraus, aus Punkten, deren Sorte bekannt ist. Dieses Finden nennt
+      dieses Buch <em
 >Lernen</em
->, und eine Funktion mit gefundenen Zahlen ein
-      <em
+>, und eine Funktion mit
+      gefundenen Parametern ein <em
 >trainiertes Modell</em
 >.</p
 ><aside
@@ -533,13 +611,21 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=clouds&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
->Öffne das Spielfeld mit zwei Wolken von Punkten.</a
+href="https://scaly.io/play/model/#lang=de"
+>Öffne die Seite mit dem zweiten Modell</a
 >
-        Binnen einer Sekunde färbt sich die Ebene zweifarbig: orange, wo
-        das Modell orange vermutet, blau, wo es blau vermutet, blass, wo es
-        unsicher ist. Die umrandeten Punkte sind Testpunkte, aus denen das
-        Modell nie lernt; sie kommen am Ende des Kapitels wieder.</p
+        und schieb <math
+><mi
+>c</mi
+></math
+>
+        hin und her: Die Färbung folgt der Formel. Ein großes
+        <math
+><mi
+>c</mi
+></math
+> macht die
+        orange Scheibe groß, ein kleines lässt Ringe entstehen.</p
 ></aside
 ></section
 ><section

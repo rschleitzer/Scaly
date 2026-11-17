@@ -513,15 +513,92 @@ width="0.1667em"
       orange on the right and blue on the left, the second an orange disc
       in a blue ring.</p
 ><p
->Machine learning does not make the function up. It fixes
-      the function's <em
+>Machine learning, on the other hand, does not make the formula
+      up. It fixes only its general <em
 >form</em
-> and leaves numbers in it open,
-      and a program finds the numbers from examples, points whose kind is
-      known. Finding them is what this book calls
+>, a formula
+      with numbers left open, the <em
+>parameters</em
+>. In the
+      second example the 72 could be such an open number,
+      <math
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>π</mi
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>c</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
+>, and <math
+><mi
+>c</mi
+></math
+> would decide how large the orange disc is. Which
+      values the parameters get, a program finds out from examples, points
+      whose kind is known. Finding them is what this book calls
       <em
 >learning</em
->, and a function with its numbers found is
+>, and a function with its parameters found
       a <em
 >trained model</em
 >.</p
@@ -532,13 +609,21 @@ class="note-title"
 >Try it</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=clouds&#38;hidden=0&#38;inputs=x,y"
->Open the field with two clouds of points.</a
+href="https://scaly.io/play/model/"
+>Open the page with the second model</a
 >
-        Within a second the plane takes on two colours: orange where the
-        model guesses orange, blue where it guesses blue, pale where it is
-        unsure. The points with a ring are test points, which the model
-        never learns from; they come back at the end of the chapter.</p
+        and move <math
+><mi
+>c</mi
+></math
+>
+        back and forth: the colouring follows the formula. A large
+        <math
+><mi
+>c</mi
+></math
+> makes the
+        orange disc large; a small one makes rings appear.</p
 ></aside
 ></section
 ><section

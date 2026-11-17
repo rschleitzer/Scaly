@@ -44,18 +44,21 @@
       guesses well depends on the points: the first suits points that are
       orange on the right and blue on the left, the second an orange disc
       in a blue ring.</para>
-    <para>Machine learning does not make the function up. It fixes
-      the function's <emphasis>form</emphasis> and leaves numbers in it open,
-      and a program finds the numbers from examples, points whose kind is
-      known. Finding them is what this book calls
-      <emphasis>learning</emphasis>, and a function with its numbers found is
+    <para>Machine learning, on the other hand, does not make the formula
+      up. It fixes only its general <emphasis>form</emphasis>, a formula
+      with numbers left open, the <emphasis>parameters</emphasis>. In the
+      second example the 72 could be such an open number,
+      <inlineequation><mml:math><mml:mrow><mml:mi>f</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>,</mml:mo><mml:mi>y</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mrow><mml:mi>cos</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>π</mml:mi><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>c</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></inlineequation>, and <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> would decide how large the orange disc is. Which
+      values the parameters get, a program finds out from examples, points
+      whose kind is known. Finding them is what this book calls
+      <emphasis>learning</emphasis>, and a function with its parameters found
       a <emphasis>trained model</emphasis>.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=clouds&amp;hidden=0&amp;inputs=x,y">Open the field with two clouds of points.</link>
-        Within a second the plane takes on two colours: orange where the
-        model guesses orange, blue where it guesses blue, pale where it is
-        unsure. The points with a ring are test points, which the model
-        never learns from; they come back at the end of the chapter.</para>
+      <para><link xlink:href="https://scaly.io/play/model/">Open the page with the second model</link>
+        and move <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation>
+        back and forth: the colouring follows the formula. A large
+        <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> makes the
+        orange disc large; a small one makes rings appear.</para>
     </sidebar>
   </section>
 
