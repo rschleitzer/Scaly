@@ -2801,6 +2801,7 @@ void Page_enable_poison() asm("_ZN4Page13enable_poisonEv");
 void Page_enable_statistics() asm("_ZN4Page17enable_statisticsEv");
 Page* Page_allocate_root_page() asm("_ZN4Page18allocate_root_pageEv");
 void Page_reset(Page&) asm("_ZN4Page5resetEv");
+bool Page_fits_fresh_page(uint64_t, uint64_t) asm("_ZN4Page15fits_fresh_pageEmm");
 void* Page_allocate_oversized(Page&, uint64_t) asm("_ZN4Page18allocate_oversizedEm");
 uint64_t Page_get_capacity(Page&, uint64_t) asm("_ZN4Page12get_capacityEm");
 Page* Page_allocate_exclusive_page(Page&) asm("_ZN4Page23allocate_exclusive_pageEv");
@@ -4100,10 +4101,9 @@ __attribute__((weak)) void* Page_allocate(Page& scaly_self, uint64_t size, uint6
     uint64_t capacity = (location_after_page - aligned_location);
     if ((capacity < size))
     {
-        uint64_t gross_size = (size + ((uint64_t)sizeof(Page)));
-        if ((gross_size > 4096ULL))
+        if (((Page_fits_fresh_page(size, align)) == (false)))
         {
-            return Page_allocate_oversized(*(this_), gross_size);
+            return Page_allocate_oversized(*(this_), (size + ((uint64_t)sizeof(Page))));
         }
         Page* head = this_->region;
         Page* tail = head->current_page;
@@ -4205,6 +4205,13 @@ __attribute__((weak)) uint64_t Page_oversized_size(Page* p)
 }
 
 // packages/scaly/0.2.1/scaly/memory/Page.scaly
+__attribute__((weak)) bool Page_fits_fresh_page(uint64_t size, uint64_t align)
+{
+    uint64_t start = ((((((uint64_t)sizeof(Page)) + align) - 1ULL)) & (((uint64_t)(~((align - 1ULL))))));
+    return ((start + size) <= 4096ULL);
+}
+
+// packages/scaly/0.2.1/scaly/memory/Page.scaly
 __attribute__((weak)) Page* Page_get(void* address)
 {
     uint64_t mask = ((uint64_t)(~(((uint64_t)(((4096ULL - 1ULL)))))));
@@ -4236,10 +4243,9 @@ __attribute__((weak)) Page* Page_allocate_exclusive_page(Page& scaly_self)
 __attribute__((weak)) void* Page_allocate_exclusive_buffer(Page& scaly_self, uint64_t size, uint64_t align)
 {
     Page* this_ = &scaly_self;
-    uint64_t gross = (size + ((uint64_t)sizeof(Page)));
-    if ((gross > 4096ULL))
+    if (((Page_fits_fresh_page(size, align)) == (false)))
     {
-        return Page_allocate_oversized(*(this_), gross);
+        return Page_allocate_oversized(*(this_), (size + ((uint64_t)sizeof(Page))));
     }
     Page* pg = Page_allocate_exclusive_page(*(this_));
     return Page_allocate(*(pg), size, align);

@@ -1,0 +1,36 @@
+; A request a few bytes short of a page, with an alignment the page header's
+; size is no multiple of, must not be served from a fresh page.
+;
+; The objects of a fresh page start behind its header, padded to the
+; alignment. Page.allocate asked `size + sizeof Page <= PAGE_SIZE` and left
+; the padding out: with sizeof Page 40 and 16 the object began at 48 and ran
+; 8 bytes past the page, the bump pointer with it, and the next request was
+; served from the page after it. On wasm32 (sizeof Page 20, and 8 for most
+; records) the compiler built for the page aborted in Page.allocate on one
+; layout of a program (exit 19), its planner's vector of statements 4074
+; bytes long.
+
+use scaly.memory.Page
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let pg Page.allocate_page()
+    let size (4096 as size_t) - sizeof Page
+    let r pg.allocate(size, 16)
+    let host Page.get(r)
+    ; a page with a bump pointer holds what it served within itself
+    if host.next_object <> null and (r as size_t) + size > (host as size_t) + 4096
+    {
+        print "FAIL: the object runs past its page"
+        return 1
+    }
+    let s pg.allocate(8, 8)
+    let after Page.get(s)
+    if after.next_object = null or (after.next_object as size_t) > (after as size_t) + 4096
+    {
+        print "FAIL: the next request is served past a page"
+        return 1
+    }
+    print "PASS"
+    0
+}

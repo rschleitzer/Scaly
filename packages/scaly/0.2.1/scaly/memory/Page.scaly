@@ -409,10 +409,10 @@ define Page
 
         if capacity < size
         {
-            ; We need to reserve the space for the page object
-            let gross_size size + sizeof Page
-            if gross_size > PAGE_SIZE
-                return allocate_oversized gross_size
+            ; A fresh page holds it behind its header, padded to the
+            ; alignment, or nothing does
+            if Page.fits_fresh_page(size, align) = false
+                return allocate_oversized(size + sizeof Page)
 
             ; Serve from the END of the region's extension chain, reached in
             ; ONE indirection: `region` names the head page, and the head's
@@ -558,6 +558,19 @@ define Page
         s as size_t
     }
 
+    ; Whether a fresh page holds `size` bytes aligned to `align`: they start
+    ; behind the header, PADDED to the alignment. The padding is not zero
+    ; where sizeof Page is no multiple of the alignment -- 20 bytes on wasm32
+    ; against 8, 40 on the 64-bit targets against 16. Asked as
+    ; `size + sizeof Page <= PAGE_SIZE`, a request a few bytes short of a page
+    ; was served from a fresh page and ran past its end: the bump pointer
+    ; beyond the page, and the next request served from the page after it.
+    function fits_fresh_page(size: size_t, align: size_t) returns bool
+    {
+        let start (sizeof Page + align - 1) & (~(align - 1))
+        start + size <= PAGE_SIZE
+    }
+
     ; Answers a borrowed reference: the page header is always there for a
     ; page-hosted address (a null would mean address 0), and the RETURN is
     ; not part of the Itanium name, so `_Z3getPv` — which the Emitter looks
@@ -596,9 +609,8 @@ define Page
     ; a generic body monomorphized into another package.
     procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
-        let gross size + sizeof Page
-        if gross > PAGE_SIZE
-            return allocate_oversized gross
+        if Page.fits_fresh_page(size, align) = false
+            return allocate_oversized(size + sizeof Page)
         let pg this.allocate_exclusive_page()
         pg.allocate(size, align)
     }
