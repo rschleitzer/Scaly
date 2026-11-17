@@ -2,6 +2,5 @@
 // run as a program (the FNV-1a hash of their text), which get a Run button
 window.SCALY_RUNNABLE = [
   "94c53368",
-  "d46d9b19",
   "e53a3ea5",
 ];

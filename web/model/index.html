@@ -49,6 +49,14 @@
   #sliders label { display: grid; grid-template-columns: 2.2em 1fr; align-items: center; gap: 8px; }
   #sliders math { font-size: 1.25em; }
   #right { color: var(--ink); font-weight: 600; }
+  #learn { display: flex; flex-direction: column; gap: 12px; }
+  #learn .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  #learn .readout { display: flex; gap: 18px; flex-wrap: wrap; align-items: baseline; font-size: 14px; color: var(--muted); }
+  #learn .readout b { color: var(--ink); font: 600 16px ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  button { font: inherit; font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; min-width: 6.5em; }
+  button:disabled { opacity: .45; cursor: default; }
   .code { max-width: 860px; margin: 0 auto 40px; padding: 0 16px; }
   .code h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
   .code pre { margin: 0 0 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
@@ -79,6 +87,19 @@
   <div class="side">
     <div id="formula"></div>
     <div id="sliders"></div>
+    <div id="learn" hidden>
+      <div class="buttons">
+        <button id="step" data-t="stepOnce">One step</button>
+        <button id="run" class="primary" data-t="learnIt">Learn</button>
+        <button id="reset" data-t="reset">Start again</button>
+      </div>
+      <div class="readout">
+        <span><span data-t="loss">Loss</span> <b id="lossValue">–</b></span>
+        <span id="stepsValue"></span>
+        <label><span data-t="rate">Learning rate</span> <select id="rate">
+          <option>0.01</option><option selected>0.1</option><option>1</option></select></label>
+      </div>
+    </div>
     <p class="say" data-t="say">Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.</p>
     <p class="say" id="right" hidden></p>
     <span id="status"></span>
@@ -100,6 +121,9 @@ const TEXT = {
         say: 'Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.',
         sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. The points are the six of the chapter, a ring around each the neuron guesses wrong.',
         right: n => `${n} of 6 right`,
+        learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
+        loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
+        sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the six points; a ring marks each point it still guesses wrong.',
         inScaly: 'In Scaly', sourceSay: 'This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.',
 
         loading: 'The program loads …', isolation: 'This page needs a server with cross-origin isolation (COOP and COEP): it shares its memory with the program.',
@@ -108,6 +132,9 @@ const TEXT = {
         say: 'Orange, wo das Modell +1 antwortet, blau, wo es −1 antwortet, blass, wo es unsicher ist; die Ebene reicht in beide Richtungen von −6 bis +6.',
         sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Die Punkte sind die sechs aus dem Kapitel, ein Ring um jeden, bei dem das Neuron falsch rät.',
         right: n => `${n} von 6 richtig`,
+        learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
+        loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
+        sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den sechs Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         inScaly: 'In Scaly', sourceSay: 'Diese Funktion rechnet die Seite an jedem ihrer Punkte: Sie ist aus dem Programm ausgeschnitten, das in der Seite läuft, model.scaly.',
 
         loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
@@ -144,6 +171,10 @@ function translatePage() {
   document.querySelector('.say:not(#right)').textContent = t(model.say);
   if (said) $('status').textContent = said();
   showValues();
+  if (model.learning) {
+    $('run').textContent = running ? t('pause') : t('learnIt');
+    if (board) $('stepsValue').textContent = t('steps')(board[39]);
+  }
 }
 $('lang').onchange = () => {
   lang = $('lang').value;
@@ -156,10 +187,10 @@ $('lang').onchange = () => {
 // MathML pieces; a parameter's value stands in the formula itself
 const mi = v => `<mi>${v}</mi>`, mo = v => `<mo>${v}</mo>`, mn = v => `<mn>${v}</mn>`;
 const sub = (b, s) => `<msub>${b}${s}</msub>`;
-const num = v => Math.abs(v).toLocaleString(lang, { maximumFractionDigits: 1 });
+const num = (v, digits = 1) => Math.abs(v).toLocaleString(lang, { minimumFractionDigits: digits === 1 ? 0 : digits, maximumFractionDigits: digits });
 // "+ 0.5 y" or "− 0.5 y" after the first term, "−0.5 y" as the first
-const term = (v, rest, first) => (v < 0 ? (first ? '<mrow><mo>−</mo>' : mo('−')) : first ? '<mrow>' : mo('+'))
-  + mn(num(v)) + (rest || '') + (first ? '</mrow>' : '');
+const term = (v, rest, first, digits) => (v < 0 ? (first ? '<mrow><mo>−</mo>' : mo('−')) : first ? '<mrow>' : mo('+'))
+  + mn(num(v, digits)) + (rest || '') + (first ? '</mrow>' : '');
 const MODELS = {
   cosine: {
     id: 0, title: 'title', say: 'say', source: 'cosine',
@@ -176,12 +207,21 @@ const MODELS = {
              { name: 'b', label: mi('b'), min: -6, max: 6, step: 0.1, value: 0 }],
     formula: ([w1, w2, b]) => mi('z') + mo('=') + term(w1, mi('x'), true) + term(w2, mi('y')) + term(b),
   },
+  descent: {
+    id: 2, title: 'learns', say: 'sayLearn', source: 'descent', learning: true,
+    params: [{ name: 'w1', label: sub(mi('w'), mn(1)), min: -3, max: 3, step: 0.01, value: -0.5 },
+             { name: 'w2', label: sub(mi('w'), mn(2)), min: -3, max: 3, step: 0.01, value: 0.5 },
+             { name: 'b', label: mi('b'), min: -3, max: 3, step: 0.01, value: 0 }],
+    formula: ([w1, w2, b]) => mi('a') + mo('=') + mi('tanh') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo>'
+      + term(w1, mi('x'), true, 2) + term(w2, mi('y'), false, 2) + term(b, '', false, 2) + '<mo stretchy="false">)</mo></mrow>',
+  },
 };
 const asked = new URLSearchParams(location.hash.slice(1));
 const model = MODELS[asked.get('model')] ?? MODELS.cosine;
 for (const q of model.params) {
   const v = Number(asked.get(q.name));
   if (asked.has(q.name) && v >= q.min && v <= q.max) q.value = v;
+  q.start = q.value;
 }
 
 // the sliders, one for each parameter
@@ -192,8 +232,11 @@ for (const q of model.params) {
   q.input.addEventListener('input', () => { showValues(); send(); });
   $('sliders').append(label);
 }
+$('learn').hidden = !model.learning;
 const values = () => model.params.map(q => Number(q.input.value));
-function showValues() { $('formula').innerHTML = `<math display="block">${model.formula(values())}</math>`; }
+// a learning model shows the values as the program has learned them
+let learned = null;
+function showValues() { $('formula').innerHTML = `<math display="block">${model.formula(learned ?? values())}</math>`; }
 
 // --- the board (model.scaly says what lies where) ----------------------------
 
@@ -202,11 +245,40 @@ let board = null;           // a Float64Array over the program's board, in its m
 let changes = 0, frame = -1;
 
 function send() {
+  learned = null;
   if (!board) return;
   board[1] = model.id;
   values().forEach((v, k) => { board[2 + k] = v; });
+  board[7] = Number($('rate').value);
   board[0] = ++changes;     // last: the program takes in what is above once it sees this
 }
+
+// learning (model 2): the program takes steps while board[5] is 1, or one
+// for each raise of board[6]
+let running = false, stepRequests = 0;
+function learning() {
+  if (!board) return;
+  board[5] = running && !document.hidden ? 1 : 0;
+  board[7] = Number($('rate').value);
+}
+$('run').onclick = () => {
+  running = !running;
+  $('run').textContent = running ? t('pause') : t('learnIt');
+  $('step').disabled = running;
+  learning();
+};
+$('step').onclick = () => { if (board) board[6] = ++stepRequests; };
+$('reset').onclick = () => {
+  for (const q of model.params) q.input.value = q.start;
+  running = false;
+  $('run').textContent = t('learnIt');
+  $('step').disabled = false;
+  learning();
+  send();
+  showValues();
+};
+$('rate').onchange = learning;
+document.addEventListener('visibilitychange', learning);
 
 // a value between -1 and 1 as the field's colour (web/field)
 function rgb(css) {
@@ -256,6 +328,13 @@ function picture() {
   }
   $('right').hidden = n === 0;
   $('right').textContent = t('right')(right);
+  if (model.learning) {
+    learned = [board[35], board[36], board[37]];
+    model.params.forEach((q, k) => { q.input.value = learned[k]; });
+    $('lossValue').textContent = board[38].toLocaleString(lang, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    $('stepsValue').textContent = t('steps')(board[39]);
+    showValues();
+  }
 }
 function tick() {
   if (board && board[33] !== frame && board[32] === changes) {
@@ -299,6 +378,7 @@ async function start() {
     if (data.type === 'watch') {
       board = new Float64Array(data.memory.buffer, data.address, BOARD);
       send();
+      learning();
       status(() => t('cores')(cpus));
     } else if (data.type === 'done') ended(data.status);
   };

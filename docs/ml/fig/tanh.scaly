@@ -1,0 +1,79 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; a = tanh(z) for z from -4 to 4, the axes crossing at 0 and dashed lines
+; at a = 1 and a = -1, which the curve comes ever closer to and never
+; reaches. The curve is orange where a is positive and blue where it is
+; negative, the colours of the plane in the book's other pictures. Each
+; point of the picture is computed, the rounds of the `for` on all cores;
+; the picture goes to picture.<size>x<size>.rgba, four bytes a point.
+define SIZE int 480
+define ZMAX f64 4.0          ; z runs from -ZMAX to ZMAX across
+define AMAX f64 1.4          ; a runs from -AMAX to AMAX up
+
+define Colour(r: f64, g: f64, b: f64)
+
+; The part `t` of the way from colour a to colour b.
+function mix(a: Colour, b: Colour, t: f64) returns Colour
+{
+    Colour(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+}
+
+; How much of a point lies within `width` of something `d` away: smooth
+; across one point.
+function cover(d: f64, width: f64) returns f64
+{
+    let c width + 0.5 - (if d < 0.0: 0.0 - d else d)
+    if c < 0.0: 0.0 else if c > 1.0: 1.0 else c
+}
+
+; z at a column of the picture, and the row of a value of a
+function z_at(px: f64) returns f64
+{
+    (px / (SIZE as f64) * 2.0 - 1.0) * ZMAX
+}
+
+function row_of(a: f64) returns f64
+{
+    (1.0 - a / AMAX) / 2.0 * (SIZE as f64)
+}
+
+function pixel(p: int) returns u32
+{
+    let px (p % SIZE) as f64 + 0.5
+    let py (p / SIZE) as f64 + 0.5
+    let paper Colour(246.0, 246.0, 244.0)
+    let ink Colour(110.0, 110.0, 116.0)
+    let faint Colour(196.0, 196.0, 202.0)
+    var c paper
+    ; the dashed lines at a = 1 and a = -1
+    if (px / 18.0).floor() as int % 2 = 0
+    {
+        c := mix(c, faint, cover(py - row_of(1.0), 1.0))
+        c := mix(c, faint, cover(py - row_of(0.0 - 1.0), 1.0))
+    }
+    ; the axes, and a tick at each whole z
+    let middle (SIZE as f64) / 2.0
+    c := mix(c, ink, cover(py - middle, 1.0))
+    c := mix(c, ink, cover(px - middle, 1.0))
+    let unit (SIZE as f64) / (2.0 * ZMAX)
+    let nearest ((px - middle) / unit).round_even() * unit + middle
+    if (py - middle) < 9.0 and (middle - py) < 9.0
+        c := mix(c, ink, cover(px - nearest, 1.0))
+    ; the curve: how far this point lies from it, measured across it
+    let z z_at(px)
+    let a tanh(z)
+    ; the curve's slope in points of the picture: rows per column
+    let slope (1.0 - a * a) * ZMAX / AMAX
+    let d (py - row_of(a)) / (1.0 + slope * slope).sqrt()
+    let curve if a >= 0.0: Colour(232.0, 133.0, 61.0) else Colour(59.0, 125.0, 216.0)
+    c := mix(c, curve, cover(d, 3.5))
+    let r c.r.round_even() as u32
+    let g c.g.round_even() as u32
+    let b c.b.round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+var picture Vector[u32]((SIZE * SIZE) as size_t)
+for p in SIZE * SIZE
+    picture.put(p as size_t, pixel(p))
+if File.write_bytes("picture.`SIZE`x`SIZE`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"

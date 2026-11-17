@@ -123,7 +123,13 @@
     <para>Deshalb bilden wir die gewichtete Summe <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> zuerst mit einer
       glatten Funktion auf eine Zahl zwischen −1 und 1 ab, hier mit dem
       Tangens hyperbolicus:</para>
-    <informalequation><mml:math><mml:mi>a</mml:mi><mml:mo>=</mml:mo><mml:mrow><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:mi>a</mml:mi><mml:mo>=</mml:mo><mml:mrow><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Kurve von tanh: links nahe −1, steigt durch den Ursprung und nähert sich rechts 1; gestrichelt die Linien bei 1 und −1.</alt>
+        <imageobject><imagedata fileref="fig/tanh.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
     <para>So antwortet das Neuron, wie es zu Beginn des Kapitels von einem
       Modell verlangt war: nahe +1 oder -1, wo es sich sicher ist, nahe 0,
       wo nicht. Eine solche Funktion ist die
@@ -141,14 +147,16 @@
 
   <section xml:id="field-gradient">
     <title>Bergab</title>
-    <para>Stell dir den Fehler als Landschaft vor. Jede Wahl der drei
-      Zahlen <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> und
-      <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> ist ein Ort darin, und der Fehler dort ist seine
-      Höhe. Lernen heißt bergab gehen. Wo es bergab geht, lässt sich für
-      jedes Gewicht einzeln ablesen: Wie stark ändert sich der Fehler, wenn
-      sich das Gewicht ein wenig ändert? Das ist die
-      <emphasis>Ableitung</emphasis> nach dem Gewicht, geschrieben
-      <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>.</para>
+    <para>Der Fehler unseres Neurons ist also eine Funktion der drei Werte
+      <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>. Nun wollen wir die Werte finden, für die er
+      möglichst klein wird. Da wir nicht alle erdenklichen Kombinationen
+      ausrechnen wollen, beginnen wir mit irgendwelchen Werten und bewegen
+      uns von dort Schritt für Schritt in die Richtung, in der der Fehler am
+      stärksten abnimmt, mit allen drei Werten zugleich. Welche Richtung das
+      ist, lässt sich für jeden Wert einzeln ablesen: Wie stark ändert sich
+      der Fehler, wenn sich der Wert ein wenig ändert? Das ist die
+      <emphasis>Ableitung</emphasis> des Fehlers nach diesem Wert, für
+      <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> geschrieben <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>.</para>
     <para>Der Fehler hängt nicht direkt von <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> ab. Er
       hängt von der Antwort <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation> ab, die Antwort von der
       Summe <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> und die Summe von <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>.
@@ -167,98 +175,19 @@
       zusammengezählt und durch ihre Anzahl geteilt, sind diese Ableitungen
       der <emphasis>Gradient</emphasis>: die Richtung, in der der Fehler am
       schnellsten steigt. Ein Schritt des
-      <emphasis>Gradientenabstiegs</emphasis> bewegt jedes Gewicht ein
-      wenig in die andere Richtung,</para>
-    <informalfigure role="beside">
-      <informalequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>←</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>−</mml:mo><mml:mi>η</mml:mi><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac></mml:math></informalequation>
-      <mediaobject>
-        <alt>Der Fehler über den beiden Gewichten, dunkel in einem Tal rechts; der Weg des Gradientenabstiegs führt hinein.</alt>
-        <imageobject><imagedata fileref="fig/landscape.png"/></imageobject>
-      </mediaobject>
-    </informalfigure>
+      <emphasis>Gradientenabstiegs</emphasis> bewegt jeden der drei Werte
+      ein wenig in die andere Richtung,</para>
+    <informalequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>←</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>−</mml:mo><mml:mi>η</mml:mi><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac></mml:math></informalequation>
     <para>wobei die kleine Zahl <inlineequation><mml:math><mml:mi>η</mml:mi></mml:math></inlineequation> die
-      <emphasis>Lernrate</emphasis> ist. Das Programm unten lässt das Neuron
-      des letzten Abschnitts bei Gewichten beginnen, die schlecht raten,
-      und macht hundert solche Schritte:</para>
-    <programlisting>; One neuron learns: it starts from weights that guess badly, measures how
-; wrong it is, and moves each weight a little the way that makes it less so.
-define Point(x: f64, y: f64, kind: f64)
-
-; A number shown to three places.
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-var points Array[Point]()
-points.add(Point(2.0, 1.5, 1.0))
-points.add(Point(1.0, 3.0, 1.0))
-points.add(Point(0.5, 0.0 - 2.5, 1.0))
-points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
-points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
-let n points.length as f64
-
-var w1 0.0 - 0.5
-var w2 0.5
-var b 0.0
-let rate 0.1
-var step 0
-while step &lt;= 100
-{
-    ; how wrong it is, and which way each weight should go
-    var loss 0.0
-    var right 0
-    var g1 0.0
-    var g2 0.0
-    var gb 0.0
-    for p in points
-    {
-        let a tanh(w1 * p.x + w2 * p.y + b)
-        let e a - p.kind
-        loss := loss + 0.5 * e * e
-        if a * p.kind &gt; 0.0
-            right := right + 1
-        let dz e * (1.0 - a * a)
-        g1 := g1 + dz * p.x
-        g2 := g2 + dz * p.y
-        gb := gb + dz
-    }
-    if step % 10 = 0
-        print "step `step`: loss `shown(loss / n)`, `right` of 6 right"
-    w1 := w1 - rate * g1 / n
-    w2 := w2 - rate * g2 / n
-    b := b - rate * gb / n
-    step := step + 1
-}
-print "w1 `shown(w1)`, w2 `shown(w2)`, b `shown(b)`"</programlisting>
-    <screen>step 0: loss 0.941, 2 of 6 right
-step 10: loss 0.325, 5 of 6 right
-step 20: loss 0.112, 5 of 6 right
-step 30: loss 0.06, 6 of 6 right
-step 40: loss 0.043, 6 of 6 right
-step 50: loss 0.033, 6 of 6 right
-step 60: loss 0.027, 6 of 6 right
-step 70: loss 0.023, 6 of 6 right
-step 80: loss 0.02, 6 of 6 right
-step 90: loss 0.018, 6 of 6 right
-step 100: loss 0.016, 6 of 6 right
-w1 1.158, w2 0.022, b 0.3</screen>
-    <para>Der Fehler fällt von Schritt zu Schritt, und nach dreißig
-      Schritten stimmt jeder Punkt. Die gefundenen Gewichte liegen nahe bei
-      denen, die wir von Hand gefunden haben: <literal>w2</literal> ist fast
-      0, die Gerade fast die senkrechte Achse. Das <literal>for</literal>
-      über die Punkte zählt den Gradienten zusammen; Scaly darf seine
-      Runden auf mehreren Kernen ausführen, und eine Summe von
-      Gleitkommazahlen kommt trotzdem gleich heraus, weil sie in der
-      Reihenfolge der Punkte gefaltet wird.</para>
+      <emphasis>Lernrate</emphasis> ist.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=circle&amp;hidden=0&amp;inputs=x2,y2&amp;rate=0.001&amp;lang=de">Öffne das Spielfeld mit einer Lernrate von 0,001.</link>
-        Die Farben kommen nur langsam, und die Fehlerkurve rechts kriecht
-        nach unten. Wähl 0,1 unter <guilabel>Lernrate</guilabel>:
-        Dasselbe Netz ist im Nu fertig. Ein zu kleiner Schritt kostet Zeit;
-        ein zu großer kann über das Tal hinausschießen und den Fehler
-        springen statt fallen lassen.</para>
+      <para><link xlink:href="https://scaly.io/play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt.</link>
+        Es beginnt bei Werten, die schlecht raten: Nur zwei der sechs Punkte
+        stimmen. Drück „Ein Schritt“: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> rücken ein wenig,
+        die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
+        dreißig Schritten stimmen alle sechs, und <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> ist bald fast 0, wie
+        bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
+        langsamer. Unter dem Bild steht der Schritt in Scaly.</para>
     </sidebar>
   </section>
 

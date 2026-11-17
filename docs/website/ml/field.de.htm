@@ -823,6 +823,8 @@ href="#field-loss"
       glatten Funktion auf eine Zahl zwischen −1 und 1 ab, hier mit dem
       Tangens hyperbolicus:</p
 ><div
+class="beside"
+><div
 class="equation"
 ><math
 display="block"
@@ -848,6 +850,10 @@ stretchy="false"
 ></mrow
 ></math
 ></div
+><img
+src="fig/tanh.png"
+alt="Die Kurve von tanh: links nahe −1, steigt durch den Ursprung und nähert sich rechts 1; gestrichelt die Linien bei 1 und −1."
+loading="lazy"></div
 ><p
 >So antwortet das Neuron, wie es zu Beginn des Kapitels von einem
       Modell verlangt war: nahe +1 oder -1, wo es sich sicher ist, nahe 0,
@@ -920,8 +926,8 @@ href="#field-gradient"
 >Bergab</a
 ></h2
 ><p
->Stell dir den Fehler als Landschaft vor. Jede Wahl der drei
-      Zahlen <math
+>Der Fehler unseres Neurons ist also eine Funktion der drei Werte
+      <math
 ><msub
 ><mi
 >w</mi
@@ -937,19 +943,29 @@ href="#field-gradient"
 >2</mn
 ></msub
 ></math
-> und
-      <math
+> und <math
 ><mi
 >b</mi
 ></math
-> ist ein Ort darin, und der Fehler dort ist seine
-      Höhe. Lernen heißt bergab gehen. Wo es bergab geht, lässt sich für
-      jedes Gewicht einzeln ablesen: Wie stark ändert sich der Fehler, wenn
-      sich das Gewicht ein wenig ändert? Das ist die
+>. Nun wollen wir die Werte finden, für die er
+      möglichst klein wird. Da wir nicht alle erdenklichen Kombinationen
+      ausrechnen wollen, beginnen wir mit irgendwelchen Werten und bewegen
+      uns von dort Schritt für Schritt in die Richtung, in der der Fehler am
+      stärksten abnimmt, mit allen drei Werten zugleich. Welche Richtung das
+      ist, lässt sich für jeden Wert einzeln ablesen: Wie stark ändert sich
+      der Fehler, wenn sich der Wert ein wenig ändert? Das ist die
       <em
 >Ableitung</em
-> nach dem Gewicht, geschrieben
+> des Fehlers nach diesem Wert, für
       <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+> geschrieben <math
 ><mo
 lspace="0"
 rspace="0"
@@ -1131,10 +1147,8 @@ stretchy="false"
       schnellsten steigt. Ein Schritt des
       <em
 >Gradientenabstiegs</em
-> bewegt jedes Gewicht ein
-      wenig in die andere Richtung,</p
-><div
-class="beside"
+> bewegt jeden der drei Werte
+      ein wenig in die andere Richtung,</p
 ><div
 class="equation"
 ><math
@@ -1181,10 +1195,6 @@ rspace="0"
 ></mfrac
 ></math
 ></div
-><img
-src="fig/landscape.png"
-alt="Der Fehler über den beiden Gewichten, dunkel in einem Tal rechts; der Weg des Gradientenabstiegs führt hinein."
-loading="lazy"></div
 ><p
 >wobei die kleine Zahl <math
 ><mi
@@ -1193,94 +1203,7 @@ loading="lazy"></div
 > die
       <em
 >Lernrate</em
-> ist. Das Programm unten lässt das Neuron
-      des letzten Abschnitts bei Gewichten beginnen, die schlecht raten,
-      und macht hundert solche Schritte:</p
-><pre
-class="listing"
-><code
->; One neuron learns: it starts from weights that guess badly, measures how
-; wrong it is, and moves each weight a little the way that makes it less so.
-define Point(x: f64, y: f64, kind: f64)
-
-; A number shown to three places.
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-var points Array[Point]()
-points.add(Point(2.0, 1.5, 1.0))
-points.add(Point(1.0, 3.0, 1.0))
-points.add(Point(0.5, 0.0 - 2.5, 1.0))
-points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
-points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
-let n points.length as f64
-
-var w1 0.0 - 0.5
-var w2 0.5
-var b 0.0
-let rate 0.1
-var step 0
-while step &#60;= 100
-{
-    ; how wrong it is, and which way each weight should go
-    var loss 0.0
-    var right 0
-    var g1 0.0
-    var g2 0.0
-    var gb 0.0
-    for p in points
-    {
-        let a tanh(w1 * p.x + w2 * p.y + b)
-        let e a - p.kind
-        loss := loss + 0.5 * e * e
-        if a * p.kind &#62; 0.0
-            right := right + 1
-        let dz e * (1.0 - a * a)
-        g1 := g1 + dz * p.x
-        g2 := g2 + dz * p.y
-        gb := gb + dz
-    }
-    if step % 10 = 0
-        print "step `step`: loss `shown(loss / n)`, `right` of 6 right"
-    w1 := w1 - rate * g1 / n
-    w2 := w2 - rate * g2 / n
-    b := b - rate * gb / n
-    step := step + 1
-}
-print "w1 `shown(w1)`, w2 `shown(w2)`, b `shown(b)`"</code
-></pre
-><pre
-class="screen"
-><code
->step 0: loss 0.941, 2 of 6 right
-step 10: loss 0.325, 5 of 6 right
-step 20: loss 0.112, 5 of 6 right
-step 30: loss 0.06, 6 of 6 right
-step 40: loss 0.043, 6 of 6 right
-step 50: loss 0.033, 6 of 6 right
-step 60: loss 0.027, 6 of 6 right
-step 70: loss 0.023, 6 of 6 right
-step 80: loss 0.02, 6 of 6 right
-step 90: loss 0.018, 6 of 6 right
-step 100: loss 0.016, 6 of 6 right
-w1 1.158, w2 0.022, b 0.3</code
-></pre
-><p
->Der Fehler fällt von Schritt zu Schritt, und nach dreißig
-      Schritten stimmt jeder Punkt. Die gefundenen Gewichte liegen nahe bei
-      denen, die wir von Hand gefunden haben: <code
->w2</code
-> ist fast
-      0, die Gerade fast die senkrechte Achse. Das <code
->for</code
->
-      über die Punkte zählt den Gradienten zusammen; Scaly darf seine
-      Runden auf mehreren Kernen ausführen, und eine Summe von
-      Gleitkommazahlen kommt trotzdem gleich heraus, weil sie in der
-      Reihenfolge der Punkte gefaltet wird.</p
+> ist.</p
 ><aside
 class="tryit"
 ><p
@@ -1288,17 +1211,43 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x2,y2&#38;rate=0.001&#38;lang=de"
->Öffne das Spielfeld mit einer Lernrate von 0,001.</a
+href="https://scaly.io/play/model/#model=descent&#38;lang=de"
+>Öffne die Seite, auf der das Neuron lernt.</a
 >
-        Die Farben kommen nur langsam, und die Fehlerkurve rechts kriecht
-        nach unten. Wähl 0,1 unter <span
-class="gui"
->Lernrate</span
->:
-        Dasselbe Netz ist im Nu fertig. Ein zu kleiner Schritt kostet Zeit;
-        ein zu großer kann über das Tal hinausschießen und den Fehler
-        springen statt fallen lassen.</p
+        Es beginnt bei Werten, die schlecht raten: Nur zwei der sechs Punkte
+        stimmen. Drück „Ein Schritt“: <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>, <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+> und <math
+><mi
+>b</mi
+></math
+> rücken ein wenig,
+        die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
+        dreißig Schritten stimmen alle sechs, und <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+> ist bald fast 0, wie
+        bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
+        langsamer. Unter dem Bild steht der Schritt in Scaly.</p
 ></aside
 ></section
 ><section

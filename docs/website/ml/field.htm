@@ -817,6 +817,8 @@ href="#field-loss"
 > to a number between −1
       and 1 by a smooth function, here the hyperbolic tangent:</p
 ><div
+class="beside"
+><div
 class="equation"
 ><math
 display="block"
@@ -842,6 +844,10 @@ stretchy="false"
 ></mrow
 ></math
 ></div
+><img
+src="fig/tanh.png"
+alt="The curve of tanh: near −1 on the left, rising through the origin and coming ever closer to 1 on the right; dashed, the lines at 1 and −1."
+loading="lazy"></div
 ><p
 >Now the neuron answers as the beginning of the chapter asked of a
       model: near +1 or -1 where it is sure, near 0 where it is not. Such a squashing function is the neuron's
@@ -909,8 +915,8 @@ href="#field-gradient"
 >Downhill</a
 ></h2
 ><p
->Think of the loss as a landscape. Each choice of the three
-      numbers <math
+>So the loss of our neuron is a function of the three values
+      <math
 ><msub
 ><mi
 >w</mi
@@ -926,19 +932,28 @@ href="#field-gradient"
 >2</mn
 ></msub
 ></math
-> and
-      <math
+> and <math
 ><mi
 >b</mi
 ></math
-> is a place in it, and the loss there is its
-      height. Learning is walking downhill. Which way is down can be read
-      off each weight separately: how much does the loss change when the
-      weight changes a little? That is the weight's
-      <em
+>. Now we want to find the values for which it
+      becomes as small as possible. Since we do not want to compute every
+      conceivable combination, we begin with some values and move from
+      there step by step in the direction in which the loss falls fastest,
+      with all three values at once. Which direction that is can be read
+      off each value separately: how much does the loss change when the
+      value changes a little? That is the <em
 >derivative</em
->, written
-      <math
+>
+      of the loss by that value, for <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+> written <math
 ><mo
 lspace="0"
 rspace="0"
@@ -1118,10 +1133,8 @@ stretchy="false"
       direction in which the loss rises fastest. One step of
       <em
 >gradient descent</em
-> moves every weight a little
-      the other way,</p
-><div
-class="beside"
+> moves each of the three values
+      a little the other way,</p
 ><div
 class="equation"
 ><math
@@ -1168,10 +1181,6 @@ rspace="0"
 ></mfrac
 ></math
 ></div
-><img
-src="fig/landscape.png"
-alt="The loss over the two weights, dark in a valley to the right; the walk of gradient descent runs down into it."
-loading="lazy"></div
 ><p
 >where the small number <math
 ><mi
@@ -1180,93 +1189,7 @@ loading="lazy"></div
 > is the
       <em
 >learning rate</em
->. The program below starts the
-      neuron of the last section from weights that guess badly and takes a
-      hundred such steps:</p
-><pre
-class="listing"
-><code
->; One neuron learns: it starts from weights that guess badly, measures how
-; wrong it is, and moves each weight a little the way that makes it less so.
-define Point(x: f64, y: f64, kind: f64)
-
-; A number shown to three places.
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-var points Array[Point]()
-points.add(Point(2.0, 1.5, 1.0))
-points.add(Point(1.0, 3.0, 1.0))
-points.add(Point(0.5, 0.0 - 2.5, 1.0))
-points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
-points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
-let n points.length as f64
-
-var w1 0.0 - 0.5
-var w2 0.5
-var b 0.0
-let rate 0.1
-var step 0
-while step &#60;= 100
-{
-    ; how wrong it is, and which way each weight should go
-    var loss 0.0
-    var right 0
-    var g1 0.0
-    var g2 0.0
-    var gb 0.0
-    for p in points
-    {
-        let a tanh(w1 * p.x + w2 * p.y + b)
-        let e a - p.kind
-        loss := loss + 0.5 * e * e
-        if a * p.kind &#62; 0.0
-            right := right + 1
-        let dz e * (1.0 - a * a)
-        g1 := g1 + dz * p.x
-        g2 := g2 + dz * p.y
-        gb := gb + dz
-    }
-    if step % 10 = 0
-        print "step `step`: loss `shown(loss / n)`, `right` of 6 right"
-    w1 := w1 - rate * g1 / n
-    w2 := w2 - rate * g2 / n
-    b := b - rate * gb / n
-    step := step + 1
-}
-print "w1 `shown(w1)`, w2 `shown(w2)`, b `shown(b)`"</code
-></pre
-><pre
-class="screen"
-><code
->step 0: loss 0.941, 2 of 6 right
-step 10: loss 0.325, 5 of 6 right
-step 20: loss 0.112, 5 of 6 right
-step 30: loss 0.06, 6 of 6 right
-step 40: loss 0.043, 6 of 6 right
-step 50: loss 0.033, 6 of 6 right
-step 60: loss 0.027, 6 of 6 right
-step 70: loss 0.023, 6 of 6 right
-step 80: loss 0.02, 6 of 6 right
-step 90: loss 0.018, 6 of 6 right
-step 100: loss 0.016, 6 of 6 right
-w1 1.158, w2 0.022, b 0.3</code
-></pre
-><p
->The loss falls from step to step, and after thirty steps every
-      point is right. The weights it found are close to the ones we found
-      by hand: <code
->w2</code
-> is nearly 0, the line nearly the
-      upright axis. The <code
->for</code
-> over the points adds up the
-      gradient; Scaly may run its rounds on several cores, and a sum of
-      floating-point numbers still comes out the same, because it is
-      folded in the order of the points.</p
+>.</p
 ><aside
 class="tryit"
 ><p
@@ -1274,17 +1197,43 @@ class="note-title"
 >Try it</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x2,y2&#38;rate=0.001"
->Open the field with a learning rate of 0.001.</a
+href="https://scaly.io/play/model/#model=descent"
+>Open the page where the neuron learns.</a
 >
-        The colours come only slowly, and the loss curve on the right
-        creeps down. Choose 0.1 under <span
-class="gui"
->Learning rate</span
->:
-        the same network is done in a moment. Too small a step costs time;
-        too large a one can overshoot the valley and make the loss jump
-        instead of fall.</p
+        It begins with values that guess badly: only two of the six points
+        are right. Press “One step”: <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>, <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+> and <math
+><mi
+>b</mi
+></math
+> move a little, the
+        line turns, the loss falls. Press “Learn”: after some thirty steps
+        all six are right, and <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+> is soon nearly 0, as in our attempt by
+        hand. With the learning rate 0.01 it goes much more slowly. Below the
+        picture stands the step in Scaly.</p
 ></aside
 ></section
 ><section
