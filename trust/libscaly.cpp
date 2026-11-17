@@ -2802,7 +2802,8 @@ void Page_enable_statistics() asm("_ZN4Page17enable_statisticsEv");
 Page* Page_allocate_root_page() asm("_ZN4Page18allocate_root_pageEv");
 void Page_reset(Page&) asm("_ZN4Page5resetEv");
 bool Page_fits_fresh_page(uint64_t, uint64_t) asm("_ZN4Page15fits_fresh_pageEmm");
-void* Page_allocate_oversized(Page&, uint64_t) asm("_ZN4Page18allocate_oversizedEm");
+uint64_t Page_object_start(uint64_t) asm("_ZN4Page12object_startEm");
+void* Page_allocate_oversized(Page&, uint64_t, uint64_t) asm("_ZN4Page18allocate_oversizedEmm");
 uint64_t Page_get_capacity(Page&, uint64_t) asm("_ZN4Page12get_capacityEm");
 Page* Page_allocate_exclusive_page(Page&) asm("_ZN4Page23allocate_exclusive_pageEv");
 void* Page_allocate_exclusive_buffer(Page&, uint64_t, uint64_t) asm("_ZN4Page25allocate_exclusive_bufferEmm");
@@ -4103,7 +4104,7 @@ __attribute__((weak)) void* Page_allocate(Page& scaly_self, uint64_t size, uint6
     {
         if (((Page_fits_fresh_page(size, align)) == (false)))
         {
-            return Page_allocate_oversized(*(this_), (size + ((uint64_t)sizeof(Page))));
+            return Page_allocate_oversized(*(this_), size, align);
         }
         Page* head = this_->region;
         Page* tail = head->current_page;
@@ -4144,10 +4145,11 @@ __attribute__((weak)) void* Page_allocate(Page& scaly_self, uint64_t size, uint6
 }
 
 // packages/scaly/0.2.1/scaly/memory/Page.scaly
-__attribute__((weak)) void* Page_allocate_oversized(Page& scaly_self, uint64_t size)
+__attribute__((weak)) void* Page_allocate_oversized(Page& scaly_self, uint64_t size, uint64_t align)
 {
     Page* this_ = &scaly_self;
-    uint64_t rounded = ((((size + 4096ULL) - 1ULL)) & (((uint64_t)(~((4096ULL - 1ULL))))));
+    uint64_t start = Page_object_start(align);
+    uint64_t rounded = (((((start + size) + 4096ULL) - 1ULL)) & (((uint64_t)(~((4096ULL - 1ULL))))));
     void* address = nullptr;
     Page* before = (Page*)(nullptr);
     Page* kept = oversized_kept;
@@ -4194,7 +4196,7 @@ __attribute__((weak)) void* Page_allocate_oversized(Page& scaly_self, uint64_t s
     (page->exclusive_pages).head = (PageNode*)(nullptr);
     page->region = ((Page*)(nullptr));
     PageList_add(this_->exclusive_pages, page);
-    return ((void*)((((page) + (int64_t)(1LL)))));
+    return ((void*)((((((uint64_t)(page))) + start))));
 }
 
 // packages/scaly/0.2.1/scaly/memory/Page.scaly
@@ -4207,8 +4209,13 @@ __attribute__((weak)) uint64_t Page_oversized_size(Page* p)
 // packages/scaly/0.2.1/scaly/memory/Page.scaly
 __attribute__((weak)) bool Page_fits_fresh_page(uint64_t size, uint64_t align)
 {
-    uint64_t start = ((((((uint64_t)sizeof(Page)) + align) - 1ULL)) & (((uint64_t)(~((align - 1ULL))))));
-    return ((start + size) <= 4096ULL);
+    return ((Page_object_start(align) + size) <= 4096ULL);
+}
+
+// packages/scaly/0.2.1/scaly/memory/Page.scaly
+__attribute__((weak)) uint64_t Page_object_start(uint64_t align)
+{
+    return ((((((uint64_t)sizeof(Page)) + align) - 1ULL)) & (((uint64_t)(~((align - 1ULL))))));
 }
 
 // packages/scaly/0.2.1/scaly/memory/Page.scaly
@@ -4245,7 +4252,7 @@ __attribute__((weak)) void* Page_allocate_exclusive_buffer(Page& scaly_self, uin
     Page* this_ = &scaly_self;
     if (((Page_fits_fresh_page(size, align)) == (false)))
     {
-        return Page_allocate_oversized(*(this_), (size + ((uint64_t)sizeof(Page))));
+        return Page_allocate_oversized(*(this_), size, align);
     }
     Page* pg = Page_allocate_exclusive_page(*(this_));
     return Page_allocate(*(pg), size, align);

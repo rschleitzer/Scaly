@@ -1,0 +1,33 @@
+; An object larger than a page lives in a block of its own, behind that
+; block's header -- aligned as it asked.
+;
+; Page.allocate_oversized answered the address right behind the header
+; (page + 1): 40 bytes in on the 64-bit targets, 20 on wasm32. A 16-byte
+; alignment (8 on wasm32) was not met, and on x86_64 a SIMD vector's aligned
+; load faults on that. Asked through both routes to an oversized block:
+; Page.allocate and Page.allocate_exclusive_buffer.
+
+use scaly.memory.Page
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let pg Page.allocate_page()
+    let size: size_t 8000
+    let a pg.allocate(size, 16)
+    let b pg.allocate_exclusive_buffer(size, 16)
+    let c pg.allocate(size, 64)
+    if ((a as size_t) & 15) <> 0 or ((b as size_t) & 15) <> 0 or ((c as size_t) & 63) <> 0
+    {
+        print "FAIL: an oversized object is not aligned as asked"
+        return 1
+    }
+    ; and it lies within its block
+    let host Page.get(c)
+    if (c as size_t) + size > (host as size_t) + Page.oversized_size(host)
+    {
+        print "FAIL: an oversized object runs past its block"
+        return 1
+    }
+    print "PASS"
+    0
+}

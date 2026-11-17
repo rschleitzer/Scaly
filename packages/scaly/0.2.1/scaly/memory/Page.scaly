@@ -412,7 +412,7 @@ define Page
             ; A fresh page holds it behind its header, padded to the
             ; alignment, or nothing does
             if Page.fits_fresh_page(size, align) = false
-                return allocate_oversized(size + sizeof Page)
+                return allocate_oversized(size, align)
 
             ; Serve from the END of the region's extension chain, reached in
             ; ONE indirection: `region` names the head page, and the head's
@@ -479,10 +479,13 @@ define Page
         return aligned_location as pointer[void]
     }
 
-    procedure allocate_oversized(this: Page, size: size_t) returns pointer[void]
+    ; `size` bytes aligned to `align` in a block of their own, behind its
+    ; header (Page.object_start#).
+    procedure allocate_oversized(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         ; We allocate oversized objects directly.
-        var rounded (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))
+        let start Page.object_start(align)
+        var rounded (start + size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))
         ; a kept block that fits and wastes at most as much again, else a
         ; fresh one
         var address: pointer[void] null
@@ -545,8 +548,11 @@ define Page
         ; An oversized page is always exclusive
         exclusive_pages.add page
 
-        ; The page offset by the null pointer for next_object
-        return (page + 1) as pointer[void]
+        ; The object behind the header, padded to its alignment: right behind
+        ; it (page + 1) answered 40 bytes in on the 64-bit targets, 20 on
+        ; wasm32 -- short of a 16-byte (8-byte) alignment, and a SIMD
+        ; vector's aligned load on x86_64 faults on that
+        return ((page as size_t) + start) as pointer[void]
     }
 
     ; The aligned_alloc block length recorded by allocate_oversized (gross
@@ -566,10 +572,12 @@ define Page
     ; was served from a fresh page and ran past its end: the bump pointer
     ; beyond the page, and the next request served from the page after it.
     function fits_fresh_page(size: size_t, align: size_t) returns bool
-    {
-        let start (sizeof Page + align - 1) & (~(align - 1))
-        start + size <= PAGE_SIZE
-    }
+        Page.object_start(align) + size <= PAGE_SIZE
+
+    ; Where the first object aligned to `align` starts on a fresh page or an
+    ; oversized block: behind the header, padded to the alignment.
+    function object_start(align: size_t) returns size_t
+        (sizeof Page + align - 1) & (~(align - 1))
 
     ; Answers a borrowed reference: the page header is always there for a
     ; page-hosted address (a null would mean address 0), and the RETURN is
@@ -603,14 +611,14 @@ define Page
     ; either way — which is what makes `Page.get(buffer)` the whole release path
     ; (slice 346, the embedded Array). Under a page's worth it is an ordinary
     ; exclusive page with the buffer as its first object; over it the oversized
-    ; route, which registers ITSELF here and returns the object right behind the
-    ; header. The decision belongs here rather than in the caller because the
+    ; route, which registers ITSELF here and returns the object behind the
+    ; header, padded to its alignment. The decision belongs here rather than in the caller because the
     ; caller cannot see PAGE_SIZE: a module-level define does not resolve inside
     ; a generic body monomorphized into another package.
     procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         if Page.fits_fresh_page(size, align) = false
-            return allocate_oversized(size + sizeof Page)
+            return allocate_oversized(size, align)
         let pg this.allocate_exclusive_page()
         pg.allocate(size, align)
     }
