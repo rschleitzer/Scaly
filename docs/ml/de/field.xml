@@ -72,47 +72,44 @@
       alles zusammen und addiert noch eine Zahl, seinen
       <emphasis>Bias</emphasis>:</para>
     <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mi>y</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></informalequation>
-    <para>Wo <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> positiv ist, vermutet das Neuron orange,
-      wo es negativ ist, blau. Die Punkte, an denen <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>
+    <para>Das Ergebnis <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> heißt die <emphasis>gewichtete Summe</emphasis>
+      des Neurons. Wo sie positiv ist, vermutet das Neuron orange, wo sie
+      negativ ist, blau. Die Punkte, an denen <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>
       genau 0 ist, bilden eine Gerade; ein Neuron teilt die Ebene also
-      durch eine Gerade: Die Gewichte drehen sie, der Bias verschiebt sie.
-      Hier ist ein Neuron mit Gewichten, die wir gewählt haben, 1 und 1
-      und einem Bias von 0, und es betrachtet sechs Punkte:</para>
-    <programlisting>; One neuron with weights we chose: it adds up its inputs, each times its
-; weight, plus a bias, and the sign of the sum is its guess.
-define Point(x: f64, y: f64, kind: f64)
-
-var points Array[Point]()
-points.add(Point(2.0, 1.5, 1.0))
-points.add(Point(1.0, 3.0, 1.0))
-points.add(Point(0.5, 0.0 - 2.5, 1.0))
-points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
-points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
-
-let w1 1.0
-let w2 1.0
-let b 0.0
-for p in points
-{
-    let z w1 * p.x + w2 * p.y + b
-    let guess if z &gt; 0.0: 1.0 else 0.0 - 1.0
-    let verdict if guess = p.kind: "right" else "wrong"
-    print "(`p.x`, `p.y`) is `p.kind`: z = `z`, the guess `guess`, `verdict`"
-}</programlisting>
-    <screen>(2, 1.5) is 1: z = 3.5, the guess 1, right
-(1, 3) is 1: z = 4, the guess 1, right
-(0.5, -2.5) is 1: z = -2, the guess -1, wrong
-(-2, -1) is -1: z = -3, the guess -1, right
-(-1, -3) is -1: z = -4, the guess -1, right
-(-3, 1) is -1: z = -2, the guess -1, right</screen>
-    <para>Fünf von sechs stimmen. Der Punkt <literal>(0.5, -2.5)</literal>
-      ist orange, liegt aber unterhalb der Geraden
-      <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:mi>y</mml:mi><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation>. Setz <literal>w2</literal> auf 0
-      und führ es noch einmal aus: Die Gerade wird zur senkrechten
-      Achse, <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation>, und alle sechs stimmen. Die Gerade
-      zu drehen, indem man ein Gewicht ändert, bis die Vermutungen stimmen,
-      ist genau das, was Lernen tun wird, nur von selbst.</para>
+      durch eine Gerade: Die Gewichte drehen sie, der Bias verschiebt sie.</para>
+    <para>Nun wollen wir versuchen, das Neuron so anzupassen, dass es die
+      Farbe von sechs Punkten, die wir willkürlich in der Ebene verteilen,
+      möglichst gut bestimmen kann: drei orange und drei blaue. Wir beginnen
+      mit den Gewichten 1 und 1 und dem Bias 0:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:mi>y</mml:mi></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Ebene, durch die Gerade x + y = 0 geteilt, oben rechts orange, unten links blau; sechs Punkte, um einen orangen auf der blauen Seite ein dunkler Ring.</alt>
+        <imageobject><imagedata fileref="fig/neuron-xy.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>Fünf der sechs liegen auf der richtigen Seite; der eingekreiste ist
+      orange, liegt aber unterhalb der Geraden. Mit <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation> dreht sich die
+      Gerade zur senkrechten Achse, und alle sechs stimmen:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:mi>x</mml:mi></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Ebene, durch die senkrechte Achse geteilt, rechts orange, links blau; alle sechs Punkte auf der Seite ihrer Farbe.</alt>
+        <imageobject><imagedata fileref="fig/neuron-x.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>Die Gerade zu drehen, indem man ein Gewicht ändert, bis die
+      Vermutungen stimmen, ist genau das, was Lernen tun wird, nur von
+      selbst.</para>
+    <sidebar role="tryit">
+      <para><link xlink:href="https://scaly.io/play/model/#model=neuron&amp;lang=de">Öffne die Seite mit dem Neuron</link>
+        und zieh an <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>,
+        <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>
+        und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>:
+        Die Gerade dreht und verschiebt sich, und die Seite zählt, wie viele
+        der sechs Punkte richtig liegen. Unter dem Bild steht die Funktion
+        in Scaly, die die Seite dafür rechnet.</para>
+    </sidebar>
   </section>
 
   <section xml:id="field-loss">
@@ -123,8 +120,8 @@ for p in points
       taugt dafür nicht: Eine kleine Änderung eines Gewichts ändert meist
       gar keine Vermutung, also sagt die Zahl nicht, in welche Richtung zu
       drehen ist.</para>
-    <para>Deshalb wird die Summe des Neurons zuerst von einer glatten
-      Funktion in eine Zahl zwischen -1 und 1 gedrückt, hier vom
+    <para>Deshalb bilden wir die gewichtete Summe <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> zuerst mit einer
+      glatten Funktion auf eine Zahl zwischen −1 und 1 ab, hier mit dem
       Tangens hyperbolicus:</para>
     <informalequation><mml:math><mml:mi>a</mml:mi><mml:mo>=</mml:mo><mml:mrow><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
     <para>So antwortet das Neuron, wie es zu Beginn des Kapitels von einem

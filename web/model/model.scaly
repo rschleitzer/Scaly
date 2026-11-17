@@ -1,19 +1,27 @@
-; The model (web/model/index.html): one function made up by hand,
+; The model (web/model/index.html): a function made up by hand as a
+; colouring of the plane from -6 to 6, and the page moves its parameters.
+; Two models, the first two of Machine Learning with Scaly:
 ;
-;   f(x, y) = cos(pi (x² + y²) / c)
+;   0  f(x, y) = cos(pi (x² + y²) / c)          the parameter c
+;   1  the neuron z = w1 x + w2 y + b, its guess the sign of z (orange
+;      where z > 0, blue where z < 0), and six points to guess
 ;
-; as a colouring of the plane from -6 to 6, and the page moves c. The
-; program keeps what the page shows in ONE vector of numbers, the board,
-; and says before its loop where the board lies in its memory; the page
-; reads the picture straight out of that memory and writes c into the
-; board's head, where the program finds it on its next round.
+; The program keeps what the page shows in ONE vector of numbers, the
+; board, and says before its loop where the board lies in its memory; the
+; page reads it straight out of that memory and writes the model and its
+; parameters into the board's head, where the program finds them on its
+; next round.
 ;
 ; The head of the board:
 ;
-;    0  a counter the page raises after it wrote c   (the page writes)
-;    1  c                                            (the page writes)
+;    0  a counter the page raises after it wrote what follows (the page)
+;    1  which model, 0 or 1                                    (the page)
+;    2  c, or w1, w2 and b in 2, 3 and 4                       (the page)
 ;   32  the counter of slot 0 the program has taken in
 ;   33  a counter raised with each picture
+;   34  how many points there are (6 for the neuron, else 0)
+;   40  the points, four numbers each: x, y, the kind (+1 orange, -1
+;       blue) and what the model answers there
 ;
 ; From slot 64 on the picture, SIZE x SIZE numbers between -1 and 1, row
 ; by row from the top.
@@ -21,6 +29,30 @@
 define SIZE int 400
 define HEAD int 64
 define BOARD int 160064      ; HEAD + SIZE * SIZE
+define POINTS int 40
+
+; --- the models: what the page shows of this program, each between its
+; two marker lines (index.html cuts it out of this file) -----------------
+
+; >> cosine
+; The model made up by hand: +1 in the middle, -1 further out, and c says
+; how far.
+function cosine(x: f64, y: f64, c: f64) returns f64
+{
+    cos(3.141592653589793 * (x * x + y * y) / c)
+}
+; <<
+
+; >> neuron
+; A neuron: its inputs, each times its weight, plus its bias. Its guess is
+; the sign of the sum: orange where it is positive, blue where negative.
+function neuron(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
+{
+    w1 * x + w2 * y + b
+}
+; <<
+
+; --- the picture ---------------------------------------------------------
 
 ; Where cell k of SIZE lies on the plane, from -6 to 6.
 function place(k: int) returns f64
@@ -28,17 +60,56 @@ function place(k: int) returns f64
     ((k as f64) + 0.5) * 12.0 / (SIZE as f64) - 6.0
 }
 
-function model(x: f64, y: f64, c: f64) returns f64
+; The neuron's guess at (x, y) for the picture: +1 or -1 by the sign of z,
+; and between them across the width of one point of the picture, where the
+; line z = 0 runs.
+function guess(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
 {
-    cos(3.141592653589793 * (x * x + y * y) / c)
+    let z neuron(x, y, w1, w2, b)
+    let slope (w1 * w1 + w2 * w2).sqrt() * 12.0 / (SIZE as f64)
+    if slope = 0.0
+        return if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0
+    let v z / slope
+    if v > 1.0: 1.0 else if v < 0.0 - 1.0: 0.0 - 1.0 else v
 }
 
-; The picture for c, into the board: a round of the `for` for each of its
-; points, on all cores.
-procedure picture(mutable board: Vector[f64], c: f64)
+function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64) returns f64
+{
+    if which = 1
+        return guess(x, y, a, b, c)
+    cosine(x, y, a)
+}
+
+; The picture, into the board: a round of the `for` for each of its points,
+; on all cores.
+procedure picture(mutable board: Vector[f64], which: int, a: f64, b: f64, c: f64)
 {
     for p in SIZE * SIZE
-        board.put(HEAD + p, model(place(p % SIZE), 0.0 - place(p / SIZE), c))
+        board.put(HEAD + p, model(which, place(p % SIZE), 0.0 - place(p / SIZE), a, b, c))
+}
+
+; The six points of the neuron in the book, and what it answers at each.
+procedure points(mutable board: Vector[f64], which: int, w1: f64, w2: f64, b: f64)
+{
+    if which <> 1
+    {
+        board.put(34, 0.0)
+        return
+    }
+    board.put(34, 6.0)
+    var k 0
+    while k < 6
+    {
+        let x if k = 0: 2.0 else if k = 1: 1.0 else if k = 2: 0.5 else if k = 3: 0.0 - 2.0 else if k = 4: 0.0 - 1.0 else 0.0 - 3.0
+        let y if k = 0: 1.5 else if k = 1: 3.0 else if k = 2: 0.0 - 2.5 else if k = 3: 0.0 - 1.0 else if k = 4: 0.0 - 3.0 else 1.0
+        let kind if k < 3: 1.0 else 0.0 - 1.0
+        let z neuron(x, y, w1, w2, b)
+        board.put(POINTS + 4 * k, x)
+        board.put(POINTS + 4 * k + 1, y)
+        board.put(POINTS + 4 * k + 2, kind)
+        board.put(POINTS + 4 * k + 3, if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0)
+        k := k + 1
+    }
 }
 
 var board Vector[f64](BOARD)
@@ -48,7 +119,7 @@ while k < BOARD
     board.put(k, 0.0)
     k := k + 1
 }
-board.put(1, 72.0)
+board.put(2, 72.0)
 print "board at `board.as_bytes().data as size_t`"
 var taken 0.0 - 1.0
 repeat
@@ -56,10 +127,12 @@ repeat
     if board[0] <> taken
     {
         taken := board[0]
-        var c board[1]
-        if c < 0.1
-            c := 0.1
-        picture(board, c)
+        let which board[1] as int
+        var a board[2]
+        if which = 0 and a < 0.1
+            a := 0.1
+        picture(board, which, a, board[3], board[4])
+        points(board, which, a, board[3], board[4])
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }

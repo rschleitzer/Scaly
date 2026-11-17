@@ -1,0 +1,91 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; the neuron z = w1 x + w2 y + b with the weights and the bias below, its
+; guess the sign of z -- orange where z > 0, blue where z < 0 -- over the
+; plane from -6 to 6, and the six points of the chapter, a dark ring around
+; each it guesses wrong. Each point of the picture is computed, the rounds of
+; the `for` on all cores; the picture goes to picture.<size>x<size>.rgba,
+; four bytes a point.
+define W1 f64 1.0
+define W2 f64 0.0
+define B f64 0.0
+define SIZE int 480
+
+define Colour(r: f64, g: f64, b: f64)
+
+function point_x(k: int) returns f64
+{
+    if k = 0: 2.0 else if k = 1: 1.0 else if k = 2: 0.5 else if k = 3: 0.0 - 2.0 else if k = 4: 0.0 - 1.0 else 0.0 - 3.0
+}
+
+function point_y(k: int) returns f64
+{
+    if k = 0: 1.5 else if k = 1: 3.0 else if k = 2: 0.0 - 2.5 else if k = 3: 0.0 - 1.0 else if k = 4: 0.0 - 3.0 else 1.0
+}
+
+; the first three are orange (+1), the others blue (-1)
+function kind(k: int) returns f64
+{
+    if k < 3: 1.0 else 0.0 - 1.0
+}
+
+function z(x: f64, y: f64) returns f64
+{
+    W1 * x + W2 * y + B
+}
+
+; The part `t` of the way from colour a to colour b.
+function mix(a: Colour, b: Colour, t: f64) returns Colour
+{
+    Colour(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+}
+
+; How much of a point is covered by a disc of radius `edge` whose middle is
+; `d` away: 1 inside, 0 outside, smooth across one point.
+function cover(d: f64, edge: f64) returns f64
+{
+    let c edge + 0.5 - d
+    if c < 0.0: 0.0 else if c > 1.0: 1.0 else c
+}
+
+function pixel(p: int) returns u32
+{
+    let px (p % SIZE) as f64 + 0.5
+    let py (p / SIZE) as f64 + 0.5
+    let x px * 12.0 / (SIZE as f64) - 6.0
+    let y 6.0 - py * 12.0 / (SIZE as f64)
+    let orange Colour(232.0, 133.0, 61.0)
+    let blue Colour(59.0, 125.0, 216.0)
+    let pale Colour(243.0, 243.0, 241.0)
+    ; the guess, between +1 and -1 across one point where z = 0 runs
+    let slope (W1 * W1 + W2 * W2).sqrt() * 12.0 / (SIZE as f64)
+    var v z(x, y) / slope
+    if v > 1.0
+        v := 1.0
+    if v < 0.0 - 1.0
+        v := 0.0 - 1.0
+    var c mix(pale, if v > 0.0: orange else blue, (if v < 0.0: 0.0 - v else v) * 0.85)
+    ; the points
+    var k 0
+    while k < 6
+    {
+        let dx px - (point_x(k) + 6.0) / 12.0 * (SIZE as f64)
+        let dy py - (6.0 - point_y(k)) / 12.0 * (SIZE as f64)
+        let d (dx * dx + dy * dy).sqrt()
+        if z(point_x(k), point_y(k)) * kind(k) <= 0.0
+            c := mix(c, Colour(29.0, 29.0, 31.0), cover(d, 40.0) - cover(d, 31.0))
+        c := mix(c, Colour(0.0, 0.0, 0.0), 0.35 * cover(d, 23.0))
+        c := mix(c, Colour(255.0, 255.0, 255.0), cover(d, 21.0))
+        c := mix(c, if kind(k) > 0.0: orange else blue, cover(d, 17.0))
+        k := k + 1
+    }
+    let r c.r.round_even() as u32
+    let g c.g.round_even() as u32
+    let b c.b.round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+var picture Vector[u32]((SIZE * SIZE) as size_t)
+for p in SIZE * SIZE
+    picture.put(p as size_t, pixel(p))
+if File.write_bytes("picture.`SIZE`x`SIZE`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"

@@ -678,87 +678,122 @@ display="block"
 ></math
 ></div
 ><p
->Where <math
+>The result <math
 ><mi
 >z</mi
 ></math
-> is positive the neuron guesses orange,
+> is called the neuron's <em
+>weighted
+      sum</em
+>. Where it is positive the neuron guesses orange,
       where it is negative, blue. The points where <math
 ><mi
 >z</mi
 ></math
 > is
       exactly 0 form a straight line, so a neuron parts the plane by a
-      line: the weights turn it, the bias moves it. Here is a neuron with
-      weights we chose, 1 and 1 and a bias of 0, looking at six
-      points:</p
-><pre
-class="listing"
-><code
->; One neuron with weights we chose: it adds up its inputs, each times its
-; weight, plus a bias, and the sign of the sum is its guess.
-define Point(x: f64, y: f64, kind: f64)
-
-var points Array[Point]()
-points.add(Point(2.0, 1.5, 1.0))
-points.add(Point(1.0, 3.0, 1.0))
-points.add(Point(0.5, 0.0 - 2.5, 1.0))
-points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
-points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
-
-let w1 1.0
-let w2 1.0
-let b 0.0
-for p in points
-{
-    let z w1 * p.x + w2 * p.y + b
-    let guess if z &#62; 0.0: 1.0 else 0.0 - 1.0
-    let verdict if guess = p.kind: "right" else "wrong"
-    print "(`p.x`, `p.y`) is `p.kind`: z = `z`, the guess `guess`, `verdict`"
-}</code
-></pre
-><pre
-class="screen"
-><code
->(2, 1.5) is 1: z = 3.5, the guess 1, right
-(1, 3) is 1: z = 4, the guess 1, right
-(0.5, -2.5) is 1: z = -2, the guess -1, wrong
-(-2, -1) is -1: z = -3, the guess -1, right
-(-1, -3) is -1: z = -4, the guess -1, right
-(-3, 1) is -1: z = -2, the guess -1, right</code
-></pre
+      line: the weights turn it, the bias moves it.</p
 ><p
->Five of the six are right. The point <code
->(0.5, -2.5)</code
->
-      is orange but lies below the line <math
+>Now let us try to adjust the neuron so that it can tell, as well
+      as possible, the colour of six points we scatter over the plane at
+      will: three orange and three blue. We begin with the weights 1 and 1
+      and the bias 0:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
 ><mi
 >x</mi
 ><mo
 >+</mo
 ><mi
 >y</mi
+></math
+></div
+><img
+src="fig/neuron-xy.png"
+alt="The plane parted by the line x + y = 0, orange to the upper right, blue to the lower left; six points, a dark ring around an orange one on the blue side."
+loading="lazy"></div
+><p
+>Five of the six lie on the right side; the one in the ring is
+      orange but lies below the line. With <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
 ><mo
 >=</mo
 ><mn
 >0</mn
 ></math
->. Set
-      <code
->w2</code
-> to 0 and run it again: the line becomes the
-      upright axis, <math
+> the line turns to the
+      upright axis, and all six are right:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
 ><mi
 >x</mi
-><mo
->=</mo
-><mn
->0</mn
 ></math
->, and all six are right.
-      Turning the line by changing a weight until the guesses are right is
-      exactly what learning will do, only by itself.</p
+></div
+><img
+src="fig/neuron-x.png"
+alt="The plane parted by the upright axis, orange on the right, blue on the left; all six points on the side of their colour."
+loading="lazy"></div
+><p
+>Turning the line by changing a weight until the guesses are right
+      is exactly what learning will do, only by itself.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Try it</p
+><p
+><a
+href="https://scaly.io/play/model/#model=neuron"
+>Open the page with the neuron</a
+>
+        and pull at <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>,
+        <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+>
+        and <math
+><mi
+>b</mi
+></math
+>:
+        the line turns and moves, and the page counts how many of the six
+        points lie right. Below the picture stands the function in Scaly
+        that the page computes for it.</p
+></aside
 ></section
 ><section
 id="field-loss"
@@ -775,8 +810,12 @@ href="#field-loss"
       small change of a weight usually changes no guess at all, so the
       count does not say which way to turn.</p
 ><p
->So the neuron's sum is first squashed into a number between
-      -1 and 1 by a smooth function, here the hyperbolic tangent:</p
+>So we first map the weighted sum <math
+><mi
+>z</mi
+></math
+> to a number between −1
+      and 1 by a smooth function, here the hyperbolic tangent:</p
 ><div
 class="equation"
 ><math

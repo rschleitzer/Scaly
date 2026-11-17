@@ -487,9 +487,10 @@ math { font-family: 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', math; 
 .equation math { font-size: 1.25em; }
 div.lead > p { margin: 0; }
 
-.beside { display: flex; align-items: center; justify-content: center; gap: 2.5em; flex-wrap: wrap; margin: 0 0 1.4em; }
+.beside { display: grid; grid-template-columns: 1fr 200px; align-items: center; gap: 2em; margin: 0 0 1.4em; }
 .beside .equation { margin: 0; }
 .beside img { width: 200px; height: auto; border-radius: 6px; }
+@media (max-width: 560px) { .beside { grid-template-columns: 1fr; justify-items: center; } }
 .run-output img.run-drawing { display: block; max-width: 100%; height: auto; margin: 8px 0; }
 
 figure.example { margin: 0 0 1.5em; }

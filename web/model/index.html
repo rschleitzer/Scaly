@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A model</title>
-<meta name="description" content="A function made up by hand, f(x, y) = cos(π(x² + y²)/c), colours the plane; move c and watch. Computed by a Scaly program in the page.">
+<meta name="description" content="A function made up by hand colours the plane -- f(x, y) = cos(π(x² + y²)/c), or a neuron z = w₁x + w₂y + b --; move its parameters and watch. Computed by a Scaly program in the page.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
 <style>
@@ -16,14 +16,14 @@
   :root {
     --bg: #fbfbfa; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcdcde;
     --accent: #2a5db0; --bad: #b3261e;
-    --plus: #e8853d; --minus: #3b7dd8; --zero: #f3f3f1;
+    --plus: #e8853d; --minus: #3b7dd8; --zero: #f3f3f1; --dot: #ffffff;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161618; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343a;
       --accent: #7aa7f0; --bad: #f08a80;
-      --plus: #f0964f; --minus: #4d8ef0; --zero: #26262a;
+      --plus: #f0964f; --minus: #4d8ef0; --zero: #26262a; --dot: #161618;
       color-scheme: dark;
     }
   }
@@ -44,7 +44,17 @@
   canvas { width: min(480px, 100%); aspect-ratio: 1; border-radius: 8px; display: block;
            background: var(--zero); border: 1px solid var(--line); }
   .side { display: flex; flex-direction: column; gap: 22px; min-width: 300px; max-width: 420px; }
-  math mn#value { font-variant-numeric: tabular-nums; }
+  math mn { font-variant-numeric: tabular-nums; }
+  #sliders { display: flex; flex-direction: column; gap: 10px; }
+  #sliders label { display: grid; grid-template-columns: 2.2em 1fr; align-items: center; gap: 8px; }
+  #sliders math { font-size: 1.25em; }
+  #right { color: var(--ink); font-weight: 600; }
+  .code { max-width: 860px; margin: 0 auto 40px; padding: 0 16px; }
+  .code h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .code pre { margin: 0 0 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+              overflow-x: auto; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .code .comment { color: var(--muted); font-style: italic; }
+  .code .word { color: var(--accent); font-weight: 600; }
   math { font-family: 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', math; font-size: 1.6em; }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   .say { color: var(--muted); margin: 0; }
@@ -67,16 +77,18 @@
 <main>
   <canvas id="plane" width="400" height="400" aria-label="The plane coloured by the model"></canvas>
   <div class="side">
-    <math display="block">
-      <mi>f</mi><mo>&#x2061;</mo><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow>
-      <mo>=</mo>
-      <mi>cos</mi><mo>&#x2061;</mo><mrow><mo>(</mo><mfrac><mrow><mi>π</mi><mrow><mo stretchy="false">(</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mrow><mn id="value">72</mn></mfrac><mo>)</mo></mrow>
-    </math>
-    <input type="range" id="c" min="1" max="150" step="0.5" value="72" aria-label="c">
+    <div id="formula"></div>
+    <div id="sliders"></div>
     <p class="say" data-t="say">Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.</p>
+    <p class="say" id="right" hidden></p>
     <span id="status"></span>
   </div>
 </main>
+<section class="code" id="code" hidden>
+  <h2 data-t="inScaly">In Scaly</h2>
+  <pre><code id="source"></code></pre>
+  <p class="say" data-t="sourceSay">This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.</p>
+</section>
 
 <script type="module">
 import { Threads } from './threads.mjs';
@@ -84,12 +96,20 @@ import { Threads } from './threads.mjs';
 const $ = id => document.getElementById(id);
 const LANGS = ['en', 'de'];
 const TEXT = {
-  en: { title: 'A model', book: 'The chapter', field: 'The field', language: 'Language',
+  en: { title: 'A model', neuron: 'A neuron', book: 'The chapter', field: 'The field', language: 'Language',
         say: 'Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.',
+        sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. The points are the six of the chapter, a ring around each the neuron guesses wrong.',
+        right: n => `${n} of 6 right`,
+        inScaly: 'In Scaly', sourceSay: 'This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.',
+
         loading: 'The program loads …', isolation: 'This page needs a server with cross-origin isolation (COOP and COEP): it shares its memory with the program.',
         ended: s => `The program has ended (${s}). Load the page again to start it anew.`, cores: n => `Scaly in the page, ${n} cores` },
-  de: { title: 'Ein Modell', book: 'Das Kapitel', field: 'Das Spielfeld', language: 'Sprache',
+  de: { title: 'Ein Modell', neuron: 'Ein Neuron', book: 'Das Kapitel', field: 'Das Spielfeld', language: 'Sprache',
         say: 'Orange, wo das Modell +1 antwortet, blau, wo es −1 antwortet, blass, wo es unsicher ist; die Ebene reicht in beide Richtungen von −6 bis +6.',
+        sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Die Punkte sind die sechs aus dem Kapitel, ein Ring um jeden, bei dem das Neuron falsch rät.',
+        right: n => `${n} von 6 richtig`,
+        inScaly: 'In Scaly', sourceSay: 'Diese Funktion rechnet die Seite an jedem ihrer Punkte: Sie ist aus dem Programm ausgeschnitten, das in der Seite läuft, model.scaly.',
+
         loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
         ended: s => `Das Programm ist beendet (${s}). Lade die Seite neu, um es wieder zu starten.`, cores: n => `Scaly in der Seite, ${n} Kerne` },
 };
@@ -115,13 +135,15 @@ function status(say, bad = false) {
 }
 function translatePage() {
   document.documentElement.lang = lang;
-  document.title = t('title');
+  document.title = t(model.title);
   $('lang').value = lang;
   $('lang').setAttribute('aria-label', t('language'));
   $('book').href = lang === 'de' ? '/ml/field.de.htm' : '/ml/field.htm';
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  document.querySelector('h1').textContent = t(model.title);
+  document.querySelector('.say:not(#right)').textContent = t(model.say);
   if (said) $('status').textContent = said();
-  showValue();
+  showValues();
 }
 $('lang').onchange = () => {
   lang = $('lang').value;
@@ -129,21 +151,62 @@ $('lang').onchange = () => {
   translatePage();
 };
 
+// --- the models --------------------------------------------------------------
+
+// MathML pieces; a parameter's value stands in the formula itself
+const mi = v => `<mi>${v}</mi>`, mo = v => `<mo>${v}</mo>`, mn = v => `<mn>${v}</mn>`;
+const sub = (b, s) => `<msub>${b}${s}</msub>`;
+const num = v => Math.abs(v).toLocaleString(lang, { maximumFractionDigits: 1 });
+// "+ 0.5 y" or "− 0.5 y" after the first term, "−0.5 y" as the first
+const term = (v, rest, first) => (v < 0 ? (first ? '<mrow><mo>−</mo>' : mo('−')) : first ? '<mrow>' : mo('+'))
+  + mn(num(v)) + (rest || '') + (first ? '</mrow>' : '');
+const MODELS = {
+  cosine: {
+    id: 0, title: 'title', say: 'say', source: 'cosine',
+    params: [{ name: 'c', label: mi('c'), min: 1, max: 150, step: 0.5, value: 72 }],
+    formula: ([c]) => mi('f') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow>'
+      + mo('=') + mi('cos') + mo('&#x2061;') + '<mrow><mo>(</mo><mfrac><mrow><mi>π</mi><mrow><mo stretchy="false">(</mo>'
+      + '<msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mrow>'
+      + mn(num(c)) + '</mfrac><mo>)</mo></mrow>',
+  },
+  neuron: {
+    id: 1, title: 'neuron', say: 'sayNeuron', source: 'neuron',
+    params: [{ name: 'w1', label: sub(mi('w'), mn(1)), min: -3, max: 3, step: 0.1, value: 1 },
+             { name: 'w2', label: sub(mi('w'), mn(2)), min: -3, max: 3, step: 0.1, value: 1 },
+             { name: 'b', label: mi('b'), min: -6, max: 6, step: 0.1, value: 0 }],
+    formula: ([w1, w2, b]) => mi('z') + mo('=') + term(w1, mi('x'), true) + term(w2, mi('y')) + term(b),
+  },
+};
+const asked = new URLSearchParams(location.hash.slice(1));
+const model = MODELS[asked.get('model')] ?? MODELS.cosine;
+for (const q of model.params) {
+  const v = Number(asked.get(q.name));
+  if (asked.has(q.name) && v >= q.min && v <= q.max) q.value = v;
+}
+
+// the sliders, one for each parameter
+for (const q of model.params) {
+  const label = document.createElement('label');
+  label.innerHTML = `<math>${q.label}</math><input type="range" min="${q.min}" max="${q.max}" step="${q.step}" value="${q.value}" aria-label="${q.name}">`;
+  q.input = label.querySelector('input');
+  q.input.addEventListener('input', () => { showValues(); send(); });
+  $('sliders').append(label);
+}
+const values = () => model.params.map(q => Number(q.input.value));
+function showValues() { $('formula').innerHTML = `<math display="block">${model.formula(values())}</math>`; }
+
 // --- the board (model.scaly says what lies where) ----------------------------
 
 const SIZE = 400, HEAD = 64, BOARD = HEAD + SIZE * SIZE;
 let board = null;           // a Float64Array over the program's board, in its memory
 let changes = 0, frame = -1;
 
-function c() { return Number($('c').value); }
-// c in the formula itself, written as the page's language writes numbers
-function showValue() { $('value').textContent = c().toLocaleString(lang, { maximumFractionDigits: 1 }); }
 function send() {
   if (!board) return;
-  board[1] = c();
-  board[0] = ++changes;     // last: the program takes c in once it sees this
+  board[1] = model.id;
+  values().forEach((v, k) => { board[2 + k] = v; });
+  board[0] = ++changes;     // last: the program takes in what is above once it sees this
 }
-$('c').addEventListener('input', () => { showValue(); send(); });
 
 // a value between -1 and 1 as the field's colour (web/field)
 function rgb(css) {
@@ -156,8 +219,9 @@ function rgb(css) {
 let palette;
 function readPalette() {
   const css = getComputedStyle(document.documentElement);
-  palette = { plus: rgb(css.getPropertyValue('--plus').trim()), minus: rgb(css.getPropertyValue('--minus').trim()),
-              zero: rgb(css.getPropertyValue('--zero').trim()) };
+  const v = name => css.getPropertyValue(name).trim();
+  palette = { plus: rgb(v('--plus')), minus: rgb(v('--minus')), zero: rgb(v('--zero')),
+              plusCss: v('--plus'), minusCss: v('--minus'), ink: v('--ink'), dot: v('--dot') };
 }
 readPalette();
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readPalette(); frame = -1; });
@@ -172,7 +236,26 @@ function picture() {
     px[4 * p + 2] = z[2] + (end[2] - z[2]) * a;
     px[4 * p + 3] = 255;
   }
-  $('plane').getContext('2d').putImageData(image, 0, 0);
+  const g = $('plane').getContext('2d');
+  g.putImageData(image, 0, 0);
+  // the points (the neuron's), a ring around each it guesses wrong
+  const n = board[34];
+  let right = 0;
+  for (let k = 0; k < n; k++) {
+    const [x, y, kind, answer] = [0, 1, 2, 3].map(i => board[40 + 4 * k + i]);
+    const px = (x + 6) / 12 * SIZE, py = (6 - y) / 12 * SIZE;
+    if (answer === kind) right++;
+    else {
+      g.beginPath(); g.arc(px, py, 15, 0, 7);
+      g.lineWidth = 3; g.strokeStyle = palette.ink; g.stroke();
+    }
+    g.beginPath(); g.arc(px, py, 8, 0, 7);
+    g.fillStyle = kind > 0 ? palette.plusCss : palette.minusCss; g.fill();
+    g.lineWidth = 5; g.strokeStyle = 'rgba(0, 0, 0, 0.35)'; g.stroke();
+    g.lineWidth = 2.5; g.strokeStyle = palette.dot; g.stroke();
+  }
+  $('right').hidden = n === 0;
+  $('right').textContent = t('right')(right);
 }
 function tick() {
   if (board && board[33] !== frame && board[32] === changes) {
@@ -182,11 +265,26 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
+// --- the model's function in Scaly ---------------------------------------------
+
+// cut out of the program itself, between "; >> <name>" and "; <<"
+const WORDS = /\b(function|procedure|returns|let|var|if|else|return|while|for|in|define)\b/g;
+function highlight(line) {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const at = line.indexOf(';');
+  const code = at < 0 ? line : line.slice(0, at), comment = at < 0 ? '' : line.slice(at);
+  return esc(code).replace(WORDS, '<span class="word">$1</span>') + (comment ? `<span class="comment">${esc(comment)}</span>` : '');
+}
+fetch('model.scaly').then(r => r.ok ? r.text() : '').then(text => {
+  const m = new RegExp(`^; >> ${model.source}\\n([\\s\\S]*?)^; <<`, 'm').exec(text);
+  if (!m) return;
+  $('source').innerHTML = m[1].replace(/\n$/, '').split('\n').map(highlight).join('\n');
+  $('code').hidden = false;
+}).catch(() => {});
+
 // --- the program -------------------------------------------------------------
 
 async function start() {
-  const asked = Number(new URLSearchParams(location.hash.slice(1)).get('c'));
-  if (asked >= 1 && asked <= 150) $('c').value = String(asked);
   translatePage();
   if (!crossOriginIsolated) { status('isolation', true); return; }
   status('loading');
@@ -194,7 +292,7 @@ async function start() {
   const env = { SCALY_CPUS: String(cpus) };
   const runner = new Worker('runner.mjs', { type: 'module' });
   const threads = await Threads.create({ out: () => {}, err: () => {}, exit: s => ended(s), env });
-  const ended = s => { board = null; status(() => t('ended')(s), true); $('c').disabled = true; };
+  const ended = s => { board = null; status(() => t('ended')(s), true); for (const q of model.params) q.input.disabled = true; };
   runner.onerror = e => ended(e.message || 'the worker stopped');
   runner.onmessage = ({ data }) => {
     if (threads.handle(data)) return;
