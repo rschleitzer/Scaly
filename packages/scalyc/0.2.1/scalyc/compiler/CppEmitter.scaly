@@ -4585,7 +4585,53 @@ define CppEmitter
         }
         if c.name = "unwrap_or" and all.length = 2
             return this.operand(all[1])
+        ; a float's methods (Emitter.emit_float_intrinsic#'s list): the
+        ; compiler's builtins of the same operation, f32 with the suffix f
+        ; -- no header needed. mul_add and mul_error stay untranslated: their
+        ; bodies differ by target.
+        let builtin CppEmitter.float_builtin(c.name)
+        if builtin.get_length() > 0
+        {
+            var suffix String()
+            if c.result_type.name = "f32"
+                suffix := String("f")
+            var sb StringBuilder()
+            sb.append "__builtin_`builtin``suffix`("
+            var i: size_t 0
+            while i < all.length
+            {
+                if i > 0
+                    sb.append ", "
+                sb.append(this.operand(all[i]))
+                i := i + 1
+            }
+            sb.append ")"
+            return sb.to_string()
+        }
         this.untranslated("intrinsic `c.name`")
+    }
+
+    ; the builtin of a float method, or empty
+    function float_builtin(name: String) returns String
+    {
+        match name
+            case "float.sqrt"
+                return String("sqrt")
+            case "float.floor"
+                return String("floor")
+            case "float.ceil"
+                return String("ceil")
+            case "float.trunc"
+                return String("trunc")
+            case "float.round_even"
+                return String("rint")
+            case "float.abs"
+                return String("fabs")
+            case "float.copy_sign"
+                return String("copysign")
+            case "float.fma"
+                return String("fma")
+        String()
     }
 
     procedure kinds_of(this, mangled: String) returns String

@@ -1,8 +1,12 @@
 ; The standard library's drawings (scaly/draw.scaly): a Drawing writes SVG,
-; text in it is escaped, a Chart draws its lines with their axes. The
-; colours and words go through svg_text -- as a STATIC function of Drawing
-; they came back as garbage from inside the standard library's methods
-; (2026-11-11, not isolated), so this holds what the page shows.
+; text in it is escaped, a Chart draws lines, bars and dots against a scale
+; of round numbers. The colours and words go through svg_text -- as a STATIC
+; function of Drawing they came back as garbage from inside the standard
+; library's methods (2026-11-11/12, Emitter.emit_tuple#, a grouping of a
+; call's result), and so did a String PARAMETER written into an
+; interpolation (2026-11-17, `Chart.small`'s anchor: a record of one field
+; held through a pointer, grouped -- rc 139 at the ticks 10, 15, 20), so
+; this holds what the page shows.
 
 function has(text: String, part: String) returns bool
     text.contains(part)
@@ -31,10 +35,32 @@ procedure main() returns int
     chart.add(0.5)
     chart.add(8.0)
     let c chart.drawing().svg()
-    if has(c, String(">Squares</text>")) = false or has(c, String(">16</text>")) = false
+    if has(c, String(">Squares</text>")) = false or has(c, String(">20</text>")) = false
         return 5
     if has(c, String("stroke=\"#b0532a\"")) = false or has(c, String(">half</text>")) = false
         return 6
+
+    ; bars with names under the axis, on a scale from zero
+    var rain Chart("Rain")
+    rain.add("Mon", 10)
+    rain.add("Tue", 20)
+    rain.bars()
+    let r rain.drawing().svg()
+    if has(r, String(">Mon</text>")) = false or has(r, String(">15</text>")) = false or has(r, String(">0</text>")) = false
+        return 7
+    if has(r, String("fill=\"#2a5db0\"")) = false
+        return 8
+
+    ; values at their own x: a scale on the x axis too, ticks as written
+    var curve Chart("Parabola")
+    curve.axes("x", "x * x")
+    curve.point(0 - 1, 1)
+    curve.point(0.5, 0.25)
+    curve.point(1, 1)
+    curve.dots()
+    let p curve.drawing().svg()
+    if has(p, String(">-0.5</text>")) = false or has(p, String(">0.5</text>")) = false or has(p, String(">x * x</text>")) = false
+        return 9
     print "PASS"
     0
 }

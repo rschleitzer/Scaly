@@ -4,8 +4,11 @@
 ; is drawn on it goes on top of what was drawn before. `show()` writes it as
 ; an SVG file -- drawing-1.svg, drawing-2.svg, ... in the working directory
 ; --, which a browser opens, and which the Scaly Playground shows beside the
-; program. A Chart is a line chart of numbers: `add` one value after another,
-; `series` begins another line, `show()` draws it with its axes.
+; program. A Chart draws numbers: `add` one value after another (with a name
+; under the axis, `add("Mon", 12)`), or `point(x, y)` a value at its own x;
+; `series` begins another series, `bars()` draws bars instead of lines,
+; `dots()` dots alone, `axes(x, y)` names the axes; `show()` draws it with a
+; scale of round numbers.
 ;
 ;   var sheet Drawing(400, 300)
 ;   sheet.rect(0, 0, 400, 300, "midnightblue")
@@ -111,33 +114,65 @@ define Chart
 (
     title: String
     var values: Array[f64]
+    ; each value's x: its place in its series, or what point gave
+    var xs: Array[f64]
+    ; each value's name under the axis (add with a name), else empty
+    var labels: Array[String]
     var starts: Array[size_t]
     var names: Array[String]
+    ; 0 lines, 1 bars, 2 dots
+    var style: int
+    ; whether a value came with its own x (point)
+    var has_x: bool
+    var x_name: String
+    var y_name: String
 )
 {
     init(title: String)
     {
         this.title := title
         this.values := Array[f64]()
+        this.xs := Array[f64]()
+        this.labels := Array[String]()
         this.starts := Array[size_t]()
         this.names := Array[String]()
+        this.style := 0
+        this.has_x := false
+        this.x_name := String()
+        this.y_name := String()
     }
 
-    ; the next value of the current line
+    ; the next value of the current series
     procedure add(mutable this, value: f64)
-    {
-        if this.starts.length = 0
-        {
-            this.starts.add(0)
-            this.names.add(String())
-        }
-        this.values.add(value)
-    }
+        this.put_value(this.next_x(), value, String())
 
     procedure add(mutable this, value: int)
-        this.add(value as f64)
+        this.put_value(this.next_x(), value as f64, String())
 
-    ; another line from here on, under its name
+    ; the next value, its name written under the axis ("Mon", 12)
+    procedure add(mutable this, name: String, value: f64)
+        this.put_value(this.next_x(), value, name)
+
+    procedure add(mutable this, name: String, value: int)
+        this.put_value(this.next_x(), value as f64, name)
+
+    ; a value at its own x: the chart's x axis is then a scale of numbers
+    procedure point(mutable this, x: f64, y: f64)
+    {
+        this.has_x := true
+        this.put_value(x, y, String())
+    }
+
+    procedure point(mutable this, x: int, y: int)
+        this.point(x as f64, y as f64)
+
+    procedure point(mutable this, x: int, y: f64)
+        this.point(x as f64, y)
+
+    procedure point(mutable this, x: f64, y: int)
+        this.point(x, y as f64)
+
+    ; another series from here on, under its name
     procedure series(mutable this, name: String)
     {
         if this.starts.length = 1 and this.values.length = 0
@@ -149,49 +184,162 @@ define Chart
         this.names.add(name)
     }
 
-    ; the chart as a Drawing of 480 x 300 points: each line over its values,
-    ; the first value at the left, the smallest and the largest written on
-    ; the axis
+    ; draw each value as a bar; several series stand side by side
+    procedure bars(mutable this)
+        this.style := 1
+
+    ; draw each value as a dot, without a line between them
+    procedure dots(mutable this)
+        this.style := 2
+
+    ; the names of the two axes, written beside them
+    procedure axes(mutable this, x: String, y: String)
+    {
+        this.x_name := x
+        this.y_name := y
+    }
+
+    procedure put_value(mutable this, x: f64, value: f64, name: String)
+    {
+        if this.starts.length = 0
+        {
+            this.starts.add(0)
+            this.names.add(String())
+        }
+        this.values.add(value)
+        this.xs.add(x)
+        this.labels.add(name)
+    }
+
+    ; the place of the next value in its series
+    function next_x(this) returns f64
+    {
+        if this.starts.length = 0
+            return 0.0
+        ((this.values.length - this.starts[this.starts.length - 1]) as f64)
+    }
+
+    ; the chart as a Drawing of 520 x 320 points: the values against a scale
+    ; of round numbers with a line across at each, a line, bars or dots per
+    ; series, the series' names in a key
     function drawing(this) returns Drawing
     {
-        let w 480
-        let h 300
-        let left 56
-        let top 36
+        let w 520
+        let h 320
+        var top 36
+        if this.y_name.get_length() > 0
+            top := 52
+        let left 64
         let right 16
-        let bottom 28
+        var bottom 28
+        if this.x_name.get_length() > 0 or this.labels_any() or this.has_x
+            bottom := 48
         var sheet Drawing(w, h)
         sheet.rect(0, 0, w, h, "white")
-        sheet.text(left, 22, this.title, "#1d1d1f")
+        sheet.text(16, 24, this.title, "#1d1d1f")
+        if this.y_name.get_length() > 0
+            Chart.small(sheet, 16, top - 14, this.y_name, "#6b6b70", "start")
+        let pw w - left - right
+        let ph h - top - bottom
+        ; the values' scale: bars stand on zero
         var low 0.0
         var high 0.0
-        var longest: size_t 0
         var i: size_t 0
         while i < this.values.length
         {
             let v this.values[i]
-            if i = 0 or v < low
+            if (i = 0 and this.style <> 1) or v < low
                 low := v
-            if i = 0 or v > high
+            if (i = 0 and this.style <> 1) or v > high
                 high := v
             i := i + 1
         }
-        if high = low
-            high := low + 1.0
+        let ys Chart.scale(low, high)
+        let y_low Chart.tick(ys, ys.first)
+        let y_high Chart.tick(ys, ys.last)
+        var n ys.first
+        while n <= ys.last
+        {
+            let v Chart.tick(ys, n)
+            let y top + ph - (((v - y_low) / (y_high - y_low) * (ph as f64)) as int)
+            var grid String("#ececf0")
+            if v = 0.0
+                grid := String("#c7c7cc")
+            sheet.line(left, y, left + pw, y, grid)
+            let words Chart.number(v)
+            Chart.small(sheet, left - 8, y + 4, words, "#6b6b70", "end")
+            n := n + 1
+        }
+        ; the x axis: a scale where values came with their x, else places
+        var longest: size_t 0
         var s: size_t 0
         while s < this.starts.length
         {
-            let n this.end_of(s) - this.starts[s]
-            if n > longest
-                longest := n
+            let count this.end_of(s) - this.starts[s]
+            if count > longest
+                longest := count
             s := s + 1
         }
-        let pw w - left - right
-        let ph h - top - bottom
-        sheet.line(left, top, left, top + ph, "#9a9aa2")
+        var x_low 0.0
+        var x_high 1.0
+        if this.style <> 1 and this.has_x
+        {
+            var xl 0.0
+            var xh 0.0
+            i := 0
+            while i < this.xs.length
+            {
+                if i = 0 or this.xs[i] < xl
+                    xl := this.xs[i]
+                if i = 0 or this.xs[i] > xh
+                    xh := this.xs[i]
+                i := i + 1
+            }
+            let xsc Chart.scale(xl, xh)
+            x_low := Chart.tick(xsc, xsc.first)
+            x_high := Chart.tick(xsc, xsc.last)
+            n := xsc.first
+            while n <= xsc.last
+            {
+                let v Chart.tick(xsc, n)
+                let x left + (((v - x_low) / (x_high - x_low) * (pw as f64)) as int)
+                Chart.small(sheet, x, top + ph + 18, Chart.number(v), "#6b6b70", "middle")
+                n := n + 1
+            }
+        }
+        else if longest > 1
+            x_high := (longest - 1) as f64
         sheet.line(left, top + ph, left + pw, top + ph, "#9a9aa2")
-        sheet.text(4, top + 6, Chart.number(high), "#6b6b70")
-        sheet.text(4, top + ph, Chart.number(low), "#6b6b70")
+        ; a slot per place, for bars and for the names under the axis
+        var slot pw
+        if longest > 0
+            slot := pw / (longest as int)
+        ; at most twelve names: every second, third ... where there are more
+        var every ((longest + 11) / 12) as int
+        if every < 1
+            every := 1
+        ; the names under the axis, from the first series that has one there
+        if this.has_x = false
+        {
+            var k: size_t 0
+            while k < longest
+            {
+                let name this.label_at(k)
+                if name.get_length() > 0 and (k as int) % every = 0
+                {
+                    var x left + (k as int) * slot + slot / 2
+                    if this.style <> 1
+                        x := this.place(left, pw, (k as f64), x_low, x_high)
+                    Chart.small(sheet, x, top + ph + 18, name, "#6b6b70", "middle")
+                }
+                k := k + 1
+            }
+        }
+        if this.x_name.get_length() > 0
+            Chart.small(sheet, left + pw, h - 8, this.x_name, "#6b6b70", "end")
+        ; the series
+        let series_count this.starts.length as int
+        let zero top + ph - (((0.0 - y_low) / (y_high - y_low) * (ph as f64)) as int)
         s := 0
         while s < this.starts.length
         {
@@ -203,21 +351,52 @@ define Chart
             var py 0
             while k < to
             {
-                var x left
-                if longest > 1
-                    x := left + ((((k - from) as f64) * (pw as f64) / ((longest - 1) as f64)) as int)
-                let y top + ph - ((((this.values[k] - low) / (high - low)) * (ph as f64)) as int)
-                if k > from
-                    sheet.line(px, py, x, y, colour)
-                if to - from < 40
-                    sheet.circle(x, y, 3, colour)
-                px := x
-                py := y
+                let y top + ph - ((((this.values[k] - y_low) / (y_high - y_low)) * (ph as f64)) as int)
+                if this.style = 1
+                {
+                    let group (slot * 4) / 5
+                    var bw group / series_count
+                    if bw < 1
+                        bw := 1
+                    let x left + ((k - from) as int) * slot + (slot - group) / 2 + (s as int) * bw
+                    if y < zero
+                        sheet.rect(x, y, bw - 1, zero - y, colour)
+                    else
+                        sheet.rect(x, zero, bw - 1, y - zero, colour)
+                }
+                else
+                {
+                    var xv ((k - from) as f64)
+                    if this.has_x
+                        xv := this.xs[k]
+                    let x this.place(left, pw, xv, x_low, x_high)
+                    if this.style = 0 and k > from
+                        sheet.line(px, py, x, y, colour)
+                    if this.style = 2
+                        sheet.circle(x, y, 4, colour)
+                    else if to - from < 40
+                        sheet.circle(x, y, 3, colour)
+                    px := x
+                    py := y
+                }
                 k := k + 1
             }
-            if this.names[s].get_length() > 0
-                sheet.text(left + pw - 140, top + 16 + (s as int) * 18, this.names[s], colour)
             s := s + 1
+        }
+        ; the key: the series' names in the title's line, from the right
+        var kx w - right
+        var ks this.starts.length
+        while ks > 0
+        {
+            ks := ks - 1
+            let name this.names[ks]
+            if name.get_length() > 0
+            {
+                kx := kx - (name.get_length() as int) * 7
+                Chart.small(sheet, kx, 24, name, Chart.colour(ks), "start")
+                sheet.rect(kx - 15, 15, 10, 10, Chart.colour(ks))
+                kx := kx - 30
+            }
         }
         sheet
     }
@@ -226,7 +405,107 @@ define Chart
     procedure show(this) returns bool mutable drawings_shown
         this.drawing().show()
 
-    ; the colour of line s
+    ; where x lies across the plot, left to left + width
+    function place(this, left: int, width: int, x: f64, low: f64, high: f64) returns int
+    {
+        if high = low
+            return left + width / 2
+        left + (((x - low) / (high - low) * (width as f64)) as int)
+    }
+
+    ; whether any value has a name under the axis
+    function labels_any(this) returns bool
+    {
+        var i: size_t 0
+        while i < this.labels.length
+        {
+            if this.labels[i].get_length() > 0
+                return true
+            i := i + 1
+        }
+        false
+    }
+
+    ; the name under the axis at place k: the first series' that has one
+    function label_at(this, k: size_t) returns String
+    {
+        var s: size_t 0
+        while s < this.starts.length
+        {
+            let at this.starts[s] + k
+            if at < this.end_of(s) and this.labels[at].get_length() > 0
+                return this.labels[at]
+            s := s + 1
+        }
+        String()
+    }
+
+    ; small words, anchored at their start, middle or end
+    procedure small(mutable sheet: Drawing, x: int, y: int, words: String, colour: String, anchor: String)
+        sheet.parts.append "<text x=\"`x`\" y=\"`y`\" fill=\"`svg_text(colour)`\" text-anchor=\"`anchor`\" font-family=\"system-ui, sans-serif\" font-size=\"12\">`svg_text(words)`</text>\n"
+
+    ; a scale of round numbers over low..high: a tick is n * mantissa *
+    ; 10^power for n from first to last, the steps 1, 2 or 5 times a power
+    ; of ten, about four of them
+    function scale(low: f64, high: f64) returns ChartScale
+    {
+        var l low
+        var h high
+        if h = l
+        {
+            l := l - 1.0
+            h := h + 1.0
+        }
+        let target (h - l) / 4.0
+        var power 0
+        while Chart.ten(power + 1) <= target
+            power := power + 1
+        while Chart.ten(power) > target
+            power := power - 1
+        let ratio target / Chart.ten(power)
+        var mantissa 1
+        if ratio > 5.0
+        {
+            mantissa := 1
+            power := power + 1
+        }
+        else if ratio > 2.0
+            mantissa := 5
+        else if ratio > 1.0
+            mantissa := 2
+        let step (mantissa as f64) * Chart.ten(power)
+        ChartScale(mantissa, power, ((l / step).floor()) as int, ((h / step).ceil()) as int)
+    }
+
+    ; 10^power, exact for the powers a chart meets
+    function ten(power: int) returns f64
+    {
+        var v 1.0
+        var p 0
+        while p < power
+        {
+            v := v * 10.0
+            p := p + 1
+        }
+        while p > power
+        {
+            v := v / 10.0
+            p := p - 1
+        }
+        v
+    }
+
+    ; the n-th tick of a scale: n * mantissa, then shifted by its power of
+    ; ten in one step, so that 0.6 is 0.6 and not 0.6000000000000001
+    function tick(sc: ChartScale, n: int) returns f64
+    {
+        let units ((n * sc.mantissa) as f64)
+        if sc.power >= 0
+            return units * Chart.ten(sc.power)
+        units / Chart.ten(0 - sc.power)
+    }
+
+    ; the colour of series s
     function colour(s: size_t) returns String
     {
         match s % 5
@@ -252,8 +531,17 @@ define Chart
     ; a value for the axis: whole where it is whole
     function number(v: f64) returns String
     {
-        if v = ((v as i64) as f64)
+        if v.abs() < 1000000000000000.0 and v = ((v as i64) as f64)
             return "`v as i64`"
         "`v`"
     }
 }
+
+; the ticks of a Chart's scale (Chart.scale#)
+define ChartScale
+(
+    mantissa: int
+    power: int
+    first: int
+    last: int
+)

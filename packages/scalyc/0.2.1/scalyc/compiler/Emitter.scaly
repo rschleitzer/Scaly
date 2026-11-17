@@ -16917,6 +16917,33 @@ define Emitter
             ; (a) `Vector[T]^rp(0)` — cv is i64, not alloca;
             ; (b) `PlannedOperand(ptr_field)` — comp_count >> 1 or alloca's
             ;     type differs.
+            ; ★A record of ONE field held through a pointer, grouped: `(p)`
+            ; -- every embedded expression of an interpolated string -- with
+            ; `p` a String PARAMETER (borrowed by pointer). The branch below
+            ; asks for more than one field, and the per-field store put the
+            ; parameter's ADDRESS into the String's one field, a pointer
+            ; beside a pointer, no verifier to object: the text was bytes of
+            ; the stack, `Chart.small` of the standard library rc 139
+            ; (2026-11-17; gate tests/regress/draw_svg, rc 139 before).
+            ; Only the standard library's own compile wrapped it so, as on
+            ; 2026-11-12. The planner says the component IS a value of the
+            ; tuple's type; load it.
+            if comp_count = 1 and elem_count = 1
+            {
+                let g0_ref comp_values.get 0
+                if g0_ref <> null and (*g0_ref) <> null
+                {
+                    let g0 (*g0_ref)
+                    if LLVMGetTypeKind(LLVMTypeOf(g0)) = LLVMTypeKind.Pointer() and Emitter.groups_own_type(tuple)
+                    {
+                        let gval LLVMBuildLoad2(builder, struct_type, g0, "grouped.load")
+                        LLVMBuildStore(builder, gval, tuple_ptr)
+                        if tuple.is_region_alloc = false
+                            return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                        return tuple_ptr
+                    }
+                }
+            }
             if comp_count = 1
             {
                 if elem_count > 1

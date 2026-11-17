@@ -88,7 +88,9 @@ struct TcpServer;
 struct Drawing;
 struct Drawing;
 struct Chart;
+struct ChartScale;
 struct Chart;
+struct ChartScale;
 struct NodeDown;
 struct ClusterJob;
 struct KeepSet;
@@ -1991,8 +1993,25 @@ struct Chart
 {
     String title;
     Array<double> values;
+    Array<double> xs;
+    Array<String> labels;
     Array<uint64_t> starts;
     Array<String> names;
+    int64_t style;
+    bool has_x;
+    String x_name;
+    String y_name;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z10ChartScale
+#define SCALY_TYPE__Z10ChartScale
+struct ChartScale
+{
+    int64_t mantissa;
+    int64_t power;
+    int64_t first;
+    int64_t last;
 };
 #endif
 
@@ -3290,14 +3309,32 @@ void Drawing_text(Drawing&, int64_t, int64_t, String&, String&) asm("_ZN7Drawing
 String Drawing_svg(scaly_frame*, Drawing&) asm("_ZN7Drawing3svgEPN4scaly6memory4PageE");
 bool Drawing_show(Drawing&) asm("_ZN7Drawing4showEv");
 void Drawing_init(Drawing&, int64_t, int64_t) asm("_ZN7DrawingC1Eii");
+double Chart_next_x(Chart&) asm("_ZN5Chart6next_xEv");
+void Chart_put_value(Chart&, double, double, String&) asm("_ZN5Chart9put_valueE3f643f646String");
 void Chart_add(Chart&, double) asm("_ZN5Chart3addE3f64");
 void Chart_add2(Chart&, int64_t) asm("_ZN5Chart3addEi");
+void Chart_add3(Chart&, String&, double) asm("_ZN5Chart3addE6String3f64");
+void Chart_add4(Chart&, String&, int64_t) asm("_ZN5Chart3addE6Stringi");
+void Chart_point(Chart&, double, double) asm("_ZN5Chart5pointE3f643f64");
+void Chart_point2(Chart&, int64_t, int64_t) asm("_ZN5Chart5pointEii");
+void Chart_point3(Chart&, int64_t, double) asm("_ZN5Chart5pointEi3f64");
+void Chart_point4(Chart&, double, int64_t) asm("_ZN5Chart5pointE3f64i");
 void Chart_series(Chart&, String&) asm("_ZN5Chart6seriesE6String");
-uint64_t Chart_end_of(Chart&, uint64_t) asm("_ZN5Chart6end_ofEm");
+void Chart_bars(Chart&) asm("_ZN5Chart4barsEv");
+void Chart_dots(Chart&) asm("_ZN5Chart4dotsEv");
+void Chart_axes(Chart&, String&, String&) asm("_ZN5Chart4axesE6String6String");
+bool Chart_labels_any(Chart&) asm("_ZN5Chart10labels_anyEv");
+void Chart_small(Drawing&, int64_t, int64_t, String&, String&, String&) asm("_ZN5Chart5smallE7Drawingii6String6String6String");
+ChartScale Chart_scale(scaly_frame*, double, double) asm("_ZN5Chart5scaleEPN4scaly6memory4PageE3f643f64");
+double Chart_tick(ChartScale&, int64_t) asm("_ZN5Chart4tickE10ChartScalei");
 String Chart_number(scaly_frame*, double) asm("_ZN5Chart6numberEPN4scaly6memory4PageE3f64");
+uint64_t Chart_end_of(Chart&, uint64_t) asm("_ZN5Chart6end_ofEm");
+String Chart_label_at(scaly_frame*, Chart&, uint64_t) asm("_ZN5Chart8label_atEPN4scaly6memory4PageEm");
+int64_t Chart_place(Chart&, int64_t, int64_t, double, double, double) asm("_ZN5Chart5placeEii3f643f643f64");
 String Chart_colour(scaly_frame*, uint64_t) asm("_ZN5Chart6colourEPN4scaly6memory4PageEm");
 Drawing Chart_drawing(scaly_frame*, Chart&) asm("_ZN5Chart7drawingEPN4scaly6memory4PageE");
 bool Chart_show(Chart&) asm("_ZN5Chart4showEv");
+double Chart_ten(int64_t) asm("_ZN5Chart3tenEi");
 void Chart_init(Chart&, String&) asm("_ZN5ChartC1E6String");
 uint32_t Sha256_rotate(uint32_t, uint32_t) asm("_ZN6Sha2566rotateE3u323u32");
 void Sha256_put_word(Slice<uint8_t>&, uint64_t, uint32_t) asm("_ZN6Sha2568put_wordE5SliceI2u8Em3u32");
@@ -13064,19 +13101,59 @@ __attribute__((weak)) void Chart_add(Chart& scaly_self, double value)
 {
     Chart* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (((this_->starts).length == 0ULL))
-    {
-        Array_add<uint64_t>(this_->starts, 0ULL);
-        Array_add7<String>(this_->names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
-    }
-    Array_add<double>(this_->values, value);
+    Chart_put_value(*(this_), Chart_next_x(*(this_)), value, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
 __attribute__((weak)) void Chart_add2(Chart& scaly_self, int64_t value)
 {
     Chart* this_ = &scaly_self;
-    Chart_add(*(this_), ((double)(value)));
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    Chart_put_value(*(this_), Chart_next_x(*(this_)), ((double)(value)), scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_add3(Chart& scaly_self, String& name, double value)
+{
+    Chart* this_ = &scaly_self;
+    Chart_put_value(*(this_), Chart_next_x(*(this_)), value, name);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_add4(Chart& scaly_self, String& name, int64_t value)
+{
+    Chart* this_ = &scaly_self;
+    Chart_put_value(*(this_), Chart_next_x(*(this_)), ((double)(value)), name);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_point(Chart& scaly_self, double x, double y)
+{
+    Chart* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    this_->has_x = true;
+    Chart_put_value(*(this_), x, y, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_point2(Chart& scaly_self, int64_t x, int64_t y)
+{
+    Chart* this_ = &scaly_self;
+    Chart_point(*(this_), ((double)(x)), ((double)(y)));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_point3(Chart& scaly_self, int64_t x, double y)
+{
+    Chart* this_ = &scaly_self;
+    Chart_point(*(this_), ((double)(x)), y);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_point4(Chart& scaly_self, double x, int64_t y)
+{
+    Chart* this_ = &scaly_self;
+    Chart_point(*(this_), x, ((double)(y)));
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
@@ -13093,6 +13170,43 @@ __attribute__((weak)) void Chart_series(Chart& scaly_self, String& name)
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_bars(Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    this_->style = 1LL;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_dots(Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    this_->style = 2LL;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_axes(Chart& scaly_self, String& x, String& y)
+{
+    Chart* this_ = &scaly_self;
+    this_->x_name = x;
+    this_->y_name = y;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_put_value(Chart& scaly_self, double x, double value, String& name)
+{
+    Chart* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((this_->starts).length == 0ULL))
+    {
+        Array_add<uint64_t>(this_->starts, 0ULL);
+        Array_add7<String>(this_->names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
+    }
+    Array_add<double>(this_->values, value);
+    Array_add<double>(this_->xs, x);
+    Array_add7<String>(this_->labels, name);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
 template <class T1> static T1 Array2(Array<T1>& scaly_self, uint64_t i)
 {
     Array<T1>* this_ = &scaly_self;
@@ -13104,60 +13218,166 @@ template <class T1> static T1 Array2(Array<T1>& scaly_self, uint64_t i)
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) double Chart_next_x(Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    if (((this_->starts).length == 0ULL))
+    {
+        return ((double)0);
+    }
+    return (((double)((((this_->values).length - Array2<uint64_t>(this_->starts, ((this_->starts).length - 1ULL)))))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
 __attribute__((weak)) Drawing Chart_drawing(scaly_frame* scaly_rp, Chart& scaly_self)
 {
     Chart* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    int64_t w = 480LL;
-    int64_t h = 300LL;
-    int64_t left = 56LL;
+    int64_t w = 520LL;
+    int64_t h = 320LL;
     int64_t top = 36LL;
+    if ((String_get_length(this_->y_name) > 0ULL))
+    {
+        top = 52LL;
+    }
+    int64_t left = 64LL;
     int64_t right = 16LL;
     int64_t bottom = 28LL;
+    if ((((String_get_length(this_->x_name) > 0ULL) ? true : Chart_labels_any(*(this_))) ? true : this_->has_x))
+    {
+        bottom = 48LL;
+    }
     Drawing* sheet = ({ Drawing* scaly_t1 = (Drawing*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Drawing), alignof(Drawing)); *scaly_t1 = Drawing{}; Drawing_init((*scaly_t1), w, h); scaly_t1; });
     Drawing_rect((*sheet), 0LL, 0LL, w, h, scaly_lvalue(String{(uint8_t*)"\005white"}));
-    Drawing_text((*sheet), left, 22LL, this_->title, scaly_lvalue(String{(uint8_t*)"\007#1d1d1f"}));
+    Drawing_text((*sheet), 16LL, 24LL, this_->title, scaly_lvalue(String{(uint8_t*)"\007#1d1d1f"}));
+    if ((String_get_length(this_->y_name) > 0ULL))
+    {
+        Chart_small((*sheet), 16LL, (top - 14LL), this_->y_name, scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}), scaly_lvalue(String{(uint8_t*)"\005start"}));
+    }
+    int64_t pw = ((w - left) - right);
+    int64_t ph = ((h - top) - bottom);
     double low = ((double)0);
     double high = ((double)0);
-    uint64_t longest = 0ULL;
     uint64_t i = 0ULL;
     while ((i < (this_->values).length))
     {
         double v = Array2<double>(this_->values, i);
-        if (((i == 0ULL) ? true : ((double)(v) < (double)(low))))
+        if (((((i == 0ULL) ? (this_->style != 1LL) : false)) ? true : ((double)(v) < (double)(low))))
         {
             low = v;
         }
-        if (((i == 0ULL) ? true : ((double)(v) > (double)(high))))
+        if (((((i == 0ULL) ? (this_->style != 1LL) : false)) ? true : ((double)(v) > (double)(high))))
         {
             high = v;
         }
         i = (i + 1ULL);
     }
-    if (((double)(high) == (double)(low)))
+    ChartScale ys = Chart_scale(&scaly_local.f, low, high);
+    double y_low = Chart_tick(ys, (ys).first);
+    double y_high = Chart_tick(ys, (ys).last);
+    int64_t n = (ys).first;
+    while ((n <= (ys).last))
     {
-        high = ((double)((double)(low) + (double)(((double)1))));
+        double v = Chart_tick(ys, n);
+        int64_t y = ((top + ph) - (((int64_t)((((double)((double)(((double)((double)((((double)((double)(v) - (double)(y_low))))) / (double)((((double)((double)(y_high) - (double)(y_low)))))))) * (double)((((double)(ph)))))))))));
+        String* grid = ({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init7((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\007#ececf0"})); scaly_t2; });
+        if (((double)(v) == (double)(((double)0))))
+        {
+            grid = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init7((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\007#c7c7cc"})); scaly_t3; });
+        }
+        Drawing_line((*sheet), left, y, (left + pw), y, (*grid));
+        String words = Chart_number(&scaly_local.f, v);
+        Chart_small((*sheet), (left - 8LL), (y + 4LL), words, scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}), scaly_lvalue(String{(uint8_t*)"\003end"}));
+        n = (n + 1LL);
     }
+    uint64_t longest = 0ULL;
     uint64_t s = 0ULL;
     while ((s < (this_->starts).length))
     {
-        uint64_t n = (Chart_end_of(*(this_), s) - Array2<uint64_t>(this_->starts, s));
-        if ((n > longest))
+        uint64_t count = (Chart_end_of(*(this_), s) - Array2<uint64_t>(this_->starts, s));
+        if ((count > longest))
         {
-            longest = n;
+            longest = count;
         }
         s = (s + 1ULL);
     }
-    int64_t pw = ((w - left) - right);
-    int64_t ph = ((h - top) - bottom);
-    Drawing_line((*sheet), left, top, left, (top + ph), scaly_lvalue(String{(uint8_t*)"\007#9a9aa2"}));
+    double x_low = ((double)0);
+    double x_high = ((double)1);
+    if (((this_->style != 1LL) ? this_->has_x : false))
+    {
+        double xl = ((double)0);
+        double xh = ((double)0);
+        i = 0ULL;
+        while ((i < (this_->xs).length))
+        {
+            if (((i == 0ULL) ? true : ((double)(Array2<double>(this_->xs, i)) < (double)(xl))))
+            {
+                xl = Array2<double>(this_->xs, i);
+            }
+            if (((i == 0ULL) ? true : ((double)(Array2<double>(this_->xs, i)) > (double)(xh))))
+            {
+                xh = Array2<double>(this_->xs, i);
+            }
+            i = (i + 1ULL);
+        }
+        ChartScale xsc = Chart_scale(scaly_rp, xl, xh);
+        x_low = Chart_tick(xsc, (xsc).first);
+        x_high = Chart_tick(xsc, (xsc).last);
+        n = (xsc).first;
+        while ((n <= (xsc).last))
+        {
+            double v = Chart_tick(xsc, n);
+            int64_t x = (left + (((int64_t)((((double)((double)(((double)((double)((((double)((double)(v) - (double)(x_low))))) / (double)((((double)((double)(x_high) - (double)(x_low)))))))) * (double)((((double)(pw)))))))))));
+            Chart_small((*sheet), x, ((top + ph) + 18LL), scaly_lvalue(Chart_number(&scaly_local.f, v)), scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}), scaly_lvalue(String{(uint8_t*)"\006middle"}));
+            n = (n + 1LL);
+        }
+    }
+    else
+    {
+        if ((longest > 1ULL))
+        {
+            x_high = ((double)(((longest - 1ULL))));
+        }
+    }
     Drawing_line((*sheet), left, (top + ph), (left + pw), (top + ph), scaly_lvalue(String{(uint8_t*)"\007#9a9aa2"}));
-    Drawing_text((*sheet), 4LL, (top + 6LL), scaly_lvalue(Chart_number(&scaly_local.f, high)), scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}));
-    Drawing_text((*sheet), 4LL, (top + ph), scaly_lvalue(Chart_number(&scaly_local.f, low)), scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}));
+    int64_t slot = pw;
+    if ((longest > 0ULL))
+    {
+        slot = (pw / (((int64_t)(longest))));
+    }
+    int64_t every = ((int64_t)(((((longest + 11ULL)) / 12ULL))));
+    if ((every < 1LL))
+    {
+        every = 1LL;
+    }
+    if (((this_->has_x) == (false)))
+    {
+        uint64_t k = 0ULL;
+        while ((k < longest))
+        {
+            String name = Chart_label_at(scaly_rp, *(this_), k);
+            if (((String_get_length(name) > 0ULL) ? (((((int64_t)(k))) % every) == 0LL) : false))
+            {
+                int64_t x = ((left + ((((int64_t)(k))) * slot)) + (slot / 2LL));
+                if ((this_->style != 1LL))
+                {
+                    x = Chart_place(*(this_), left, pw, (((double)(k))), x_low, x_high);
+                }
+                Chart_small((*sheet), x, ((top + ph) + 18LL), name, scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}), scaly_lvalue(String{(uint8_t*)"\006middle"}));
+            }
+            k = (k + 1ULL);
+        }
+    }
+    if ((String_get_length(this_->x_name) > 0ULL))
+    {
+        Chart_small((*sheet), (left + pw), (h - 8LL), this_->x_name, scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}), scaly_lvalue(String{(uint8_t*)"\003end"}));
+    }
+    int64_t series_count = ((int64_t)((this_->starts).length));
+    int64_t zero = ((top + ph) - (((int64_t)((((double)((double)(((double)((double)((((double)((double)(((double)0)) - (double)(y_low))))) / (double)((((double)((double)(y_high) - (double)(y_low)))))))) * (double)((((double)(ph)))))))))));
     s = 0ULL;
     while ((s < (this_->starts).length))
     {
-        String colour = Chart_colour(&scaly_local.f, s);
+        String colour = Chart_colour(scaly_rp, s);
         uint64_t from = Array2<uint64_t>(this_->starts, s);
         uint64_t to = Chart_end_of(*(this_), s);
         uint64_t k = from;
@@ -13165,29 +13385,68 @@ __attribute__((weak)) Drawing Chart_drawing(scaly_frame* scaly_rp, Chart& scaly_
         int64_t py = 0LL;
         while ((k < to))
         {
-            int64_t x = left;
-            if ((longest > 1ULL))
+            int64_t y = ((top + ph) - (((int64_t)((((double)((double)((((double)((double)((((double)((double)(Array2<double>(this_->values, k)) - (double)(y_low))))) / (double)((((double)((double)(y_high) - (double)(y_low))))))))) * (double)((((double)(ph)))))))))));
+            if ((this_->style == 1LL))
             {
-                x = (left + (((int64_t)((((double)((double)(((double)((double)((((double)(((k - from)))))) * (double)((((double)(pw))))))) / (double)((((double)(((longest - 1ULL)))))))))))));
+                int64_t group = (((slot * 4LL)) / 5LL);
+                int64_t bw = (group / series_count);
+                if ((bw < 1LL))
+                {
+                    bw = 1LL;
+                }
+                int64_t x = (((left + ((((int64_t)(((k - from))))) * slot)) + (((slot - group)) / 2LL)) + ((((int64_t)(s))) * bw));
+                if ((y < zero))
+                {
+                    Drawing_rect((*sheet), x, y, (bw - 1LL), (zero - y), colour);
+                }
+                else
+                {
+                    Drawing_rect((*sheet), x, zero, (bw - 1LL), (y - zero), colour);
+                }
             }
-            int64_t y = ((top + ph) - (((int64_t)((((double)((double)((((double)((double)((((double)((double)(Array2<double>(this_->values, k)) - (double)(low))))) / (double)((((double)((double)(high) - (double)(low))))))))) * (double)((((double)(ph)))))))))));
-            if ((k > from))
+            else
             {
-                Drawing_line((*sheet), px, py, x, y, colour);
+                double xv = (((double)(((k - from)))));
+                if (this_->has_x)
+                {
+                    xv = Array2<double>(this_->xs, k);
+                }
+                int64_t x = Chart_place(*(this_), left, pw, xv, x_low, x_high);
+                if (((this_->style == 0LL) ? (k > from) : false))
+                {
+                    Drawing_line((*sheet), px, py, x, y, colour);
+                }
+                if ((this_->style == 2LL))
+                {
+                    Drawing_circle((*sheet), x, y, 4LL, colour);
+                }
+                else
+                {
+                    if (((to - from) < 40ULL))
+                    {
+                        Drawing_circle((*sheet), x, y, 3LL, colour);
+                    }
+                }
+                px = x;
+                py = y;
             }
-            if (((to - from) < 40ULL))
-            {
-                Drawing_circle((*sheet), x, y, 3LL, colour);
-            }
-            px = x;
-            py = y;
             k = (k + 1ULL);
         }
-        if ((String_get_length(scaly_lvalue(Array2<String>(this_->names, s))) > 0ULL))
-        {
-            Drawing_text((*sheet), ((left + pw) - 140LL), ((top + 16LL) + ((((int64_t)(s))) * 18LL)), scaly_lvalue(Array2<String>(this_->names, s)), colour);
-        }
         s = (s + 1ULL);
+    }
+    int64_t kx = (w - right);
+    uint64_t ks = (this_->starts).length;
+    while ((ks > 0ULL))
+    {
+        ks = (ks - 1ULL);
+        String name = Array2<String>(this_->names, ks);
+        if ((String_get_length(name) > 0ULL))
+        {
+            kx = (kx - ((((int64_t)(String_get_length(name)))) * 7LL));
+            Chart_small((*sheet), kx, 24LL, name, scaly_lvalue(Chart_colour(&scaly_local.f, ks)), scaly_lvalue(String{(uint8_t*)"\005start"}));
+            Drawing_rect((*sheet), (kx - 15LL), 15LL, 10LL, 10LL, scaly_lvalue(Chart_colour(&scaly_local.f, ks)));
+            kx = (kx - 30LL);
+        }
     }
     return (*sheet);
 }
@@ -13198,6 +13457,149 @@ __attribute__((weak)) bool Chart_show(Chart& scaly_self)
     Chart* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     return Drawing_show(scaly_lvalue(Chart_drawing(&scaly_local.f, *(this_))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) int64_t Chart_place(Chart& scaly_self, int64_t left, int64_t width, double x, double low, double high)
+{
+    Chart* this_ = &scaly_self;
+    if (((double)(high) == (double)(low)))
+    {
+        return (left + (width / 2LL));
+    }
+    return (left + (((int64_t)((((double)((double)(((double)((double)((((double)((double)(x) - (double)(low))))) / (double)((((double)((double)(high) - (double)(low)))))))) * (double)((((double)(width)))))))))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) bool Chart_labels_any(Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    uint64_t i = 0ULL;
+    while ((i < (this_->labels).length))
+    {
+        if ((String_get_length(scaly_lvalue(Array2<String>(this_->labels, i))) > 0ULL))
+        {
+            return true;
+        }
+        i = (i + 1ULL);
+    }
+    return false;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String Chart_label_at(scaly_frame* scaly_rp, Chart& scaly_self, uint64_t k)
+{
+    Chart* this_ = &scaly_self;
+    uint64_t s = 0ULL;
+    while ((s < (this_->starts).length))
+    {
+        uint64_t at = (Array2<uint64_t>(this_->starts, s) + k);
+        if (((at < Chart_end_of(*(this_), s)) ? (String_get_length(scaly_lvalue(Array2<String>(this_->labels, at))) > 0ULL) : false))
+        {
+            return Array2<String>(this_->labels, at);
+        }
+        s = (s + 1ULL);
+    }
+    return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init((*scaly_t2)); scaly_t2; }));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_small(Drawing& sheet, int64_t x, int64_t y, String& words, String& colour, String& anchor)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2((sheet).parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011<text x=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 y=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\017\042 text-anchor=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((anchor)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\065\042 font-family=\042system-ui, sans-serif\042 font-size=\04212\042>"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, words))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010</text>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) ChartScale Chart_scale(scaly_frame* scaly_rp, double low, double high)
+{
+    double l = low;
+    double h = high;
+    if (((double)(h) == (double)(l)))
+    {
+        l = ((double)((double)(l) - (double)(((double)1))));
+        h = ((double)((double)(h) + (double)(((double)1))));
+    }
+    double target = ((double)((double)((((double)((double)(h) - (double)(l))))) / (double)(((double)4))));
+    int64_t power = 0LL;
+    while (((double)(Chart_ten((power + 1LL))) <= (double)(target)))
+    {
+        power = (power + 1LL);
+    }
+    while (((double)(Chart_ten(power)) > (double)(target)))
+    {
+        power = (power - 1LL);
+    }
+    double ratio = ((double)((double)(target) / (double)(Chart_ten(power))));
+    int64_t mantissa = 1LL;
+    if (((double)(ratio) > (double)(((double)5))))
+    {
+        mantissa = 1LL;
+        power = (power + 1LL);
+    }
+    else
+    {
+        if (((double)(ratio) > (double)(((double)2))))
+        {
+            mantissa = 5LL;
+        }
+        else
+        {
+            if (((double)(ratio) > (double)(((double)1))))
+            {
+                mantissa = 2LL;
+            }
+        }
+    }
+    double step = ((double)((double)((((double)(mantissa)))) * (double)(Chart_ten(power))));
+    return ChartScale{mantissa, power, ((int64_t)((__builtin_floor(((double)((double)(l) / (double)(step))))))), ((int64_t)((__builtin_ceil(((double)((double)(h) / (double)(step)))))))};
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) double Chart_ten(int64_t power)
+{
+    double v = ((double)1);
+    int64_t p = 0LL;
+    while ((p < power))
+    {
+        v = ((double)((double)(v) * (double)(((double)10))));
+        p = (p + 1LL);
+    }
+    while ((p > power))
+    {
+        v = ((double)((double)(v) / (double)(((double)10))));
+        p = (p - 1LL);
+    }
+    return v;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) double Chart_tick(ChartScale& sc, int64_t n)
+{
+    double units = (((double)(((n * (sc).mantissa)))));
+    if (((sc).power >= 0LL))
+    {
+        return ((double)((double)(units) * (double)(Chart_ten((sc).power))));
+    }
+    return ((double)((double)(units) / (double)(Chart_ten((0LL - (sc).power)))));
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
@@ -13240,7 +13642,7 @@ __attribute__((weak)) uint64_t Chart_end_of(Chart& scaly_self, uint64_t s)
 __attribute__((weak)) String Chart_number(scaly_frame* scaly_rp, double v)
 {
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    if (((double)(v) == (double)((((double)((((int64_t)(v)))))))))
+    if ((((double)(__builtin_fabs(v)) < (double)(((double)1000000000000000))) ? ((double)(v) == (double)((((double)((((int64_t)(v)))))))) : false))
     {
         return ({
         String scaly_t1{};
@@ -13265,8 +13667,14 @@ __attribute__((weak)) void Chart_init(Chart& scaly_self, String& title)
     Chart* this_ = &scaly_self;
     this_->title = title;
     this_->values = (*({ Array<double>* scaly_t1 = (Array<double>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<double>), alignof(Array<double>)); *scaly_t1 = Array<double>{}; (void)0; scaly_t1; }));
-    this_->starts = (*({ Array<uint64_t>* scaly_t2 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t2 = Array<uint64_t>{}; (void)0; scaly_t2; }));
-    this_->names = (*({ Array<String>* scaly_t3 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t3 = Array<String>{}; (void)0; scaly_t3; }));
+    this_->xs = (*({ Array<double>* scaly_t2 = (Array<double>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<double>), alignof(Array<double>)); *scaly_t2 = Array<double>{}; (void)0; scaly_t2; }));
+    this_->labels = (*({ Array<String>* scaly_t3 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t3 = Array<String>{}; (void)0; scaly_t3; }));
+    this_->starts = (*({ Array<uint64_t>* scaly_t4 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t4 = Array<uint64_t>{}; (void)0; scaly_t4; }));
+    this_->names = (*({ Array<String>* scaly_t5 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t5 = Array<String>{}; (void)0; scaly_t5; }));
+    this_->style = 0LL;
+    this_->has_x = false;
+    this_->x_name = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init((*scaly_t6)); scaly_t6; }));
+    this_->y_name = (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init((*scaly_t7)); scaly_t7; }));
 }
 
 // packages/scaly/0.2.1/scaly/crypto.scaly

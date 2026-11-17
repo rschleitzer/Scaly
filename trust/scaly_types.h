@@ -55,7 +55,9 @@ struct TcpServer;
 struct Drawing;
 struct Drawing;
 struct Chart;
+struct ChartScale;
 struct Chart;
+struct ChartScale;
 struct NodeDown;
 struct ClusterJob;
 struct KeepSet;
@@ -1958,8 +1960,25 @@ struct Chart
 {
     String title;
     Array<double> values;
+    Array<double> xs;
+    Array<String> labels;
     Array<uint64_t> starts;
     Array<String> names;
+    int64_t style;
+    bool has_x;
+    String x_name;
+    String y_name;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z10ChartScale
+#define SCALY_TYPE__Z10ChartScale
+struct ChartScale
+{
+    int64_t mantissa;
+    int64_t power;
+    int64_t first;
+    int64_t last;
 };
 #endif
 

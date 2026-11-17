@@ -63,4 +63,50 @@ chart.show()</programlisting>
       meet, at 3 the squares are even ahead — and then doubling leaves the
       squares far behind. Make the loops longer: how far behind?</para>
   </section>
+
+  <section xml:id="pg-bars">
+    <title>Bars</title>
+    <para>A chart can draw bars as well. <code>add</code> takes a name for each
+      value, which is written under it; <code>bars()</code> turns the chart
+      into a bar chart, and <code>axes</code> names its two axes. With a second
+      <code>series</code>, the bars of each name stand side by side.</para>
+    <programlisting>var rain Chart("Rain in a week")
+rain.axes("day", "mm")
+rain.series("this week")
+rain.add("Mon", 3)
+rain.add("Tue", 0)
+rain.add("Wed", 12)
+rain.add("Thu", 7)
+rain.add("Fri", 4.5)
+rain.series("last week")
+rain.add(6)
+rain.add(2)
+rain.add(1)
+rain.add(0)
+rain.add(9)
+rain.bars()
+rain.show()</programlisting>
+    <para>Which day was the wettest? Add Saturday and Sunday to both weeks —
+      and see what the chart looks like without <code>rain.bars()</code>.</para>
+  </section>
+
+  <section xml:id="pg-points">
+    <title>Points at Their Own Place</title>
+    <para><code>point(x, y)</code> puts a value where its x says, instead of
+      one after the other: now the axis at the bottom has numbers too.
+      <code>dots()</code> draws only the points, with no line between them.
+      Here a loop computes the parabola x · x from −2 to 2.</para>
+    <programlisting>var curve Chart("A parabola")
+curve.axes("x", "x * x")
+for i in 41
+{
+    let x (i as f64) / 10.0 - 2.0
+    curve.point(x, x * x)
+}
+curve.dots()
+curve.show()</programlisting>
+    <para>Change <code>x * x</code> into <code>x * x * x</code>, or draw a
+      second curve after <code>curve.series("…")</code> — and leave out
+      <code>dots()</code> to join the points by lines.</para>
+  </section>
 </chapter>

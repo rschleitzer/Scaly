@@ -18932,6 +18932,7 @@ String CppEmitter_frame_for(scaly_frame*, CppEmitter&, Lifetime&) asm("_ZN10CppE
 String CppEmitter_page_of(scaly_frame*, CppEmitter&, String&) asm("_ZN10CppEmitterB6scalycB4v0_27page_ofEPN4scaly6memory4PageE6String");
 bool CppEmitter_is_region_life(Lifetime&) asm("_ZN10CppEmitterB6scalycB4v0_214is_region_lifeE8LifetimeB6scalycB4v0_2");
 String CppEmitter_construction_storage(scaly_frame*, CppEmitter&, PlannedCall&) asm("_ZN10CppEmitterB6scalycB4v0_220construction_storageEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
+String CppEmitter_float_builtin(scaly_frame*, String&) asm("_ZN10CppEmitterB6scalycB4v0_213float_builtinEPN4scaly6memory4PageE6String");
 String CppEmitter_init_call(scaly_frame*, CppEmitter&, PlannedCall&, String&) asm("_ZN10CppEmitterB6scalycB4v0_29init_callEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_26String");
 String CppEmitter_arguments(scaly_frame*, CppEmitter&, Vector<PlannedOperand>*, String&) asm("_ZN10CppEmitterB6scalycB4v0_29argumentsEPN4scaly6memory4PageE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE6String");
 String CppEmitter_prefix_operation(scaly_frame*, CppEmitter&, String&, PlannedOperand&, PlannedType&) asm("_ZN10CppEmitterB6scalycB4v0_216prefix_operationEPN4scaly6memory4PageE6String14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
@@ -156564,6 +156565,24 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_tuple(Emitter& scaly_self, P
         }
         return tuple_ptr;
     }
+    if (((comp_count == 1ULL) ? (elem_count == (uint32_t)1ULL) : false))
+    {
+        LLVMOpaqueValue** g0_ref = Vector_get<LLVMOpaqueValue*>((*comp_values), 0ULL);
+        if ((((g0_ref) != (nullptr)) ? ((((*(g0_ref)))) != (nullptr)) : false))
+        {
+            LLVMOpaqueValue* g0 = ((*(g0_ref)));
+            if ((((int64_t)LLVMGetTypeKind(LLVMTypeOf(g0)) == LLVMTypeKind_Pointer()) ? Emitter_groups_own_type(tuple) : false))
+            {
+                LLVMOpaqueValue* gval = LLVMBuildLoad2(this_->builder, struct_type, g0, ((const char*)"grouped.load"));
+                LLVMBuildStore(this_->builder, gval, tuple_ptr);
+                if ((((tuple).is_region_alloc) == (false)))
+                {
+                    return LLVMBuildLoad2(this_->builder, struct_type, tuple_ptr, ((const char*)"tuple.val"));
+                }
+                return tuple_ptr;
+            }
+        }
+    }
     if ((comp_count == 1ULL))
     {
         if ((elem_count > (uint32_t)1ULL))
@@ -175097,16 +175116,91 @@ __attribute__((weak)) String CppEmitter_intrinsic_function(scaly_frame* scaly_rp
     {
         return CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, 1ULL)));
     }
-    return CppEmitter_untranslated(scaly_rp, *(this_), scaly_lvalue(({
-        String scaly_t11{};
+    String builtin = CppEmitter_float_builtin(&scaly_local.f, (c).name);
+    if ((String_get_length(builtin) > 0ULL))
+    {
+        String* suffix = ({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init3((*scaly_t9)); scaly_t9; });
+        if (String_equals(((c).result_type).name, scaly_lvalue(String{(uint8_t*)"\003f32"})))
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t12 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t12 = StringBuilder{}; StringBuilder_init((*scaly_t12)); scaly_t12; });
+            suffix = ({ String* scaly_t10 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t10 = String{}; String_init2((*scaly_t10), scaly_lvalue(String{(uint8_t*)"\001f"})); scaly_t10; });
+        }
+        StringBuilder* sb = ({ StringBuilder* scaly_t11 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t11 = StringBuilder{}; StringBuilder_init((*scaly_t11)); scaly_t11; });
+        StringBuilder_append2((*sb), scaly_lvalue(({
+        String scaly_t12{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t13 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t13 = StringBuilder{}; StringBuilder_init((*scaly_t13)); scaly_t13; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012__builtin_"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((builtin)));
+            StringBuilder_append2((*isb$), scaly_lvalue(((*suffix))));
+            StringBuilder_append((*isb$), ((uint8_t)'('));
+            scaly_t12 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t12;
+    })));
+        uint64_t i = 0ULL;
+        while ((i < (all).length))
+        {
+            if ((i > 0ULL))
+            {
+                StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
+            }
+            StringBuilder_append2((*sb), scaly_lvalue(CppEmitter_operand(scaly_rp, *(this_), scaly_lvalue(Vector11<PlannedOperand>(all, i)))));
+            i = (i + 1ULL);
+        }
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\001)"}));
+        return StringBuilder_to_string(scaly_rp, (*sb));
+    }
+    return CppEmitter_untranslated(scaly_rp, *(this_), scaly_lvalue(({
+        String scaly_t16{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t17 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t17 = StringBuilder{}; StringBuilder_init((*scaly_t17)); scaly_t17; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012intrinsic "}));
             StringBuilder_append2((*isb$), scaly_lvalue(((c).name)));
-            scaly_t11 = StringBuilder_to_string(scaly_rp, (*isb$));
+            scaly_t16 = StringBuilder_to_string(scaly_rp, (*isb$));
         }
-        scaly_t11;
+        scaly_t16;
     })));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
+__attribute__((weak)) String CppEmitter_float_builtin(scaly_frame* scaly_rp, String& name)
+{
+    {
+        auto&& scaly_t1 = true;
+        if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\012float.sqrt"})))
+        {
+            return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\004sqrt"})); scaly_t2; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\013float.floor"})))
+        {
+            return (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\005floor"})); scaly_t3; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\012float.ceil"})))
+        {
+            return (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{(uint8_t*)"\004ceil"})); scaly_t4; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\013float.trunc"})))
+        {
+            return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\005trunc"})); scaly_t5; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\020float.round_even"})))
+        {
+            return (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue(String{(uint8_t*)"\004rint"})); scaly_t6; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\011float.abs"})))
+        {
+            return (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue(String{(uint8_t*)"\004fabs"})); scaly_t7; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\017float.copy_sign"})))
+        {
+            return (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(String{(uint8_t*)"\010copysign"})); scaly_t8; }));
+        }
+        else if (scaly_t1 == String_equals(name, scaly_lvalue(String{(uint8_t*)"\011float.fma"})))
+        {
+            return (*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), scaly_lvalue(String{(uint8_t*)"\003fma"})); scaly_t9; }));
+        }
+    }
+    return (*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init3((*scaly_t11)); scaly_t11; }));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly

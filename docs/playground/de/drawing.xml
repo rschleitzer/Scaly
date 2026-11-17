@@ -65,4 +65,52 @@ chart.show()</programlisting>
       lässt das Verdoppeln die Quadrate weit hinter sich. Mach die Schleifen
       länger: wie weit?</para>
   </section>
+
+  <section xml:id="pg-bars">
+    <title>Balken</title>
+    <para>Ein Diagramm kann auch Balken zeichnen. <code>add</code> nimmt zu
+      jedem Wert einen Namen, der darunter steht; <code>bars()</code> macht aus
+      dem Diagramm ein Balkendiagramm, und <code>axes</code> benennt seine
+      beiden Achsen. Mit einer zweiten <code>series</code> stehen die Balken
+      jedes Namens nebeneinander.</para>
+    <programlisting>var rain Chart("Regen in einer Woche")
+rain.axes("Tag", "mm")
+rain.series("diese Woche")
+rain.add("Mo", 3)
+rain.add("Di", 0)
+rain.add("Mi", 12)
+rain.add("Do", 7)
+rain.add("Fr", 4.5)
+rain.series("letzte Woche")
+rain.add(6)
+rain.add(2)
+rain.add(1)
+rain.add(0)
+rain.add(9)
+rain.bars()
+rain.show()</programlisting>
+    <para>An welchem Tag war es am nassesten? Füg beiden Wochen Samstag und
+      Sonntag hinzu — und schau, wie das Diagramm ohne
+      <code>rain.bars()</code> aussieht.</para>
+  </section>
+
+  <section xml:id="pg-points">
+    <title>Punkte an ihrem eigenen Platz</title>
+    <para><code>point(x, y)</code> setzt einen Wert dorthin, wo sein x sagt,
+      statt einen nach dem anderen: jetzt hat auch die Achse unten Zahlen.
+      <code>dots()</code> zeichnet nur die Punkte, ohne Linie dazwischen. Hier
+      rechnet eine Schleife die Parabel x · x von −2 bis 2.</para>
+    <programlisting>var curve Chart("Eine Parabel")
+curve.axes("x", "x * x")
+for i in 41
+{
+    let x (i as f64) / 10.0 - 2.0
+    curve.point(x, x * x)
+}
+curve.dots()
+curve.show()</programlisting>
+    <para>Mach aus <code>x * x</code> ein <code>x * x * x</code>, oder zeichne
+      nach <code>curve.series("…")</code> eine zweite Kurve — und lass
+      <code>dots()</code> weg, dann verbinden Linien die Punkte.</para>
+  </section>
 </chapter>
