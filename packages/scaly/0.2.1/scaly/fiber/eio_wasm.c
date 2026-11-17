@@ -563,6 +563,29 @@ struct scaly_wasm_pipe
 static struct scaly_wasm_pipe* scaly_wasm_pipes[SCALY_PIPES];
 static pthread_mutex_t scaly_wasm_pipes_lock = PTHREAD_MUTEX_INITIALIZER;
 
+/* At the program's end the writing end of every pipe is closed: the task
+ * pool's workers, waiting on theirs, read its end and return, and their
+ * threads end -- none is left waiting in a memory its host takes again. A
+ * page runs one program again and again in ONE memory, wiped
+ * (web/threads.mjs, runMemory): a worker left waiting there was woken by
+ * the next run and ran on in that run's state -- the playground hung after
+ * a few runs of a program with parallel loops, and Safari kept such
+ * workers spinning after the page was gone (2026-11-17). Rule (a): only
+ * this target's host runs a program again in its memory. */
+static void scaly_wasm_pipes_end(void)
+{
+    for (int i = 0; i < SCALY_PIPES; i++) {
+        struct scaly_wasm_pipe* p = scaly_wasm_pipes[i];
+        if (!p || !p->used)
+            continue;
+        pthread_mutex_lock(&p->lock);
+        p->closed_write = 1;
+        pthread_cond_broadcast(&p->changed);
+        pthread_mutex_unlock(&p->lock);
+    }
+}
+static int scaly_wasm_pipes_ending = 0;
+
 static int scaly_wasm_is_pipe(int fd)
 {
     return fd >= SCALY_PIPE_FD && fd < SCALY_PIPE_FD + 2 * SCALY_PIPES;
@@ -576,6 +599,10 @@ static struct scaly_wasm_pipe* scaly_wasm_pipe_of(int fd)
 int pipe(int fds[2])
 {
     pthread_mutex_lock(&scaly_wasm_pipes_lock);
+    if (!scaly_wasm_pipes_ending) {
+        scaly_wasm_pipes_ending = 1;
+        atexit(scaly_wasm_pipes_end);
+    }
     int i = 0;
     while (i < SCALY_PIPES && scaly_wasm_pipes[i] && scaly_wasm_pipes[i]->used)
         i++;

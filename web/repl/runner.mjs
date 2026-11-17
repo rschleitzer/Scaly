@@ -1,7 +1,8 @@
 // The playground's program worker (playground.html): a program the page
 // BUILT for wasm32-wasip1-threads with --gpu (`scaly build` in the page,
 // worker.mjs and playground.json) runs here, once per message -- a new
-// instance each time, over one memory, wiped (threads.mjs, runMemory) --, its threads in the page's
+// instance each time, over a memory that has rested, wiped (`memories`
+// below) --, its threads in the page's
 // workers (the page is their coordinator: threads.mjs) and its card in a
 // worker of its own (gpu-host.mjs, gpu-worker.mjs), opened once and kept, so
 // that a kernel is compiled once.
@@ -27,7 +28,17 @@ import { GpuHost } from './gpu-host.mjs';
 
 let program = null;     // { bytes, module }
 let card;               // the GpuHost, or null where the page has no card
-let kept = null;        // the program's memory, { memory, maximum }, kept from run to run
+// The program's memories, { memory, maximum, freed }, kept from run to run:
+// a run takes one that has rested REST_MS since its run ended, wiped
+// (threads.mjs, runMemory), else a new one -- at most MEMORIES, then it
+// waits for the oldest to rest. A thread of the run before that is still
+// waiting in a memory (a browser ends a worker some time after it is told
+// to) was woken by the next run in it and ran on in that run's state: the
+// playground hung after a few runs, Safari kept the worker spinning
+// (2026-11-17). The program itself ends its pool's threads at its end
+// (eio_wasm.c, scaly_wasm_pipes_end); the rest is the time they take.
+const REST_MS = 500, MEMORIES = 3;
+let memories = [];
 
 self.onmessage = async ({ data }) => {
   try {
@@ -53,8 +64,23 @@ async function answer(data) {
     self.postMessage({ type: 'loaded', threads: threaded(program.bytes) });
     return;
   }
-  kept = runMemory(program.bytes, kept, { most: PAGE_MEMORY }) ?? kept;
-  const memory = threaded(program.bytes) ? kept.memory : null;
+  let used = null;
+  if (threaded(program.bytes)) {
+    const resting = m => performance.now() - m.freed;
+    let pick = memories.find(m => m.freed > 0 && resting(m) >= REST_MS);
+    if (!pick && memories.length >= MEMORIES) {
+      pick = memories.filter(m => m.freed > 0).sort((a, b) => a.freed - b.freed)[0];
+      if (pick) await new Promise(r => setTimeout(r, Math.max(0, REST_MS - resting(pick))));
+    }
+    const got = runMemory(program.bytes, pick ?? null, { most: PAGE_MEMORY });
+    if (got !== pick) {
+      used = { ...got, freed: 0 };
+      if (pick) memories.splice(memories.indexOf(pick), 1);
+      memories.push(used);
+    } else used = pick;
+    used.freed = 0;
+  }
+  const memory = used ? used.memory : null;
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
@@ -74,6 +100,7 @@ async function answer(data) {
     status = 'ended: ' + (e && e.message || e);
   }
   const ms = performance.now() - t0;
+  if (used) used.freed = performance.now();
   const pictures = [], drawings = [];
   for (const path of new Set(files.written)) {
     const bytes = path.startsWith('/work/') ? files.read(path) : null;
