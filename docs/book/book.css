@@ -444,6 +444,7 @@ kbd {
 var { font-style: italic; color: var(--muted); }
 
 q { quotes: '\201C' '\201D' '\2018' '\2019'; }
+:lang(de) q { quotes: '\201E' '\201C' '\201A' '\2018'; }
 
 .table-wrap { overflow-x: auto; margin: 0 0 1.4em; border: 1px solid var(--border); border-radius: 10px; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.5; }
@@ -460,6 +461,21 @@ aside.note {
   background: var(--accent-faint);
 }
 .note-title { margin: 0 0 0.3em; color: var(--accent-strong); font-weight: 600; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+aside.tryit {
+  margin: 0 0 1.4em;
+  padding: 14px 18px 4px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-faint);
+}
+aside.tryit .note-title::before { content: '\25B6\FE0E  '; }
+.tryit-title { font-weight: 600; }
+aside.sidebar-box { margin: 0 0 1.4em; padding: 14px 18px 4px; border: 1px solid var(--border); border-radius: 10px; }
+
+.equation { margin: 0 0 1.2em; padding: 0.3em 0; text-align: center; overflow-x: auto; }
+.math { font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', Georgia, serif; font-size: 1.12em; font-style: italic; }
+div.lead > p { margin: 0; }
 
 figure.example { margin: 0 0 1.5em; }
 figure.example figcaption { margin: 0 0 6px; color: var(--muted); font-size: 14px; font-weight: 500; }

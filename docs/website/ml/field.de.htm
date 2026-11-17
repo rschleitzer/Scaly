@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html
+lang="de"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Ein erstes Modell - Maschinelles Lernen mit Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.de.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Inhalt"
+><a
+class="sidebar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><ol
+class="toc"
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="field.de.htm"
+aria-current="page"
+><span
+class="num"
+>1.</span
+>Ein erstes Modell</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.de.htm#field-points"
+><span
+class="num"
+>1.1</span
+>Zwei Sorten von Punkten</a
+></li
+><li
+><a
+href="field.de.htm#field-neuron"
+><span
+class="num"
+>1.2</span
+>Ein Neuron</a
+></li
+><li
+><a
+href="field.de.htm#field-loss"
+><span
+class="num"
+>1.3</span
+>Wie falsch</a
+></li
+><li
+><a
+href="field.de.htm#field-gradient"
+><span
+class="num"
+>1.4</span
+>Bergab</a
+></li
+><li
+><a
+href="field.de.htm#field-features"
+><span
+class="num"
+>1.5</span
+>Bessere Eingaben</a
+></li
+><li
+><a
+href="field.de.htm#field-hidden"
+><span
+class="num"
+>1.6</span
+>Verborgene Schichten</a
+></li
+><li
+><a
+href="field.de.htm#field-backprop"
+><span
+class="num"
+>1.7</span
+>Rückwärtsrechnung</a
+></li
+><li
+><a
+href="field.de.htm#field-test"
+><span
+class="num"
+>1.8</span
+>Was es nicht gesehen hat</a
+></li
+><li
+><a
+href="field.de.htm#field-program"
+><span
+class="num"
+>1.9</span
+>Das Programm des Spielfelds</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Inhalt"
+title="Inhalt"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Farben"
+title="Farben"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Suchen (S)"
+title="Suchen (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><nav
+class="topbar-links"
+aria-label="Anderswo"
+><a
+href="field.htm"
+>English</a
+><a
+href="../play/"
+>Der Playground</a
+><a
+href="../lang/"
+>Die Sprache</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Im Buch suchen"
+aria-label="Im Buch suchen"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Kapitel 1</p
+><h1
+id="field"
+>Ein erstes Modell</h1
+><p
+>In diesem Kapitel wollen wir ein Programm entwickeln, das zwischen
+    zwei Sorten von Punkten unterscheiden kann. Wir beginnen mit einem
+    einzelnen Neuron und bauen dann aus Schichten von Neuronen ein kleines
+    Netz, das seine Gewichte selbst findet.</p
+><section
+id="field-points"
+><h2
+><a
+class="header"
+href="#field-points"
+>Zwei Sorten von Punkten</a
+></h2
+><p
+>Gegeben sei eine Ebene mit den Koordinaten <code
+>x</code
+>
+      und <code
+>y</code
+>, jeweils von -6 bis +6. In diese Ebene setzen
+      wir Punkte zweier Sorten: orange und blau. In den Programmen wird die
+      Sorte eines Punkts durch eine Zahl dargestellt: <code
+>1</code
+>
+      für orange und <code
+>-1</code
+> für blau.</p
+><p
+>Ein <em
+>Modell</em
+> ist eine Funktion, die aus den
+      Koordinaten <code
+>x</code
+> und <code
+>y</code
+> eines Orts
+      in dieser Ebene eine Vermutung über die Sorte eines Punkts an diesem
+      Ort berechnet, einen Wert zwischen -1 und +1. Bei -1 ist sich das
+      Modell sicher, dass dort ein blauer Punkt liegt, bei +1 sagt es mit
+      Sicherheit einen orangen voraus. Werte dazwischen drücken Unsicherheit
+      aus: Das Vorzeichen sagt, welche Sorte das Modell eher vermutet, und
+      je näher der Wert an 0 liegt, desto unsicherer ist es; bei 0 kann es
+      sich nicht entscheiden.</p
+><p
+>Eine solche Funktion könnten wir beliebig formulieren, etwa</p
+><div
+class="equation"
+><span
+class="math"
+>f(x, y) = x / 6</span
+></div
+><p
+>Sie ist am rechten Rand +1, am linken -1 und auf der senkrechten
+      Achse 0: Rechts vermutet sie orange, links blau, und je näher zur
+      Mitte, desto unsicherer ist sie. Oder</p
+><div
+class="equation"
+><span
+class="math"
+>f(x, y) = cos(π·(x² + y²) / 72)</span
+></div
+><p
+>Sie ist im Mittelpunkt +1, denn cos 0 = 1, und in den vier Ecken
+      -1, denn dort ist x² + y² = 36 + 36 = 72 und cos π = -1; auf dem
+      Kreis mit dem Radius 6 um den Mittelpunkt ist sie 0. Ob eine solche
+      Funktion gut vermutet, hängt von den Punkten ab: Die erste passt zu
+      Punkten, die rechts orange und links blau sind, die zweite zu einer
+      orangen Scheibe in einem blauen Ring.</p
+><p
+>Maschinelles Lernen denkt sich die Funktion nicht aus. Es legt die <em
+>Form</em
+> der Funktion fest und lässt Zahlen
+      darin offen, und ein Programm findet die Zahlen aus Beispielen,
+      Punkten, deren Sorte bekannt ist. Dieses Finden nennt dieses Buch
+      <em
+>Lernen</em
+>, und eine Funktion mit gefundenen Zahlen ein
+      <em
+>trainiertes Modell</em
+>.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/field/#data=clouds&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
+>Öffne das Spielfeld mit zwei Wolken von Punkten.</a
+>
+        Binnen einer Sekunde färbt sich die Ebene zweifarbig: orange, wo
+        das Modell orange vermutet, blau, wo es blau vermutet, blass, wo es
+        unsicher ist. Die umrandeten Punkte sind Testpunkte, aus denen das
+        Modell nie lernt; sie kommen am Ende des Kapitels wieder.</p
+></aside
+></section
+><section
+id="field-neuron"
+><h2
+><a
+class="header"
+href="#field-neuron"
+>Ein Neuron</a
+></h2
+><p
+>Die einfachste Form einer solchen Funktion ist ein
+      <em
+>Neuron</em
+>. Es multipliziert jede seiner Eingaben
+      mit einer eigenen Zahl, seinem <em
+>Gewicht</em
+>, zählt
+      alles zusammen und addiert noch eine Zahl, seinen
+      <em
+>Bias</em
+>:</p
+><div
+class="equation"
+><span
+class="math"
+>z = w<sub
+>1</sub
+>·x + w<sub
+>2</sub
+>·y + b</span
+></div
+><p
+>Wo <code
+>z</code
+> positiv ist, vermutet das Neuron orange,
+      wo es negativ ist, blau. Die Punkte, an denen <code
+>z</code
+>
+      genau 0 ist, bilden eine Gerade; ein Neuron teilt die Ebene also
+      durch eine Gerade: Die Gewichte drehen sie, der Bias verschiebt sie.
+      Hier ist ein Neuron mit Gewichten, die wir gewählt haben, 1 und 1
+      und einem Bias von 0, und es betrachtet sechs Punkte:</p
+><pre
+class="listing"
+><code
+>; One neuron with weights we chose: it adds up its inputs, each times its
+; weight, plus a bias, and the sign of the sum is its guess.
+define Point(x: f64, y: f64, kind: f64)
+
+var points Array[Point]()
+points.add(Point(2.0, 1.5, 1.0))
+points.add(Point(1.0, 3.0, 1.0))
+points.add(Point(0.5, 0.0 - 2.5, 1.0))
+points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
+points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
+points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
+
+let w1 1.0
+let w2 1.0
+let b 0.0
+for p in points
+{
+    let z w1 * p.x + w2 * p.y + b
+    let guess if z &#62; 0.0: 1.0 else 0.0 - 1.0
+    let verdict if guess = p.kind: "right" else "wrong"
+    print "(`p.x`, `p.y`) is `p.kind`: z = `z`, the guess `guess`, `verdict`"
+}</code
+></pre
+><pre
+class="screen"
+><code
+>(2, 1.5) is 1: z = 3.5, the guess 1, right
+(1, 3) is 1: z = 4, the guess 1, right
+(0.5, -2.5) is 1: z = -2, the guess -1, wrong
+(-2, -1) is -1: z = -3, the guess -1, right
+(-1, -3) is -1: z = -4, the guess -1, right
+(-3, 1) is -1: z = -2, the guess -1, right</code
+></pre
+><p
+>Fünf von sechs stimmen. Der Punkt <code
+>(0.5, -2.5)</code
+>
+      ist orange, liegt aber unterhalb der Geraden
+      <code
+>x + y = 0</code
+>. Setz <code
+>w2</code
+> auf 0
+      und führ es noch einmal aus: Die Gerade wird zur senkrechten
+      Achse, <code
+>x = 0</code
+>, und alle sechs stimmen. Die Gerade
+      zu drehen, indem man ein Gewicht ändert, bis die Vermutungen stimmen,
+      ist genau das, was Lernen tun wird, nur von selbst.</p
+></section
+><section
+id="field-loss"
+><h2
+><a
+class="header"
+href="#field-loss"
+>Wie falsch</a
+></h2
+><p
+>Um die Gewichte von selbst zu ändern, braucht ein Programm eine
+      Zahl, die sagt, wie falsch das Neuron liegt, eine Zahl, die kleiner
+      wird, wenn das Neuron besser wird. Die falschen Vermutungen zu zählen
+      taugt dafür nicht: Eine kleine Änderung eines Gewichts ändert meist
+      gar keine Vermutung, also sagt die Zahl nicht, in welche Richtung zu
+      drehen ist.</p
+><p
+>Deshalb wird die Summe des Neurons zuerst von einer glatten
+      Funktion in eine Zahl zwischen -1 und 1 gedrückt, hier vom
+      Tangens hyperbolicus:</p
+><div
+class="equation"
+><span
+class="math"
+>a = tanh(z)</span
+></div
+><p
+>So antwortet das Neuron, wie es zu Beginn des Kapitels von einem
+      Modell verlangt war: nahe +1 oder -1, wo es sich sicher ist, nahe 0,
+      wo nicht. Eine solche Funktion ist die
+      <em
+>Aktivierung</em
+> des Neurons und
+      <code
+>a</code
+> seine Antwort. Jetzt lässt sich die Antwort mit
+      der Sorte <code
+>t</code
+> vergleichen, die der Punkt wirklich
+      hat:</p
+><div
+class="equation"
+><span
+class="math"
+>L = ½·(a − t)²</span
+></div
+><p
+>Das ist der <em
+>Fehler</em
+> eines Punkts (englisch
+      <em
+>loss</em
+>): 0, wo die Antwort genau die Sorte ist,
+      größer, je weiter sie davon weg ist, und jede kleine Änderung eines
+      Gewichts ändert ihn ein wenig. Der Fehler des Modells ist der
+      Mittelwert der Fehler aller Punkte.</p
+></section
+><section
+id="field-gradient"
+><h2
+><a
+class="header"
+href="#field-gradient"
+>Bergab</a
+></h2
+><p
+>Stell dir den Fehler als Landschaft vor. Jede Wahl der drei
+      Zahlen <code
+>w1</code
+>, <code
+>w2</code
+> und
+      <code
+>b</code
+> ist ein Ort darin, und der Fehler dort ist seine
+      Höhe. Lernen heißt bergab gehen. Wo es bergab geht, lässt sich für
+      jedes Gewicht einzeln ablesen: Wie stark ändert sich der Fehler, wenn
+      sich das Gewicht ein wenig ändert? Das ist die
+      <em
+>Ableitung</em
+> nach dem Gewicht, geschrieben
+      <code
+>∂L/∂w1</code
+>.</p
+><p
+>Der Fehler hängt nicht direkt von <code
+>w1</code
+> ab. Er
+      hängt von der Antwort <code
+>a</code
+> ab, die Antwort von der
+      Summe <code
+>z</code
+> und die Summe von <code
+>w1</code
+>.
+      Jedes Glied dieser Kette hat eine Steigung, die leicht zu sagen
+      ist:</p
+><ul
+><li
+><p
+>der Fehler nach der Antwort: <code
+>a − t</code
+>;</p
+></li
+><li
+><p
+>die Antwort nach der Summe, die Steigung von tanh: <code
+>1 − a²</code
+>;</p
+></li
+><li
+><p
+>die Summe nach dem Gewicht: <code
+>x</code
+>, die Eingabe, die das Gewicht multipliziert.</p
+></li
+></ul
+><p
+>Die <em
+>Kettenregel</em
+> sagt: Die Steigung der ganzen
+      Kette ist das Produkt der Steigungen ihrer Glieder.</p
+><div
+class="equation"
+><span
+class="math"
+>∂L/∂w<sub
+>1</sub
+> = (a − t)·(1 − a²)·x</span
+></div
+><p
+>Für <code
+>w2</code
+> ist der letzte Faktor
+      <code
+>y</code
+>, für den Bias 1. Über alle Punkte
+      zusammengezählt und durch ihre Anzahl geteilt, sind diese Ableitungen
+      der <em
+>Gradient</em
+>: die Richtung, in der der Fehler am
+      schnellsten steigt. Ein Schritt des
+      <em
+>Gradientenabstiegs</em
+> bewegt jedes Gewicht ein
+      wenig in die andere Richtung,</p
+><div
+class="equation"
+><span
+class="math"
+>w<sub
+>1</sub
+> ← w<sub
+>1</sub
+> − η·∂L/∂w<sub
+>1</sub
+></span
+></div
+><p
+>wobei die kleine Zahl <code
+>η</code
+> die
+      <em
+>Lernrate</em
+> ist. Das Programm unten lässt das Neuron
+      des letzten Abschnitts bei Gewichten beginnen, die schlecht raten,
+      und macht hundert solche Schritte:</p
+><pre
+class="listing"
+><code
+>; One neuron learns: it starts from weights that guess badly, measures how
+; wrong it is, and moves each weight a little the way that makes it less so.
+define Point(x: f64, y: f64, kind: f64)
+
+; A number shown to three places.
+function shown(v: f64) returns f64
+{
+    (v * 1000.0).round_even() / 1000.0
+}
+
+var points Array[Point]()
+points.add(Point(2.0, 1.5, 1.0))
+points.add(Point(1.0, 3.0, 1.0))
+points.add(Point(0.5, 0.0 - 2.5, 1.0))
+points.add(Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
+points.add(Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
+points.add(Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
+let n points.length as f64
+
+var w1 0.0 - 0.5
+var w2 0.5
+var b 0.0
+let rate 0.1
+var step 0
+while step &#60;= 100
+{
+    ; how wrong it is, and which way each weight should go
+    var loss 0.0
+    var right 0
+    var g1 0.0
+    var g2 0.0
+    var gb 0.0
+    for p in points
+    {
+        let a tanh(w1 * p.x + w2 * p.y + b)
+        let e a - p.kind
+        loss := loss + 0.5 * e * e
+        if a * p.kind &#62; 0.0
+            right := right + 1
+        let dz e * (1.0 - a * a)
+        g1 := g1 + dz * p.x
+        g2 := g2 + dz * p.y
+        gb := gb + dz
+    }
+    if step % 10 = 0
+        print "step `step`: loss `shown(loss / n)`, `right` of 6 right"
+    w1 := w1 - rate * g1 / n
+    w2 := w2 - rate * g2 / n
+    b := b - rate * gb / n
+    step := step + 1
+}
+print "w1 `shown(w1)`, w2 `shown(w2)`, b `shown(b)`"</code
+></pre
+><pre
+class="screen"
+><code
+>step 0: loss 0.941, 2 of 6 right
+step 10: loss 0.325, 5 of 6 right
+step 20: loss 0.112, 5 of 6 right
+step 30: loss 0.06, 6 of 6 right
+step 40: loss 0.043, 6 of 6 right
+step 50: loss 0.033, 6 of 6 right
+step 60: loss 0.027, 6 of 6 right
+step 70: loss 0.023, 6 of 6 right
+step 80: loss 0.02, 6 of 6 right
+step 90: loss 0.018, 6 of 6 right
+step 100: loss 0.016, 6 of 6 right
+w1 1.158, w2 0.022, b 0.3</code
+></pre
+><p
+>Der Fehler fällt von Schritt zu Schritt, und nach dreißig
+      Schritten stimmt jeder Punkt. Die gefundenen Gewichte liegen nahe bei
+      denen, die wir von Hand gefunden haben: <code
+>w2</code
+> ist fast
+      0, die Gerade fast die senkrechte Achse. Das <code
+>for</code
+>
+      über die Punkte zählt den Gradienten zusammen; Scaly darf seine
+      Runden auf mehreren Kernen ausführen, und eine Summe von
+      Gleitkommazahlen kommt trotzdem gleich heraus, weil sie in der
+      Reihenfolge der Punkte gefaltet wird.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x2,y2&#38;rate=0.001&#38;lang=de"
+>Öffne das Spielfeld mit einer Lernrate von 0,001.</a
+>
+        Die Farben kommen nur langsam, und die Fehlerkurve rechts kriecht
+        nach unten. Wähl 0,1 unter <span
+class="gui"
+>Lernrate</span
+>:
+        Dasselbe Netz ist im Nu fertig. Ein zu kleiner Schritt kostet Zeit;
+        ein zu großer kann über das Tal hinausschießen und den Fehler
+        springen statt fallen lassen.</p
+></aside
+></section
+><section
+id="field-features"
+><h2
+><a
+class="header"
+href="#field-features"
+>Bessere Eingaben</a
+></h2
+><p
+>Ein Neuron teilt die Ebene durch eine Gerade, und manche Punkte
+      kann keine Gerade teilen. Leg eine Scheibe oranger Punkte in
+      einen Ring blauer: Jede Gerade hat Orange und Blau auf beiden Seiten.
+      Das Programm unten versucht es zweimal, zuerst mit
+      <code
+>x</code
+> und <code
+>y</code
+> als Eingaben des
+      Neurons, dann mit ihren Quadraten:</p
+><pre
+class="listing"
+><code
+>; A disc of points inside a ring of points: no line parts them, so one
+; neuron given x and y cannot learn it. Given x² and y² instead, it can --
+; in those inputs the disc and the ring lie on two sides of a line.
+define Point(x: f64, y: f64, kind: f64)
+
+function shown(v: f64) returns f64
+{
+    (v * 1000.0).round_even() / 1000.0
+}
+
+; The neuron's two inputs at a point: x and y, or their squares.
+function inputs(p: Point, squared: bool) returns (f64, f64)
+{
+    if squared: (p.x * p.x, p.y * p.y) else (p.x, p.y)
+}
+
+procedure train(points: Array[Point], squared: bool)
+{
+    let n points.length as f64
+    var w1 0.0
+    var w2 0.0
+    var b 0.0
+    var step 0
+    while step &#60;= 400
+    {
+        var loss 0.0
+        var right 0
+        var g1 0.0
+        var g2 0.0
+        var gb 0.0
+        for p in points
+        {
+            let (u, v) inputs(p, squared)
+            let a tanh(w1 * u + w2 * v + b)
+            let e a - p.kind
+            loss := loss + 0.5 * e * e
+            if a * p.kind &#62; 0.0
+                right := right + 1
+            let dz e * (1.0 - a * a)
+            g1 := g1 + dz * u
+            g2 := g2 + dz * v
+            gb := gb + dz
+        }
+        if step % 100 = 0
+            print "  step `step`: loss `shown(loss / n)`, `right` of 16 right"
+        w1 := w1 - 0.1 * g1 / n
+        w2 := w2 - 0.1 * g2 / n
+        b := b - 0.1 * gb / n
+        step := step + 1
+    }
+}
+
+; eight points on a circle of radius 1, eight on one of radius 3
+var points Array[Point]()
+var k 0
+while k &#60; 8
+{
+    let t 0.7853981633974483 * (k as f64)
+    points.add(Point(cos(t), sin(t), 1.0))
+    points.add(Point(3.0 * cos(t + 0.4), 3.0 * sin(t + 0.4), 0.0 - 1.0))
+    k := k + 1
+}
+print "given x and y:"
+train(points, false)
+print "given x² and y²:"
+train(points, true)</code
+></pre
+><pre
+class="screen"
+><code
+>given x and y:
+  step 0: loss 0.5, 0 of 16 right
+  step 100: loss 0.5, 7 of 16 right
+  step 200: loss 0.5, 7 of 16 right
+  step 300: loss 0.5, 7 of 16 right
+  step 400: loss 0.5, 7 of 16 right
+given x² and y²:
+  step 0: loss 0.5, 0 of 16 right
+  step 100: loss 0.015, 16 of 16 right
+  step 200: loss 0.007, 16 of 16 right
+  step 300: loss 0.004, 16 of 16 right
+  step 400: loss 0.003, 16 of 16 right</code
+></pre
+><p
+>Mit <code
+>x</code
+> und <code
+>y</code
+> bleibt das
+      Neuron bei einem Fehler von 0,5, nicht besser, als gar nicht zu
+      raten. Mit <code
+>x²</code
+> und <code
+>y²</code
+> lernt es
+      jeden Punkt. Das Neuron zieht noch immer eine Gerade, aber eine Gerade
+      in den Eingaben, die es bekommt: <code
+>w1·x² + w2·y² + b = 0</code
+>
+      ist auf der Ebene ein Kreis. Auszuwählen, was ein Modell sieht, heißt
+      <em
+>Feature Engineering</em
+>, und gute Eingaben können ein
+      schweres Problem leicht machen.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
+>Öffne den Kreis mit x und y als Eingaben.</a
+>
+        Die Ausgabe bleibt eine gerade Kante zwischen zwei blassen Hälften.
+        Klick im Netz auf <code
+>x²</code
+> und
+        <code
+>y²</code
+>, um sie dem Neuron zu geben, und auf
+        <code
+>x</code
+> und <code
+>y</code
+>, um diese
+        wegzunehmen: Die Kante schließt sich zum Kreis. Jedes kleine Quadrat
+        zeigt, was eine Eingabe oder ein Neuron über der ganzen Ebene
+        antwortet.</p
+></aside
+></section
+><section
+id="field-hidden"
+><h2
+><a
+class="header"
+href="#field-hidden"
+>Verborgene Schichten</a
+></h2
+><p
+>Für eine Scheibe sind die richtigen Eingaben leicht zu erraten.
+      Für die meisten Daten sind sie es nicht, und hier kommt die Idee, die
+      neuronale Netze stark macht: Lass Neuronen die Eingaben berechnen.
+      Eine <em
+>verborgene Schicht</em
+> ist eine Reihe von
+      Neuronen, die jedes <code
+>x</code
+> und <code
+>y</code
+>
+      lesen und jedes eine eigene Gerade ziehen. Ihre Antworten sind die
+      Eingaben eines weiteren Neurons, der <em
+>Ausgabe</em
+>,
+      die die Geraden zu Gebieten verbindet: orange innerhalb dieser zwei,
+      blau außerhalb jener.</p
+><p
+>Die Daten, an denen man das am besten sieht, heißen XOR: orange,
+      wo <code
+>x</code
+> und <code
+>y</code
+> dasselbe Vorzeichen
+      haben, blau, wo nicht, die vier Viertel der Ebene im Wechsel. Keine
+      einzelne Gerade teilt sie, zwei Geraden schon, mit etwas, das sie
+      verbindet.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/field/#data=xor&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
+>Öffne XOR ohne verborgene Schicht:</a
+>
+        Das Netz findet nichts. <a
+href="https://scaly.io/play/field/#data=xor&#38;hidden=3&#38;inputs=x,y&#38;lang=de"
+>Mit einer verborgenen Schicht aus drei Neuronen</a
+>
+        lernt es die vier Viertel. Sieh dir die drei Quadrate der
+        verborgenen Schicht an: Jedes ist eine gerade Kante, eine Gerade, und
+        das Quadrat der Ausgabe ist ihre Verbindung. Die Linien zwischen
+        den Quadraten sind die Gewichte, orange für positive, blau für
+        negative, je dicker, desto stärker.</p
+></aside
+><p
+>Dabei kommt es auf die Aktivierung an. Ohne sie würde ein
+      Neuron, das Neuronen liest, Summen von Summen addieren, und das ist
+      wieder nur eine Summe, eine Gerade; erst der Knick in der Antwort
+      jedes Neurons lässt die Schichten mehr können als ein einzelnes
+      Neuron. Das Spielfeld bietet vier an: <code
+>tanh</code
+>,
+      <code
+>ReLU</code
+> (die Summe selbst, wo sie positiv ist, sonst
+      0), <code
+>sigmoid</code
+> (wie tanh, aber zwischen 0 und 1) und
+      gar keine, die genau dieses Scheitern zeigt.</p
+></section
+><section
+id="field-backprop"
+><h2
+><a
+class="header"
+href="#field-backprop"
+>Rückwärtsrechnung</a
+></h2
+><p
+>Wie lernt ein verborgenes Neuron? Seine Gewichte sind so weit vom
+      Fehler entfernt wie nur möglich, hinter dem Ausgabeneuron. Die
+      Kettenregel antwortet trotzdem, mit einer Kette, die ein Glied länger
+      ist, und der Kniff liegt in der Reihenfolge, in der sie gerechnet
+      wird.</p
+><p
+>Zuerst wird alles vorwärts gerechnet, wie bisher: die Antwort
+      <code
+>hⱼ</code
+> jedes verborgenen Neurons, dann die Summe der
+      Ausgabe und ihre Antwort <code
+>a</code
+>. Dann rückwärts. Der
+      Anteil des Ausgabeneurons am Fehler, der Fehler nach seiner Summe,
+      ist das bekannte</p
+><div
+class="equation"
+><span
+class="math"
+>d = (a − t)·(1 − a²)</span
+></div
+><p
+>und die Ableitungen seiner Gewichte folgen daraus wie bei einem
+      einzelnen Neuron: <code
+>d·hⱼ</code
+> für das Gewicht
+      <code
+>vⱼ</code
+>, das das verborgene Neuron <code
+>j</code
+>
+      liest. Das verborgene Neuron <code
+>j</code
+> erreicht den Fehler
+      über dieses Gewicht, also ist die Steigung nach seiner Antwort
+      <code
+>d·vⱼ</code
+>, und durch sein eigenes tanh wird sein Anteil
+      am Fehler zu</p
+><div
+class="equation"
+><span
+class="math"
+>d<sub
+>j</sub
+> = d·v<sub
+>j</sub
+>·(1 − h<sub
+>j</sub
+>²)</span
+></div
+><p
+>Von da an sind seine Gewichte wieder die eines einzelnen Neurons:
+      <code
+>dⱼ·x</code
+>, <code
+>dⱼ·y</code
+> und
+      <code
+>dⱼ</code
+> für seinen Bias. Der Fehler wird Schicht für
+      Schicht rückwärts durch das Netz gereicht, der Anteil jeder Schicht
+      aus dem Anteil der Schicht nach ihr berechnet. Das ist die
+      <em
+>Rückwärtsrechnung</em
+> (englisch
+      <em
+>backpropagation</em
+>), und sie ist das ganze
+      Geheimnis, wie Netze jeder Tiefe lernen. Hier ist sie für XOR
+      ausgeschrieben, mit drei verborgenen Neuronen:</p
+><pre
+class="listing"
+><code
+>; XOR: the kind is +1 where x and y have the same sign, -1 where not. No
+; line parts the kinds, and no single neuron learns it -- but three neurons
+; in a hidden layer, and one more that reads them, do. Learning them takes
+; the error back through both layers: backpropagation, written out by hand.
+define Point(x: f64, y: f64, kind: f64)
+define HIDDEN int 3
+
+function shown(v: f64) returns f64
+{
+    (v * 1000.0).round_even() / 1000.0
+}
+
+var points Array[Point]()
+points.add(Point(1.0, 1.0, 1.0))
+points.add(Point(0.0 - 1.0, 0.0 - 1.0, 1.0))
+points.add(Point(1.0, 0.0 - 1.0, 0.0 - 1.0))
+points.add(Point(0.0 - 1.0, 1.0, 0.0 - 1.0))
+let n points.length as f64
+
+; the hidden layer: neuron j has the weights w[2j] for x and w[2j+1] for y,
+; and the bias c[j]; the output neuron has the weights v[j] and the bias b
+var w Vector[f64](2 * HIDDEN)
+var c Vector[f64](HIDDEN)
+var v Vector[f64](HIDDEN)
+var b 0.0
+w.put(0, 0.5)
+w.put(1, 0.0 - 0.4)
+w.put(2, 0.3)
+w.put(3, 0.8)
+w.put(4, 0.0 - 0.7)
+w.put(5, 0.2)
+var k 0
+var j 0
+while j &#60; HIDDEN
+{
+    c.put(j, 0.0)
+    v.put(j, 0.3 - 0.2 * (j as f64))
+    j := j + 1
+}
+
+; the gradients, and what each hidden neuron answers
+var gw Vector[f64](2 * HIDDEN)
+var gc Vector[f64](HIDDEN)
+var gv Vector[f64](HIDDEN)
+var h Vector[f64](HIDDEN)
+let rate 0.5
+var step 0
+while step &#60;= 300
+{
+    k := 0
+    while k &#60; 2 * HIDDEN
+    {
+        gw.put(k, 0.0)
+        k := k + 1
+    }
+    j := 0
+    while j &#60; HIDDEN
+    {
+        gc.put(j, 0.0)
+        gv.put(j, 0.0)
+        j := j + 1
+    }
+    var gb 0.0
+    var loss 0.0
+    var right 0
+    for p in points
+    {
+        ; forward: the hidden layer, then the output
+        var z b
+        j := 0
+        while j &#60; HIDDEN
+        {
+            h.put(j, tanh(w[2 * j] * p.x + w[2 * j + 1] * p.y + c[j]))
+            z := z + v[j] * h[j]
+            j := j + 1
+        }
+        let a tanh(z)
+        let e a - p.kind
+        loss := loss + 0.5 * e * e
+        if a * p.kind &#62; 0.0
+            right := right + 1
+        ; back: the output neuron's share of the error ...
+        let d e * (1.0 - a * a)
+        gb := gb + d
+        j := 0
+        while j &#60; HIDDEN
+        {
+            gv.put(j, gv[j] + d * h[j])
+            ; ... and each hidden neuron's, through the weight that reads it
+            let dj d * v[j] * (1.0 - h[j] * h[j])
+            gw.put(2 * j, gw[2 * j] + dj * p.x)
+            gw.put(2 * j + 1, gw[2 * j + 1] + dj * p.y)
+            gc.put(j, gc[j] + dj)
+            j := j + 1
+        }
+    }
+    if step % 50 = 0
+        print "step `step`: loss `shown(loss / n)`, `right` of 4 right"
+    ; every weight a little against its gradient
+    k := 0
+    while k &#60; 2 * HIDDEN
+    {
+        w.put(k, w[k] - rate * gw[k] / n)
+        k := k + 1
+    }
+    j := 0
+    while j &#60; HIDDEN
+    {
+        c.put(j, c[j] - rate * gc[j] / n)
+        v.put(j, v[j] - rate * gv[j] / n)
+        j := j + 1
+    }
+    b := b - rate * gb / n
+    step := step + 1
+}</code
+></pre
+><pre
+class="screen"
+><code
+>step 0: loss 0.52, 2 of 4 right
+step 50: loss 0.025, 4 of 4 right
+step 100: loss 0.006, 4 of 4 right
+step 150: loss 0.003, 4 of 4 right
+step 200: loss 0.002, 4 of 4 right
+step 250: loss 0.002, 4 of 4 right
+step 300: loss 0.001, 4 of 4 right</code
+></pre
+><p
+>Die verborgenen Neuronen beginnen mit Absicht bei verschiedenen
+      Gewichten. Hätten alle gleich begonnen, würden sie gleich antworten,
+      in jedem Schritt denselben Gradienten bekommen und für immer gleich
+      bleiben, drei Kopien einer Geraden. Das Spielfeld beginnt seine
+      Gewichte aus demselben Grund zufällig.</p
+></section
+><section
+id="field-test"
+><h2
+><a
+class="header"
+href="#field-test"
+>Was es nicht gesehen hat</a
+></h2
+><p
+>Ein Modell, das seine Trainingspunkte kennt, nützt noch nichts.
+      Die Frage ist, wie gut es Punkte errät, die es nie gesehen hat.
+      Deshalb hält das Spielfeld die Hälfte seiner Punkte als
+      <em
+>Testpunkte</em
+> zurück, umrandet gezeichnet: Das Netz
+      lernt nie aus ihnen, und der Fehler über ihnen, der
+      <em
+>Testfehler</em
+>, sagt, wie gut es
+      verallgemeinert.</p
+><p
+>Wenn die Daten verrauscht sind und das Netz groß ist, gehen die
+      beiden Fehler auseinander. Das Netz lernt die Trainingspunkte immer
+      besser, das Rauschen eingeschlossen, und zieht Grenzen um einzelne
+      verirrte Punkte; der Testfehler hört auf zu fallen und steigt. Das
+      ist <em
+>Überanpassung</em
+> (englisch
+      <em
+>overfitting</em
+>). Ein Mittel dagegen ist
+      <em
+>Regularisierung</em
+>: ein zusätzlicher Fehler für
+      große Gewichte, <code
+>λ·w²</code
+> für jedes Gewicht. Seine
+      Ableitung schrumpft jedes Gewicht in jedem Schritt ein wenig, und ein
+      Netz mit kleineren Gewichten zieht glattere Grenzen.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/field/#data=spiral&#38;noise=30&#38;hidden=8,8,8,8&#38;inputs=x,y,sinx,siny&#38;speed=30&#38;lang=de"
+>Öffne die Spirale mit 30 % Rauschen und vier verborgenen Schichten zu acht.</a
+>
+        Nach einigen Sekunden liegt der Trainingsfehler weit unter dem
+        Testfehler, und die Ebene zeigt Inseln um einzelne Punkte. Wähl
+        0,01 unter <span
+class="gui"
+>Regularisierung (L2)</span
+> und klick auf
+        <span
+class="gui"
+>Neu beginnen</span
+>: Der Trainingsfehler bleibt höher,
+        der Testfehler endet niedriger, die Grenzen sind glatter.</p
+></aside
+></section
+><section
+id="field-program"
+><h2
+><a
+class="header"
+href="#field-program"
+>Das Programm des Spielfelds</a
+></h2
+><p
+>Die Seite führt ein einziges Scaly-Programm aus,
+      <code
+class="filename"
+>field.scaly</code
+>, für WebAssembly gebaut. Es sind die
+      Programme dieses Kapitels, erwachsen geworden: bis zu sechs
+      verborgene Schichten mit bis zu acht Neuronen, sieben Eingaben zur
+      Wahl, vier Aktivierungen, Regularisierung, und die Rückwärtsrechnung
+      wie im letzten Abschnitt, nur in Schleifen über die Schichten statt
+      ausgeschrieben. Alles, was die Seite zeigt, hält es in einem Vektor
+      von Zahlen in seinem Speicher, den die Seite direkt liest, ohne
+      Kopie; das Bild der Antwort des Netzes über der Ebene ist ein
+      <code
+>for</code
+> über ihre 6400 Punkte, das Scaly von selbst
+      auf die Kerne des Rechners verteilt. Der Quelltext liegt
+      <a
+href="https://github.com/rschleitzer/Scaly/blob/master/web/field/field.scaly"
+>auf GitHub</a
+>.</p
+><p
+>Alles, was dieses Kapitel von Hand hergeleitet hat, die
+      Kettenregel durch jedes Glied und den Gradienten jedes Gewichts, kann
+      auch ein Programm herleiten. Davon handeln die nächsten Kapitel:
+      zuerst, wie Scaly viele Zahlen auf einmal hält, in Tensoren, dann ein
+      Band, das die Rechnung vorwärts aufzeichnet und rückwärts abspielt,
+      um jede Ableitung zu bekommen.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Kapitel"
+><span
+class="prev"
+></span
+><span
+class="next"
+></span
+></nav
+></main
+></div
+></body
+></html
+>

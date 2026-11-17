@@ -18,6 +18,13 @@
 ;; running it in the page where runnable.js (docs/runnable.py) says it runs --,
 ;; theme.js sets the theme before the page is drawn. docs/html.sh puts them
 ;; beside the pages.
+;;
+;; The same sheet sets a companion book -- one whose info holds an abstract,
+;; as Machine Learning with Scaly (docs/scaly-ml.xml, docs/ml.sh): the
+;; abstract is its lead, its bar links to the playground, the language and
+;; its other language, and a book in another language (xml:lang="de") has its
+;; words in that language and its files named with it (field.de.htm,
+;; index.de.html, searchindex.de.js), so that both stand in one directory.
 
 (declare-flow-object-class element
   "UNREGISTERED::James Clark//Flow Object Class::element")
@@ -30,7 +37,40 @@
 (declare-flow-object-class formatting-instruction
   "UNREGISTERED::James Clark//Flow Object Class::formatting-instruction")
 
-(define %book-title% "The Scaly Programming Language")
+;; the book: its root element, its language, its title
+(define (book-node)
+  (let loop ((n (current-node)))
+    (if (equal? (gi n) "book") n (loop (parent n)))))
+
+(define (book-lang)
+  (let ((l (attribute-string "xml:lang" (book-node))))
+    (if l l "en")))
+
+(define (book-title) (data (select-elements (children (book-node)) "title")))
+
+;; the abstract of a companion book, or an empty node list
+(define (book-abstract)
+  (select-elements (children (select-elements (children (book-node)) "info")) "abstract"))
+
+(define (companion?) (not (node-list-empty? (book-abstract))))
+
+;; what a file's name carries for the book's language: nothing in English
+(define (suffix-of lang) (if (equal? lang "en") "" (string-append "." lang)))
+(define (suffix) (suffix-of (book-lang)))
+
+;; the words of the pages in the book's language
+(define %words-de%
+  '(("Chapter" . "Kapitel") ("Appendix" . "Anhang") ("Part" . "Teil") ("Appendices" . "Anhänge")
+    ("Contents" . "Inhalt") ("Previous" . "Zurück") ("Next" . "Weiter") ("Theme" . "Farben")
+    ("Search (S)" . "Suchen (S)") ("Search the book" . "Im Buch suchen") ("Start reading" . "Lesen")
+    ("Note" . "Hinweis") ("Try it" . "Ausprobieren") ("Show the sections" . "Abschnitte zeigen")
+    ("Elsewhere" . "Anderswo") ("Chapters" . "Kapitel") ("The playground" . "Der Playground")
+    ("The language" . "Die Sprache") ("other-language" . "English")))
+
+(define (word en)
+  (if (equal? (book-lang) "de")
+      (let ((p (assoc en %words-de%))) (if p (cdr p) en))
+      (if (equal? en "other-language") "Deutsch" en)))
 (define %fonts%
   "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap")
 
@@ -85,11 +125,11 @@
     (cond ((same-division? d pd) (empty-sosofo))
           (d (make element gi: "li" attributes: '(("class" "division"))
                (make element gi: "span" attributes: '(("class" "division-label"))
-                 (literal (string-append "Part " (division-number d))))
+                 (literal (string-append (word "Part") " " (division-number d))))
                (literal (title-text d))))
           ((equal? (gi part) "appendix")
            (make element gi: "li" attributes: '(("class" "division"))
-             (literal "Appendices")))
+             (literal (word "Appendices"))))
           (else (empty-sosofo)))))
 
 ;; f of every part, the division headings between them
@@ -121,8 +161,8 @@
 
 (define (part-label part)
   (if (equal? (gi part) "chapter")
-      (string-append "Chapter " (part-number part))
-      (string-append "Appendix " (part-number part))))
+      (string-append (word "Chapter") " " (part-number part))
+      (string-append (word "Appendix") " " (part-number part))))
 
 ;; "3.2.1": the part's number and the section's place in each section above it
 (define (section-number nd)
@@ -130,7 +170,9 @@
       (part-number nd)
       (string-append (section-number (parent nd)) "." (number->string (child-number nd)))))
 
-(define (file-of part) (string-append (id part) ".htm"))
+(define (file-of part) (string-append (id part) (suffix) ".htm"))
+
+(define (index-file) (string-append "index" (suffix) ".html"))
 
 ;; an element's anchor: its id, else its number (a few sections have none)
 (define (anchor nd)
@@ -163,7 +205,7 @@
     (make empty-element gi: "link" attributes: '(("rel" "apple-touch-icon") ("href" "../apple-touch-icon.png")))
     (make element gi: "script" attributes: '(("src" "theme.js")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "words.js") ("defer" "defer")) (empty-sosofo))
-    (make element gi: "script" attributes: '(("src" "searchindex.js") ("defer" "defer")) (empty-sosofo))
+    (make element gi: "script" attributes: (list (list "src" (string-append "searchindex" (suffix) ".js")) (list "defer" "defer")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "runnable.js") ("defer" "defer")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "runnable.js") ("defer" "defer")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "book.js") ("defer" "defer")) (empty-sosofo))))
@@ -183,25 +225,32 @@
                           (list "aria-label" label) (list "title" label))
     (icon path)))
 
-(define (topbar)
+;; other: the same page in the book's other language, for a companion book
+(define (topbar other)
   (make element gi: "header" attributes: '(("class" "topbar"))
     (make element gi: "div" attributes: '(("class" "topbar-tools"))
-      (button "toggle-sidebar" "Contents" %icon-menu%)
-      (button "toggle-theme" "Theme" %icon-theme%)
-      (button "toggle-search" "Search (S)" %icon-search%))
-    (make element gi: "a" attributes: '(("class" "topbar-title") ("href" "index.html"))
-      (literal %book-title%))
-    (make element gi: "nav" attributes: '(("class" "topbar-links") ("aria-label" "Elsewhere"))
-      (make element gi: "a" attributes: '(("href" "../play/tour.html")) (literal "Tour"))
-      (make element gi: "a" attributes: '(("href" "scaly-spec.pdf")) (literal "PDF"))
+      (button "toggle-sidebar" (word "Contents") %icon-menu%)
+      (button "toggle-theme" (word "Theme") %icon-theme%)
+      (button "toggle-search" (word "Search (S)") %icon-search%))
+    (make element gi: "a" attributes: (list (list "class" "topbar-title") (list "href" (index-file)))
+      (literal (book-title)))
+    (make element gi: "nav" attributes: (list (list "class" "topbar-links") (list "aria-label" (word "Elsewhere")))
+      (if (companion?)
+          (sosofo-append
+            (make element gi: "a" attributes: (list (list "href" other)) (literal (word "other-language")))
+            (make element gi: "a" attributes: '(("href" "../play/")) (literal (word "The playground")))
+            (make element gi: "a" attributes: '(("href" "../lang/")) (literal (word "The language"))))
+          (sosofo-append
+            (make element gi: "a" attributes: '(("href" "../play/tour.html")) (literal "Tour"))
+            (make element gi: "a" attributes: '(("href" "scaly-spec.pdf")) (literal "PDF"))))
       (make element gi: "a" attributes: '(("href" "https://github.com/rschleitzer/Scaly")) (literal "GitHub"))
       (make element gi: "a" attributes: '(("href" "../")) (literal "scaly.io")))))
 
 (define (search-panel)
   (make element gi: "div" attributes: '(("class" "search") ("id" "search") ("hidden" "hidden"))
     (make empty-element gi: "input"
-          attributes: '(("type" "search") ("id" "search-input") ("placeholder" "Search the book")
-                        ("aria-label" "Search the book") ("autocomplete" "off") ("spellcheck" "false")))
+          attributes: (list (list "type" "search") (list "id" "search-input") (list "placeholder" (word "Search the book"))
+                            (list "aria-label" (word "Search the book")) (list "autocomplete" "off") (list "spellcheck" "false")))
     (make element gi: "p" attributes: '(("class" "search-summary") ("id" "search-summary")) (empty-sosofo))
     (make element gi: "ol" attributes: '(("class" "search-results") ("id" "search-results")) (empty-sosofo))))
 
@@ -228,7 +277,7 @@
         (if (null? secs)
             (empty-sosofo)
             (make element gi: "button"
-                  attributes: '(("class" "fold") ("type" "button") ("aria-label" "Show the sections"))
+                  attributes: (list (list "class" "fold") (list "type" "button") (list "aria-label" (word "Show the sections")))
               (empty-sosofo))))
       (if (null? secs)
           (empty-sosofo)
@@ -236,9 +285,9 @@
             (sosofo-map toc-section secs))))))
 
 (define (sidebar parts current)
-  (make element gi: "nav" attributes: '(("class" "sidebar") ("id" "sidebar") ("aria-label" "Contents"))
-    (make element gi: "a" attributes: '(("class" "sidebar-title") ("href" "index.html"))
-      (literal %book-title%))
+  (make element gi: "nav" attributes: (list (list "class" "sidebar") (list "id" "sidebar") (list "aria-label" (word "Contents")))
+    (make element gi: "a" attributes: (list (list "class" "sidebar-title") (list "href" (index-file)))
+      (literal (book-title)))
     (make element gi: "ol" attributes: '(("class" "toc"))
       (with-divisions (lambda (p) (toc-part p current)) parts))))
 
@@ -247,7 +296,7 @@
       (make element gi: "a"
             attributes: (list (list "class" rel) (list "rel" rel) (list "href" (file-of part)))
         (make element gi: "span" attributes: '(("class" "pager-label"))
-          (literal (if (equal? rel "prev") "Previous" "Next")))
+          (literal (word (if (equal? rel "prev") "Previous" "Next"))))
         (make element gi: "span" attributes: '(("class" "pager-title"))
           (literal (title-text part))))
       (make element gi: "span" attributes: (list (list "class" rel)) (empty-sosofo))))
@@ -255,23 +304,32 @@
 (define (page file title parts current prev next body)
   (make entity system-id: file
     (make document-type name: "html")
-    (make element gi: "html" attributes: '(("lang" "en"))
+    (make element gi: "html" attributes: (list (list "lang" (book-lang)))
       (make element gi: "head" (head-of title))
       (make element gi: "body"
         (sidebar parts current)
         (make element gi: "div" attributes: '(("class" "scrim") ("id" "scrim")) (empty-sosofo))
         (make element gi: "div" attributes: '(("class" "page"))
-          (topbar)
+          (topbar (other-file file))
           (search-panel)
           (make element gi: "main" attributes: '(("class" "content") ("id" "content"))
             (make element gi: "article" body)
-            (make element gi: "nav" attributes: '(("class" "pager") ("aria-label" "Chapters"))
+            (make element gi: "nav" attributes: (list (list "class" "pager") (list "aria-label" (word "Chapters")))
               (pager-link prev "prev")
               (pager-link next "next"))))))))
 
+;; a page's file in the book's other language (English and German):
+;; field.htm and field.de.htm
+(define (other-file file)
+  (let* ((len (string-length file))
+         (dot (let loop ((i (- len 1))) (if (char=? (string-ref file i) #\.) i (loop (- i 1))))))
+    (if (equal? (book-lang) "en")
+        (string-append (substring file 0 dot) ".de" (substring file dot len))
+        (string-append (substring file 0 (- dot 3)) (substring file dot len)))))
+
 (define (part-page part parts prev next)
   (page (file-of part)
-        (string-append (title-text part) " - " %book-title%)
+        (string-append (title-text part) " - " (book-title))
         parts part prev next
         (sosofo-append
           (make element gi: "p" attributes: '(("class" "part-label")) (literal (part-label part)))
@@ -289,21 +347,27 @@
                 (part-page (car rest) parts prev (if (null? (cdr rest)) #f (car (cdr rest)))))))))
 
 (define (index-page book parts)
-  (page "index.html" %book-title% parts #f #f (car parts)
+  (page (index-file) (book-title) parts #f #f (car parts)
     (sosofo-append
       (make element gi: "div" attributes: '(("class" "title-page"))
-        (make element gi: "h1" (literal %book-title%))
-        (make element gi: "p" attributes: '(("class" "lead"))
-          (literal "The language in three parts: a first program, how a program scales, and the reference
-of what a program says and what it means, down to the grammar."))
+        (make element gi: "h1" (literal (book-title)))
+        (if (companion?)
+            (make element gi: "div" attributes: '(("class" "lead"))
+              (process-node-list (children (book-abstract))))
+            (make element gi: "p" attributes: '(("class" "lead"))
+              (literal "The language in three parts: a first program, how a program scales, and the reference
+of what a program says and what it means, down to the grammar.")))
         (make element gi: "p" attributes: '(("class" "actions"))
           (make element gi: "a" attributes: (list (list "class" "button primary") (list "href" (file-of (car parts))))
-            (literal "Start reading"))
-          (make element gi: "a" attributes: '(("class" "button") ("href" "../play/tour.html"))
-            (literal "Take the tour in the browser"))
-          (make element gi: "a" attributes: '(("class" "button") ("href" "scaly-spec.pdf"))
-            (literal "The PDF"))))
-      (make element gi: "h2" attributes: '(("id" "contents")) (literal "Contents"))
+            (literal (word "Start reading")))
+          (if (companion?)
+              (empty-sosofo)
+              (sosofo-append
+                (make element gi: "a" attributes: '(("class" "button") ("href" "../play/tour.html"))
+                  (literal "Take the tour in the browser"))
+                (make element gi: "a" attributes: '(("class" "button") ("href" "scaly-spec.pdf"))
+                  (literal "The PDF"))))))
+      (make element gi: "h2" attributes: '(("id" "contents")) (literal (word "Contents")))
       (make element gi: "ol" attributes: '(("class" "contents"))
         (with-divisions
           (lambda (part)
@@ -365,7 +429,7 @@ of what a program says and what it means, down to the grammar."))
                (map search-entries (sections-of nd)))))
 
 (define (search-index parts)
-  (make entity system-id: "searchindex.js"
+  (make entity system-id: (string-append "searchindex" (suffix) ".js")
     (make formatting-instruction
       data: (string-append
               "// searchindex.js - written by docs/dsssl/scaly-book.dsl: page, anchor, number,
@@ -463,8 +527,30 @@ window.SEARCH_INDEX = [
 
 (element note
   (make element gi: "aside" attributes: '(("class" "note"))
-    (make element gi: "p" attributes: '(("class" "note-title")) (literal "Note"))
+    (make element gi: "p" attributes: '(("class" "note-title")) (literal (word "Note")))
     (process-children)))
+
+;; a box beside the text: role="tryit" sends the reader to a page to try
+;; what the text says (a link in it opens the page as the text needs it)
+(element sidebar
+  (make element gi: "aside" attributes: (list (list "class" (if (equal? (attribute-string "role") "tryit") "tryit" "sidebar-box")))
+    (make element gi: "p" attributes: '(("class" "note-title"))
+      (if (equal? (attribute-string "role") "tryit")
+          (literal (word "Try it"))
+          (process-node-list (children (title-node (current-node))))))
+    (if (and (equal? (attribute-string "role") "tryit") (not (node-list-empty? (title-node (current-node)))))
+        (make element gi: "p" attributes: '(("class" "tryit-title"))
+          (process-node-list (children (title-node (current-node)))))
+        (empty-sosofo))
+    (process-children)))
+
+;; a formula on a line of its own, and its text
+(element informalequation
+  (make element gi: "div" attributes: '(("class" "equation")) (process-children)))
+(element mathphrase (make element gi: "span" attributes: '(("class" "math")) (process-children)))
+(element subscript (make element gi: "sub" (process-children)))
+(element superscript (make element gi: "sup" (process-children)))
+(element info (empty-sosofo))
 
 (element example
   (make element gi: "figure" attributes: (if (id) (list (list "class" "example") (list "id" (id))) '(("class" "example")))

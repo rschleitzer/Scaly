@@ -105,6 +105,7 @@
   <span class="spacer"></span>
   <nav>
     <a href="https://scaly.io/scaly/">Scaly</a>
+    <a href="/ml/field.htm" id="book" data-t="book">The chapter</a>
     <a href="/play/fractals/" data-t="fractals">Fractals</a>
     <a href="/play/playground.html" data-t="playground">The playground</a>
   </nav>
@@ -202,7 +203,7 @@ const $ = id => document.getElementById(id);
 const LANGS = ['en', 'de'];
 const TEXT = {
   en: {
-    title: 'The field', fractals: 'Fractals', playground: 'The playground', language: 'Language',
+    title: 'The field', book: 'The chapter', fractals: 'Fractals', playground: 'The playground', language: 'Language',
     run: 'Learn', pause: 'Pause', stepOnce: 'One step', reset: 'Start again', stepsLabel: 'steps',
     rate: 'Learning rate', activation: 'Activation', linear: 'none', l2: 'Regularization (L2)', speed: 'Steps per picture',
     dataTitle: 'Data', noise: 'Noise', redraw: 'New points', clear: 'Remove the points',
@@ -222,7 +223,7 @@ const TEXT = {
     about3: 'The network is a Scaly program, <code>field.scaly</code>, built for WebAssembly and running in this page, in a worker. It keeps everything you see in one vector of numbers and says where that lies in its memory; the page reads it straight out of the memory, which the program shares with it, and writes your settings into the vector’s first numbers, where the program finds them on its next round. Nothing is copied between the two. The answer over the plane is one <code>for</code> over its points, and Scaly gives its rounds to the cores of this computer by itself.',
   },
   de: {
-    title: 'Das Spielfeld', fractals: 'Fraktale', playground: 'Der Playground', language: 'Sprache',
+    title: 'Das Spielfeld', book: 'Das Kapitel', fractals: 'Fraktale', playground: 'Der Playground', language: 'Sprache',
     run: 'Lernen', pause: 'Pause', stepOnce: 'Ein Schritt', reset: 'Neu beginnen', stepsLabel: 'Schritte',
     rate: 'Lernrate', activation: 'Aktivierung', linear: 'keine', l2: 'Regularisierung (L2)', speed: 'Schritte je Bild',
     dataTitle: 'Daten', noise: 'Rauschen', redraw: 'Neue Punkte', clear: 'Punkte entfernen',
@@ -235,18 +236,19 @@ const TEXT = {
     plus: 'die eine Sorte', minus: 'die andere', testPoints: 'umrandet: Testpunkte', showTest: 'Testpunkte zeigen', sharp: 'Nur die Entscheidung',
     aboutTitle: 'Was hier passiert', sourceTitle: 'Das Programm',
     loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
-    ended: s => `Das Programm ist beendet (${s}). Laden Sie die Seite neu, um es wieder zu starten.`,
+    ended: s => `Das Programm ist beendet (${s}). Lade die Seite neu, um es wieder zu starten.`,
     cores: n => `Scaly in der Seite, ${n} Kerne`,
     about1: 'Ein kleines neuronales Netz lernt, zwei Sorten von Punkten zu unterscheiden. Es bekommt die Punkte der einen Hälfte — die anderen, umrandet, sind der Test: Aus ihnen lernt es nie, sie zeigen nur, wie gut es rät, was es nicht gesehen hat. In jedem Schritt sieht es alle seine Punkte an, rechnet aus, wie viel jedes Gewicht zum Fehler beiträgt, und verschiebt jedes ein wenig dagegen: <em>Gradientenabstieg</em>. Das Bild rechts ist seine Antwort über der ganzen Ebene.',
-    about2: 'Versuchen Sie die Spirale mit nur <code>x</code> und <code>y</code> als Eingaben: Zwei Neuronen reichen nicht, vier auch nicht. Geben Sie ihm mehr Schichten oder die Eingaben <code>sin x</code> und <code>sin y</code>, und sehen Sie auf die Quadrate: Die erste Schicht zieht gerade Linien, die folgenden biegen sie zu Kurven. Eine zu große Lernrate lässt den Fehler springen statt fallen.',
-    about3: 'Das Netz ist ein Scaly-Programm, <code>field.scaly</code>, für WebAssembly gebaut und in dieser Seite in einem Worker ausgeführt. Alles, was Sie sehen, hält es in einem einzigen Vektor von Zahlen und sagt, wo der in seinem Speicher liegt; die Seite liest ihn direkt aus dem Speicher, den das Programm mit ihr teilt, und schreibt Ihre Einstellungen in die ersten Zahlen des Vektors, wo das Programm sie in seiner nächsten Runde findet. Zwischen beiden wird nichts kopiert. Die Antwort über der Ebene ist ein <code>for</code> über ihre Punkte, und Scaly verteilt seine Runden von selbst auf die Kerne dieses Rechners.',
+    about2: 'Versuch die Spirale mit nur <code>x</code> und <code>y</code> als Eingaben: Zwei Neuronen reichen nicht, vier auch nicht. Gib ihm mehr Schichten oder die Eingaben <code>sin x</code> und <code>sin y</code>, und sieh dir die Quadrate an: Die erste Schicht zieht gerade Linien, die folgenden biegen sie zu Kurven. Eine zu große Lernrate lässt den Fehler springen statt fallen.',
+    about3: 'Das Netz ist ein Scaly-Programm, <code>field.scaly</code>, für WebAssembly gebaut und in dieser Seite in einem Worker ausgeführt. Alles, was du siehst, hält es in einem einzigen Vektor von Zahlen und sagt, wo der in seinem Speicher liegt; die Seite liest ihn direkt aus dem Speicher, den das Programm mit ihr teilt, und schreibt deine Einstellungen in die ersten Zahlen des Vektors, wo das Programm sie in seiner nächsten Runde findet. Zwischen beiden wird nichts kopiert. Die Antwort über der Ebene ist ein <code>for</code> über ihre Punkte, und Scaly verteilt seine Runden von selbst auf die Kerne dieses Rechners.',
   },
 };
 function storedLang() {
   try { return localStorage.getItem('scaly-playground:lang'); } catch { return null; }
 }
 function chooseLang() {
-  const asked = new URLSearchParams(location.search).get('lang') ?? storedLang();
+  const asked = new URLSearchParams(location.search).get('lang') ?? new URLSearchParams(location.hash.slice(1)).get('lang')
+    ?? storedLang();
   if (LANGS.includes(asked)) return asked;
   for (const tag of navigator.languages ?? [navigator.language ?? 'en']) {
     const primary = String(tag).toLowerCase().split('-')[0];
@@ -265,6 +267,7 @@ function status(say, bad = false) {
 function translatePage() {
   document.documentElement.lang = lang;
   document.title = t('title');
+  $('book').href = lang === 'de' ? '/ml/field.de.htm' : '/ml/field.htm';
   $('lang').value = lang;
   $('lang').setAttribute('aria-label', t('language'));
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
@@ -660,11 +663,66 @@ plot.addEventListener('pointerdown', e => {
   frame = -1;
 });
 
+// --- a state in the link ------------------------------------------------------
+
+// A link may say how the field begins -- the book's boxes open it so:
+//   #data=circle&hidden=0&inputs=x2,y2&noise=10&rate=0.1&activation=relu&l2=0.01&speed=30&run=0
+// data: circle, xor, clouds, spiral or own; hidden: the hidden layers'
+// widths, 0 for none; inputs: of x, y, x2, y2, xy, sinx, siny. What it does
+// not name stays as it was.
+const DATA_NAMES = ['circle', 'xor', 'clouds', 'spiral', 'own'];
+const INPUT_NAMES = ['x', 'y', 'x2', 'y2', 'xy', 'sinx', 'siny'];
+const ACTIVATION_NAMES = ['tanh', 'relu', 'sigmoid', 'linear'];
+function choose(select, value) {
+  const v = String(value);
+  if (![...select.options].some(o => (o.value || o.textContent) === v)) select.append(new Option(v, v));
+  select.value = v;
+}
+function fromLink() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const s = settings;
+  const number = (key, low, high) => {
+    const v = Number(q.get(key));
+    return q.has(key) && Number.isFinite(v) ? Math.min(high, Math.max(low, v)) : null;
+  };
+  if (DATA_NAMES.includes(q.get('data'))) s.data = DATA_NAMES.indexOf(q.get('data'));
+  if (q.has('hidden'))
+    s.hidden = q.get('hidden').split(',').map(Number).filter(w => w >= 1).map(w => Math.min(WIDE, Math.round(w))).slice(0, LAYERS);
+  if (q.has('inputs')) {
+    const mask = q.get('inputs').split(',').reduce((m, name) => m | (INPUT_NAMES.includes(name) ? 1 << INPUT_NAMES.indexOf(name) : 0), 0);
+    if (mask) s.mask = mask;
+  }
+  if (ACTIVATION_NAMES.includes(q.get('activation'))) s.activation = ACTIVATION_NAMES.indexOf(q.get('activation'));
+  const noise = number('noise', 0, 50), rate = number('rate', 0.0001, 10), l2 = number('l2', 0, 1), speed = number('speed', 1, 100);
+  if (noise !== null) s.noise = Math.round(noise / 5) * 5 / 100;
+  if (rate !== null) s.rate = rate;
+  if (l2 !== null) s.l2 = l2;
+  if (speed !== null) s.speed = Math.round(speed);
+  if (q.has('run')) s.running = q.get('run') !== '0';
+  choose($('rate'), s.rate);
+  choose($('l2'), s.l2);
+  choose($('speed'), s.speed);
+  $('activation').value = String(s.activation);
+  $('noise').value = String(Math.round(s.noise * 100));
+  $('noiseSays').textContent = $('noise').value + ' %';
+  $('run').textContent = s.running ? t('pause') : t('run');
+  $('step').disabled = s.running;
+  $('ownNote').hidden = $('clear').hidden = s.data !== 4;
+  $('redraw').hidden = s.data === 4;
+  s.reset++;
+  s.redraw++;
+  sets();
+  build();
+  send();
+}
+addEventListener('hashchange', fromLink);
+
 // --- the program -------------------------------------------------------------
 
 async function start() {
   translatePage();
   $('ownNote').hidden = $('clear').hidden = true;
+  fromLink();
   if (!crossOriginIsolated) { status('isolation', true); return; }
   status('loading');
   fetch('field.scaly').then(r => r.ok ? r.text() : '').then(s => { $('source').textContent = s; }).catch(() => {});

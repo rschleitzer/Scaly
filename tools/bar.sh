@@ -237,6 +237,7 @@ lane_ports() {
   step tool tests/tool/run.sh "$BIN" || rc=1
   step tour tests/tour/run.sh "$BIN" || rc=1
   step book tests/book/run.sh "$BIN" || rc=1
+  step mlbook tests/mlbook/run.sh "$BIN" || rc=1
   return $rc
 }
 

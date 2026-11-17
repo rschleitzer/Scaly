@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Machine Learning with Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.htm"
+><span
+class="num"
+>1.</span
+>A First Model</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.htm#field-points"
+><span
+class="num"
+>1.1</span
+>Two Kinds of Points</a
+></li
+><li
+><a
+href="field.htm#field-neuron"
+><span
+class="num"
+>1.2</span
+>One Neuron</a
+></li
+><li
+><a
+href="field.htm#field-loss"
+><span
+class="num"
+>1.3</span
+>How Wrong</a
+></li
+><li
+><a
+href="field.htm#field-gradient"
+><span
+class="num"
+>1.4</span
+>Downhill</a
+></li
+><li
+><a
+href="field.htm#field-features"
+><span
+class="num"
+>1.5</span
+>Better Inputs</a
+></li
+><li
+><a
+href="field.htm#field-hidden"
+><span
+class="num"
+>1.6</span
+>Hidden Layers</a
+></li
+><li
+><a
+href="field.htm#field-backprop"
+><span
+class="num"
+>1.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.htm#field-test"
+><span
+class="num"
+>1.8</span
+>What It Has Not Seen</a
+></li
+><li
+><a
+href="field.htm#field-program"
+><span
+class="num"
+>1.9</span
+>The Field's Program</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="index.de.html"
+>Deutsch</a
+><a
+href="../play/"
+>The playground</a
+><a
+href="../lang/"
+>The language</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><div
+class="title-page"
+><h1
+>Machine Learning with Scaly</h1
+><div
+class="lead"
+><p
+>Neural networks from the first neuron on, in Scaly and without
+        Python: every program in the book runs, and beside the text stand
+        pages where a network learns while you watch.</p
+></div
+><p
+class="actions"
+><a
+class="button primary"
+href="field.htm"
+>Start reading</a
+></p
+></div
+><h2
+id="contents"
+>Contents</h2
+><ol
+class="contents"
+><li
+><a
+href="field.htm"
+><span
+class="num"
+>1</span
+>A First Model</a
+><ol
+><li
+><a
+href="field.htm#field-points"
+><span
+class="num"
+>1.1</span
+>Two Kinds of Points</a
+></li
+><li
+><a
+href="field.htm#field-neuron"
+><span
+class="num"
+>1.2</span
+>One Neuron</a
+></li
+><li
+><a
+href="field.htm#field-loss"
+><span
+class="num"
+>1.3</span
+>How Wrong</a
+></li
+><li
+><a
+href="field.htm#field-gradient"
+><span
+class="num"
+>1.4</span
+>Downhill</a
+></li
+><li
+><a
+href="field.htm#field-features"
+><span
+class="num"
+>1.5</span
+>Better Inputs</a
+></li
+><li
+><a
+href="field.htm#field-hidden"
+><span
+class="num"
+>1.6</span
+>Hidden Layers</a
+></li
+><li
+><a
+href="field.htm#field-backprop"
+><span
+class="num"
+>1.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.htm#field-test"
+><span
+class="num"
+>1.8</span
+>What It Has Not Seen</a
+></li
+><li
+><a
+href="field.htm#field-program"
+><span
+class="num"
+>1.9</span
+>The Field's Program</a
+></li
+></ol
+></li
+></ol
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><span
+class="prev"
+></span
+><a
+class="next"
+rel="next"
+href="field.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>A First Model</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>

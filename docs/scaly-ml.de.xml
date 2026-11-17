@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book SYSTEM "docbook.dtd" [
+  <!ENTITY field SYSTEM "ml/de/field.xml">
+]>
+<!-- Machine Learning with Scaly in German (scaly-ml.xml says the rest).
+     Every chapter and section has the id of its English twin, and the
+     programs are the English ones, character for character. -->
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="de">
+  <title>Maschinelles Lernen mit Scaly</title>
+  <info>
+    <abstract>
+      <para>Neuronale Netze vom ersten Neuron an, in Scaly und ohne Python:
+        Jedes Programm im Buch läuft, und neben dem Text stehen Seiten, auf
+        denen ein Netz lernt, während du zusiehst.</para>
+    </abstract>
+  </info>
+&field;
+</book>

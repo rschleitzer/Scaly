@@ -1,6 +1,7 @@
 #!/bin/bash
-# tests/book/run.sh [compiler] -- the programs of the book's part on scaling
-# run and print what the book says they print. Every listing of those
+# tests/book/run.sh [compiler [chapter.xml...]] -- the programs of the book's
+# part on scaling (or of the chapters named; tests/mlbook/run.sh names those
+# of Machine Learning with Scaly) run and print what the book says they print. Every listing of those
 # chapters stands with its output (tests/book/listings.py says how a screen
 # is read): a plain screen is checked against `scaly run` of the program --
 # twice, with the pool and with SCALY_WORKERS=1, because what a program
@@ -15,7 +16,7 @@ cd "$ROOT"
 . tests/platform.sh || exit 1
 set -u
 
-CHAPTERS=(docs/scaly/chapters/scaling-*.xml)
+if [ $# -ge 2 ]; then CHAPTERS=("${@:2}"); else CHAPTERS=(docs/scaly/chapters/scaling-*.xml); fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 export SCALY_CACHE="$TMP/cache"
@@ -142,5 +143,5 @@ for d in "$TMP"/listings/*/; do
   done
   if [ "$ok" = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); fi
 done
-echo "book: $pass PASS, $fail FAIL"
+echo "${BOOK_NAME:-book}: $pass PASS, $fail FAIL"
 [ "$fail" = 0 ]

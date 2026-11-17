@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book SYSTEM "docbook.dtd" [
+  <!ENTITY field SYSTEM "ml/field.xml">
+]>
+<!-- Machine Learning with Scaly: a book of its own beside the specification,
+     in English and in German (scaly-ml.de.xml), set by the same stylesheet
+     (dsssl/scaly-book.dsl; ml.sh writes both into website/ml/). Its pages,
+     the field and those to come, stand under web/ and are linked from the
+     boxes marked role="tryit". The programs are the same in both languages:
+     tests/mlbook/run.sh runs every one and checks both. -->
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>Machine Learning with Scaly</title>
+  <info>
+    <abstract>
+      <para>Neural networks from the first neuron on, in Scaly and without
+        Python: every program in the book runs, and beside the text stand
+        pages where a network learns while you watch.</para>
+    </abstract>
+  </info>
+&field;
+</book>
