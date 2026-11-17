@@ -189,6 +189,14 @@
         bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
         langsamer. Unter dem Bild steht der Schritt in Scaly.</para>
     </sidebar>
+    <para>Probier auch die Startwerte <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>3</mml:mn></mml:mrow></mml:math></inlineequation>
+      (<link xlink:href="https://scaly.io/play/model/#model=descent&amp;w1=-3&amp;w2=-3&amp;lang=de">die Seite mit diesen Werten</link>):
+      Dann rührt sich das Neuron kaum. Fast alle Punkte liegen auf der
+      falschen Seite, und zwar weit weg von der Geraden, wo tanh fast ±1 ist
+      und kaum noch steigt. Weil der Faktor <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> dort fast 0 ist, ist es
+      auch der Gradient: Ein Neuron, das sich sicher irrt, lernt kaum. Man
+      nennt das <emphasis>Sättigung</emphasis>, und deshalb beginnt man mit
+      kleinen Gewichten.</para>
   </section>
 
   <section xml:id="field-features">

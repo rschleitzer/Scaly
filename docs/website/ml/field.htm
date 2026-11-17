@@ -1235,6 +1235,56 @@ href="https://scaly.io/play/model/#model=descent"
         hand. With the learning rate 0.01 it goes much more slowly. Below the
         picture stands the step in Scaly.</p
 ></aside
+><p
+>Try the start values <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mn
+>3</mn
+></mrow
+></math
+> as well
+      (<a
+href="https://scaly.io/play/model/#model=descent&#38;w1=-3&#38;w2=-3"
+>the page with these values</a
+>):
+      then the neuron hardly moves. Nearly all points lie on the wrong
+      side, and far from the line, where tanh is nearly ±1 and hardly rises
+      any more. Since the factor <math
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+></math
+> is nearly 0 there, so is the
+      gradient: a neuron that is sure and wrong hardly learns. This is
+      called <em
+>saturation</em
+>, and it is why one begins with
+      small weights.</p
 ></section
 ><section
 id="field-features"
