@@ -1,0 +1,157 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; the loss of the neuron of "Downhill" over its two weights, w1 across and
+; w2 up, each from -3 to 3, the bias held at 0 -- dark where the loss is
+; small, light where it is large -- and on it the walk of gradient descent
+; from (-0.5, 0.5) down into the valley. Each point of the picture is
+; computed, the rounds of the `for` on all cores; the picture goes to
+; picture.<size>x<size>.rgba, four bytes a point.
+define Point(x: f64, y: f64, kind: f64)
+define SIZE int 600
+define STEPS int 200
+
+function loss(points: Vector[Point], w1: f64, w2: f64) returns f64
+{
+    var sum 0.0
+    var i: size_t 0
+    while i < points.length
+    {
+        let p points[i]
+        let e tanh(w1 * p.x + w2 * p.y) - p.kind
+        sum := sum + 0.5 * e * e
+        i := i + 1
+    }
+    sum / (points.length as f64)
+}
+
+; One channel, the part `t` of the way from `a` to `b`.
+function mix(a: f64, b: f64, t: f64) returns f64
+{
+    a + (b - a) * t
+}
+
+; A loss between 0 and 2 as a colour, dark violet, blue, green, yellow;
+; `white` of it white, the walk drawn over it.
+function colour(v: f64, white: f64) returns u32
+{
+    var t v / 2.0
+    if t > 1.0
+        t := 1.0
+    let at t * 4.0
+    var k at.floor() as int
+    if k > 3
+        k := 3
+    let f at - (k as f64)
+    let (r0, g0, b0, r1, g1, b1) if k = 0: (68.0, 1.0, 84.0, 59.0, 82.0, 139.0)
+        else if k = 1: (59.0, 82.0, 139.0, 33.0, 145.0, 140.0)
+        else if k = 2: (33.0, 145.0, 140.0, 94.0, 201.0, 98.0)
+        else (94.0, 201.0, 98.0, 253.0, 231.0, 37.0)
+    let r mix(mix(r0, r1, f), 255.0, white).round_even() as u32
+    let g mix(mix(g0, g1, f), 255.0, white).round_even() as u32
+    let b mix(mix(b0, b1, f), 255.0, white).round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+; Where a weight lies across the picture, in points.
+function place(w: f64) returns f64
+{
+    (w + 3.0) / 6.0 * (SIZE as f64)
+}
+
+; How far (px, py) is from the segment from (ax, ay) to (bx, by).
+function distance(px: f64, py: f64, ax: f64, ay: f64, bx: f64, by: f64) returns f64
+{
+    let dx bx - ax
+    let dy by - ay
+    let length dx * dx + dy * dy
+    var t if length > 0.0: ((px - ax) * dx + (py - ay) * dy) / length else 0.0
+    if t < 0.0
+        t := 0.0
+    if t > 1.0
+        t := 1.0
+    let ex px - (ax + t * dx)
+    let ey py - (ay + t * dy)
+    (ex * ex + ey * ey).sqrt()
+}
+
+; How much of a point is covered by something `d` away from it whose edge
+; lies `edge` from its middle: 1 inside, 0 outside, smooth across one point.
+function cover(d: f64, edge: f64) returns f64
+{
+    let c edge + 0.5 - d
+    if c < 0.0: 0.0 else if c > 1.0: 1.0 else c
+}
+
+; The point p of the picture: the loss there, the faint axes, the walk (a
+; line, a dot every twenty steps, a larger one where it begins).
+function point(points: Vector[Point], walk: Vector[f64], p: int) returns u32
+{
+    let px (p % SIZE) as f64 + 0.5
+    let py (p / SIZE) as f64 + 0.5
+    let w1 px / (SIZE as f64) * 6.0 - 3.0
+    let w2 3.0 - py / (SIZE as f64) * 6.0
+    let middle (SIZE as f64) / 2.0
+    let ax px - middle
+    let ay py - middle
+    var white 0.3 * (cover(if ax < 0.0: 0.0 - ax else ax, 1.0) + cover(if ay < 0.0: 0.0 - ay else ay, 1.0))
+    var s 0
+    while s < STEPS
+    {
+        let d distance(px, py, walk[(2 * s) as size_t], walk[(2 * s + 1) as size_t],
+                       walk[(2 * s + 2) as size_t], walk[(2 * s + 3) as size_t])
+        let line cover(d, 3.0)
+        if line > white
+            white := line
+        if (s + 1) % 20 = 0
+        {
+            let dot cover(distance(px, py, walk[(2 * s + 2) as size_t], walk[(2 * s + 3) as size_t],
+                                   walk[(2 * s + 2) as size_t], walk[(2 * s + 3) as size_t]), 7.0)
+            if dot > white
+                white := dot
+        }
+        s := s + 1
+    }
+    let start cover(distance(px, py, walk[0], walk[1], walk[0], walk[1]), 14.0)
+    if start > white
+        white := start
+    colour(loss(points, w1, w2), if white > 1.0: 1.0 else white)
+}
+
+var points Vector[Point](6)
+points.put(0, Point(2.0, 1.5, 1.0))
+points.put(1, Point(1.0, 3.0, 1.0))
+points.put(2, Point(0.5, 0.0 - 2.5, 1.0))
+points.put(3, Point(0.0 - 2.0, 0.0 - 1.0, 0.0 - 1.0))
+points.put(4, Point(0.0 - 1.0, 0.0 - 3.0, 0.0 - 1.0))
+points.put(5, Point(0.0 - 3.0, 1.0, 0.0 - 1.0))
+
+; the walk, as the picture's coordinates of each step
+var walk Vector[f64]((2 * STEPS + 2) as size_t)
+var w1 0.0 - 0.5
+var w2 0.5
+var s 0
+while s <= STEPS
+{
+    walk.put((2 * s) as size_t, place(w1))
+    walk.put((2 * s + 1) as size_t, (SIZE as f64) - place(w2))
+    var g1 0.0
+    var g2 0.0
+    var i: size_t 0
+    while i < points.length
+    {
+        let p points[i]
+        let a tanh(w1 * p.x + w2 * p.y)
+        let d (a - p.kind) * (1.0 - a * a)
+        g1 := g1 + d * p.x
+        g2 := g2 + d * p.y
+        i := i + 1
+    }
+    w1 := w1 - 0.5 * g1 / 6.0
+    w2 := w2 - 0.5 * g2 / 6.0
+    s := s + 1
+}
+
+var picture Vector[u32]((SIZE * SIZE) as size_t)
+for p in SIZE * SIZE
+    picture.put(p as size_t, point(points, walk, p))
+if File.write_bytes("picture.`SIZE`x`SIZE`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"

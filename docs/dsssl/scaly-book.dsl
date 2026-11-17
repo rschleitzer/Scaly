@@ -544,6 +544,24 @@ window.SEARCH_INDEX = [
         (empty-sosofo))
     (process-children)))
 
+;; a formula with a picture beside it (informalfigure role="beside"), and
+;; a picture: a mediaobject's image (docs/figures.py draws the book's, into
+;; fig/ beside the pages), its alt the text of the mediaobject's alt
+(element informalfigure
+  (if (equal? (attribute-string "role") "beside")
+      (make element gi: "div" attributes: '(("class" "beside")) (process-children))
+      (process-children)))
+
+(element mediaobject
+  (let ((image (select-elements (descendants (current-node)) "imagedata"))
+        (alt (select-elements (children (current-node)) "alt")))
+    (if (node-list-empty? image)
+        (empty-sosofo)
+        (make empty-element gi: "img"
+              attributes: (list (list "src" (attribute-string "fileref" (node-list-first image)))
+                                (list "alt" (if (node-list-empty? alt) "" (data alt)))
+                                (list "loading" "lazy"))))))
+
 ;; a formula on a line of its own, and its text
 (element informalequation
   (make element gi: "div" attributes: '(("class" "equation")) (process-children)))

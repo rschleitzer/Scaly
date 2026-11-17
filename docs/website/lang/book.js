@@ -244,6 +244,20 @@
     return box;
   }
 
+  // The drawings a run showed (scaly/draw.scaly: drawing-<n>.svg), below
+  // its output.
+  function show_drawings(pre, box, drawings) {
+    const url = d => URL.createObjectURL(new Blob([d.text], { type: 'image/svg+xml' }));
+    for (const d of drawings) {
+      const img = document.createElement('img');
+      img.className = 'run-drawing';
+      img.alt = d.name;
+      img.src = url(d);
+      box.appendChild(img);
+      box.classList.add('has-output');
+    }
+  }
+
   function run_listing(pre, text, button) {
     if (button._worker) {
       button._worker.terminate();
@@ -284,6 +298,7 @@
       worker.onmessage = ({ data }) => {
         if (data.type === 'out' || data.type === 'err') show(data.bytes, data.type);
         else if (data.type === 'exit') {
+          show_drawings(pre, box, data.drawings || []);
           const ms = Math.round(performance.now() - t0);
           if (data.status === 0)
             finish(box.classList.contains('has-output') ? `Ran in ${ms} ms.` : `Ran in ${ms} ms and printed nothing.`, 'ok');

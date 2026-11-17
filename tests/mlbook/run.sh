@@ -5,7 +5,8 @@
 # German book (docs/scaly-ml.de.xml) is the English one translated: the same
 # chapters and sections, by id and in order, and in each the same programs
 # and screens, character for character, and the same formulas (parity.py);
-# every formula reaches the page as MathML a browser sets (mathml.py).
+# every formula reaches the page as MathML a browser sets (mathml.py), and
+# every picture's program draws its picture (docs/figures.py).
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -26,5 +27,10 @@ else
   echo "mathml: SKIPPED (no engine at $DAZZLE -- ./mkp builds it)"
 fi
 CHAPTERS=($(python3 "$HERE/parity.py" --chapters docs/scaly-ml.xml))
+# every picture's program (docs/ml/fig) runs and writes its picture
+# (docs/figures.py)
+FIG="$(mktemp -d)"
+python3 docs/figures.py "$FIG" "$("$ROOT/tools/scaly-of.sh" "$BIN")" docs/ml/fig/*.scaly || rc=1
+rm -rf "$FIG"
 BOOK_NAME=mlbook tests/book/run.sh "$BIN" "${CHAPTERS[@]}" || rc=1
 exit $rc

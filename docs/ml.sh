@@ -5,8 +5,9 @@
 # index.html and searchindex.js, the German ones beside them as
 # field.de.htm, index.de.html and searchindex.de.js, and book.css, book.js,
 # theme.js and words.js as html.sh puts them, and fonts/ with the formulas'
-# font. Then runnable.py gives the
-# listings that run their Run button (SCALY, default scalyc/build/scaly).
+# font. Then figures.py runs the pictures' programs (ml/fig/) and puts their
+# pictures into fig/ as PNG, and runnable.py gives the listings that run their Run button
+# (SCALY, default scalyc/build/scaly).
 cd "$(dirname "$0")" || exit 1
 export SP_ENCODING=utf-8
 
@@ -23,5 +24,6 @@ done
 cp book/book.css book/book.js book/theme.js book/words.js "$OUT/"
 cp -R book/fonts "$OUT/"
 SCALY="${SCALY:-../scalyc/build/scaly}"
-[ -x "$SCALY" ] || { echo "ml.sh: no tool at $SCALY for the Run buttons -- ./build.sh builds it"; exit 1; }
+[ -x "$SCALY" ] || { echo "ml.sh: no tool at $SCALY for the pictures and the Run buttons -- ./build.sh builds it"; exit 1; }
+python3 figures.py "$OUT" "$SCALY" ml/fig/*.scaly || exit 1
 python3 runnable.py "$OUT" "$SCALY" || exit 1

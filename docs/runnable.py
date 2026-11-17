@@ -32,7 +32,7 @@ def fnv1a(text):
 
 
 def main():
-    lang, scaly = sys.argv[1], sys.argv[2]
+    lang, scaly = sys.argv[1], os.path.abspath(sys.argv[2])
     home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     env = dict(os.environ, SCALY_HOME=home)
     listings = {}
@@ -50,7 +50,8 @@ def main():
         with open(path, 'w', encoding='utf-8') as f:
             f.write(text + '\n')
         try:
-            done = subprocess.run([scaly, 'run', path], capture_output=True, timeout=120, env=env,
+            # in a directory of its own: a drawing it shows lands there
+            done = subprocess.run([scaly, 'run', path], capture_output=True, timeout=120, env=env, cwd=work,
                                   stdin=subprocess.DEVNULL)
             return key if done.returncode == 0 else None
         except subprocess.TimeoutExpired:
