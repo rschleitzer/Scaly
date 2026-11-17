@@ -16294,7 +16294,7 @@ __attribute__((weak)) int32_t cluster_offer_weighed(void* desc, void* cell, int6
     uint64_t at_hi = ((uint64_t)(Cluster_desc_word(desc, 3ULL)));
     TaskPool* pool = TaskPool_default_pool();
     TaskGroup* g = (TaskGroup*)(nullptr);
-    int64_t fair_parts = (((helpers + 1LL)) * 2LL);
+    int64_t fair_parts = (helpers + 1LL);
     int64_t least = (share / 8LL);
     if ((least < 1LL))
     {

@@ -55048,7 +55048,7 @@ entry:
   %outstanding = alloca i1, align 1
   %b = alloca i64, align 8
   %a = alloca i64, align 8
-  %s256 = alloca i64, align 8
+  %s255 = alloca i64, align 8
   %hi = alloca i64, align 8
   %lo = alloca i64, align 8
   %lost = alloca i64, align 8
@@ -55480,20 +55480,19 @@ while.exit194:                                    ; preds = %while.cond192
   store ptr null, ptr %g, align 1
   %helpers211 = load i64, ptr %helpers, align 8
   %add212 = add i64 %helpers211, 1
-  %mul213 = mul i64 %add212, 2
-  %share214 = load i64, ptr %share, align 8
-  %sdiv215 = sdiv i64 %share214, 8
-  store i64 %sdiv215, ptr %least, align 1
-  %least216 = load i64, ptr %least, align 8
-  %lt217 = icmp slt i64 %least216, 1
-  br i1 %lt217, label %if.then218, label %if.end219
+  %share213 = load i64, ptr %share, align 8
+  %sdiv214 = sdiv i64 %share213, 8
+  store i64 %sdiv214, ptr %least, align 1
+  %least215 = load i64, ptr %least, align 8
+  %lt216 = icmp slt i64 %least215, 1
+  br i1 %lt216, label %if.then217, label %if.end218
 
-if.then218:                                       ; preds = %while.exit194
+if.then217:                                       ; preds = %while.exit194
   store i64 1, ptr %least, align 1
-  br label %if.end219
+  br label %if.end218
 
-if.end219:                                        ; preds = %if.then218, %while.exit194
-  %call220 = call i64 @scaly_eio_now_ns()
+if.end218:                                        ; preds = %if.then217, %while.exit194
+  %call219 = call i64 @scaly_eio_now_ns()
   store i64 %3, ptr %next, align 1
   store i1 false, ptr %here_busy, align 1
   store i64 0, ptr %here_at, align 1
@@ -55505,777 +55504,777 @@ if.end219:                                        ; preds = %if.then218, %while.
   store i64 0, ptr %lost, align 1
   br label %repeat.body
 
-repeat.body:                                      ; preds = %if.end570, %if.end219
+repeat.body:                                      ; preds = %if.end569, %if.end218
   store i64 0, ptr %k, align 1
-  br label %while.cond221
+  br label %while.cond220
 
-repeat.exit:                                      ; preds = %if.then435
+repeat.exit:                                      ; preds = %if.then434
   store double %4, ptr %beyond, align 1
-  %here_measured575 = load i64, ptr %here_measured, align 8
-  %gt576 = icmp sgt i64 %here_measured575, 0
-  br i1 %gt576, label %land.rhs574, label %if.end573
+  %here_measured574 = load i64, ptr %here_measured, align 8
+  %gt575 = icmp sgt i64 %here_measured574, 0
+  br i1 %gt575, label %land.rhs573, label %if.end572
 
-while.cond221:                                    ; preds = %if.end227, %repeat.body
-  %k224 = load i64, ptr %k, align 8
-  %lt225 = icmp ult i64 %k224, %global.load15
-  br i1 %lt225, label %while.body222, label %while.exit223
+while.cond220:                                    ; preds = %if.end226, %repeat.body
+  %k223 = load i64, ptr %k, align 8
+  %lt224 = icmp ult i64 %k223, %global.load15
+  br i1 %lt224, label %while.body221, label %while.exit222
 
-while.body222:                                    ; preds = %while.cond221
-  %k229 = load i64, ptr %k, align 8
-  %ptr.add230 = getelementptr inbounds i8, ptr %call27, i64 %k229
-  %deref231 = load i8, ptr %ptr.add230, align 1
-  %eq232 = icmp eq i8 %deref231, 1
-  br i1 %eq232, label %land.rhs228, label %if.end227
+while.body221:                                    ; preds = %while.cond220
+  %k228 = load i64, ptr %k, align 8
+  %ptr.add229 = getelementptr inbounds i8, ptr %call27, i64 %k228
+  %deref230 = load i8, ptr %ptr.add229, align 1
+  %eq231 = icmp eq i8 %deref230, 1
+  br i1 %eq231, label %land.rhs227, label %if.end226
 
-while.exit223:                                    ; preds = %while.cond221
-  %here_busy313 = load i1, ptr %here_busy, align 1
-  %eq314 = icmp eq i1 %here_busy313, false
-  br i1 %eq314, label %if.then315, label %if.end316
+while.exit222:                                    ; preds = %while.cond220
+  %here_busy312 = load i1, ptr %here_busy, align 1
+  %eq313 = icmp eq i1 %here_busy312, false
+  br i1 %eq313, label %if.then314, label %if.end315
 
-if.then226:                                       ; preds = %land.rhs228
+if.then225:                                       ; preds = %land.rhs227
   store i64 -1, ptr %lo, align 1
   store i64 0, ptr %hi, align 1
   %backs = load i64, ptr %s, align 8
-  %gt237 = icmp ugt i64 %backs, 0
-  br i1 %gt237, label %if.then238, label %if.else239
+  %gt236 = icmp ugt i64 %backs, 0
+  br i1 %gt236, label %if.then237, label %if.else238
 
-if.end227:                                        ; preds = %if.end284, %land.rhs228, %while.body222
-  %k311 = load i64, ptr %k, align 8
-  %add312 = add i64 %k311, 1
-  store i64 %add312, ptr %k, align 1
-  br label %while.cond221
+if.end226:                                        ; preds = %if.end283, %land.rhs227, %while.body221
+  %k310 = load i64, ptr %k, align 8
+  %add311 = add i64 %k310, 1
+  store i64 %add311, ptr %k, align 1
+  br label %while.cond220
 
-land.rhs228:                                      ; preds = %while.body222
-  %k233 = load i64, ptr %k, align 8
-  %ptr.add234 = getelementptr inbounds i64, ptr %call175, i64 %k233
-  %deref235 = load i64, ptr %ptr.add234, align 8
-  %lt236 = icmp slt i64 %deref235, 0
-  br i1 %lt236, label %if.then226, label %if.end227
+land.rhs227:                                      ; preds = %while.body221
+  %k232 = load i64, ptr %k, align 8
+  %ptr.add233 = getelementptr inbounds i64, ptr %call175, i64 %k232
+  %deref234 = load i64, ptr %ptr.add233, align 8
+  %lt235 = icmp slt i64 %deref234, 0
+  br i1 %lt235, label %if.then225, label %if.end226
 
-if.then238:                                       ; preds = %if.then226
-  %backs241 = load i64, ptr %s, align 8
-  %sub242 = sub i64 %backs241, 1
-  store i64 %sub242, ptr %s, align 1
-  %backs243 = load i64, ptr %s, align 8
-  %ptr.add244 = getelementptr inbounds i64, ptr %call184, i64 %backs243
-  %deref245 = load i64, ptr %ptr.add244, align 8
-  store i64 %deref245, ptr %lo, align 1
-  %backs246 = load i64, ptr %s, align 8
-  %ptr.add247 = getelementptr inbounds i64, ptr %call187, i64 %backs246
-  %deref248 = load i64, ptr %ptr.add247, align 8
-  store i64 %deref248, ptr %hi, align 1
-  br label %if.end240
+if.then237:                                       ; preds = %if.then225
+  %backs240 = load i64, ptr %s, align 8
+  %sub241 = sub i64 %backs240, 1
+  store i64 %sub241, ptr %s, align 1
+  %backs242 = load i64, ptr %s, align 8
+  %ptr.add243 = getelementptr inbounds i64, ptr %call184, i64 %backs242
+  %deref244 = load i64, ptr %ptr.add243, align 8
+  store i64 %deref244, ptr %lo, align 1
+  %backs245 = load i64, ptr %s, align 8
+  %ptr.add246 = getelementptr inbounds i64, ptr %call187, i64 %backs245
+  %deref247 = load i64, ptr %ptr.add246, align 8
+  store i64 %deref247, ptr %hi, align 1
+  br label %if.end239
 
-if.else239:                                       ; preds = %if.then226
-  %next249 = load i64, ptr %next, align 8
-  %lt250 = icmp slt i64 %next249, %2
-  br i1 %lt250, label %if.then251, label %if.end252
+if.else238:                                       ; preds = %if.then225
+  %next248 = load i64, ptr %next, align 8
+  %lt249 = icmp slt i64 %next248, %2
+  br i1 %lt249, label %if.then250, label %if.end251
 
-if.end240:                                        ; preds = %if.end252, %if.then238
-  %lo281 = load i64, ptr %lo, align 8
-  %ge282 = icmp sge i64 %lo281, 0
-  br i1 %ge282, label %if.then283, label %if.end284
+if.end239:                                        ; preds = %if.end251, %if.then237
+  %lo280 = load i64, ptr %lo, align 8
+  %ge281 = icmp sge i64 %lo280, 0
+  br i1 %ge281, label %if.then282, label %if.end283
 
-if.then251:                                       ; preds = %if.else239
-  %k253 = load i64, ptr %k, align 8
-  %ptr.add254 = getelementptr inbounds i64, ptr %call26, i64 %k253
-  %deref255 = load i64, ptr %ptr.add254, align 8
-  store i64 %deref255, ptr %s256, align 1
-  %next257 = load i64, ptr %next, align 8
-  %sub258 = sub i64 %2, %next257
-  %add259 = add i64 %sub258, %mul213
-  %sub260 = sub i64 %add259, 1
-  %sdiv261 = sdiv i64 %sub260, %mul213
-  %s262 = load i64, ptr %s256, align 8
-  %gt263 = icmp sgt i64 %s262, %sdiv261
-  br i1 %gt263, label %if.then264, label %if.end265
+if.then250:                                       ; preds = %if.else238
+  %k252 = load i64, ptr %k, align 8
+  %ptr.add253 = getelementptr inbounds i64, ptr %call26, i64 %k252
+  %deref254 = load i64, ptr %ptr.add253, align 8
+  store i64 %deref254, ptr %s255, align 1
+  %next256 = load i64, ptr %next, align 8
+  %sub257 = sub i64 %2, %next256
+  %add258 = add i64 %sub257, %add212
+  %sub259 = sub i64 %add258, 1
+  %sdiv260 = sdiv i64 %sub259, %add212
+  %s261 = load i64, ptr %s255, align 8
+  %gt262 = icmp sgt i64 %s261, %sdiv260
+  br i1 %gt262, label %if.then263, label %if.end264
 
-if.end252:                                        ; preds = %if.end279, %if.else239
-  br label %if.end240
+if.end251:                                        ; preds = %if.end278, %if.else238
+  br label %if.end239
 
-if.then264:                                       ; preds = %if.then251
-  store i64 %sdiv261, ptr %s256, align 1
-  br label %if.end265
+if.then263:                                       ; preds = %if.then250
+  store i64 %sdiv260, ptr %s255, align 1
+  br label %if.end264
 
-if.end265:                                        ; preds = %if.then264, %if.then251
-  %s266 = load i64, ptr %s256, align 8
-  %least267 = load i64, ptr %least, align 8
-  %lt268 = icmp slt i64 %s266, %least267
-  br i1 %lt268, label %if.then269, label %if.end270
+if.end264:                                        ; preds = %if.then263, %if.then250
+  %s265 = load i64, ptr %s255, align 8
+  %least266 = load i64, ptr %least, align 8
+  %lt267 = icmp slt i64 %s265, %least266
+  br i1 %lt267, label %if.then268, label %if.end269
 
-if.then269:                                       ; preds = %if.end265
-  %least271 = load i64, ptr %least, align 8
-  store i64 %least271, ptr %s256, align 1
-  br label %if.end270
+if.then268:                                       ; preds = %if.end264
+  %least270 = load i64, ptr %least, align 8
+  store i64 %least270, ptr %s255, align 1
+  br label %if.end269
 
-if.end270:                                        ; preds = %if.then269, %if.end265
+if.end269:                                        ; preds = %if.then268, %if.end264
+  %next271 = load i64, ptr %next, align 8
+  store i64 %next271, ptr %lo, align 1
   %next272 = load i64, ptr %next, align 8
-  store i64 %next272, ptr %lo, align 1
-  %next273 = load i64, ptr %next, align 8
-  %s274 = load i64, ptr %s256, align 8
-  %add275 = add i64 %next273, %s274
-  store i64 %add275, ptr %hi, align 1
-  %hi276 = load i64, ptr %hi, align 8
-  %gt277 = icmp sgt i64 %hi276, %2
-  br i1 %gt277, label %if.then278, label %if.end279
+  %s273 = load i64, ptr %s255, align 8
+  %add274 = add i64 %next272, %s273
+  store i64 %add274, ptr %hi, align 1
+  %hi275 = load i64, ptr %hi, align 8
+  %gt276 = icmp sgt i64 %hi275, %2
+  br i1 %gt276, label %if.then277, label %if.end278
 
-if.then278:                                       ; preds = %if.end270
+if.then277:                                       ; preds = %if.end269
   store i64 %2, ptr %hi, align 1
-  br label %if.end279
+  br label %if.end278
 
-if.end279:                                        ; preds = %if.then278, %if.end270
-  %hi280 = load i64, ptr %hi, align 8
-  store i64 %hi280, ptr %next, align 1
-  br label %if.end252
+if.end278:                                        ; preds = %if.then277, %if.end269
+  %hi279 = load i64, ptr %hi, align 8
+  store i64 %hi279, ptr %next, align 1
+  br label %if.end251
 
-if.then283:                                       ; preds = %if.end240
-  %lo285 = load i64, ptr %lo, align 8
-  %hi286 = load i64, ptr %hi, align 8
-  %k287 = load i64, ptr %k, align 8
-  %add288 = add i64 %k287, 1
-  call void @_ZN7Cluster13trace_stretchE3i643i643i64(i64 %lo285, i64 %hi286, i64 %add288)
-  %call289 = call i64 @scaly_eio_now_ns()
-  %k290 = load i64, ptr %k, align 8
-  %ptr.add291 = getelementptr inbounds i64, ptr %call179, i64 %k290
-  store i64 %call289, ptr %ptr.add291, align 8
-  %global.load292 = load ptr, ptr @cluster_peers, align 8
-  %k293 = load i64, ptr %k, align 8
-  %ptr.add294 = getelementptr inbounds ptr, ptr %global.load292, i64 %k293
-  %deref295 = load ptr, ptr %ptr.add294, align 8
-  %lo296 = load i64, ptr %lo, align 8
-  %hi297 = load i64, ptr %hi, align 8
-  %global.load298 = load ptr, ptr @cluster_peer_keep, align 8
-  %k299 = load i64, ptr %k, align 8
-  %ptr.add300 = getelementptr inbounds ptr, ptr %global.load298, i64 %k299
-  %deref301 = load ptr, ptr %ptr.add300, align 8
-  %call302 = call i64 @_ZN7Cluster8send_jobEP8NodePeerPvPv3u643i643i64P3u64P7KeepSet(ptr %deref295, ptr %0, ptr %1, i64 %global.load173, i64 %lo296, i64 %hi297, ptr %call24, ptr %deref301)
-  %k303 = load i64, ptr %k, align 8
-  %ptr.add304 = getelementptr inbounds i64, ptr %call181, i64 %k303
-  store i64 %call302, ptr %ptr.add304, align 8
-  %lo305 = load i64, ptr %lo, align 8
-  %k306 = load i64, ptr %k, align 8
-  %ptr.add307 = getelementptr inbounds i64, ptr %call175, i64 %k306
-  store i64 %lo305, ptr %ptr.add307, align 8
-  %hi308 = load i64, ptr %hi, align 8
-  %k309 = load i64, ptr %k, align 8
-  %ptr.add310 = getelementptr inbounds i64, ptr %call177, i64 %k309
-  store i64 %hi308, ptr %ptr.add310, align 8
-  br label %if.end284
+if.then282:                                       ; preds = %if.end239
+  %lo284 = load i64, ptr %lo, align 8
+  %hi285 = load i64, ptr %hi, align 8
+  %k286 = load i64, ptr %k, align 8
+  %add287 = add i64 %k286, 1
+  call void @_ZN7Cluster13trace_stretchE3i643i643i64(i64 %lo284, i64 %hi285, i64 %add287)
+  %call288 = call i64 @scaly_eio_now_ns()
+  %k289 = load i64, ptr %k, align 8
+  %ptr.add290 = getelementptr inbounds i64, ptr %call179, i64 %k289
+  store i64 %call288, ptr %ptr.add290, align 8
+  %global.load291 = load ptr, ptr @cluster_peers, align 8
+  %k292 = load i64, ptr %k, align 8
+  %ptr.add293 = getelementptr inbounds ptr, ptr %global.load291, i64 %k292
+  %deref294 = load ptr, ptr %ptr.add293, align 8
+  %lo295 = load i64, ptr %lo, align 8
+  %hi296 = load i64, ptr %hi, align 8
+  %global.load297 = load ptr, ptr @cluster_peer_keep, align 8
+  %k298 = load i64, ptr %k, align 8
+  %ptr.add299 = getelementptr inbounds ptr, ptr %global.load297, i64 %k298
+  %deref300 = load ptr, ptr %ptr.add299, align 8
+  %call301 = call i64 @_ZN7Cluster8send_jobEP8NodePeerPvPv3u643i643i64P3u64P7KeepSet(ptr %deref294, ptr %0, ptr %1, i64 %global.load173, i64 %lo295, i64 %hi296, ptr %call24, ptr %deref300)
+  %k302 = load i64, ptr %k, align 8
+  %ptr.add303 = getelementptr inbounds i64, ptr %call181, i64 %k302
+  store i64 %call301, ptr %ptr.add303, align 8
+  %lo304 = load i64, ptr %lo, align 8
+  %k305 = load i64, ptr %k, align 8
+  %ptr.add306 = getelementptr inbounds i64, ptr %call175, i64 %k305
+  store i64 %lo304, ptr %ptr.add306, align 8
+  %hi307 = load i64, ptr %hi, align 8
+  %k308 = load i64, ptr %k, align 8
+  %ptr.add309 = getelementptr inbounds i64, ptr %call177, i64 %k308
+  store i64 %hi307, ptr %ptr.add309, align 8
+  br label %if.end283
 
-if.end284:                                        ; preds = %if.then283, %if.end240
-  br label %if.end227
+if.end283:                                        ; preds = %if.then282, %if.end239
+  br label %if.end226
 
-if.then315:                                       ; preds = %while.exit223
+if.then314:                                       ; preds = %while.exit222
   store i64 -1, ptr %lo, align 1
   store i64 0, ptr %hi, align 1
-  %backs317 = load i64, ptr %s, align 8
-  %gt318 = icmp ugt i64 %backs317, 0
-  br i1 %gt318, label %if.then319, label %if.else320
+  %backs316 = load i64, ptr %s, align 8
+  %gt317 = icmp ugt i64 %backs316, 0
+  br i1 %gt317, label %if.then318, label %if.else319
 
-if.end316:                                        ; preds = %if.end362, %while.exit223
-  %here_busy419 = load i1, ptr %here_busy, align 1
-  store i1 %here_busy419, ptr %outstanding, align 1
+if.end315:                                        ; preds = %if.end361, %while.exit222
+  %here_busy418 = load i1, ptr %here_busy, align 1
+  store i1 %here_busy418, ptr %outstanding, align 1
   store i64 0, ptr %k, align 1
-  br label %while.cond420
+  br label %while.cond419
 
-if.then319:                                       ; preds = %if.then315
-  %backs322 = load i64, ptr %s, align 8
-  %sub323 = sub i64 %backs322, 1
-  store i64 %sub323, ptr %s, align 1
-  %backs324 = load i64, ptr %s, align 8
-  %ptr.add325 = getelementptr inbounds i64, ptr %call184, i64 %backs324
-  %deref326 = load i64, ptr %ptr.add325, align 8
-  store i64 %deref326, ptr %lo, align 1
-  %backs327 = load i64, ptr %s, align 8
-  %ptr.add328 = getelementptr inbounds i64, ptr %call187, i64 %backs327
-  %deref329 = load i64, ptr %ptr.add328, align 8
-  store i64 %deref329, ptr %hi, align 1
-  br label %if.end321
+if.then318:                                       ; preds = %if.then314
+  %backs321 = load i64, ptr %s, align 8
+  %sub322 = sub i64 %backs321, 1
+  store i64 %sub322, ptr %s, align 1
+  %backs323 = load i64, ptr %s, align 8
+  %ptr.add324 = getelementptr inbounds i64, ptr %call184, i64 %backs323
+  %deref325 = load i64, ptr %ptr.add324, align 8
+  store i64 %deref325, ptr %lo, align 1
+  %backs326 = load i64, ptr %s, align 8
+  %ptr.add327 = getelementptr inbounds i64, ptr %call187, i64 %backs326
+  %deref328 = load i64, ptr %ptr.add327, align 8
+  store i64 %deref328, ptr %hi, align 1
+  br label %if.end320
 
-if.else320:                                       ; preds = %if.then315
-  %next330 = load i64, ptr %next, align 8
-  %lt331 = icmp slt i64 %next330, %2
-  br i1 %lt331, label %if.then332, label %if.end333
+if.else319:                                       ; preds = %if.then314
+  %next329 = load i64, ptr %next, align 8
+  %lt330 = icmp slt i64 %next329, %2
+  br i1 %lt330, label %if.then331, label %if.end332
 
-if.end321:                                        ; preds = %if.end333, %if.then319
-  %lo359 = load i64, ptr %lo, align 8
-  %ge360 = icmp sge i64 %lo359, 0
-  br i1 %ge360, label %if.then361, label %if.end362
+if.end320:                                        ; preds = %if.end332, %if.then318
+  %lo358 = load i64, ptr %lo, align 8
+  %ge359 = icmp sge i64 %lo358, 0
+  br i1 %ge359, label %if.then360, label %if.end361
 
-if.then332:                                       ; preds = %if.else320
-  %share334 = load i64, ptr %share, align 8
-  store i64 %share334, ptr %s256, align 1
-  %next335 = load i64, ptr %next, align 8
-  %sub336 = sub i64 %2, %next335
-  %add337 = add i64 %sub336, %mul213
-  %sub338 = sub i64 %add337, 1
-  %sdiv339 = sdiv i64 %sub338, %mul213
-  %s340 = load i64, ptr %s256, align 8
-  %gt341 = icmp sgt i64 %s340, %sdiv339
-  br i1 %gt341, label %if.then342, label %if.end343
+if.then331:                                       ; preds = %if.else319
+  %share333 = load i64, ptr %share, align 8
+  store i64 %share333, ptr %s255, align 1
+  %next334 = load i64, ptr %next, align 8
+  %sub335 = sub i64 %2, %next334
+  %add336 = add i64 %sub335, %add212
+  %sub337 = sub i64 %add336, 1
+  %sdiv338 = sdiv i64 %sub337, %add212
+  %s339 = load i64, ptr %s255, align 8
+  %gt340 = icmp sgt i64 %s339, %sdiv338
+  br i1 %gt340, label %if.then341, label %if.end342
 
-if.end333:                                        ; preds = %if.end357, %if.else320
-  br label %if.end321
+if.end332:                                        ; preds = %if.end356, %if.else319
+  br label %if.end320
 
-if.then342:                                       ; preds = %if.then332
-  store i64 %sdiv339, ptr %s256, align 1
-  br label %if.end343
+if.then341:                                       ; preds = %if.then331
+  store i64 %sdiv338, ptr %s255, align 1
+  br label %if.end342
 
-if.end343:                                        ; preds = %if.then342, %if.then332
-  %s344 = load i64, ptr %s256, align 8
-  %least345 = load i64, ptr %least, align 8
-  %lt346 = icmp slt i64 %s344, %least345
-  br i1 %lt346, label %if.then347, label %if.end348
+if.end342:                                        ; preds = %if.then341, %if.then331
+  %s343 = load i64, ptr %s255, align 8
+  %least344 = load i64, ptr %least, align 8
+  %lt345 = icmp slt i64 %s343, %least344
+  br i1 %lt345, label %if.then346, label %if.end347
 
-if.then347:                                       ; preds = %if.end343
-  %least349 = load i64, ptr %least, align 8
-  store i64 %least349, ptr %s256, align 1
-  br label %if.end348
+if.then346:                                       ; preds = %if.end342
+  %least348 = load i64, ptr %least, align 8
+  store i64 %least348, ptr %s255, align 1
+  br label %if.end347
 
-if.end348:                                        ; preds = %if.then347, %if.end343
+if.end347:                                        ; preds = %if.then346, %if.end342
+  %next349 = load i64, ptr %next, align 8
+  store i64 %next349, ptr %lo, align 1
   %next350 = load i64, ptr %next, align 8
-  store i64 %next350, ptr %lo, align 1
-  %next351 = load i64, ptr %next, align 8
-  %s352 = load i64, ptr %s256, align 8
-  %add353 = add i64 %next351, %s352
-  store i64 %add353, ptr %hi, align 1
-  %hi354 = load i64, ptr %hi, align 8
-  %gt355 = icmp sgt i64 %hi354, %2
-  br i1 %gt355, label %if.then356, label %if.end357
+  %s351 = load i64, ptr %s255, align 8
+  %add352 = add i64 %next350, %s351
+  store i64 %add352, ptr %hi, align 1
+  %hi353 = load i64, ptr %hi, align 8
+  %gt354 = icmp sgt i64 %hi353, %2
+  br i1 %gt354, label %if.then355, label %if.end356
 
-if.then356:                                       ; preds = %if.end348
+if.then355:                                       ; preds = %if.end347
   store i64 %2, ptr %hi, align 1
-  br label %if.end357
+  br label %if.end356
 
-if.end357:                                        ; preds = %if.then356, %if.end348
-  %hi358 = load i64, ptr %hi, align 8
-  store i64 %hi358, ptr %next, align 1
-  br label %if.end333
+if.end356:                                        ; preds = %if.then355, %if.end347
+  %hi357 = load i64, ptr %hi, align 8
+  store i64 %hi357, ptr %next, align 1
+  br label %if.end332
 
-if.then361:                                       ; preds = %if.end321
-  %lo363 = load i64, ptr %lo, align 8
-  %hi364 = load i64, ptr %hi, align 8
-  call void @_ZN7Cluster13trace_stretchE3i643i643i64(i64 %lo363, i64 %hi364, i64 0)
-  %call365 = call ptr @_ZN9TaskGroup6createEv()
-  store ptr %call365, ptr %g, align 1
-  store i64 %if.value, ptr %s256, align 1
-  %parts = load i64, ptr %s256, align 8
-  %hi366 = load i64, ptr %hi, align 8
-  %lo367 = load i64, ptr %lo, align 8
-  %sub368 = sub i64 %hi366, %lo367
-  %gt369 = icmp sgt i64 %parts, %sub368
-  br i1 %gt369, label %if.then370, label %if.end371
+if.then360:                                       ; preds = %if.end320
+  %lo362 = load i64, ptr %lo, align 8
+  %hi363 = load i64, ptr %hi, align 8
+  call void @_ZN7Cluster13trace_stretchE3i643i643i64(i64 %lo362, i64 %hi363, i64 0)
+  %call364 = call ptr @_ZN9TaskGroup6createEv()
+  store ptr %call364, ptr %g, align 1
+  store i64 %if.value, ptr %s255, align 1
+  %parts = load i64, ptr %s255, align 8
+  %hi365 = load i64, ptr %hi, align 8
+  %lo366 = load i64, ptr %lo, align 8
+  %sub367 = sub i64 %hi365, %lo366
+  %gt368 = icmp sgt i64 %parts, %sub367
+  br i1 %gt368, label %if.then369, label %if.end370
 
-if.end362:                                        ; preds = %while.exit386, %if.end321
-  br label %if.end316
+if.end361:                                        ; preds = %while.exit385, %if.end320
+  br label %if.end315
 
-if.then370:                                       ; preds = %if.then361
-  %hi372 = load i64, ptr %hi, align 8
-  %lo373 = load i64, ptr %lo, align 8
-  %sub374 = sub i64 %hi372, %lo373
-  store i64 %sub374, ptr %s256, align 1
-  br label %if.end371
+if.then369:                                       ; preds = %if.then360
+  %hi371 = load i64, ptr %hi, align 8
+  %lo372 = load i64, ptr %lo, align 8
+  %sub373 = sub i64 %hi371, %lo372
+  store i64 %sub373, ptr %s255, align 1
+  br label %if.end370
 
-if.end371:                                        ; preds = %if.then370, %if.then361
-  %hi375 = load i64, ptr %hi, align 8
-  %lo376 = load i64, ptr %lo, align 8
-  %sub377 = sub i64 %hi375, %lo376
-  %parts378 = load i64, ptr %s256, align 8
-  %add379 = add i64 %sub377, %parts378
-  %sub380 = sub i64 %add379, 1
-  %parts381 = load i64, ptr %s256, align 8
-  %sdiv382 = sdiv i64 %sub380, %parts381
-  %lo383 = load i64, ptr %lo, align 8
-  store i64 %lo383, ptr %a, align 1
-  br label %while.cond384
+if.end370:                                        ; preds = %if.then369, %if.then360
+  %hi374 = load i64, ptr %hi, align 8
+  %lo375 = load i64, ptr %lo, align 8
+  %sub376 = sub i64 %hi374, %lo375
+  %parts377 = load i64, ptr %s255, align 8
+  %add378 = add i64 %sub376, %parts377
+  %sub379 = sub i64 %add378, 1
+  %parts380 = load i64, ptr %s255, align 8
+  %sdiv381 = sdiv i64 %sub379, %parts380
+  %lo382 = load i64, ptr %lo, align 8
+  store i64 %lo382, ptr %a, align 1
+  br label %while.cond383
 
-while.cond384:                                    ; preds = %if.end396, %if.end371
-  %a387 = load i64, ptr %a, align 8
-  %hi388 = load i64, ptr %hi, align 8
-  %lt389 = icmp slt i64 %a387, %hi388
-  br i1 %lt389, label %while.body385, label %while.exit386
+while.cond383:                                    ; preds = %if.end395, %if.end370
+  %a386 = load i64, ptr %a, align 8
+  %hi387 = load i64, ptr %hi, align 8
+  %lt388 = icmp slt i64 %a386, %hi387
+  br i1 %lt388, label %while.body384, label %while.exit385
 
-while.body385:                                    ; preds = %while.cond384
-  %a390 = load i64, ptr %a, align 8
-  %add391 = add i64 %a390, %sdiv382
-  store i64 %add391, ptr %b, align 1
-  %b392 = load i64, ptr %b, align 8
-  %hi393 = load i64, ptr %hi, align 8
-  %gt394 = icmp sgt i64 %b392, %hi393
-  br i1 %gt394, label %if.then395, label %if.end396
+while.body384:                                    ; preds = %while.cond383
+  %a389 = load i64, ptr %a, align 8
+  %add390 = add i64 %a389, %sdiv381
+  store i64 %add390, ptr %b, align 1
+  %b391 = load i64, ptr %b, align 8
+  %hi392 = load i64, ptr %hi, align 8
+  %gt393 = icmp sgt i64 %b391, %hi392
+  br i1 %gt393, label %if.then394, label %if.end395
 
-while.exit386:                                    ; preds = %while.cond384
+while.exit385:                                    ; preds = %while.cond383
   store i1 true, ptr %here_busy, align 1
-  %call410 = call i64 @scaly_eio_now_ns()
-  store i64 %call410, ptr %here_at, align 1
-  %hi411 = load i64, ptr %hi, align 8
-  %lo412 = load i64, ptr %lo, align 8
-  %sub413 = sub i64 %hi411, %lo412
-  store i64 %sub413, ptr %here_size, align 1
-  %here_rounds414 = load i64, ptr %here_rounds, align 8
-  %hi415 = load i64, ptr %hi, align 8
-  %lo416 = load i64, ptr %lo, align 8
-  %sub417 = sub i64 %hi415, %lo416
-  %add418 = add i64 %here_rounds414, %sub417
-  store i64 %add418, ptr %here_rounds, align 1
-  br label %if.end362
+  %call409 = call i64 @scaly_eio_now_ns()
+  store i64 %call409, ptr %here_at, align 1
+  %hi410 = load i64, ptr %hi, align 8
+  %lo411 = load i64, ptr %lo, align 8
+  %sub412 = sub i64 %hi410, %lo411
+  store i64 %sub412, ptr %here_size, align 1
+  %here_rounds413 = load i64, ptr %here_rounds, align 8
+  %hi414 = load i64, ptr %hi, align 8
+  %lo415 = load i64, ptr %lo, align 8
+  %sub416 = sub i64 %hi414, %lo415
+  %add417 = add i64 %here_rounds413, %sub416
+  store i64 %add417, ptr %here_rounds, align 1
+  br label %if.end361
 
-if.then395:                                       ; preds = %while.body385
-  %hi397 = load i64, ptr %hi, align 8
-  store i64 %hi397, ptr %b, align 1
-  br label %if.end396
+if.then394:                                       ; preds = %while.body384
+  %hi396 = load i64, ptr %hi, align 8
+  store i64 %hi396, ptr %b, align 1
+  br label %if.end395
 
-if.end396:                                        ; preds = %if.then395, %while.body385
-  %call398 = call ptr @_ZN4Page8allocateEmm(ptr %call23, i64 %call207, i64 16)
-  %call399 = call ptr @memcpy(ptr %call398, ptr %1, i64 %call207)
-  %a400 = load i64, ptr %a, align 8
-  %as.ptrtoint = ptrtoint ptr %call398 to i64
-  %add401 = add i64 %as.ptrtoint, %call208
-  %as.inttoptr = inttoptr i64 %add401 to ptr
-  %ptr.add402 = getelementptr inbounds i64, ptr %as.inttoptr, i64 0
-  store i64 %a400, ptr %ptr.add402, align 8
-  %b403 = load i64, ptr %b, align 8
-  %as.ptrtoint404 = ptrtoint ptr %call398 to i64
-  %add405 = add i64 %as.ptrtoint404, %call209
-  %as.inttoptr406 = inttoptr i64 %add405 to ptr
-  %ptr.add407 = getelementptr inbounds i64, ptr %as.inttoptr406, i64 0
-  store i64 %b403, ptr %ptr.add407, align 8
-  %g408 = load ptr, ptr %g, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %call210, ptr %deref206, ptr %call398, ptr %g408)
-  %b409 = load i64, ptr %b, align 8
-  store i64 %b409, ptr %a, align 1
-  br label %while.cond384
+if.end395:                                        ; preds = %if.then394, %while.body384
+  %call397 = call ptr @_ZN4Page8allocateEmm(ptr %call23, i64 %call207, i64 16)
+  %call398 = call ptr @memcpy(ptr %call397, ptr %1, i64 %call207)
+  %a399 = load i64, ptr %a, align 8
+  %as.ptrtoint = ptrtoint ptr %call397 to i64
+  %add400 = add i64 %as.ptrtoint, %call208
+  %as.inttoptr = inttoptr i64 %add400 to ptr
+  %ptr.add401 = getelementptr inbounds i64, ptr %as.inttoptr, i64 0
+  store i64 %a399, ptr %ptr.add401, align 8
+  %b402 = load i64, ptr %b, align 8
+  %as.ptrtoint403 = ptrtoint ptr %call397 to i64
+  %add404 = add i64 %as.ptrtoint403, %call209
+  %as.inttoptr405 = inttoptr i64 %add404 to ptr
+  %ptr.add406 = getelementptr inbounds i64, ptr %as.inttoptr405, i64 0
+  store i64 %b402, ptr %ptr.add406, align 8
+  %g407 = load ptr, ptr %g, align 8
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %call210, ptr %deref206, ptr %call397, ptr %g407)
+  %b408 = load i64, ptr %b, align 8
+  store i64 %b408, ptr %a, align 1
+  br label %while.cond383
 
-while.cond420:                                    ; preds = %if.end430, %if.end316
-  %k423 = load i64, ptr %k, align 8
-  %lt424 = icmp ult i64 %k423, %global.load15
-  br i1 %lt424, label %while.body421, label %while.exit422
+while.cond419:                                    ; preds = %if.end429, %if.end315
+  %k422 = load i64, ptr %k, align 8
+  %lt423 = icmp ult i64 %k422, %global.load15
+  br i1 %lt423, label %while.body420, label %while.exit421
 
-while.body421:                                    ; preds = %while.cond420
-  %k425 = load i64, ptr %k, align 8
-  %ptr.add426 = getelementptr inbounds i64, ptr %call175, i64 %k425
-  %deref427 = load i64, ptr %ptr.add426, align 8
-  %ge428 = icmp sge i64 %deref427, 0
-  br i1 %ge428, label %if.then429, label %if.end430
+while.body420:                                    ; preds = %while.cond419
+  %k424 = load i64, ptr %k, align 8
+  %ptr.add425 = getelementptr inbounds i64, ptr %call175, i64 %k424
+  %deref426 = load i64, ptr %ptr.add425, align 8
+  %ge427 = icmp sge i64 %deref426, 0
+  br i1 %ge427, label %if.then428, label %if.end429
 
-while.exit422:                                    ; preds = %while.cond420
-  %outstanding433 = load i1, ptr %outstanding, align 1
-  %eq434 = icmp eq i1 %outstanding433, false
-  br i1 %eq434, label %if.then435, label %if.end436
+while.exit421:                                    ; preds = %while.cond419
+  %outstanding432 = load i1, ptr %outstanding, align 1
+  %eq433 = icmp eq i1 %outstanding432, false
+  br i1 %eq433, label %if.then434, label %if.end435
 
-if.then429:                                       ; preds = %while.body421
+if.then428:                                       ; preds = %while.body420
   store i1 true, ptr %outstanding, align 1
-  br label %if.end430
+  br label %if.end429
 
-if.end430:                                        ; preds = %if.then429, %while.body421
-  %k431 = load i64, ptr %k, align 8
-  %add432 = add i64 %k431, 1
-  store i64 %add432, ptr %k, align 1
-  br label %while.cond420
+if.end429:                                        ; preds = %if.then428, %while.body420
+  %k430 = load i64, ptr %k, align 8
+  %add431 = add i64 %k430, 1
+  store i64 %add431, ptr %k, align 1
+  br label %while.cond419
 
-if.then435:                                       ; preds = %while.exit422
+if.then434:                                       ; preds = %while.exit421
   br label %repeat.exit
 
-if.end436:                                        ; preds = %while.exit422
+if.end435:                                        ; preds = %while.exit421
   store i1 false, ptr %got, align 1
   store i64 0, ptr %k, align 1
-  br label %while.cond437
+  br label %while.cond436
 
-while.cond437:                                    ; preds = %if.end447, %if.end436
-  %k440 = load i64, ptr %k, align 8
-  %lt441 = icmp ult i64 %k440, %global.load15
-  br i1 %lt441, label %while.body438, label %while.exit439
+while.cond436:                                    ; preds = %if.end446, %if.end435
+  %k439 = load i64, ptr %k, align 8
+  %lt440 = icmp ult i64 %k439, %global.load15
+  br i1 %lt440, label %while.body437, label %while.exit438
 
-while.body438:                                    ; preds = %while.cond437
-  %k442 = load i64, ptr %k, align 8
-  %ptr.add443 = getelementptr inbounds i64, ptr %call175, i64 %k442
-  %deref444 = load i64, ptr %ptr.add443, align 8
-  %ge445 = icmp sge i64 %deref444, 0
-  br i1 %ge445, label %if.then446, label %if.end447
+while.body437:                                    ; preds = %while.cond436
+  %k441 = load i64, ptr %k, align 8
+  %ptr.add442 = getelementptr inbounds i64, ptr %call175, i64 %k441
+  %deref443 = load i64, ptr %ptr.add442, align 8
+  %ge444 = icmp sge i64 %deref443, 0
+  br i1 %ge444, label %if.then445, label %if.end446
 
-while.exit439:                                    ; preds = %while.cond437
-  %here_busy553 = load i1, ptr %here_busy, align 1
-  br i1 %here_busy553, label %land.rhs552, label %if.end551
+while.exit438:                                    ; preds = %while.cond436
+  %here_busy552 = load i1, ptr %here_busy, align 1
+  br i1 %here_busy552, label %land.rhs551, label %if.end550
 
-if.then446:                                       ; preds = %while.body438
+if.then445:                                       ; preds = %while.body437
   store i1 false, ptr %timed, align 1
-  %global.load448 = load ptr, ptr @cluster_peers, align 8
-  %k449 = load i64, ptr %k, align 8
-  %ptr.add450 = getelementptr inbounds ptr, ptr %global.load448, i64 %k449
-  %deref451 = load ptr, ptr %ptr.add450, align 8
-  %call452 = call ptr @_ZN7Cluster7channelEP8NodePeer3u64(ptr %deref451, i64 901)
-  %call453 = call ptr @_ZN7Channel15receive_timeoutER7Channel3i32Rb(ptr %call452, i32 0, ptr %timed)
+  %global.load447 = load ptr, ptr @cluster_peers, align 8
+  %k448 = load i64, ptr %k, align 8
+  %ptr.add449 = getelementptr inbounds ptr, ptr %global.load447, i64 %k448
+  %deref450 = load ptr, ptr %ptr.add449, align 8
+  %call451 = call ptr @_ZN7Cluster7channelEP8NodePeer3u64(ptr %deref450, i64 901)
+  %call452 = call ptr @_ZN7Channel15receive_timeoutER7Channel3i32Rb(ptr %call451, i32 0, ptr %timed)
   store i1 false, ptr %gone, align 1
-  %ne = icmp ne ptr %call453, null
-  br i1 %ne, label %if.then454, label %if.else455
+  %ne = icmp ne ptr %call452, null
+  br i1 %ne, label %if.then453, label %if.else454
 
-if.end447:                                        ; preds = %if.end529, %while.body438
-  %k548 = load i64, ptr %k, align 8
-  %add549 = add i64 %k548, 1
-  store i64 %add549, ptr %k, align 1
-  br label %while.cond437
+if.end446:                                        ; preds = %if.end528, %while.body437
+  %k547 = load i64, ptr %k, align 8
+  %add548 = add i64 %k547, 1
+  store i64 %add548, ptr %k, align 1
+  br label %while.cond436
 
-if.then454:                                       ; preds = %if.then446
-  %unwrap.isnull457 = icmp eq ptr %call453, null
-  br i1 %unwrap.isnull457, label %unwrap.trap458, label %unwrap.ok459
+if.then453:                                       ; preds = %if.then445
+  %unwrap.isnull456 = icmp eq ptr %call452, null
+  br i1 %unwrap.isnull456, label %unwrap.trap457, label %unwrap.ok458
 
-if.else455:                                       ; preds = %if.then446
-  %timed523 = load i1, ptr %timed, align 1
-  %eq524 = icmp eq i1 %timed523, false
-  br i1 %eq524, label %if.then525, label %if.end526
+if.else454:                                       ; preds = %if.then445
+  %timed522 = load i1, ptr %timed, align 1
+  %eq523 = icmp eq i1 %timed522, false
+  br i1 %eq523, label %if.then524, label %if.end525
 
-if.end456:                                        ; preds = %if.end526, %if.end467
-  %gone527 = load i1, ptr %gone, align 1
-  br i1 %gone527, label %if.then528, label %if.end529
+if.end455:                                        ; preds = %if.end525, %if.end466
+  %gone526 = load i1, ptr %gone, align 1
+  br i1 %gone526, label %if.then527, label %if.end528
 
-unwrap.trap458:                                   ; preds = %if.then454
+unwrap.trap457:                                   ; preds = %if.then453
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.417)
   unreachable
 
-unwrap.ok459:                                     ; preds = %if.then454
-  %load.struct460 = load %_Z14ReceivedRegion, ptr %call453, align 8
-  %root = extractvalue %_Z14ReceivedRegion %load.struct460, 1
-  %unwrap.isnull461 = icmp eq ptr %root, null
-  br i1 %unwrap.isnull461, label %unwrap.trap462, label %unwrap.ok463
+unwrap.ok458:                                     ; preds = %if.then453
+  %load.struct459 = load %_Z14ReceivedRegion, ptr %call452, align 8
+  %root = extractvalue %_Z14ReceivedRegion %load.struct459, 1
+  %unwrap.isnull460 = icmp eq ptr %root, null
+  br i1 %unwrap.isnull460, label %unwrap.trap461, label %unwrap.ok462
 
-unwrap.trap462:                                   ; preds = %unwrap.ok459
+unwrap.trap461:                                   ; preds = %unwrap.ok458
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.418)
   unreachable
 
-unwrap.ok463:                                     ; preds = %unwrap.ok459
-  call void @_ZN7Cluster10fix_resultER14ReceivedRegionR13ClusterResult(ptr %call453, ptr %root)
-  %load.struct464 = load %_Z13ClusterResult, ptr %root, align 8
-  %ok = extractvalue %_Z13ClusterResult %load.struct464, 2
-  br i1 %ok, label %if.then465, label %if.else466
+unwrap.ok462:                                     ; preds = %unwrap.ok458
+  call void @_ZN7Cluster10fix_resultER14ReceivedRegionR13ClusterResult(ptr %call452, ptr %root)
+  %load.struct463 = load %_Z13ClusterResult, ptr %root, align 8
+  %ok = extractvalue %_Z13ClusterResult %load.struct463, 2
+  br i1 %ok, label %if.then464, label %if.else465
 
-if.then465:                                       ; preds = %unwrap.ok463
-  %unwrap.isnull468 = icmp eq ptr %root, null
-  br i1 %unwrap.isnull468, label %unwrap.trap469, label %unwrap.ok470
+if.then464:                                       ; preds = %unwrap.ok462
+  %unwrap.isnull467 = icmp eq ptr %root, null
+  br i1 %unwrap.isnull467, label %unwrap.trap468, label %unwrap.ok469
 
-if.else466:                                       ; preds = %unwrap.ok463
+if.else465:                                       ; preds = %unwrap.ok462
   store i1 true, ptr %gone, align 1
-  br label %if.end467
+  br label %if.end466
 
-if.end467:                                        ; preds = %if.else466, %if.end500
-  call void @_ZN7Cluster15dispose_messageER14ReceivedRegion(ptr %call453)
+if.end466:                                        ; preds = %if.else465, %if.end499
+  call void @_ZN7Cluster15dispose_messageER14ReceivedRegion(ptr %call452)
   store i1 true, ptr %got, align 1
-  br label %if.end456
+  br label %if.end455
 
-unwrap.trap469:                                   ; preds = %if.then465
+unwrap.trap468:                                   ; preds = %if.then464
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.419)
   unreachable
 
-unwrap.ok470:                                     ; preds = %if.then465
+unwrap.ok469:                                     ; preds = %if.then464
   call void @_ZN7Cluster11take_resultEPvPvR13ClusterResult(ptr %0, ptr %1, ptr %root)
-  %load.struct471 = load %_Z13ClusterResult, ptr %root, align 8
-  %hi472 = extractvalue %_Z13ClusterResult %load.struct471, 1
-  %load.struct473 = load %_Z13ClusterResult, ptr %root, align 8
-  %lo474 = extractvalue %_Z13ClusterResult %load.struct473, 0
-  %sub475 = sub i64 %hi472, %lo474
-  %as.sitofp476 = sitofp i64 %sub475 to double
-  %call477 = call i64 @scaly_eio_now_ns()
-  %k478 = load i64, ptr %k, align 8
-  %ptr.add479 = getelementptr inbounds i64, ptr %call179, i64 %k478
-  %deref480 = load i64, ptr %ptr.add479, align 8
-  %sub481 = sub i64 %call477, %deref480
-  %as.sitofp482 = sitofp i64 %sub481 to double
-  %k483 = load i64, ptr %k, align 8
-  %ptr.add484 = getelementptr inbounds i64, ptr %call181, i64 %k483
-  %deref485 = load i64, ptr %ptr.add484, align 8
-  %as.fptoui = fptoui double %as.sitofp476 to i64
-  %load.struct486 = load { i64, i64 }, ptr %sret.result, align 8
-  %per_round487 = extractvalue { i64, i64 } %load.struct486, 1
-  %mul488 = mul i64 %as.fptoui, %per_round487
-  %add489 = add i64 %deref485, %mul488
-  %as.uitofp490 = uitofp i64 %add489 to double
-  %fmul491 = fmul double %as.uitofp490, 1.000000e+01
-  %global.load492 = load ptr, ptr @cluster_peer_lat, align 8
-  %k493 = load i64, ptr %k, align 8
-  %ptr.add494 = getelementptr inbounds double, ptr %global.load492, i64 %k493
-  %deref495 = load double, ptr %ptr.add494, align 8
-  %fsub = fsub double %as.sitofp482, %deref495
-  %fsub496 = fsub double %fsub, %fmul491
-  store double %fsub496, ptr %beyond, align 1
-  %beyond497 = load double, ptr %beyond, align 8
-  %lt498 = fcmp olt double %beyond497, 0.000000e+00
-  br i1 %lt498, label %if.then499, label %if.end500
+  %load.struct470 = load %_Z13ClusterResult, ptr %root, align 8
+  %hi471 = extractvalue %_Z13ClusterResult %load.struct470, 1
+  %load.struct472 = load %_Z13ClusterResult, ptr %root, align 8
+  %lo473 = extractvalue %_Z13ClusterResult %load.struct472, 0
+  %sub474 = sub i64 %hi471, %lo473
+  %as.sitofp475 = sitofp i64 %sub474 to double
+  %call476 = call i64 @scaly_eio_now_ns()
+  %k477 = load i64, ptr %k, align 8
+  %ptr.add478 = getelementptr inbounds i64, ptr %call179, i64 %k477
+  %deref479 = load i64, ptr %ptr.add478, align 8
+  %sub480 = sub i64 %call476, %deref479
+  %as.sitofp481 = sitofp i64 %sub480 to double
+  %k482 = load i64, ptr %k, align 8
+  %ptr.add483 = getelementptr inbounds i64, ptr %call181, i64 %k482
+  %deref484 = load i64, ptr %ptr.add483, align 8
+  %as.fptoui = fptoui double %as.sitofp475 to i64
+  %load.struct485 = load { i64, i64 }, ptr %sret.result, align 8
+  %per_round486 = extractvalue { i64, i64 } %load.struct485, 1
+  %mul487 = mul i64 %as.fptoui, %per_round486
+  %add488 = add i64 %deref484, %mul487
+  %as.uitofp489 = uitofp i64 %add488 to double
+  %fmul490 = fmul double %as.uitofp489, 1.000000e+01
+  %global.load491 = load ptr, ptr @cluster_peer_lat, align 8
+  %k492 = load i64, ptr %k, align 8
+  %ptr.add493 = getelementptr inbounds double, ptr %global.load491, i64 %k492
+  %deref494 = load double, ptr %ptr.add493, align 8
+  %fsub = fsub double %as.sitofp481, %deref494
+  %fsub495 = fsub double %fsub, %fmul490
+  store double %fsub495, ptr %beyond, align 1
+  %beyond496 = load double, ptr %beyond, align 8
+  %lt497 = fcmp olt double %beyond496, 0.000000e+00
+  br i1 %lt497, label %if.then498, label %if.end499
 
-if.then499:                                       ; preds = %unwrap.ok470
+if.then498:                                       ; preds = %unwrap.ok469
   store double 0.000000e+00, ptr %beyond, align 1
-  br label %if.end500
+  br label %if.end499
 
-if.end500:                                        ; preds = %if.then499, %unwrap.ok470
-  %k501 = load i64, ptr %k, align 8
-  %ptr.add502 = getelementptr inbounds double, ptr %call189, i64 %k501
-  %deref503 = load double, ptr %ptr.add502, align 8
-  %beyond504 = load double, ptr %beyond, align 8
-  %fadd505 = fadd double %deref503, %beyond504
-  %k506 = load i64, ptr %k, align 8
-  %ptr.add507 = getelementptr inbounds double, ptr %call189, i64 %k506
-  store double %fadd505, ptr %ptr.add507, align 8
-  %k508 = load i64, ptr %k, align 8
-  %ptr.add509 = getelementptr inbounds double, ptr %call191, i64 %k508
-  %deref510 = load double, ptr %ptr.add509, align 8
-  %fadd511 = fadd double %deref510, %as.sitofp476
-  %k512 = load i64, ptr %k, align 8
-  %ptr.add513 = getelementptr inbounds double, ptr %call191, i64 %k512
-  store double %fadd511, ptr %ptr.add513, align 8
-  %out_rounds514 = load i64, ptr %out_rounds, align 8
-  %load.struct515 = load %_Z13ClusterResult, ptr %root, align 8
-  %hi516 = extractvalue %_Z13ClusterResult %load.struct515, 1
-  %load.struct517 = load %_Z13ClusterResult, ptr %root, align 8
-  %lo518 = extractvalue %_Z13ClusterResult %load.struct517, 0
-  %sub519 = sub i64 %hi516, %lo518
-  %add520 = add i64 %out_rounds514, %sub519
-  store i64 %add520, ptr %out_rounds, align 1
-  %k521 = load i64, ptr %k, align 8
-  %ptr.add522 = getelementptr inbounds i64, ptr %call175, i64 %k521
-  store i64 -1, ptr %ptr.add522, align 8
-  br label %if.end467
+if.end499:                                        ; preds = %if.then498, %unwrap.ok469
+  %k500 = load i64, ptr %k, align 8
+  %ptr.add501 = getelementptr inbounds double, ptr %call189, i64 %k500
+  %deref502 = load double, ptr %ptr.add501, align 8
+  %beyond503 = load double, ptr %beyond, align 8
+  %fadd504 = fadd double %deref502, %beyond503
+  %k505 = load i64, ptr %k, align 8
+  %ptr.add506 = getelementptr inbounds double, ptr %call189, i64 %k505
+  store double %fadd504, ptr %ptr.add506, align 8
+  %k507 = load i64, ptr %k, align 8
+  %ptr.add508 = getelementptr inbounds double, ptr %call191, i64 %k507
+  %deref509 = load double, ptr %ptr.add508, align 8
+  %fadd510 = fadd double %deref509, %as.sitofp475
+  %k511 = load i64, ptr %k, align 8
+  %ptr.add512 = getelementptr inbounds double, ptr %call191, i64 %k511
+  store double %fadd510, ptr %ptr.add512, align 8
+  %out_rounds513 = load i64, ptr %out_rounds, align 8
+  %load.struct514 = load %_Z13ClusterResult, ptr %root, align 8
+  %hi515 = extractvalue %_Z13ClusterResult %load.struct514, 1
+  %load.struct516 = load %_Z13ClusterResult, ptr %root, align 8
+  %lo517 = extractvalue %_Z13ClusterResult %load.struct516, 0
+  %sub518 = sub i64 %hi515, %lo517
+  %add519 = add i64 %out_rounds513, %sub518
+  store i64 %add519, ptr %out_rounds, align 1
+  %k520 = load i64, ptr %k, align 8
+  %ptr.add521 = getelementptr inbounds i64, ptr %call175, i64 %k520
+  store i64 -1, ptr %ptr.add521, align 8
+  br label %if.end466
 
-if.then525:                                       ; preds = %if.else455
+if.then524:                                       ; preds = %if.else454
   store i1 true, ptr %gone, align 1
-  br label %if.end526
+  br label %if.end525
 
-if.end526:                                        ; preds = %if.then525, %if.else455
-  br label %if.end456
+if.end525:                                        ; preds = %if.then524, %if.else454
+  br label %if.end455
 
-if.then528:                                       ; preds = %if.end456
-  %k530 = load i64, ptr %k, align 8
-  %ptr.add531 = getelementptr inbounds i64, ptr %call175, i64 %k530
-  %deref532 = load i64, ptr %ptr.add531, align 8
-  %backs533 = load i64, ptr %s, align 8
-  %ptr.add534 = getelementptr inbounds i64, ptr %call184, i64 %backs533
-  store i64 %deref532, ptr %ptr.add534, align 8
-  %k535 = load i64, ptr %k, align 8
-  %ptr.add536 = getelementptr inbounds i64, ptr %call177, i64 %k535
-  %deref537 = load i64, ptr %ptr.add536, align 8
-  %backs538 = load i64, ptr %s, align 8
-  %ptr.add539 = getelementptr inbounds i64, ptr %call187, i64 %backs538
-  store i64 %deref537, ptr %ptr.add539, align 8
-  %backs540 = load i64, ptr %s, align 8
-  %add541 = add i64 %backs540, 1
-  store i64 %add541, ptr %s, align 1
-  %k542 = load i64, ptr %k, align 8
-  %ptr.add543 = getelementptr inbounds i64, ptr %call175, i64 %k542
-  store i64 -1, ptr %ptr.add543, align 8
-  %k544 = load i64, ptr %k, align 8
-  %ptr.add545 = getelementptr inbounds i8, ptr %call27, i64 %k544
-  store i8 0, ptr %ptr.add545, align 1
-  %lost546 = load i64, ptr %lost, align 8
-  %add547 = add i64 %lost546, 1
-  store i64 %add547, ptr %lost, align 1
+if.then527:                                       ; preds = %if.end455
+  %k529 = load i64, ptr %k, align 8
+  %ptr.add530 = getelementptr inbounds i64, ptr %call175, i64 %k529
+  %deref531 = load i64, ptr %ptr.add530, align 8
+  %backs532 = load i64, ptr %s, align 8
+  %ptr.add533 = getelementptr inbounds i64, ptr %call184, i64 %backs532
+  store i64 %deref531, ptr %ptr.add533, align 8
+  %k534 = load i64, ptr %k, align 8
+  %ptr.add535 = getelementptr inbounds i64, ptr %call177, i64 %k534
+  %deref536 = load i64, ptr %ptr.add535, align 8
+  %backs537 = load i64, ptr %s, align 8
+  %ptr.add538 = getelementptr inbounds i64, ptr %call187, i64 %backs537
+  store i64 %deref536, ptr %ptr.add538, align 8
+  %backs539 = load i64, ptr %s, align 8
+  %add540 = add i64 %backs539, 1
+  store i64 %add540, ptr %s, align 1
+  %k541 = load i64, ptr %k, align 8
+  %ptr.add542 = getelementptr inbounds i64, ptr %call175, i64 %k541
+  store i64 -1, ptr %ptr.add542, align 8
+  %k543 = load i64, ptr %k, align 8
+  %ptr.add544 = getelementptr inbounds i8, ptr %call27, i64 %k543
+  store i8 0, ptr %ptr.add544, align 1
+  %lost545 = load i64, ptr %lost, align 8
+  %add546 = add i64 %lost545, 1
+  store i64 %add546, ptr %lost, align 1
   store i1 true, ptr %got, align 1
-  br label %if.end529
+  br label %if.end528
 
-if.end529:                                        ; preds = %if.then528, %if.end456
-  br label %if.end447
+if.end528:                                        ; preds = %if.then527, %if.end455
+  br label %if.end446
 
-if.then550:                                       ; preds = %land.rhs552
+if.then549:                                       ; preds = %land.rhs551
+  %g555 = load ptr, ptr %g, align 8
+  call void @_ZN9TaskGroup4waitEP9TaskGroup(ptr %g555)
   %g556 = load ptr, ptr %g, align 8
-  call void @_ZN9TaskGroup4waitEP9TaskGroup(ptr %g556)
-  %g557 = load ptr, ptr %g, align 8
-  call void @_ZN9TaskGroup7disposeEP9TaskGroup(ptr %g557)
+  call void @_ZN9TaskGroup7disposeEP9TaskGroup(ptr %g556)
   store ptr null, ptr %g, align 1
-  %here_took558 = load double, ptr %here_took, align 8
-  %call559 = call i64 @scaly_eio_now_ns()
-  %here_at560 = load i64, ptr %here_at, align 8
-  %sub561 = sub i64 %call559, %here_at560
-  %as.sitofp562 = sitofp i64 %sub561 to double
-  %fadd563 = fadd double %here_took558, %as.sitofp562
-  store double %fadd563, ptr %here_took, align 1
-  %here_measured564 = load i64, ptr %here_measured, align 8
-  %here_size565 = load i64, ptr %here_size, align 8
-  %add566 = add i64 %here_measured564, %here_size565
-  store i64 %add566, ptr %here_measured, align 1
+  %here_took557 = load double, ptr %here_took, align 8
+  %call558 = call i64 @scaly_eio_now_ns()
+  %here_at559 = load i64, ptr %here_at, align 8
+  %sub560 = sub i64 %call558, %here_at559
+  %as.sitofp561 = sitofp i64 %sub560 to double
+  %fadd562 = fadd double %here_took557, %as.sitofp561
+  store double %fadd562, ptr %here_took, align 1
+  %here_measured563 = load i64, ptr %here_measured, align 8
+  %here_size564 = load i64, ptr %here_size, align 8
+  %add565 = add i64 %here_measured563, %here_size564
+  store i64 %add565, ptr %here_measured, align 1
   store i1 false, ptr %here_busy, align 1
   store i1 true, ptr %got, align 1
-  br label %if.end551
+  br label %if.end550
 
-if.end551:                                        ; preds = %if.then550, %land.rhs552, %while.exit439
-  %got567 = load i1, ptr %got, align 1
-  %eq568 = icmp eq i1 %got567, false
-  br i1 %eq568, label %if.then569, label %if.end570
+if.end550:                                        ; preds = %if.then549, %land.rhs551, %while.exit438
+  %got566 = load i1, ptr %got, align 1
+  %eq567 = icmp eq i1 %got566, false
+  br i1 %eq567, label %if.then568, label %if.end569
 
-land.rhs552:                                      ; preds = %while.exit439
-  %g554 = load ptr, ptr %g, align 8
-  %addr.gep = getelementptr inbounds nuw %_Z9TaskGroup, ptr %g554, i32 0, i32 0
+land.rhs551:                                      ; preds = %while.exit438
+  %g553 = load ptr, ptr %g, align 8
+  %addr.gep = getelementptr inbounds nuw %_Z9TaskGroup, ptr %g553, i32 0, i32 0
   %atomic.load = load atomic i64, ptr %addr.gep seq_cst, align 8
-  %eq555 = icmp eq i64 %atomic.load, 0
-  br i1 %eq555, label %if.then550, label %if.end551
+  %eq554 = icmp eq i64 %atomic.load, 0
+  br i1 %eq554, label %if.then549, label %if.end550
 
-if.then569:                                       ; preds = %if.end551
-  %call571 = call i32 @poll(ptr null, i64 0, i32 1)
-  br label %if.end570
+if.then568:                                       ; preds = %if.end550
+  %call570 = call i32 @poll(ptr null, i64 0, i32 1)
+  br label %if.end569
 
-if.end570:                                        ; preds = %if.then569, %if.end551
+if.end569:                                        ; preds = %if.then568, %if.end550
   br label %repeat.body
 
-if.then572:                                       ; preds = %land.rhs574
-  %here_took579 = load double, ptr %here_took, align 8
-  %as.sitofp580 = sitofp i64 %if.value to double
-  %fmul581 = fmul double %here_took579, %as.sitofp580
-  %here_measured582 = load i64, ptr %here_measured, align 8
-  %as.sitofp583 = sitofp i64 %here_measured582 to double
-  %fdiv584 = fdiv double %fmul581, %as.sitofp583
-  store double %fdiv584, ptr %beyond, align 1
-  %ge585 = icmp sge i64 %6, 0
-  br i1 %ge585, label %if.then586, label %if.end587
+if.then571:                                       ; preds = %land.rhs573
+  %here_took578 = load double, ptr %here_took, align 8
+  %as.sitofp579 = sitofp i64 %if.value to double
+  %fmul580 = fmul double %here_took578, %as.sitofp579
+  %here_measured581 = load i64, ptr %here_measured, align 8
+  %as.sitofp582 = sitofp i64 %here_measured581 to double
+  %fdiv583 = fdiv double %fmul580, %as.sitofp582
+  store double %fdiv583, ptr %beyond, align 1
+  %ge584 = icmp sge i64 %6, 0
+  br i1 %ge584, label %if.then585, label %if.end586
 
-if.end573:                                        ; preds = %if.end587, %land.rhs574, %repeat.exit
-  %call590 = call i64 @scaly_eio_now_ns()
-  %sub591 = sub i64 %call590, %call220
-  %as.sitofp592 = sitofp i64 %sub591 to double
-  %ge596 = icmp sge i64 %6, 0
-  br i1 %ge596, label %land.rhs595, label %if.end594
+if.end572:                                        ; preds = %if.end586, %land.rhs573, %repeat.exit
+  %call589 = call i64 @scaly_eio_now_ns()
+  %sub590 = sub i64 %call589, %call219
+  %as.sitofp591 = sitofp i64 %sub590 to double
+  %ge595 = icmp sge i64 %6, 0
+  br i1 %ge595, label %land.rhs594, label %if.end593
 
-land.rhs574:                                      ; preds = %repeat.exit
-  %here_took577 = load double, ptr %here_took, align 8
-  %gt578 = fcmp ogt double %here_took577, 0.000000e+00
-  br i1 %gt578, label %if.then572, label %if.end573
+land.rhs573:                                      ; preds = %repeat.exit
+  %here_took576 = load double, ptr %here_took, align 8
+  %gt577 = fcmp ogt double %here_took576, 0.000000e+00
+  br i1 %gt577, label %if.then571, label %if.end572
 
-if.then586:                                       ; preds = %if.then572
+if.then585:                                       ; preds = %if.then571
   %now_round = load double, ptr %beyond, align 8
-  %global.load588 = load ptr, ptr @cluster_loop_round, align 8
-  %ptr.add589 = getelementptr inbounds double, ptr %global.load588, i64 %6
-  store double %now_round, ptr %ptr.add589, align 8
-  br label %if.end587
+  %global.load587 = load ptr, ptr @cluster_loop_round, align 8
+  %ptr.add588 = getelementptr inbounds double, ptr %global.load587, i64 %6
+  store double %now_round, ptr %ptr.add588, align 8
+  br label %if.end586
 
-if.end587:                                        ; preds = %if.then586, %if.then572
-  br label %if.end573
+if.end586:                                        ; preds = %if.then585, %if.then571
+  br label %if.end572
 
-if.then593:                                       ; preds = %land.rhs595
-  %as.sitofp598 = sitofp i64 %sub to double
-  %now_round599 = load double, ptr %beyond, align 8
-  %fmul600 = fmul double %as.sitofp598, %now_round599
-  %as.sitofp601 = sitofp i64 %if.value to double
-  %fdiv602 = fdiv double %fmul600, %as.sitofp601
-  %fdiv603 = fdiv double %fdiv602, %as.sitofp592
-  %global.load604 = load ptr, ptr @cluster_loop_gain, align 8
-  %ptr.add605 = getelementptr inbounds double, ptr %global.load604, i64 %6
-  store double %fdiv603, ptr %ptr.add605, align 8
-  br label %if.end594
+if.then592:                                       ; preds = %land.rhs594
+  %as.sitofp597 = sitofp i64 %sub to double
+  %now_round598 = load double, ptr %beyond, align 8
+  %fmul599 = fmul double %as.sitofp597, %now_round598
+  %as.sitofp600 = sitofp i64 %if.value to double
+  %fdiv601 = fdiv double %fmul599, %as.sitofp600
+  %fdiv602 = fdiv double %fdiv601, %as.sitofp591
+  %global.load603 = load ptr, ptr @cluster_loop_gain, align 8
+  %ptr.add604 = getelementptr inbounds double, ptr %global.load603, i64 %6
+  store double %fdiv602, ptr %ptr.add604, align 8
+  br label %if.end593
 
-if.end594:                                        ; preds = %if.then593, %land.rhs595, %if.end573
+if.end593:                                        ; preds = %if.then592, %land.rhs594, %if.end572
   store i64 0, ptr %k, align 1
-  br label %while.cond606
+  br label %while.cond605
 
-land.rhs595:                                      ; preds = %if.end573
-  %gt597 = fcmp ogt double %as.sitofp592, 0.000000e+00
-  br i1 %gt597, label %if.then593, label %if.end594
+land.rhs594:                                      ; preds = %if.end572
+  %gt596 = fcmp ogt double %as.sitofp591, 0.000000e+00
+  br i1 %gt596, label %if.then592, label %if.end593
 
-while.cond606:                                    ; preds = %if.end616, %if.end594
-  %k609 = load i64, ptr %k, align 8
-  %lt610 = icmp ult i64 %k609, %global.load15
-  br i1 %lt610, label %while.body607, label %while.exit608
+while.cond605:                                    ; preds = %if.end615, %if.end593
+  %k608 = load i64, ptr %k, align 8
+  %lt609 = icmp ult i64 %k608, %global.load15
+  br i1 %lt609, label %while.body606, label %while.exit607
 
-while.body607:                                    ; preds = %while.cond606
-  %k611 = load i64, ptr %k, align 8
-  %ptr.add612 = getelementptr inbounds double, ptr %call191, i64 %k611
-  %deref613 = load double, ptr %ptr.add612, align 8
-  %gt614 = fcmp ogt double %deref613, 0.000000e+00
-  br i1 %gt614, label %if.then615, label %if.end616
+while.body606:                                    ; preds = %while.cond605
+  %k610 = load i64, ptr %k, align 8
+  %ptr.add611 = getelementptr inbounds double, ptr %call191, i64 %k610
+  %deref612 = load double, ptr %ptr.add611, align 8
+  %gt613 = fcmp ogt double %deref612, 0.000000e+00
+  br i1 %gt613, label %if.then614, label %if.end615
 
-while.exit608:                                    ; preds = %while.cond606
-  %call652 = call i1 @_ZN7Cluster7tracingEv()
-  br i1 %call652, label %if.then653, label %if.end654
+while.exit607:                                    ; preds = %while.cond605
+  %call651 = call i1 @_ZN7Cluster7tracingEv()
+  br i1 %call651, label %if.then652, label %if.end653
 
-if.then615:                                       ; preds = %while.body607
-  %k617 = load i64, ptr %k, align 8
-  %ptr.add618 = getelementptr inbounds double, ptr %call189, i64 %k617
-  %deref619 = load double, ptr %ptr.add618, align 8
-  %k620 = load i64, ptr %k, align 8
-  %ptr.add621 = getelementptr inbounds double, ptr %call191, i64 %k620
-  %deref622 = load double, ptr %ptr.add621, align 8
-  %now_round623 = load double, ptr %beyond, align 8
-  %fmul624 = fmul double %deref622, %now_round623
-  %global.load625 = load ptr, ptr @cluster_peer_cores, align 8
-  %k626 = load i64, ptr %k, align 8
-  %ptr.add627 = getelementptr inbounds i64, ptr %global.load625, i64 %k626
-  %deref628 = load i64, ptr %ptr.add627, align 8
-  %as.sitofp629 = sitofp i64 %deref628 to double
-  %fdiv630 = fdiv double %fmul624, %as.sitofp629
-  %fdiv631 = fdiv double %deref619, %fdiv630
-  store double %fdiv631, ptr %f, align 1
-  %f632 = load double, ptr %f, align 8
-  %lt633 = fcmp olt double %f632, 5.000000e-02
-  br i1 %lt633, label %if.then634, label %if.end635
+if.then614:                                       ; preds = %while.body606
+  %k616 = load i64, ptr %k, align 8
+  %ptr.add617 = getelementptr inbounds double, ptr %call189, i64 %k616
+  %deref618 = load double, ptr %ptr.add617, align 8
+  %k619 = load i64, ptr %k, align 8
+  %ptr.add620 = getelementptr inbounds double, ptr %call191, i64 %k619
+  %deref621 = load double, ptr %ptr.add620, align 8
+  %now_round622 = load double, ptr %beyond, align 8
+  %fmul623 = fmul double %deref621, %now_round622
+  %global.load624 = load ptr, ptr @cluster_peer_cores, align 8
+  %k625 = load i64, ptr %k, align 8
+  %ptr.add626 = getelementptr inbounds i64, ptr %global.load624, i64 %k625
+  %deref627 = load i64, ptr %ptr.add626, align 8
+  %as.sitofp628 = sitofp i64 %deref627 to double
+  %fdiv629 = fdiv double %fmul623, %as.sitofp628
+  %fdiv630 = fdiv double %deref618, %fdiv629
+  store double %fdiv630, ptr %f, align 1
+  %f631 = load double, ptr %f, align 8
+  %lt632 = fcmp olt double %f631, 5.000000e-02
+  br i1 %lt632, label %if.then633, label %if.end634
 
-if.end616:                                        ; preds = %if.end639, %while.body607
-  %k650 = load i64, ptr %k, align 8
-  %add651 = add i64 %k650, 1
-  store i64 %add651, ptr %k, align 1
-  br label %while.cond606
+if.end615:                                        ; preds = %if.end638, %while.body606
+  %k649 = load i64, ptr %k, align 8
+  %add650 = add i64 %k649, 1
+  store i64 %add650, ptr %k, align 1
+  br label %while.cond605
 
-if.then634:                                       ; preds = %if.then615
+if.then633:                                       ; preds = %if.then614
   store double 5.000000e-02, ptr %f, align 1
-  br label %if.end635
+  br label %if.end634
 
-if.end635:                                        ; preds = %if.then634, %if.then615
-  %f636 = load double, ptr %f, align 8
-  %gt637 = fcmp ogt double %f636, 6.400000e+01
-  br i1 %gt637, label %if.then638, label %if.end639
+if.end634:                                        ; preds = %if.then633, %if.then614
+  %f635 = load double, ptr %f, align 8
+  %gt636 = fcmp ogt double %f635, 6.400000e+01
+  br i1 %gt636, label %if.then637, label %if.end638
 
-if.then638:                                       ; preds = %if.end635
+if.then637:                                       ; preds = %if.end634
   store double 6.400000e+01, ptr %f, align 1
-  br label %if.end639
+  br label %if.end638
 
-if.end639:                                        ; preds = %if.then638, %if.end635
-  %global.load640 = load ptr, ptr @cluster_peer_factor, align 8
-  %k641 = load i64, ptr %k, align 8
-  %ptr.add642 = getelementptr inbounds double, ptr %global.load640, i64 %k641
-  %deref643 = load double, ptr %ptr.add642, align 8
-  %f644 = load double, ptr %f, align 8
-  %fadd645 = fadd double %deref643, %f644
-  %fdiv646 = fdiv double %fadd645, 2.000000e+00
-  %global.load647 = load ptr, ptr @cluster_peer_factor, align 8
-  %k648 = load i64, ptr %k, align 8
-  %ptr.add649 = getelementptr inbounds double, ptr %global.load647, i64 %k648
-  store double %fdiv646, ptr %ptr.add649, align 8
-  br label %if.end616
+if.end638:                                        ; preds = %if.then637, %if.end634
+  %global.load639 = load ptr, ptr @cluster_peer_factor, align 8
+  %k640 = load i64, ptr %k, align 8
+  %ptr.add641 = getelementptr inbounds double, ptr %global.load639, i64 %k640
+  %deref642 = load double, ptr %ptr.add641, align 8
+  %f643 = load double, ptr %f, align 8
+  %fadd644 = fadd double %deref642, %f643
+  %fdiv645 = fdiv double %fadd644, 2.000000e+00
+  %global.load646 = load ptr, ptr @cluster_peer_factor, align 8
+  %k647 = load i64, ptr %k, align 8
+  %ptr.add648 = getelementptr inbounds double, ptr %global.load646, i64 %k647
+  store double %fdiv645, ptr %ptr.add648, align 8
+  br label %if.end615
 
-if.then653:                                       ; preds = %while.exit608
+if.then652:                                       ; preds = %while.exit607
   call void @_Z11scaly_eputsP10const_char(ptr @.str.420)
   call void @_Z11scaly_eputi3i64(i64 %sub)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.421)
-  %here_rounds655 = load i64, ptr %here_rounds, align 8
-  call void @_Z11scaly_eputi3i64(i64 %here_rounds655)
+  %here_rounds654 = load i64, ptr %here_rounds, align 8
+  call void @_Z11scaly_eputi3i64(i64 %here_rounds654)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.422)
-  %out_rounds656 = load i64, ptr %out_rounds, align 8
-  call void @_Z11scaly_eputi3i64(i64 %out_rounds656)
+  %out_rounds655 = load i64, ptr %out_rounds, align 8
+  call void @_Z11scaly_eputi3i64(i64 %out_rounds655)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.423)
-  %helpers657 = load i64, ptr %helpers, align 8
-  call void @_Z11scaly_eputi3i64(i64 %helpers657)
+  %helpers656 = load i64, ptr %helpers, align 8
+  call void @_Z11scaly_eputi3i64(i64 %helpers656)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.424)
-  %call658 = call i64 @scaly_eio_now_ns()
-  %sub659 = sub i64 %call658, %call220
-  %as.sitofp660 = sitofp i64 %sub659 to double
-  %call661 = call i64 @_Z10cluster_ms3f64(double %as.sitofp660)
-  call void @_Z11scaly_eputi3i64(i64 %call661)
+  %call657 = call i64 @scaly_eio_now_ns()
+  %sub658 = sub i64 %call657, %call219
+  %as.sitofp659 = sitofp i64 %sub658 to double
+  %call660 = call i64 @_Z10cluster_ms3f64(double %as.sitofp659)
+  call void @_Z11scaly_eputi3i64(i64 %call660)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.425)
-  %call662 = call i64 @_Z10cluster_ms3f64(double %fdiv)
-  call void @_Z11scaly_eputi3i64(i64 %call662)
+  %call661 = call i64 @_Z10cluster_ms3f64(double %fdiv)
+  call void @_Z11scaly_eputi3i64(i64 %call661)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.426)
-  %lost663 = load i64, ptr %lost, align 8
-  %gt664 = icmp sgt i64 %lost663, 0
-  br i1 %gt664, label %if.then665, label %if.end666
+  %lost662 = load i64, ptr %lost, align 8
+  %gt663 = icmp sgt i64 %lost662, 0
+  br i1 %gt663, label %if.then664, label %if.end665
 
-if.end654:                                        ; preds = %if.end666, %while.exit608
+if.end653:                                        ; preds = %if.end665, %while.exit607
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call23)
   call void @_ZN4Page12release_pageER4Page(ptr %call23)
   ret i32 1
 
-if.then665:                                       ; preds = %if.then653
+if.then664:                                       ; preds = %if.then652
   call void @_Z11scaly_eputsP10const_char(ptr @.str.427)
-  %lost667 = load i64, ptr %lost, align 8
-  call void @_Z11scaly_eputi3i64(i64 %lost667)
+  %lost666 = load i64, ptr %lost, align 8
+  call void @_Z11scaly_eputi3i64(i64 %lost666)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.428)
-  br label %if.end666
+  br label %if.end665
 
-if.end666:                                        ; preds = %if.then665, %if.then653
+if.end665:                                        ; preds = %if.then664, %if.then652
   call void @_Z11scaly_eputsP10const_char(ptr @.str.429)
   call void @_Z12scaly_eputnlv()
-  br label %if.end654
+  br label %if.end653
 }
 
 declare float @expf(float)

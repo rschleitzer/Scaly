@@ -2696,8 +2696,9 @@ procedure cluster_offer_forced(desc: pointer[void], cell: pointer[void], count: 
 ; whose first stretch alone would not end before this machine ends the
 ; rest does not take part; the helpers take part where all of it ends a
 ; quarter sooner. Then this machine and its helpers each take the next
-; stretch as they finish one, the stretches smaller toward the end (an
-; eighth of the usual at least), and what a helper's stretches took in all,
+; stretch as they finish one, the stretches smaller only toward the end,
+; once less is left than a stretch for each (an eighth of the usual at
+; least), and what a helper's stretches took in all,
 ; against what they were predicted to take in all, teaches the next offer. A helper that goes or does not know the loop gives its
 ; stretch back, and the others run it.
 procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count: int, done: int, round: f64, workers: int, slot: i64) returns i32
@@ -2855,9 +2856,13 @@ procedure cluster_offer_weighed(desc: pointer[void], cell: pointer[void], count:
     ; this machine's stretch under way: a group of its own (its pipe gets a
     ; byte each wave, which only its dispose takes back)
     var g: pointer[TaskGroup] null
-    let fair_parts (helpers + 1) * 2
-    ; toward the end the stretches get smaller, an eighth of the usual at
-    ; least: a stretch of a few rounds costs its messages and no more
+    ; A stretch is at most an equal part of what is left for every node
+    ; taking part: the usual size over most of the loop, and smaller only
+    ; toward its end, once less is left than a usual stretch for each --
+    ; then no node holds a long stretch while the others wait. An eighth of
+    ; the usual at least: a stretch of a few rounds costs its messages and
+    ; no more.
+    let fair_parts helpers + 1
     var least share / 8
     if least < 1
         least := 1
