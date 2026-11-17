@@ -52,6 +52,8 @@ struct TcpListener;
 struct TcpServer;
 struct TcpListener;
 struct TcpServer;
+struct Stopwatch;
+struct Stopwatch;
 struct Drawing;
 struct Drawing;
 struct Chart;
@@ -1860,6 +1862,14 @@ template <> struct Array<uint64_t>
 struct TcpServer
 {
     int64_t* cell;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z9Stopwatch
+#define SCALY_TYPE__Z9Stopwatch
+struct Stopwatch
+{
+    int64_t started;
 };
 #endif
 

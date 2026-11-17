@@ -217,6 +217,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorImE = type { ptr }
 %_Z13ArrayIteratorImE = type { ptr, i64 }
 %_Z9TcpServer = type { ptr }
+%_Z9Stopwatch = type { i64 }
 %_Z10CardVector = type { i64, ptr, i32 }
 %_Z7Drawing = type { i64, i64, %_Z13StringBuilder }
 %_Z5ArrayI3f64E = type { i64, i64, ptr }
@@ -39652,6 +39653,28 @@ while.exit:                                       ; preds = %while.cond
   %call14 = call ptr @_ZN4Page3getEPv(ptr %deref.recv13)
   call void @_ZN4Page12release_pageER4Page(ptr %call14)
   ret void
+}
+
+define linkonce_odr void @_ZN9Stopwatch5startEPN4scaly6memory4PageE(ptr noalias sret(%_Z9Stopwatch) %0, ptr %1) {
+entry:
+  %call = call i64 @scaly_eio_now_ns()
+  %tuple = alloca %_Z9Stopwatch, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z9Stopwatch, ptr %tuple, i32 0, i32 0
+  store i64 %call, ptr %tuple.field, align 1
+  %tuple.val = load %_Z9Stopwatch, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z9Stopwatch, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr double @_ZN9Stopwatch12millisecondsEv(ptr noalias %0) {
+entry:
+  %call = call i64 @scaly_eio_now_ns()
+  %load.struct = load %_Z9Stopwatch, ptr %0, align 8
+  %started = extractvalue %_Z9Stopwatch %load.struct, 0
+  %sub = sub i64 %call, %started
+  %as.sitofp = sitofp i64 %sub to double
+  %fdiv = fdiv double %as.sitofp, 1.000000e+06
+  ret double %fdiv
 }
 
 declare i32 @scaly_card_available()

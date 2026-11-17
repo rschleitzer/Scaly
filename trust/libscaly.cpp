@@ -85,6 +85,8 @@ struct TcpListener;
 struct TcpServer;
 struct TcpListener;
 struct TcpServer;
+struct Stopwatch;
+struct Stopwatch;
 struct Drawing;
 struct Drawing;
 struct Chart;
@@ -1896,6 +1898,14 @@ struct TcpServer
 };
 #endif
 
+#ifndef SCALY_TYPE__Z9Stopwatch
+#define SCALY_TYPE__Z9Stopwatch
+struct Stopwatch
+{
+    int64_t started;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z7Drawing
 #define SCALY_TYPE__Z7Drawing
 struct Drawing
@@ -3294,6 +3304,8 @@ bool TcpServer_stopping(TcpServer&) asm("_ZN9TcpServer8stoppingEv");
 void TcpServer_shutdown(TcpServer&) asm("_ZN9TcpServer8shutdownEv");
 void TcpServer_stop(TcpServer&) asm("_ZN9TcpServer4stopEv");
 void TcpServer_wait(TcpServer&) asm("_ZN9TcpServer4waitEv");
+Stopwatch Stopwatch_start(scaly_frame*) asm("_ZN9Stopwatch5startEPN4scaly6memory4PageE");
+double Stopwatch_milliseconds(Stopwatch&) asm("_ZN9Stopwatch12millisecondsEv");
 extern "C" int32_t scaly_card_available();
 extern "C" uint32_t scaly_card_create(uint64_t);
 extern "C" void scaly_card_write(uint32_t, uint64_t, void*, uint64_t);
@@ -12905,6 +12917,19 @@ __attribute__((weak)) void TcpServer_wait(TcpServer& scaly_self)
     }
     tcp_close_twins(this_->cell);
     Page_release_page(Page_get((void*)(this_->cell)));
+}
+
+// packages/scaly/0.2.1/scaly/os/Stopwatch.scaly
+__attribute__((weak)) Stopwatch Stopwatch_start(scaly_frame* scaly_rp)
+{
+    return Stopwatch{scaly_eio_now_ns()};
+}
+
+// packages/scaly/0.2.1/scaly/os/Stopwatch.scaly
+__attribute__((weak)) double Stopwatch_milliseconds(Stopwatch& scaly_self)
+{
+    Stopwatch* this_ = &scaly_self;
+    return ((double)((double)((((double)(((scaly_eio_now_ns() - this_->started)))))) / (double)(((double)1000000))));
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
