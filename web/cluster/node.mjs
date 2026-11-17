@@ -1,49 +1,35 @@
 // One node of the render farm (web/cluster/index.html): render.wasm, built
-// for wasm32-wasip1-threads with --gpu and --cluster, as one machine of a
-// cluster runs it -- the program, or a helper (`args`: --scaly-helper) --
-// a memory of its own, its threads in workers of their own (the page is their
-// coordinator: threads.mjs), its sockets on the page's network (net.mjs),
-// which every node shares, and, where it has one, the page's graphics card.
+// for wasm32-wasip1-threads with --cluster, as one machine of a cluster runs
+// it -- the program, or a helper (`args`: --scaly-helper) -- a memory of its
+// own, its threads in workers of their own (the page is their coordinator:
+// threads.mjs), and its sockets on the page's network (net.mjs), which every
+// node shares.
 //
-//   { bytes, module, args, env, net: { buffer, node }, kept, most, card, cardMode }
+//   { bytes, module, args, env, net: { buffer, node }, kept, most }
 //       -> { type: 'memory', kept }       where it made a new memory
-//          { type: 'scaly-gpu', run, transfer }   a run for the card
 //          { type: 'out', fd, text }      what it writes, as it comes
-//          { type: 'exit', status, cards } its end; how often the card ran
+//          { type: 'exit', status }       its end
 //
 // `kept` is the memory this node's place had in the run before, which it
 // takes again (threads.mjs, runMemory): a browser gives the address space of
 // a memory back late, and a page that rendered again and again would run out
 // of it. `most` is what the memory may grow to, in pages of 64 KiB: the page
 // gives a node more the more cores it has -- each of its threads keeps
-// pages of its own. `card`, where the node has one, is the first answer of
-// the page's card worker (gpu-worker.mjs, { card, why }): the node's card
-// runs go to the page, which passes them on to that worker -- one card for
-// every node that has one, its kernels compiled once. The card is asked at
-// the driver's gates (gpu-host.mjs, `cardMode`, 'auto' unless the page says
-// 'on'): a pass goes there where it pays, before the helpers are asked. The page ends this worker to end the
-// node -- as a machine is switched off.
+// pages of its own. The page ends this worker to end the node -- as a
+// machine is switched off.
 import { Wasi } from './wasi.mjs';
 import { Net } from './net.mjs';
 import { ThreadHost, runMemory } from './threads.mjs';
-import { GpuHost } from './gpu-host.mjs';
 
-self.onmessage = async ({ data: { bytes, module, args = [], env, net, kept, most, card, cardMode = 'auto' } }) => {
+self.onmessage = async ({ data: { bytes, module, args = [], env, net, kept, most } }) => {
   const decoder = new TextDecoder();
   const out = fd => bytes => self.postMessage({ type: 'out', fd, text: decoder.decode(bytes) });
-  let status, gpu = null;
+  let status;
   try {
-    if (card) {
-      const relay = {
-        hello: card,
-        postMessage: (run, transfer = []) => self.postMessage({ type: 'scaly-gpu', run, transfer }, transfer),
-      };
-      gpu = await GpuHost.open(relay, { mode: cardMode }).catch(() => null);
-    }
     const got = runMemory(bytes, kept, { most });
     if (got !== kept) self.postMessage({ type: 'memory', kept: got });
     const wasi = new Wasi({
-      args: ['render', ...args], env, net: new Net(net.buffer, net.node), gpu,
+      args: ['render', ...args], env, net: new Net(net.buffer, net.node),
       stdout: out(1), stderr: out(2),
       threads: new ThreadHost({ memory: got.memory, post: m => self.postMessage(m) }),
     });
@@ -52,6 +38,5 @@ self.onmessage = async ({ data: { bytes, module, args = [], env, net, kept, most
     self.postMessage({ type: 'out', fd: 2, text: `[the node stopped: ${e && e.message || e}]\n` });
     status = 134;
   }
-  const cards = gpu ? gpu.report().reduce((all, site) => all + site.card, 0) : 0;
-  self.postMessage({ type: 'exit', status, cards });
+  self.postMessage({ type: 'exit', status });
 };
