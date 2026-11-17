@@ -697,20 +697,35 @@ async function ensureBuilt() {
 
 // One run of the built program on `workers` cores, the card 'off', 'on' or
 // 'auto'; its output goes to the page where `echo` says so.
+//
+// The workers of the program's threads are kept from run to run: a program
+// ends its pool's threads at its end (eio_wasm.c, scaly_wasm_pipes_end),
+// and their workers wait, idle, for the next run's. A new worker loads
+// thread.mjs and its modules -- on scaly.io a way to the CDN each, which a
+// page sent with no-cache revalidates: spectral-norm on all cores took 57
+// to 287 ms there, 22 locally (2026-11-17). After a run that did not end
+// well, its workers are ended: a thread may still be at work in it.
+let threads = null, threadsSay = null;
 async function runWay(workers, gpu, echo = true) {
   const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
   let resolve;
   const done = new Promise(r => { resolve = r; });
-  const threads = await threadsLib.Threads.create({
+  threadsSay = {
     out: b => { if (echo) append(new TextDecoder().decode(b)); },
     err: b => { if (echo) append(new TextDecoder().decode(b), 'err'); },
     exit: s => resolve({ status: String(s), stdout: '', stderr: '', ms: 0, pictures: [], drawings: [], cards: 0 }),
-    env,
+  };
+  threads ??= await threadsLib.Threads.create({
+    out: b => threadsSay.out(b), err: b => threadsSay.err(b), exit: s => threadsSay.exit(s), env,
   });
+  threads.env = env;
   runner.onmessage = ({ data }) => { if (threads.handle(data)) return; if (data.type === 'done') resolve(data); };
   runner.postMessage({ type: 'run', args: [], env, gpu });
   const r = await done;
-  threads.end();
+  if (r.status !== '0') {
+    threads.end();
+    threads = null;
+  }
   return r;
 }
 
