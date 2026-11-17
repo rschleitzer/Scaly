@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The field</title>
+<meta name="description" content="A small neural network, written in Scaly and running in the page, learns to tell two kinds of points apart, and you watch it learn: every neuron's answer over the plane, the weights, the loss, live.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcdcde;
+    --accent: #2a5db0; --bad: #b3261e; --code: #f4f4f2;
+    --plus: #e8853d; --minus: #3b7dd8; --zero: #f3f3f1; --dot: #ffffff;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343a;
+      --accent: #7aa7f0; --bad: #f08a80; --code: #26262a;
+      --plus: #f0964f; --minus: #4d8ef0; --zero: #26262a; --dot: #161618;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; padding: 12px 16px;
+           border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 18px; margin: 0; }
+  header .spacer { flex: 1; }
+  header nav { display: flex; flex-wrap: wrap; gap: 16px; }
+  a { color: var(--accent); }
+  header a { text-decoration: none; font-size: 14px; }
+  main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+  h2 { font-size: 13px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  p { margin: 0 0 10px; }
+  code, pre { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  p code { background: var(--code); padding: 1px 4px; border-radius: 4px; }
+  button { font: inherit; font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; min-width: 6.5em; }
+  button.small { font-size: 13px; padding: 1px 8px; line-height: 1.4; }
+  button:disabled { opacity: .45; cursor: default; }
+  select { font: inherit; font-size: 14px; padding: 4px 6px; border-radius: 6px;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  [hidden] { display: none !important; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+  .controls .group { display: flex; gap: 8px; align-items: center; }
+  #steps { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; min-width: 6ch; }
+  .stepsLabel { font-size: 12px; color: var(--muted); }
+  #status { font-size: 14px; color: var(--muted); }
+  #status.bad { color: var(--bad); }
+
+  .data { display: flex; flex-direction: column; gap: 12px; }
+  .sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  .sets button { padding: 3px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; }
+  .sets button canvas { width: 56px; height: 56px; border-radius: 4px; display: block; }
+  .sets button.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .data label { font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .note { font-size: 13px; color: var(--muted); }
+
+  .network { position: relative; overflow-x: auto; }
+  .netHead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .netHead .count { font-size: 14px; }
+  .net { position: relative; display: flex; justify-content: space-between; gap: 22px; min-width: max-content; padding: 6px 4px; }
+  #links { position: absolute; inset: 0; pointer-events: none; }
+  .column { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 56px; }
+  .column .head { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); height: 26px; }
+  .column .what { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .cell { position: relative; display: flex; align-items: center; gap: 6px; }
+  .cell canvas { width: 44px; height: 44px; border-radius: 4px; border: 1px solid var(--line); display: block; background: var(--zero); }
+  .input .cell { cursor: pointer; }
+  .input .cell span { font-size: 13px; width: 3.2em; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .input .cell.off canvas { opacity: .25; }
+  .input .cell.off span { color: var(--muted); text-decoration: line-through; }
+  .cell canvas:hover { outline: 2px solid var(--accent); }
+
+  .output { display: flex; flex-direction: column; gap: 10px; }
+  .plotFrame { position: relative; width: 100%; max-width: 440px; aspect-ratio: 1; }
+  #plot { width: 100%; height: 100%; border-radius: 6px; display: block; touch-action: none; }
+  .losses { display: flex; gap: 16px; font-size: 14px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .losses b { font-weight: 600; }
+  #curve { width: 100%; max-width: 440px; height: 70px; display: block; }
+  .legend { display: flex; gap: 14px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+  .output label { font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+
+  .about p { max-width: 75ch; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+  #source { margin: 10px 0 0; padding: 10px; background: var(--code); border-radius: 6px; overflow: auto; max-height: 40em; tab-size: 4; }
+
+  @media (min-width: 1100px) {
+    main { grid-template-columns: 230px minmax(0, 1fr) 460px; }
+    .controls, .about, .code { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 data-t="title">The field</h1>
+  <span class="spacer"></span>
+  <nav>
+    <a href="https://scaly.io/scaly/">Scaly</a>
+    <a href="/play/fractals/" data-t="fractals">Fractals</a>
+    <a href="/play/playground.html" data-t="playground">The playground</a>
+  </nav>
+  <select id="lang" aria-label="Language">
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+  </select>
+</header>
+<main>
+  <section class="controls">
+    <div class="group">
+      <button class="primary" id="run" disabled data-t="pause">Pause</button>
+      <button id="step" disabled data-t="stepOnce">One step</button>
+      <button id="reset" disabled data-t="reset">Start again</button>
+    </div>
+    <div class="group">
+      <span id="steps">0</span><span class="stepsLabel" data-t="stepsLabel">steps</span>
+    </div>
+    <label><span data-t="rate">Learning rate</span> <select id="rate">
+      <option>0.001</option><option>0.003</option><option>0.01</option><option selected>0.03</option>
+      <option>0.1</option><option>0.3</option><option>1</option><option>3</option></select></label>
+    <label><span data-t="activation">Activation</span> <select id="activation">
+      <option value="0" selected>tanh</option><option value="1">ReLU</option><option value="2">sigmoid</option>
+      <option value="3" data-t="linear">none</option></select></label>
+    <label><span data-t="l2">Regularization (L2)</span> <select id="l2">
+      <option selected>0</option><option>0.001</option><option>0.003</option><option>0.01</option><option>0.03</option>
+      <option>0.1</option></select></label>
+    <label><span data-t="speed">Steps per picture</span> <select id="speed">
+      <option>1</option><option>3</option><option selected>10</option><option>30</option><option>100</option></select></label>
+    <span id="status"></span>
+  </section>
+
+  <section class="data">
+    <h2 data-t="dataTitle">Data</h2>
+    <div class="sets" id="sets"></div>
+    <label><span><span data-t="noise">Noise</span> <span id="noiseSays">0 %</span></span>
+      <input type="range" id="noise" min="0" max="50" step="5" value="0"></label>
+    <button id="redraw" data-t="redraw">New points</button>
+    <p class="note" id="ownNote" hidden data-t="ownNote">Click into the plane for an orange point, shift-click or right-click for a blue one.</p>
+    <button id="clear" hidden data-t="clear">Remove the points</button>
+  </section>
+
+  <section class="network">
+    <div class="netHead">
+      <button class="small" id="fewer" aria-label="One hidden layer less">−</button>
+      <button class="small" id="more" aria-label="One hidden layer more">+</button>
+      <span class="count" id="layersSay"></span>
+    </div>
+    <div class="net" id="net">
+      <canvas id="links"></canvas>
+    </div>
+    <p class="note" data-t="netNote">Each square shows what one neuron answers over the whole plane: orange for one kind, blue for the other. Click an input to give it to the network or take it away. The lines are the weights — orange positive, blue negative, the thicker the stronger.</p>
+  </section>
+
+  <section class="output">
+    <h2 data-t="outputTitle">Output</h2>
+    <div class="losses">
+      <span><span data-t="trainLoss">Training loss</span> <b id="trainLoss">–</b></span>
+      <span><span data-t="testLoss">Test loss</span> <b id="testLoss">–</b></span>
+    </div>
+    <canvas id="curve" width="880" height="140" aria-hidden="true"></canvas>
+    <div class="plotFrame"><canvas id="plot" width="880" height="880" aria-label="The plane" data-t-label="plane"></canvas></div>
+    <div class="legend">
+      <span><i style="background: var(--plus)"></i><span data-t="plus">one kind</span></span>
+      <span><i style="background: var(--minus)"></i><span data-t="minus">the other</span></span>
+      <span><i style="border: 2px solid var(--ink)"></i><span data-t="testPoints">ringed: test points</span></span>
+    </div>
+    <div class="legend">
+      <label><input type="checkbox" id="showTest" checked> <span data-t="showTest">Show the test points</span></label>
+      <label><input type="checkbox" id="sharp"> <span data-t="sharp">Only the decision</span></label>
+    </div>
+  </section>
+
+  <section class="about">
+    <h2 data-t="aboutTitle">What happens here</h2>
+    <p data-h="about1"></p>
+    <p data-h="about2"></p>
+    <p data-h="about3"></p>
+  </section>
+
+  <section class="code">
+    <details>
+      <summary data-t="sourceTitle">The program</summary>
+      <pre id="source"></pre>
+    </details>
+  </section>
+</main>
+<script type="module">
+import { Threads } from './threads.mjs';
+
+const $ = id => document.getElementById(id);
+
+// --- the words ---------------------------------------------------------------
+
+const LANGS = ['en', 'de'];
+const TEXT = {
+  en: {
+    title: 'The field', fractals: 'Fractals', playground: 'The playground', language: 'Language',
+    run: 'Learn', pause: 'Pause', stepOnce: 'One step', reset: 'Start again', stepsLabel: 'steps',
+    rate: 'Learning rate', activation: 'Activation', linear: 'none', l2: 'Regularization (L2)', speed: 'Steps per picture',
+    dataTitle: 'Data', noise: 'Noise', redraw: 'New points', clear: 'Remove the points',
+    ownNote: 'Click into the plane for an orange point, shift-click or right-click for a blue one.',
+    sets: ['Circle', 'XOR', 'Clouds', 'Spiral', 'Your own'],
+    layers: n => n === 1 ? '1 hidden layer' : `${n} hidden layers`,
+    inputs: 'Inputs', hidden: n => `Layer ${n}`, out: 'Output', neurons: n => n === 1 ? '1 neuron' : `${n} neurons`,
+    netNote: 'Each square shows what one neuron answers over the whole plane: orange for one kind, blue for the other. Click an input to give it to the network or take it away. The lines are the weights — orange positive, blue negative, the thicker the stronger.',
+    outputTitle: 'Output', trainLoss: 'Training loss', testLoss: 'Test loss', plane: 'The plane',
+    plus: 'one kind', minus: 'the other', testPoints: 'ringed: test points', showTest: 'Show the test points', sharp: 'Only the decision',
+    aboutTitle: 'What happens here', sourceTitle: 'The program',
+    loading: 'Loading the program …', isolation: 'This page needs a cross-origin isolated server (COOP and COEP): it shares memory with its program.',
+    ended: s => `The program ended (${s}). Reload the page to start it again.`,
+    cores: n => `Scaly in the page, ${n} cores`,
+    about1: 'A small neural network learns to tell two kinds of points apart. It is given the points of one half — the others, ringed, are the test: it never learns from them, they only show how well it guesses what it has not seen. Each step it looks at all its points, works out how much each weight is to blame for the error, and moves each one a little against it: <em>gradient descent</em>. The picture on the right is its answer over the whole plane.',
+    about2: 'Try the spiral with only <code>x</code> and <code>y</code> as inputs: two neurons are not enough, and neither are four. Give it more layers, or the inputs <code>sin x</code> and <code>sin y</code>, and watch the squares: the first layer draws straight lines, the next ones bend them into curves. A learning rate that is too large makes the loss jump instead of fall.',
+    about3: 'The network is a Scaly program, <code>field.scaly</code>, built for WebAssembly and running in this page, in a worker. It keeps everything you see in one vector of numbers and says where that lies in its memory; the page reads it straight out of the memory, which the program shares with it, and writes your settings into the vector’s first numbers, where the program finds them on its next round. Nothing is copied between the two. The answer over the plane is one <code>for</code> over its points, and Scaly gives its rounds to the cores of this computer by itself.',
+  },
+  de: {
+    title: 'Das Spielfeld', fractals: 'Fraktale', playground: 'Der Playground', language: 'Sprache',
+    run: 'Lernen', pause: 'Pause', stepOnce: 'Ein Schritt', reset: 'Neu beginnen', stepsLabel: 'Schritte',
+    rate: 'Lernrate', activation: 'Aktivierung', linear: 'keine', l2: 'Regularisierung (L2)', speed: 'Schritte je Bild',
+    dataTitle: 'Daten', noise: 'Rauschen', redraw: 'Neue Punkte', clear: 'Punkte entfernen',
+    ownNote: 'Ein Klick in die Ebene setzt einen orangen Punkt, Umschalt-Klick oder Rechtsklick einen blauen.',
+    sets: ['Kreis', 'XOR', 'Wolken', 'Spirale', 'Eigene'],
+    layers: n => n === 1 ? '1 verborgene Schicht' : `${n} verborgene Schichten`,
+    inputs: 'Eingaben', hidden: n => `Schicht ${n}`, out: 'Ausgabe', neurons: n => n === 1 ? '1 Neuron' : `${n} Neuronen`,
+    netNote: 'Jedes Quadrat zeigt, was ein Neuron über der ganzen Ebene antwortet: orange für die eine Sorte, blau für die andere. Ein Klick auf eine Eingabe gibt sie dem Netz oder nimmt sie ihm weg. Die Linien sind die Gewichte — orange positiv, blau negativ, je dicker, desto stärker.',
+    outputTitle: 'Ausgabe', trainLoss: 'Fehler beim Training', testLoss: 'Fehler beim Test', plane: 'Die Ebene',
+    plus: 'die eine Sorte', minus: 'die andere', testPoints: 'umrandet: Testpunkte', showTest: 'Testpunkte zeigen', sharp: 'Nur die Entscheidung',
+    aboutTitle: 'Was hier passiert', sourceTitle: 'Das Programm',
+    loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
+    ended: s => `Das Programm ist beendet (${s}). Laden Sie die Seite neu, um es wieder zu starten.`,
+    cores: n => `Scaly in der Seite, ${n} Kerne`,
+    about1: 'Ein kleines neuronales Netz lernt, zwei Sorten von Punkten zu unterscheiden. Es bekommt die Punkte der einen Hälfte — die anderen, umrandet, sind der Test: Aus ihnen lernt es nie, sie zeigen nur, wie gut es rät, was es nicht gesehen hat. In jedem Schritt sieht es alle seine Punkte an, rechnet aus, wie viel jedes Gewicht zum Fehler beiträgt, und verschiebt jedes ein wenig dagegen: <em>Gradientenabstieg</em>. Das Bild rechts ist seine Antwort über der ganzen Ebene.',
+    about2: 'Versuchen Sie die Spirale mit nur <code>x</code> und <code>y</code> als Eingaben: Zwei Neuronen reichen nicht, vier auch nicht. Geben Sie ihm mehr Schichten oder die Eingaben <code>sin x</code> und <code>sin y</code>, und sehen Sie auf die Quadrate: Die erste Schicht zieht gerade Linien, die folgenden biegen sie zu Kurven. Eine zu große Lernrate lässt den Fehler springen statt fallen.',
+    about3: 'Das Netz ist ein Scaly-Programm, <code>field.scaly</code>, für WebAssembly gebaut und in dieser Seite in einem Worker ausgeführt. Alles, was Sie sehen, hält es in einem einzigen Vektor von Zahlen und sagt, wo der in seinem Speicher liegt; die Seite liest ihn direkt aus dem Speicher, den das Programm mit ihr teilt, und schreibt Ihre Einstellungen in die ersten Zahlen des Vektors, wo das Programm sie in seiner nächsten Runde findet. Zwischen beiden wird nichts kopiert. Die Antwort über der Ebene ist ein <code>for</code> über ihre Punkte, und Scaly verteilt seine Runden von selbst auf die Kerne dieses Rechners.',
+  },
+};
+function storedLang() {
+  try { return localStorage.getItem('scaly-playground:lang'); } catch { return null; }
+}
+function chooseLang() {
+  const asked = new URLSearchParams(location.search).get('lang') ?? storedLang();
+  if (LANGS.includes(asked)) return asked;
+  for (const tag of navigator.languages ?? [navigator.language ?? 'en']) {
+    const primary = String(tag).toLowerCase().split('-')[0];
+    if (LANGS.includes(primary)) return primary;
+  }
+  return 'en';
+}
+let lang = chooseLang();
+const t = key => TEXT[lang][key];
+let said = null;
+function status(say, bad = false) {
+  said = typeof say === 'function' ? say : () => t(say);
+  $('status').textContent = said();
+  $('status').classList.toggle('bad', bad);
+}
+function translatePage() {
+  document.documentElement.lang = lang;
+  document.title = t('title');
+  $('lang').value = lang;
+  $('lang').setAttribute('aria-label', t('language'));
+  for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-h]')) e.innerHTML = t(e.dataset.h);
+  for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
+  if (said) $('status').textContent = said();
+  $('run').textContent = settings.running ? t('pause') : t('run');
+  sets();
+  build();
+}
+$('lang').onchange = () => {
+  lang = $('lang').value;
+  try { localStorage.setItem('scaly-playground:lang', lang); } catch {}
+  translatePage();
+};
+
+// --- the board (field.scaly says what lies where) ----------------------------
+
+const FEATURES = 7, WIDE = 8, LAYERS = 6, MAXP = 600, GRID = 80, TILE = 24;
+const HEAD = 64, CELLS = 1864, TILES = 8264, NEURONS = 56, WEIGHTS = 40520, BLOCK = 72, BOARD = 41024;
+const FEATURE_NAMES = ['x', 'y', 'x²', 'y²', 'xy', 'sin x', 'sin y'];
+let board = null;         // a Float64Array over the program's board, in its memory
+
+// what the page asks for; send() writes it into the board's head
+const settings = {
+  data: 0, noise: 0, rate: 0.03, activation: 0, hidden: [4, 2], running: true, mask: 3, speed: 10, l2: 0,
+  reset: 0, step: 0, redraw: 0,
+};
+const own = [];           // the reader's points, [x, y, kind]
+let changes = 0;
+
+function send() {
+  if (!board) return;
+  const s = settings;
+  board[1] = s.data;
+  board[2] = s.noise;
+  board[3] = s.rate;
+  board[4] = s.activation;
+  board[5] = s.hidden.length;
+  for (let l = 0; l < LAYERS; l++) board[6 + l] = s.hidden[l] ?? 0;
+  board[12] = s.running && !document.hidden ? 1 : 0;
+  board[13] = s.reset;
+  board[14] = s.mask;
+  if (s.data === 4) {
+    own.slice(0, MAXP).forEach(([x, y, k], p) => { board[HEAD + 3 * p] = x; board[HEAD + 3 * p + 1] = y; board[HEAD + 3 * p + 2] = k; });
+    board[15] = Math.min(own.length, MAXP);
+  }
+  board[16] = s.step;
+  board[17] = s.redraw;
+  board[18] = s.speed;
+  board[19] = s.l2;
+  board[0] = ++changes;   // last: the program takes in what is above once it sees this
+}
+
+// --- colours -----------------------------------------------------------------
+
+function rgb(css) {
+  const c = document.createElement('canvas').getContext('2d');
+  c.fillStyle = css;
+  const hex = c.fillStyle;
+  if (hex.startsWith('#')) return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return hex.match(/\d+/g).slice(0, 3).map(Number);
+}
+let palette;
+function readPalette() {
+  const css = getComputedStyle(document.documentElement);
+  const v = name => rgb(css.getPropertyValue(name).trim());
+  palette = { plus: v('--plus'), minus: v('--minus'), zero: v('--zero'), ink: css.getPropertyValue('--ink').trim(),
+              dot: css.getPropertyValue('--dot').trim(), plusCss: css.getPropertyValue('--plus').trim(),
+              minusCss: css.getPropertyValue('--minus').trim(), line: css.getPropertyValue('--line').trim() };
+}
+readPalette();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readPalette(); frame = -1; });
+
+// a value between -1 and 1 into its colour, into pixels at i
+function paint(px, i, v, sharp) {
+  if (sharp) v = v > 0 ? 0.6 : -0.6;
+  const a = Math.min(1, Math.abs(v)) * 0.85;
+  const end = v > 0 ? palette.plus : palette.minus, z = palette.zero;
+  px[i] = z[0] + (end[0] - z[0]) * a;
+  px[i + 1] = z[1] + (end[1] - z[1]) * a;
+  px[i + 2] = z[2] + (end[2] - z[2]) * a;
+  px[i + 3] = 255;
+}
+
+// --- the data sets -----------------------------------------------------------
+
+// small pictures of the four sets, drawn here (the program draws the points)
+function preview(c, which) {
+  const g = c.getContext('2d');
+  const w = c.width = c.height = 112;
+  g.fillStyle = `rgb(${palette.zero})`;
+  g.fillRect(0, 0, w, w);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let p = 0; p < 160; p++) {
+    let x, y, k = (p >> 1) % 2 ? -1 : 1;
+    if (which === 0) { const r = k > 0 ? rnd() * 2.5 : 3.5 + rnd() * 1.5, a = rnd() * 6.283; x = r * Math.sin(a); y = r * Math.cos(a); }
+    else if (which === 1) { x = rnd() * 10 - 5; y = rnd() * 10 - 5; k = x * y > 0 ? 1 : -1; }
+    else if (which === 2) { x = 2 * k + (rnd() + rnd() + rnd() - 1.5) * 1.6; y = 2 * k + (rnd() + rnd() + rnd() - 1.5) * 1.6; }
+    else if (which === 3) { const r = rnd(), a = 1.75 * 6.283 * r + (k > 0 ? 0 : Math.PI); x = 5 * r * Math.sin(a); y = 5 * r * Math.cos(a); }
+    else return;
+    g.fillStyle = k > 0 ? palette.plusCss : palette.minusCss;
+    g.beginPath();
+    g.arc((x + 6) / 12 * w, (6 - y) / 12 * w, 3, 0, 7);
+    g.fill();
+  }
+  if (which === 4) {
+    g.fillStyle = palette.ink;
+    g.font = '40px system-ui';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('+', w / 2, w / 2);
+  }
+}
+function sets() {
+  const box = $('sets');
+  box.textContent = '';
+  t('sets').forEach((name, i) => {
+    const b = document.createElement('button');
+    const c = document.createElement('canvas');
+    preview(c, i);
+    b.append(c, name);
+    b.classList.toggle('on', settings.data === i);
+    b.onclick = () => {
+      settings.data = i;
+      if (i !== 4) settings.redraw++;
+      send();
+      sets();
+      $('ownNote').hidden = $('clear').hidden = i !== 4;
+      $('redraw').hidden = i === 4;
+    };
+    box.append(b);
+  });
+}
+
+// --- the network -------------------------------------------------------------
+
+// The columns: the inputs, each hidden layer, the output; a canvas per
+// neuron, which picture() fills from the board.
+let tiles = [];           // [layer][j] -> { canvas, image }
+function tile() {
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  return { canvas: c, image: new ImageData(TILE, TILE) };
+}
+function build() {
+  const net = $('net');
+  for (const e of [...net.querySelectorAll('.column')]) e.remove();
+  tiles = [];
+  const h = settings.hidden;
+  $('layersSay').textContent = t('layers')(h.length);
+  $('fewer').disabled = h.length === 0;
+  $('more').disabled = h.length === LAYERS;
+  const shape = [FEATURES, ...h, 1];
+  shape.forEach((n, layer) => {
+    const col = document.createElement('div');
+    col.className = 'column' + (layer === 0 ? ' input' : '');
+    const head = document.createElement('div');
+    head.className = 'head';
+    if (layer > 0 && layer <= h.length) {
+      const less = document.createElement('button'), more = document.createElement('button');
+      less.className = more.className = 'small';
+      less.textContent = '−';
+      more.textContent = '+';
+      less.disabled = n === 1;
+      more.disabled = n === WIDE;
+      less.onclick = () => { if (h[layer - 1] > 1) { h[layer - 1]--; changed(); } };
+      more.onclick = () => { if (h[layer - 1] < WIDE) { h[layer - 1]++; changed(); } };
+      head.append(less, more);
+    }
+    col.append(head);
+    const what = document.createElement('div');
+    what.className = 'what';
+    what.textContent = layer === 0 ? t('inputs') : layer === shape.length - 1 ? t('out') : `${t('hidden')(layer)} · ${t('neurons')(n)}`;
+    col.append(what);
+    const row = [];
+    for (let j = 0; j < n; j++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const tl = tile();
+      if (layer === 0) {
+        const name = document.createElement('span');
+        name.textContent = FEATURE_NAMES[j];
+        cell.append(name);
+        cell.classList.toggle('off', !(settings.mask >> j & 1));
+        cell.onclick = () => { settings.mask ^= 1 << j; if (!settings.mask) settings.mask = 1 << j; changed(); };
+      }
+      cell.append(tl.canvas);
+      col.append(cell);
+      row.push(tl);
+    }
+    tiles.push(row);
+    net.append(col);
+  });
+  frame = -1;
+}
+function changed() {
+  settings.reset++;
+  send();
+  build();
+}
+$('fewer').onclick = () => { if (settings.hidden.length) { settings.hidden.pop(); changed(); } };
+$('more').onclick = () => { if (settings.hidden.length < LAYERS) { settings.hidden.push(4); changed(); } };
+
+// The weights as lines between the squares, and a light running along each
+// from the input side, the faster the stronger.
+function links(now) {
+  const c = $('links'), net = $('net');
+  const W = net.scrollWidth, H = net.scrollHeight, dpr = devicePixelRatio || 1;
+  if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) {
+    c.width = Math.round(W * dpr);
+    c.height = Math.round(H * dpr);
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+  }
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+  if (!board || tiles.length < 2) return;
+  const base = net.getBoundingClientRect();
+  const at = (cv, right) => {
+    const r = cv.getBoundingClientRect();
+    return [(right ? r.right : r.left) - base.left + net.scrollLeft, r.top + r.height / 2 - base.top];
+  };
+  for (let l = 0; l + 1 < tiles.length; l++) {
+    for (let j = 0; j < tiles[l + 1].length; j++) {
+      const [x1, y1] = at(tiles[l + 1][j].canvas, false);
+      for (let i = 0; i < tiles[l].length; i++) {
+        if (l === 0 && !(settings.mask >> i & 1)) continue;
+        const w = board[WEIGHTS + l * BLOCK + j * WIDE + i];
+        const s = Math.min(1, Math.abs(w) / 2);
+        const [x0, y0] = at(tiles[l][i].canvas, true);
+        const mx = (x0 + x1) / 2;
+        g.strokeStyle = w > 0 ? palette.plusCss : palette.minusCss;
+        g.globalAlpha = 0.25 + 0.65 * s;
+        g.lineWidth = 0.6 + 5 * s;
+        g.setLineDash([]);
+        g.beginPath();
+        g.moveTo(x0, y0);
+        g.bezierCurveTo(mx, y0, mx, y1, x1, y1);
+        g.stroke();
+        if (s > 0.08) {
+          g.globalAlpha = 0.9 * s;
+          g.strokeStyle = palette.dot;
+          g.lineWidth = Math.max(1, g.lineWidth * 0.45);
+          g.setLineDash([2, 14]);
+          g.lineDashOffset = -(now / 1000) * (20 + 80 * s);
+          g.stroke();
+        }
+      }
+    }
+  }
+  g.globalAlpha = 1;
+  g.setLineDash([]);
+}
+
+// --- the pictures ------------------------------------------------------------
+
+const plotImage = new ImageData(GRID, GRID);
+const plotSmall = document.createElement('canvas');
+plotSmall.width = plotSmall.height = GRID;
+const history = [];       // [step, train, test]
+let frame = -1;           // the program's picture counter last shown
+let lastSteps = -1;
+
+function picture() {
+  const sharp = $('sharp').checked;
+  // the plane
+  const px = plotImage.data;
+  for (let p = 0; p < GRID * GRID; p++) paint(px, p * 4, board[CELLS + p], sharp);
+  plotSmall.getContext('2d').putImageData(plotImage, 0, 0);
+  const c = $('plot'), g = c.getContext('2d'), W = c.width;
+  g.imageSmoothingEnabled = true;
+  g.drawImage(plotSmall, 0, 0, W, W);
+  // the axes
+  g.strokeStyle = palette.ink;
+  g.globalAlpha = 0.18;
+  g.lineWidth = 1;
+  for (let v = -6; v <= 6; v += 2) {
+    const q = (v + 6) / 12 * W;
+    g.beginPath(); g.moveTo(q, 0); g.lineTo(q, W); g.moveTo(0, q); g.lineTo(W, q); g.stroke();
+  }
+  g.globalAlpha = 1;
+  // the points
+  const n = board[37] | 0, test = $('showTest').checked;
+  for (let p = 0; p < n; p++) {
+    const isTest = p % 2 === 1;
+    if (isTest && !test) continue;
+    const x = (board[HEAD + 3 * p] + 6) / 12 * W, y = (6 - board[HEAD + 3 * p + 1]) / 12 * W;
+    g.beginPath();
+    g.arc(x, y, W / 110, 0, 7);
+    g.fillStyle = board[HEAD + 3 * p + 2] > 0 ? palette.plusCss : palette.minusCss;
+    g.fill();
+    g.lineWidth = isTest ? W / 260 : W / 350;
+    g.strokeStyle = isTest ? palette.ink : palette.dot;
+    g.stroke();
+  }
+  // the neurons
+  const shape = [FEATURES, ...settings.hidden, 1];
+  tiles.forEach((row, layer) => row.forEach((tl, j) => {
+    const at = layer === shape.length - 1 ? NEURONS - 1 : layer === 0 ? j : FEATURES + (layer - 1) * WIDE + j;
+    const base = TILES + at * TILE * TILE, d = tl.image.data;
+    // an input's values reach past 1 (x runs to 6): scaled to show its shape
+    const scale = layer === 0 ? [1 / 6, 1 / 6, 1 / 36, 1 / 36, 1 / 36, 1, 1][j] : 1;
+    for (let q = 0; q < TILE * TILE; q++) paint(d, q * 4, board[base + q] * scale, false);
+    tl.canvas.getContext('2d').putImageData(tl.image, 0, 0);
+  }));
+  // the numbers
+  const steps = board[33] | 0;
+  $('steps').textContent = steps.toLocaleString(lang);
+  $('trainLoss').textContent = board[34].toFixed(3);
+  $('testLoss').textContent = board[35].toFixed(3);
+  if (steps < lastSteps) history.length = 0;
+  if (steps !== lastSteps) {
+    history.push([steps, board[34], board[35]]);
+    if (history.length > 2000) history.splice(0, history.length - 2000);
+  }
+  lastSteps = steps;
+  curve();
+}
+
+// both losses over the steps: the training loss in the ink, the test loss
+// dashed
+function curve() {
+  const c = $('curve'), g = c.getContext('2d'), W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  if (history.length < 2) return;
+  const top = Math.max(0.05, ...history.map(h => Math.max(h[1], h[2])));
+  const first = history[0][0], last = Math.max(first + 1, history[history.length - 1][0]);
+  for (const [k, dash] of [[1, []], [2, [8, 6]]]) {
+    g.beginPath();
+    history.forEach((h, i) => {
+      const x = (h[0] - first) / (last - first) * (W - 4) + 2, y = H - 4 - h[k] / top * (H - 8);
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    });
+    g.strokeStyle = palette.ink;
+    g.globalAlpha = k === 1 ? 0.9 : 0.5;
+    g.lineWidth = 3;
+    g.setLineDash(dash);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+  g.setLineDash([]);
+}
+
+function tick(now) {
+  if (board && board[36] !== frame && board[32] === changes) {
+    frame = board[36];
+    picture();
+  }
+  links(now);
+  requestAnimationFrame(tick);
+}
+
+// --- the controls ------------------------------------------------------------
+
+$('run').onclick = () => {
+  settings.running = !settings.running;
+  $('run').textContent = settings.running ? t('pause') : t('run');
+  $('step').disabled = settings.running;
+  send();
+};
+$('step').onclick = () => { settings.step++; send(); };
+$('reset').onclick = () => { settings.reset++; send(); };
+$('rate').onchange = () => { settings.rate = Number($('rate').value); send(); };
+$('activation').onchange = () => { settings.activation = Number($('activation').value); settings.reset++; send(); };
+$('l2').onchange = () => { settings.l2 = Number($('l2').value); send(); };
+$('speed').onchange = () => { settings.speed = Number($('speed').value); send(); };
+$('noise').oninput = () => {
+  settings.noise = Number($('noise').value) / 100;
+  $('noiseSays').textContent = $('noise').value + ' %';
+  send();
+};
+$('redraw').onclick = () => { settings.redraw++; send(); };
+$('clear').onclick = () => { own.length = 0; settings.reset++; send(); };
+$('showTest').onchange = $('sharp').onchange = () => { frame = -1; };
+document.addEventListener('visibilitychange', send);
+
+// the reader's own points
+const plot = $('plot');
+plot.addEventListener('contextmenu', e => e.preventDefault());
+plot.addEventListener('pointerdown', e => {
+  if (settings.data !== 4 || own.length >= MAXP) return;
+  const r = plot.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * 12 - 6, y = 6 - (e.clientY - r.top) / r.height * 12;
+  // of each four points the first two are of the one kind and the second of
+  // each two a test point (field.scaly): a point is put where its kind is
+  // and keeps the pairs together
+  const kind = e.button === 2 || e.shiftKey ? -1 : 1;
+  own.push([x, y, kind]);
+  send();
+  frame = -1;
+});
+
+// --- the program -------------------------------------------------------------
+
+async function start() {
+  translatePage();
+  $('ownNote').hidden = $('clear').hidden = true;
+  if (!crossOriginIsolated) { status('isolation', true); return; }
+  status('loading');
+  fetch('field.scaly').then(r => r.ok ? r.text() : '').then(s => { $('source').textContent = s; }).catch(() => {});
+  const cpus = navigator.hardwareConcurrency || 4;
+  const env = { SCALY_CPUS: String(cpus) };
+  const runner = new Worker('runner.mjs', { type: 'module' });
+  const threads = await Threads.create({ out: () => {}, err: () => {}, exit: s => ended(s), env });
+  const ended = s => { board = null; status(() => t('ended')(s), true); for (const b of ['run', 'step', 'reset']) $(b).disabled = true; };
+  runner.onerror = e => ended(e.message || 'the worker stopped');
+  runner.onmessage = ({ data }) => {
+    if (threads.handle(data)) return;
+    if (data.type === 'watch') {
+      board = new Float64Array(data.memory.buffer, data.address, BOARD);
+      send();
+      for (const b of ['run', 'reset']) $(b).disabled = false;
+      status(() => t('cores')(cpus));
+    } else if (data.type === 'done') ended(data.status);
+  };
+  runner.postMessage({ type: 'run', env });
+  requestAnimationFrame(tick);
+}
+start();
+</script>
+</body>
+</html>

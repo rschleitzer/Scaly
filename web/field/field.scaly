@@ -1,0 +1,604 @@
+; The field (web/field/index.html): a small network learns to tell two kinds
+; of points in a plane apart, and the page watches it learn.
+;
+; The program keeps everything the page shows in ONE vector of numbers, the
+; board, and says before its loop where the board lies in its memory. The
+; page reads the board straight out of that memory -- the network's answer
+; over the whole plane, what each neuron answers, the weights, the losses --
+; and writes its settings into the board's head, where the program finds
+; them on its next round. Nothing is copied between the two.
+;
+;   field                         run for the page, until the page ends it
+;   field <data> <steps> [<hidden>...]   train without a page and print the
+;                                 losses: data 0 circle, 1 xor, 2 two
+;                                 clouds, 3 spiral; the hidden layers'
+;                                 widths, default 4 2
+;
+; The head of the board, what the page writes (the slots are numbers, as
+; the rest of the board):
+;
+;    0  a counter the page raises after each change of what follows
+;    1  the data: 0 circle, 1 xor, 2 two clouds, 3 spiral, 4 the page's own
+;       points
+;    2  the noise, 0 to 0.5
+;    3  the learning rate
+;    4  the activation: 0 tanh, 1 ReLU, 2 sigmoid, 3 none
+;    5  how many hidden layers, 0 to 6
+;    6 to 11  how many neurons in each, 1 to 8
+;   12  1 while the network learns, 0 while it waits
+;   13  a counter: raised, the network starts again from new weights
+;   14  which inputs it is given, a bit each: x, y, x², y², xy, sin x, sin y
+;   15  how many points of its own the page put in (data 4)
+;   16  a counter: raised, the network takes one step while it waits
+;   17  a counter: raised, new points are drawn for the data
+;   18  steps per picture, 1 to 100
+;   19  the L2 regularization's rate
+;
+; and what the program writes:
+;
+;   32  the counter of slot 0 it has taken in
+;   33  how many steps the network has taken
+;   34  the loss over the training points
+;   35  the loss over the test points
+;   36  a counter raised with each picture
+;   37  how many points there are
+;
+; The points lie from slot 64 on, three numbers each: x, y and the kind,
+; +1 or -1. Every second one (the 2nd, the 4th, ...) is a test point: the
+; network never learns from it, it only shows how well it guesses. Then the
+; network's answer over the plane, GRID x GRID numbers between -1 and 1,
+; row by row from the top; then each neuron's answer over the plane, TILE x
+; TILE numbers each: the seven inputs, then the hidden layers, WIDE places
+; each, then the output; then the weights, a BLOCK for each step from one
+; layer to the next: WIDE x WIDE weights (row: the neuron it goes to) and
+; WIDE biases. The plane runs from -6 to 6 both ways.
+
+define FEATURES int 7
+define WIDE int 8
+define LAYERS int 6
+define MAXP int 600
+define GRID int 80
+define TILE int 24
+define HEAD int 64
+define CELLS int 1864        ; HEAD + 3 * MAXP
+define TILES int 8264        ; CELLS + GRID * GRID
+define NEURONS int 56        ; FEATURES + LAYERS * WIDE + 1
+define WEIGHTS int 40520     ; TILES + NEURONS * TILE * TILE
+define BLOCK int 72          ; WIDE * WIDE + WIDE
+define BOARD int 41024       ; WEIGHTS + (LAYERS + 1) * BLOCK
+define ROW int 64            ; (LAYERS + 2) * WIDE: a layer's activations each
+
+; --- numbers -----------------------------------------------------------------
+
+mutable seed: u64 88172645463325252
+
+; A number between 0 and 1, xorshift.
+procedure random() returns f64 mutable seed
+{
+    var x seed
+    x := x xor (x << 13)
+    x := x xor (x >> 7)
+    x := x xor (x << 17)
+    seed := x
+    let top (x >> 11) as f64
+    top / 9007199254740992.0
+}
+
+; Between a and b.
+procedure between(a: f64, b: f64) returns f64 mutable seed
+{
+    let r random()
+    a + (b - a) * r
+}
+
+; Normally distributed, mean 0, spread 1 (Box and Muller).
+procedure normal() returns f64 mutable seed
+{
+    let u 1.0 - random()
+    let v random()
+    (0.0 - 2.0 * log(u)).sqrt() * cos(6.283185307179586 * v)
+}
+
+; A whole number from an argument.
+function whole(text: Slice[u8]) returns int
+{
+    var n 0
+    var i: size_t 0
+    while i < text.length
+    {
+        let digit text[i] as int
+        if digit >= 48 and digit <= 57
+            n := n * 10 + (digit - 48)
+        i := i + 1
+    }
+    n
+}
+
+; --- the network -------------------------------------------------------------
+
+; Input k at (x, y): x, y, x², y², xy, sin x, sin y.
+function feature(k: int, x: f64, y: f64) returns f64
+{
+    if k = 0
+        return x
+    if k = 1
+        return y
+    if k = 2
+        return x * x
+    if k = 3
+        return y * y
+    if k = 4
+        return x * y
+    if k = 5
+        return sin(x)
+    sin(y)
+}
+
+function activate(z: f64, kind: int) returns f64
+{
+    if kind = 1
+        return if z > 0.0: z else 0.0
+    if kind = 2
+        return 1.0 / (1.0 + exp(0.0 - z))
+    if kind = 3
+        return z
+    tanh(z)
+}
+
+; The activation's slope, from what it gave.
+function slope(a: f64, kind: int) returns f64
+{
+    if kind = 1
+        return if a > 0.0: 1.0 else 0.0
+    if kind = 2
+        return a * (1.0 - a)
+    if kind = 3
+        return 1.0
+    1.0 - a * a
+}
+
+; What neuron j of layer `upto` answers at (x, y): layer 0 are the inputs,
+; layer `depth` the output. shape says how wide each layer is.
+function neuron(net: Vector[f64], shape: Vector[int], depth: int, kind: int, mask: int, x: f64, y: f64,
+                upto: int, j: int) returns f64
+{
+    if upto = 0
+        return feature(j, x, y)
+    var a Vector[f64](ROW)
+    var k 0
+    while k < FEATURES
+    {
+        a.put(k, if ((mask >> k) & 1) <> 0: feature(k, x, y) else 0.0)
+        k := k + 1
+    }
+    var l 1
+    while l <= upto
+    {
+        let base (l - 1) * BLOCK
+        var i 0
+        while i < shape[l]
+        {
+            var z net[base + WIDE * WIDE + i]
+            var m 0
+            while m < shape[l - 1]
+            {
+                z := z + net[base + i * WIDE + m] * a[(l - 1) * WIDE + m]
+                m := m + 1
+            }
+            a.put(l * WIDE + i, if l = depth: tanh(z) else activate(z, kind))
+            i := i + 1
+        }
+        l := l + 1
+    }
+    a[upto * WIDE + j]
+}
+
+; The same for every layer at once, into a: what the steps below learn from.
+procedure forward(net: Vector[f64], shape: Vector[int], depth: int, kind: int, mask: int, x: f64, y: f64,
+                  mutable a: Vector[f64])
+{
+    var k 0
+    while k < FEATURES
+    {
+        a.put(k, if ((mask >> k) & 1) <> 0: feature(k, x, y) else 0.0)
+        k := k + 1
+    }
+    var l 1
+    while l <= depth
+    {
+        let base (l - 1) * BLOCK
+        var i 0
+        while i < shape[l]
+        {
+            var z net[base + WIDE * WIDE + i]
+            var m 0
+            while m < shape[l - 1]
+            {
+                z := z + net[base + i * WIDE + m] * a[(l - 1) * WIDE + m]
+                m := m + 1
+            }
+            a.put(l * WIDE + i, if l = depth: tanh(z) else activate(z, kind))
+            i := i + 1
+        }
+        l := l + 1
+    }
+}
+
+; New weights, between -0.5 and 0.5, and the biases 0.1.
+procedure begin(mutable net: Vector[f64]) mutable seed
+{
+    var k 0
+    while k < net.length
+    {
+        let r between(0.0 - 0.5, 0.5)
+        net.put(k, if k % BLOCK >= WIDE * WIDE: 0.1 else r)
+        k := k + 1
+    }
+}
+
+; Half the squared error over the points from `first` on, every second one.
+procedure loss(net: Vector[f64], shape: Vector[int], depth: int, kind: int, mask: int,
+               points: Vector[f64], n: int, first: int, mutable a: Vector[f64]) returns f64
+{
+    var sum 0.0
+    var count 0
+    var p first
+    while p < n
+    {
+        forward(net, shape, depth, kind, mask, points[HEAD + 3 * p], points[HEAD + 3 * p + 1], a)
+        let e a[depth * WIDE] - points[HEAD + 3 * p + 2]
+        sum := sum + 0.5 * e * e
+        count := count + 1
+        p := p + 2
+    }
+    if count = 0: 0.0 else sum / (count as f64)
+}
+
+; One step of gradient descent over all the training points: what each
+; weight adds to the error, back through the layers, and each weight moved
+; against it by the learning rate.
+procedure step(mutable net: Vector[f64], mutable grad: Vector[f64], mutable a: Vector[f64], mutable d: Vector[f64],
+               shape: Vector[int], depth: int, kind: int, mask: int, points: Vector[f64], n: int,
+               rate: f64, l2: f64)
+{
+    var k 0
+    while k < grad.length
+    {
+        grad.put(k, 0.0)
+        k := k + 1
+    }
+    var count 0
+    var p 0
+    while p < n
+    {
+        forward(net, shape, depth, kind, mask, points[HEAD + 3 * p], points[HEAD + 3 * p + 1], a)
+        let o a[depth * WIDE]
+        k := 0
+        while k < ROW
+        {
+            d.put(k, 0.0)
+            k := k + 1
+        }
+        d.put(depth * WIDE, (o - points[HEAD + 3 * p + 2]) * (1.0 - o * o))
+        var l depth
+        while l >= 1
+        {
+            let base (l - 1) * BLOCK
+            var j 0
+            while j < shape[l]
+            {
+                let dj d[l * WIDE + j]
+                let b base + WIDE * WIDE + j
+                grad.put(b, grad[b] + dj)
+                var i 0
+                while i < shape[l - 1]
+                {
+                    let w base + j * WIDE + i
+                    let below (l - 1) * WIDE + i
+                    grad.put(w, grad[w] + dj * a[below])
+                    if l > 1
+                        d.put(below, d[below] + dj * net[w])
+                    i := i + 1
+                }
+                j := j + 1
+            }
+            if l > 1
+            {
+                var i 0
+                while i < shape[l - 1]
+                {
+                    let at (l - 1) * WIDE + i
+                    d.put(at, d[at] * slope(a[at], kind))
+                    i := i + 1
+                }
+            }
+            l := l - 1
+        }
+        count := count + 1
+        p := p + 2
+    }
+    if count = 0
+        return
+    let many count as f64
+    k := 0
+    while k < net.length
+    {
+        let shrink if k % BLOCK < WIDE * WIDE: l2 * net[k] else 0.0
+        net.put(k, net[k] - rate * (grad[k] / many + shrink))
+        k := k + 1
+    }
+}
+
+; --- the points --------------------------------------------------------------
+
+; n points of the data into the board: of each four the first two are of
+; the one kind, the others of the other; of each two the second is a test
+; point.
+procedure draw(mutable board: Vector[f64], data: int, noise: f64, n: int) mutable seed
+{
+    var p 0
+    while p < n
+    {
+        var x 0.0
+        var y 0.0
+        var kind if (p / 2) % 2 = 0: 1.0 else 0.0 - 1.0
+        if data = 0
+        {
+            ; a disc inside a ring
+            let r if kind > 0.0: between(0.0, 2.5) else between(3.5, 5.0)
+            let t between(0.0, 6.283185307179586)
+            x := r * sin(t)
+            y := r * cos(t)
+        }
+        else if data = 1
+        {
+            ; the four quarters, the kind by the sign of xy
+            x := between(0.0 - 5.0, 5.0)
+            y := between(0.0 - 5.0, 5.0)
+            x := x + (if x > 0.0: 0.3 else 0.0 - 0.3)
+            y := y + (if y > 0.0: 0.3 else 0.0 - 0.3)
+            kind := if x * y > 0.0: 1.0 else 0.0 - 1.0
+        }
+        else if data = 2
+        {
+            ; two clouds
+            let spread 1.0 + 4.0 * noise
+            let gx normal()
+            let gy normal()
+            x := 2.0 * kind + spread * gx
+            y := 2.0 * kind + spread * gy
+        }
+        else
+        {
+            ; two spirals, the one half a turn from the other
+            let along random()
+            let r 5.0 * along
+            let t 1.75 * 6.283185307179586 * along + (if kind > 0.0: 0.0 else 3.141592653589793)
+            x := r * sin(t)
+            y := r * cos(t)
+        }
+        if data <> 2
+        {
+            let nx between(0.0 - 5.0, 5.0)
+            let ny between(0.0 - 5.0, 5.0)
+            x := x + noise * nx
+            y := y + noise * ny
+        }
+        board.put(HEAD + 3 * p, x)
+        board.put(HEAD + 3 * p + 1, y)
+        board.put(HEAD + 3 * p + 2, kind)
+        p := p + 1
+    }
+}
+
+; --- the pictures ------------------------------------------------------------
+
+; Where cell c of n lies on the plane, from -6 to 6.
+function place(c: int, n: int) returns f64
+{
+    ((c as f64) + 0.5) * 12.0 / (n as f64) - 6.0
+}
+
+; The network's answer over the plane, each neuron's, and the weights,
+; into the board.
+procedure picture(mutable board: Vector[f64], net: Vector[f64], shape: Vector[int], depth: int, kind: int,
+                  mask: int)
+{
+    for p in GRID * GRID
+        board.put(CELLS + p, neuron(net, shape, depth, kind, mask, place(p % GRID, GRID),
+                                    0.0 - place(p / GRID, GRID), depth, 0))
+    var layer 0
+    while layer <= depth
+    {
+        var j 0
+        while j < shape[layer]
+        {
+            let at if layer = depth: NEURONS - 1 else if layer = 0: j else FEATURES + (layer - 1) * WIDE + j
+            let base TILES + at * TILE * TILE
+            for q in TILE * TILE
+                board.put(base + q, neuron(net, shape, depth, kind, mask, place(q % TILE, TILE),
+                                           0.0 - place(q / TILE, TILE), layer, j))
+            j := j + 1
+        }
+        layer := layer + 1
+    }
+    var k 0
+    while k < net.length
+    {
+        board.put(WEIGHTS + k, net[k])
+        k := k + 1
+    }
+}
+
+; The layers' widths from the board's head: the inputs, the hidden layers,
+; the output. Answers the depth, the number of steps from layer to layer.
+procedure shape_of(mutable shape: Vector[int], board: Vector[f64]) returns int
+{
+    var hidden board[5] as int
+    if hidden < 0
+        hidden := 0
+    if hidden > LAYERS
+        hidden := LAYERS
+    shape.put(0, FEATURES)
+    var l 1
+    while l <= hidden
+    {
+        var w board[5 + l] as int
+        if w < 1
+            w := 1
+        if w > WIDE
+            w := WIDE
+        shape.put(l, w)
+        l := l + 1
+    }
+    shape.put(hidden + 1, 1)
+    hidden + 1
+}
+
+; --- the run -----------------------------------------------------------------
+
+var board Vector[f64](BOARD)
+var k 0
+while k < BOARD
+{
+    board.put(k, 0.0)
+    k := k + 1
+}
+board.put(1, 3.0)
+board.put(2, 0.0)
+board.put(3, 0.03)
+board.put(4, 0.0)
+board.put(5, 2.0)
+board.put(6, 4.0)
+board.put(7, 2.0)
+board.put(14, 3.0)
+board.put(18, 10.0)
+var net Vector[f64]((LAYERS + 1) * BLOCK)
+var grad Vector[f64]((LAYERS + 1) * BLOCK)
+var a Vector[f64](ROW)
+var d Vector[f64](ROW)
+var shape Vector[int](LAYERS + 2)
+begin(net)
+
+let args os.arguments()
+if args.length >= 2
+{
+    ; without a page: train and print the losses
+    let data whole(args[0])
+    let steps whole(args[1])
+    if args.length >= 3
+    {
+        board.put(5, ((args.length - 2) as int) as f64)
+        var l 2
+        while l < args.length
+        {
+            board.put(4 + l, whole(args[l as size_t]) as f64)
+            l := l + 1
+        }
+    }
+    board.put(1, data as f64)
+    let depth shape_of(shape, board)
+    let n 400
+    draw(board, data, 0.0, n)
+    var s 0
+    while s <= steps
+    {
+        if s % 100 = 0
+        {
+            let train loss(net, shape, depth, 0, 3, board, n, 0, a)
+            let test loss(net, shape, depth, 0, 3, board, n, 1, a)
+            print "step `s` train `train` test `test`"
+        }
+        step(net, grad, a, d, shape, depth, 0, 3, board, n, 0.03, 0.0)
+        s := s + 1
+    }
+    picture(board, net, shape, depth, 0, 3)
+    var right 0
+    var p 1
+    while p < n
+    {
+        let o neuron(net, shape, depth, 0, 3, board[HEAD + 3 * p], board[HEAD + 3 * p + 1], depth, 0)
+        if o * board[HEAD + 3 * p + 2] > 0.0
+            right := right + 1
+        p := p + 2
+    }
+    print "test right `right` of `n / 2`"
+}
+else
+{
+    print "board at `board.as_bytes().data as size_t`"
+    var taken 0.0 - 1.0
+    var started 0.0
+    var stepped 0.0
+    var drawn 0.0
+    var drawn_data 0 - 1
+    var drawn_noise 0.0
+    var steps 0
+    var n 0
+    var depth 1
+    var kind 0
+    var mask 3
+    repeat
+    {
+        let begun scaly_eio_now_ns()
+        var change false
+        if board[0] <> taken
+        {
+            taken := board[0]
+            change := true
+            depth := shape_of(shape, board)
+            kind := board[4] as int
+            mask := board[14] as int
+            let data board[1] as int
+            if data = 4
+            {
+                n := board[15] as int
+                if n > MAXP
+                    n := MAXP
+            }
+            else if board[17] <> drawn or n = 0 or data <> drawn_data or board[2] <> drawn_noise or drawn_data = 4
+            {
+                drawn := board[17]
+                drawn_noise := board[2]
+                n := 300
+                draw(board, data, board[2], n)
+            }
+            drawn_data := data
+            if board[13] <> started
+            {
+                started := board[13]
+                begin(net)
+                steps := 0
+            }
+            board.put(37, n as f64)
+            board.put(32, taken)
+        }
+        var go 0
+        if board[12] > 0.5
+            go := board[18] as int
+        else if board[16] <> stepped
+        {
+            stepped := board[16]
+            go := 1
+        }
+        var s 0
+        while s < go
+        {
+            step(net, grad, a, d, shape, depth, kind, mask, board, n, board[3], board[19])
+            steps := steps + 1
+            s := s + 1
+        }
+        if go > 0 or change
+        {
+            board.put(33, steps as f64)
+            board.put(34, loss(net, shape, depth, kind, mask, board, n, 0, a))
+            board.put(35, loss(net, shape, depth, kind, mask, board, n, 1, a))
+            picture(board, net, shape, depth, kind, mask)
+            board.put(36, board[36] + 1.0)
+        }
+        ; a picture each 30 ms at most
+        let spent (scaly_eio_now_ns() - begun) / 1000000
+        if spent < 30
+            Scheduler.sleep(30 - spent)
+    }
+}
