@@ -484,18 +484,50 @@ function describe() {
   $('gestures').textContent = t('gestures');
 }
 
-// One run of the program: the page is the coordinator of its threads.
-// `seen` is the view the run draws; null for a run nobody watches.
+// The program's memories, { memory, maximum, freed }: a run takes one that
+// has rested REST_MS since its run ended, else the runner makes a new one --
+// at most MEMORIES, then the run waits for the oldest to rest. A run broken
+// off (breakOff) leaves its threads at work in its memory until the browser
+// ends their workers, which it does some time later: the next run in that
+// memory woke them in its state, and the page hung -- in Safari for good
+// (2026-11-17, the playground; the program ends its pool's threads at its
+// end, eio_wasm.c, but not one that is broken off).
+const REST_MS = 500, MEMORIES = 3;
+let memories = [];
+let inUse = null;         // the memory of the run under way
+async function memoryForRun() {
+  const resting = m => performance.now() - m.freed;
+  let pick = memories.find(m => m.freed > 0 && resting(m) >= REST_MS);
+  if (!pick && memories.length >= MEMORIES) {
+    pick = memories.filter(m => m.freed > 0).sort((a, b) => a.freed - b.freed)[0];
+    if (pick) await new Promise(r => setTimeout(r, Math.max(0, REST_MS - resting(pick))));
+  }
+  return pick ?? null;
+}
+// a memory the runner made: it takes the place of the one it could not use
+function madeMemory(kept) {
+  if (inUse) memories.splice(memories.indexOf(inUse), 1);
+  inUse = { ...kept, freed: 0 };
+  memories.push(inUse);
+}
+
+// One run of the program: the page is the coordinator of its threads, and
+// keeps their workers from run to run -- the program ends its pool's
+// threads at its end, and a new worker loads its modules again, on scaly.io
+// a way to the CDN each. A run broken off or ended badly ends them: a
+// thread may still be at work. `seen` is the view the run draws; null for a
+// run nobody watches.
+let threads = null, threadsSay = null;
 async function runOnce(way, workers, gpu, given = args(), seen = { ...view, kind }) {
   const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
   let resolve;
   const done = new Promise(r => { resolve = r; });
   running = { gpu, resolve };
-  const threads = await Threads.create({
-    out: () => { }, err: () => { },
-    exit: s => resolve({ status: String(s), stdout: '', picture: null, cards: 0 }),
-    env,
-  });
+  threadsSay = { exit: s => resolve({ status: String(s), stdout: '', picture: null, cards: 0 }) };
+  threads ??= await Threads.create({ out: () => { }, err: () => { }, exit: s => threadsSay.exit(s), env });
+  threads.env = env;
+  inUse = await memoryForRun();
+  if (inUse) inUse.freed = 0;
   runner.onerror = e => resolve({ status: 'ended: ' + (e.message || 'the worker stopped'), stdout: '', picture: null, cards: 0 });
   runner.onmessage = ({ data }) => {
     if (threads.handle(data)) return;
@@ -503,10 +535,15 @@ async function runOnce(way, workers, gpu, given = args(), seen = { ...view, kind
     else if (data.type === 'done') resolve(data);
   };
   const t0 = performance.now();
-  runner.postMessage({ type: 'run', args: given, env, gpu });
+  runner.postMessage({ type: 'run', args: given, env, gpu, memory: inUse && { memory: inUse.memory, maximum: inUse.maximum } });
   const answer = await done;
   running = null;
-  threads.end();
+  if (inUse) inUse.freed = performance.now();
+  inUse = null;
+  if (answer.broken || answer.status !== '0') {
+    threads.end();
+    threads = null;
+  }
   live = null;
   // broken off: the runner was ended in the middle of the run (breakOff),
   // and another one takes its place, with the program it ran
@@ -522,7 +559,6 @@ async function runOnce(way, workers, gpu, given = args(), seen = { ...view, kind
 // runner's card runs on to it.
 let gpuWorker = null;
 let myBytes = null;       // the reader's build, for a runner made again
-let kept = null;          // the program's memory, { memory, maximum }, for a runner made again
 let running = null;       // the run under way: { gpu, resolve }
 function startRunner() {
   runner = new Worker('runner.mjs', { type: 'module' });
@@ -530,12 +566,12 @@ function startRunner() {
   // arrays are handed over (transfer), not copied
   runner.addEventListener('message', ({ data }) => {
     if (data && data.type === 'scaly-gpu') gpuWorker.postMessage(data.run, data.transfer);
-    else if (data && data.type === 'memory') kept = data.kept;
+    else if (data && data.type === 'memory') madeMemory(data.kept);
   });
   return cardHello().then(hello => new Promise(resolve => {
     runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data); };
     runner.onerror = e => resolve({ failed: e.message || 'the worker did not start' });
-    runner.postMessage({ type: 'hello', gpu: hello, memory: kept });
+    runner.postMessage({ type: 'hello', gpu: hello });
   })).then(async ready => {
     if (!ready.failed && version > 0 && myBytes) await load(myBytes.slice());
     return ready;
