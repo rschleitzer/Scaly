@@ -99,6 +99,32 @@
   .runs .bar.card span { background: var(--accent); }
   /* compiling the card's kernel, once: the lighter part of its bar */
   .runs .bar span.compile { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); opacity: .55; }
+  /* where a card's run went (runner.mjs, parts): the way there and back, the
+     card computing, its results read and checked, the processor's own part */
+  .runs .bar span.there { background: var(--accent); opacity: .35; }
+  .runs .bar span.compute { background: var(--accent); }
+  .runs .bar span.read { background: var(--ink); opacity: .55; }
+  .runs .bar span.cpu { background: var(--muted); }
+  .runs .key { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+  .runs .key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .runs .key i.compile { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); opacity: .55; }
+  .runs .key i.there { background: var(--accent); opacity: .35; }
+  .runs .key i.compute { background: var(--accent); }
+  .runs .key i.read { background: var(--ink); opacity: .55; }
+  .runs .key i.cpu { background: var(--muted); }
+  /* a step's experiment: a race over the cores, or the sizes against the card */
+  #experimentbox[hidden] { display: none; }
+  #experimentchart { width: 100%; max-width: 560px; height: auto; display: block; }
+  #experimentchart text { fill: var(--muted); font-size: 11px; font-family: system-ui, sans-serif; }
+  #experimentchart .axis { stroke: var(--line); }
+  #experimentchart .grid { stroke: var(--line); opacity: .5; }
+  #experimentchart .ideal { stroke: var(--muted); stroke-dasharray: 4 4; fill: none; }
+  #experimentchart .s0 { stroke: var(--muted); fill: none; stroke-width: 2; }
+  #experimentchart .s1 { stroke: var(--accent); fill: none; stroke-width: 2; }
+  #experimentchart .s2 { stroke: var(--ok); fill: none; stroke-width: 2; stroke-dasharray: 5 3; }
+  #experimentchart .d0 { fill: var(--muted); } #experimentchart .d1 { fill: var(--accent); } #experimentchart .d2 { fill: var(--ok); }
+  #experimentchart .mark { stroke: var(--accent); stroke-dasharray: 2 3; }
+  #experimentchart text.strong { fill: var(--ink); }
   .runs .time { font-variant-numeric: tabular-nums; }
   .runs .what { grid-column: 1 / -1; margin: -2px 0 4px; }
   /* a task (P4): what to change, hints on request, the lizard's verdict */
@@ -172,6 +198,7 @@
         <option value="card" data-t="card">On the graphics card</option>
         <option value="auto" data-t="auto" selected>Where it pays</option>
       </select>
+      <button id="experiment" hidden></button>
       <span id="status">Loading…</span>
     </div>
     <div class="editwrap" id="editwrap">
@@ -183,6 +210,10 @@
       The compiler and the program run in this browser tab.</div>
     <div class="results">
       <div class="praise" id="praise" hidden><img src="lizard.svg" alt=""><span id="praisetext"></span></div>
+      <div id="experimentbox" hidden>
+        <svg id="experimentchart" viewBox="0 0 560 260" role="img"></svg>
+        <p class="hint" id="experimentnote"></p>
+      </div>
       <div class="runs" id="runs" aria-label="The runs of this program" data-t-label="runs"></div>
       <div id="drawings"></div>
       <div id="pictures"></div>
@@ -230,6 +261,15 @@ const TEXT = {
     praise: ['That’s it — well done!', 'Exactly right. The lizard is impressed.', 'Perfect — on to the next one?', 'You did it!'],
     notYet: 'Not quite yet: the task wants a different output. Compare it with the task — or take a hint.',
     solved: 'solved',
+    race: 'Race: 1, 2, 4 … cores and the card', compare: 'Compare: cores, card, where it pays',
+    racing: what => `Racing: ${what}…`, comparing: what => `Comparing: ${what}…`, raceDone: 'The race is run.', compareDone: 'Compared.',
+    speedupAxis: 'cores', speedupCard: s => `the card: ${s}×`, timesFaster: s => `${s}×`,
+    raceNote: 'Both axes are logarithmic. The dashed line is a perfect speedup: twice the cores, half the time. The card is a line of its own; the compilation of its kernel, once, is left out.',
+    sizesAxis: 'points', sizesNote: 'Both axes are logarithmic: the time of the loop against how many points it has, for each way it can run.',
+    fromN: n => `from about ${n} points on, the card is faster`, never: 'at none of these sizes was the card faster',
+    seriesCores: n => `${n} cores`, seriesCard: 'the card', seriesAuto: 'where it pays',
+    noCardHere: why => `This browser gives the page no graphics card (${why}): only the cores take part.`,
+    key: { compile: 'compiling the kernel (once)', there: 'to the card and back', compute: 'the card computing', read: 'reading and checking the results', cpu: 'the processor' },
   },
   de: {
     repl: 'Die REPL', spec: 'Die Spezifikation', loading: 'Der Playground lädt…',
@@ -255,6 +295,15 @@ const TEXT = {
     praise: ['Genau so — gut gemacht!', 'Ganz richtig. Die Eidechse staunt.', 'Perfekt — weiter zum nächsten?', 'Geschafft!'],
     notYet: 'Noch nicht ganz: Die Aufgabe will eine andere Ausgabe. Vergleiche sie mit der Aufgabe — oder hol dir einen Hinweis.',
     solved: 'gelöst',
+    race: 'Wettlauf: 1, 2, 4 … Kerne und die Karte', compare: 'Vergleichen: Kerne, Karte, wo es sich lohnt',
+    racing: what => `Wettlauf: ${what}…`, comparing: what => `Vergleiche: ${what}…`, raceDone: 'Der Wettlauf ist gelaufen.', compareDone: 'Verglichen.',
+    speedupAxis: 'Kerne', speedupCard: s => `die Karte: ${s}×`, timesFaster: s => `${s}×`,
+    raceNote: 'Beide Achsen sind logarithmisch. Die gestrichelte Linie ist der ideale Gewinn: doppelt so viele Kerne, halb so viel Zeit. Die Karte ist eine eigene Linie; das einmalige Übersetzen ihres Kernels ist herausgerechnet.',
+    sizesAxis: 'Punkte', sizesNote: 'Beide Achsen sind logarithmisch: die Zeit der Schleife gegen die Zahl ihrer Punkte, für jeden Weg, den sie nehmen kann.',
+    fromN: n => `ab etwa ${n} Punkten ist die Karte schneller`, never: 'bei keiner dieser Größen war die Karte schneller',
+    seriesCores: n => `${n} Kerne`, seriesCard: 'die Karte', seriesAuto: 'wo es sich lohnt',
+    noCardHere: why => `Dieser Browser gibt der Seite keine Grafikkarte (${why}): Es laufen nur die Kerne.`,
+    key: { compile: 'Kernel übersetzen (einmal)', there: 'zur Karte und zurück', compute: 'die Karte rechnet', read: 'Ergebnisse lesen und prüfen', cpu: 'der Prozessor' },
   },
 };
 function storedLang() {
@@ -332,8 +381,11 @@ function show(i, push = true) {
   $('pictures').textContent = '';
   showDrawings([]);
   $('where').hidden = !step.gpu;
+  $('experiment').hidden = !(step.race || step.sizes);
+  $('experiment').textContent = step.race ? t('race') : step.sizes ? t('compare') : '';
   document.querySelector('.work').classList.toggle('card', step.gpu);
   showRuns();
+  showExperiment();
   if (location.hash !== `#${at + 1}`) {
     if (push) history.pushState(null, '', `#${at + 1}`);
     else history.replaceState(null, '', `#${at + 1}`);
@@ -499,29 +551,46 @@ function showDrawings(drawings) {
 }
 
 // The runs of this step, one bar each, as long as the program ran: the same
-// program on the processor and on the card, side by side.
+// program on the processor and on the card, side by side. A run the card
+// took part in shows where its time went (runner.mjs, parts): compiling the
+// kernel (once), the way to the card and back, the card computing, its
+// results read and checked -- and the processor's own part of the program.
 function showRuns() {
   const box = $('runs');
   box.textContent = '';
   const list = runs.get(at) ?? [];
   const longest = Math.max(1, ...list.map(r => r.ran));
+  let keyed = false;
   for (const r of list) {
     const label = document.createElement('span');
     label.textContent = r.where;
-    // the run, and before it the part that compiled the card's kernel
     const bar = document.createElement('span');
     bar.className = r.cards > 0 ? 'bar card' : 'bar';
     bar.style.width = `${Math.max(1, 100 * r.ran / longest)}%`;
-    const compiled = Math.min(r.compiled ?? 0, r.ran);
-    if (compiled > 0) {
+    const segment = (cls, ms) => {
+      if (!(ms > 0)) return;
       const part = document.createElement('span');
-      part.className = 'compile';
-      part.style.width = `${100 * compiled / r.ran}%`;
+      part.className = cls;
+      part.style.width = `${Math.min(100, 100 * ms / r.ran)}%`;
       bar.appendChild(part);
+    };
+    const p = r.parts;
+    if (r.cards > 0 && p && p.card > 0) {
+      keyed = true;
+      const compile = Math.min(p.compile, p.card);
+      const there = p.there + p.back, read = p.read + p.errors;
+      segment('compile', compile);
+      segment('there', there);
+      segment('compute', Math.max(0, p.card - compile - there - read));
+      segment('read', read);
+      segment('cpu', Math.max(0, r.ran - p.card));
+    } else {
+      const compiled = Math.min(r.compiled ?? 0, r.ran);
+      segment('compile', compiled);
+      const rest = document.createElement('span');
+      rest.style.flex = '1';
+      bar.appendChild(rest);
     }
-    const rest = document.createElement('span');
-    rest.style.flex = '1';
-    bar.appendChild(rest);
     const time = document.createElement('span');
     time.className = 'time';
     time.textContent = `${r.ran < 10 ? r.ran.toFixed(1) : Math.round(r.ran)} ms`;
@@ -529,6 +598,18 @@ function showRuns() {
     what.className = 'what';
     what.textContent = r.what;
     box.append(label, bar, time, what);
+  }
+  if (keyed) {
+    const key = document.createElement('span');
+    key.className = 'key';
+    for (const [cls, words] of Object.entries(t('key'))) {
+      const item = document.createElement('span');
+      const chip = document.createElement('i');
+      chip.className = cls;
+      item.append(chip, words);
+      key.appendChild(item);
+    }
+    box.appendChild(key);
   }
 }
 
@@ -587,6 +668,52 @@ function buildForCores(text) {
   });
 }
 
+// The program in the editor, built and handed to the runner -- once for
+// each text: a race runs it many times. Answers how long the build took (0
+// where it was there already), or null where it did not build.
+let loadedText = null;
+async function ensureBuilt() {
+  await prepareCores();
+  if (loadedText === editor.value) return 0;
+  loadedText = null;
+  status(t('building'));
+  const t0 = performance.now();
+  const text = editor.value;
+  const built = await buildForCores(text);
+  worker = null;
+  if (built.status !== 0 || !built.bytes) {
+    append(built.said || t('compilerEnded')(built.status), 'err');
+    status(t('notBuilt'), 'bad');
+    return null;
+  }
+  const compiled = performance.now() - t0;
+  await new Promise(resolve => {
+    runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(); };
+    runner.postMessage({ type: 'load', bytes: built.bytes }, [built.bytes.buffer]);
+  });
+  loadedText = text;
+  return compiled;
+}
+
+// One run of the built program on `workers` cores, the card 'off', 'on' or
+// 'auto'; its output goes to the page where `echo` says so.
+async function runWay(workers, gpu, echo = true) {
+  const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
+  let resolve;
+  const done = new Promise(r => { resolve = r; });
+  const threads = await threadsLib.Threads.create({
+    out: b => { if (echo) append(new TextDecoder().decode(b)); },
+    err: b => { if (echo) append(new TextDecoder().decode(b), 'err'); },
+    exit: s => resolve({ status: String(s), stdout: '', stderr: '', ms: 0, pictures: [], drawings: [], cards: 0 }),
+    env,
+  });
+  runner.onmessage = ({ data }) => { if (threads.handle(data)) return; if (data.type === 'done') resolve(data); };
+  runner.postMessage({ type: 'run', args: [], env, gpu });
+  const r = await done;
+  threads.end();
+  return r;
+}
+
 async function runOnCores() {
   const choice = $('where').value, step = at;
   const workers = choice === 'one' ? 1 : cpus;
@@ -596,34 +723,10 @@ async function runOnCores() {
   showDrawings([]);
   runButton.textContent = t('stop');
   try {
-    await prepareCores();
-    status(t('building'));
-    const t0 = performance.now();
-    const built = await buildForCores(editor.value);
-    worker = null;
-    if (built.status !== 0 || !built.bytes) {
-      append(built.said || t('compilerEnded')(built.status), 'err');
-      status(t('notBuilt'), 'bad');
-      return;
-    }
-    const compiled = performance.now() - t0;
-    await new Promise(resolve => {
-      runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(); };
-      runner.postMessage({ type: 'load', bytes: built.bytes }, [built.bytes.buffer]);
-    });
+    const compiled = await ensureBuilt();
+    if (compiled === null) return;
     status(t('running'));
-    const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
-    let resolve;
-    const done = new Promise(r => { resolve = r; });
-    const threads = await threadsLib.Threads.create({
-      out: b => append(new TextDecoder().decode(b)), err: b => append(new TextDecoder().decode(b), 'err'),
-      exit: s => resolve({ status: String(s), stdout: '', stderr: '', ms: 0, pictures: [], drawings: [], cards: 0 }),
-      env,
-    });
-    runner.onmessage = ({ data }) => { if (threads.handle(data)) return; if (data.type === 'done') resolve(data); };
-    runner.postMessage({ type: 'run', args: [], env, gpu });
-    const r = await done;
-    threads.end();
+    const r = await runWay(workers, gpu);
     append(r.stdout);
     if (r.stderr) append(r.stderr, 'err');
     showPictures(r.pictures);
@@ -631,12 +734,12 @@ async function runOnCores() {
     if (r.status !== '0') { status(t('ended')(r.status), 'bad'); return; }
     const where = choice === 'one' ? t('oneCore') : choice === 'all' ? t('cores')(cpus)
       : choice === 'card' ? (runnerCard ? t('theCard') : t('noCard')) : t('auto');
-    let what = t('builtIn')(Math.round(compiled));
+    let what = compiled > 0 ? t('builtIn')(Math.round(compiled)) : '';
     if ((choice === 'card' || choice === 'auto') && !runnerCard) what += t('noCardGiven')(noCardWhy);
     else if (r.cards > 0) what += t('cardRan')(r.cards) + (r.compiled >= 1 ? t('compiledOnce')(Math.round(r.compiled)) : '');
     else what += workers > 1 ? t('upTo')(workers) : t('onOne');
     const list = runs.get(step) ?? [];
-    list.push({ where, cards: r.cards, ran: r.ms, compiled: r.compiled ?? 0, what });
+    list.push({ where, cards: r.cards, ran: r.ms, compiled: r.compiled ?? 0, parts: r.parts, what });
     runs.set(step, list.slice(-6));
     showRuns();
     status(t('done')(Math.round(r.ms)), 'ok');
@@ -644,6 +747,156 @@ async function runOnCores() {
     worker = null;
     runButton.textContent = t('run');
   }
+}
+
+// --- a step's experiment ----------------------------------------------------
+// role="gpu-race": the program on 1, 2, 4 ... cores and on the card, its
+// speedup against one core drawn against the cores. role="gpu-sizes": the
+// program prints `size <n> <ms>` for growing n; it runs on all cores, on the
+// card and where it pays, and the times are drawn against n.
+const experiments = new Map();     // per step: { kind, ... } of its last experiment
+let experimenting = false;
+
+async function experiment() {
+  const step = at, kind = steps[at].race ? 'race' : 'sizes';
+  if (experimenting || worker) return;
+  experimenting = true;
+  $('experiment').disabled = runButton.disabled = true;
+  output.textContent = '';
+  try {
+    if (await ensureBuilt() === null) return;
+    if (kind === 'race') {
+      const ways = [];
+      for (let w = 1; w < cpus; w *= 2) ways.push(w);
+      ways.push(cpus);
+      const result = { kind, cores: [], card: null };
+      experiments.set(step, result);
+      for (const w of ways) {
+        status(t('racing')(t('cores')(w)));
+        const r = await runWay(w, 'off', false);
+        if (r.status !== '0') { status(t('ended')(r.status), 'bad'); return; }
+        result.cores.push({ workers: w, ms: r.ms });
+        if (w === 1) { showPictures(r.pictures); showDrawings(r.drawings); }
+        showExperiment();
+      }
+      if (runnerCard) {
+        status(t('racing')(t('theCard')));
+        const r = await runWay(cpus, 'on', false);
+        if (r.status === '0' && r.cards > 0) result.card = { ms: Math.max(0.1, r.ms - (r.compiled ?? 0)) };
+      } else result.noCard = noCardWhy;
+      showExperiment();
+      status(t('raceDone'), 'ok');
+    } else {
+      const result = { kind, series: [] };
+      experiments.set(step, result);
+      const ways = [['cores', cpus, 'off']];
+      if (runnerCard) ways.push(['card', cpus, 'on'], ['auto', cpus, 'auto']);
+      else result.noCard = noCardWhy;
+      for (const [name, w, gpu] of ways) {
+        const label = name === 'cores' ? t('seriesCores')(w) : name === 'card' ? t('seriesCard') : t('seriesAuto');
+        status(t('comparing')(label));
+        const r = await runWay(w, gpu, false);
+        if (r.status !== '0') { status(t('ended')(r.status), 'bad'); return; }
+        const points = [...r.stdout.matchAll(/^size (\d+) ([0-9.eE+-]+)$/gm)].map(m => ({ n: Number(m[1]), ms: Math.max(0.001, Number(m[2])) }));
+        result.series.push({ name, label, points });
+        showExperiment();
+      }
+      status(t('compareDone'), 'ok');
+    }
+  } finally {
+    experimenting = false;
+    $('experiment').disabled = runButton.disabled = false;
+    worker = null;
+  }
+}
+$('experiment').onclick = experiment;
+
+// The experiment's chart: an SVG of its own, both axes logarithmic.
+function showExperiment() {
+  const result = experiments.get(at);
+  const box = $('experimentbox'), svg = $('experimentchart');
+  box.hidden = !result;
+  if (!result) return;
+  const L = 52, R = 20, T = 18, B = 222, W = 560 - L - R, H = B - T;
+  const parts = [];
+  const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const text = (x, y, words, anchor = 'middle', cls = '') =>
+    parts.push(`<text x="${x}" y="${y}" text-anchor="${anchor}"${cls ? ` class="${cls}"` : ''}>${esc(words)}</text>`);
+  const logScale = (lo, hi, from, to) => v => from + (Math.log(v / lo) / Math.log(hi / lo)) * (to - from);
+  parts.push(`<line class="axis" x1="${L}" y1="${B}" x2="${L + W}" y2="${B}"/><line class="axis" x1="${L}" y1="${B}" x2="${L}" y2="${T}"/>`);
+  const round = v => v >= 100 ? Math.round(v) : v >= 10 ? Math.round(v) : v >= 1 ? +v.toFixed(1) : +v.toPrecision(1);
+  // round values on a logarithmic axis: 1, 2, 5, 10, ...
+  const decades = (lo, hi) => {
+    const out = [];
+    for (let p = Math.floor(Math.log10(lo)); p <= Math.ceil(Math.log10(hi)); p++)
+      for (const m of [1, 2, 5]) { const v = m * 10 ** p; if (v >= lo && v <= hi) out.push(v); }
+    return out;
+  };
+  if (result.kind === 'race') {
+    const one = result.cores.find(c => c.workers === 1);
+    if (!one) { svg.innerHTML = ''; return; }
+    const speed = ms => one.ms / ms;
+    const maxX = Math.max(2, ...result.cores.map(c => c.workers));
+    const speeds = result.cores.map(c => speed(c.ms)).concat(result.card ? [speed(result.card.ms)] : []);
+    const hiY = Math.max(maxX, ...speeds) * 1.3, loY = Math.min(1, ...speeds) / 1.3;
+    const x = logScale(1, maxX, L, L + W), y = logScale(loY, hiY, B, T);
+    for (const v of decades(loY, hiY)) {
+      parts.push(`<line class="grid" x1="${L}" y1="${y(v)}" x2="${L + W}" y2="${y(v)}"/>`);
+      text(L - 6, y(v) + 4, t('timesFaster')(v), 'end');
+    }
+    for (const c of result.cores) text(x(c.workers), B + 15, String(c.workers));
+    text(L + W / 2, B + 32, t('speedupAxis'));
+    parts.push(`<polyline class="ideal" points="${x(1)},${y(1)} ${x(maxX)},${y(Math.min(maxX, hiY))}"/>`);
+    parts.push(`<polyline class="s0" points="${result.cores.map(c => `${x(c.workers)},${y(speed(c.ms))}`).join(' ')}"/>`);
+    for (const c of result.cores) parts.push(`<circle class="d0" cx="${x(c.workers)}" cy="${y(speed(c.ms))}" r="3.5"/>`);
+    for (const c of result.cores) text(x(c.workers), y(speed(c.ms)) - 8, `${round(speed(c.ms))}×`);
+    if (result.card) {
+      const s = speed(result.card.ms);
+      parts.push(`<line class="s1" x1="${L}" y1="${y(s)}" x2="${L + W}" y2="${y(s)}"/>`);
+      text(L + W, y(s) - 6, t('speedupCard')(round(s)), 'end', 'strong');
+    }
+    $('experimentnote').textContent = t('raceNote') + (result.noCard ? ' ' + t('noCardHere')(result.noCard) : '');
+  } else {
+    const all = result.series.flatMap(s => s.points);
+    if (all.length === 0) { svg.innerHTML = ''; return; }
+    const loX = Math.min(...all.map(p => p.n)), hiX = Math.max(...all.map(p => p.n));
+    const loY = Math.min(...all.map(p => p.ms)) / 1.5, hiY = Math.max(...all.map(p => p.ms)) * 1.5;
+    const x = logScale(loX, Math.max(hiX, loX * 2), L, L + W), y = logScale(loY, hiY, B, T);
+    for (const v of decades(loY, hiY)) {
+      parts.push(`<line class="grid" x1="${L}" y1="${y(v)}" x2="${L + W}" y2="${y(v)}"/>`);
+      text(L - 6, y(v) + 4, `${round(v)} ms`, 'end');
+    }
+    const ns = [...new Set(all.map(p => p.n))].sort((a, b) => a - b);
+    for (const n of ns) text(x(n), B + 15, n >= 1048576 ? `${n / 1048576}M` : n >= 1024 ? `${n / 1024}k` : String(n));
+    text(L + W / 2, B + 32, t('sizesAxis'));
+    result.series.forEach((s, i) => {
+      if (s.points.length === 0) return;
+      parts.push(`<polyline class="s${i}" points="${s.points.map(p => `${x(p.n)},${y(p.ms)}`).join(' ')}"/>`);
+      for (const p of s.points) parts.push(`<circle class="d${i}" cx="${x(p.n)}" cy="${y(p.ms)}" r="3"/>`);
+      const last = s.points[s.points.length - 1];
+      text(L + W - 2, T + 12 + i * 15, s.label, 'end', '');
+      parts.push(`<line class="s${i}" x1="${L + W - 2 - 7 * s.label.length - 26}" y1="${T + 8 + i * 15}" x2="${L + W - 2 - 7 * s.label.length - 8}" y2="${T + 8 + i * 15}"/>`);
+    });
+    // where the card is faster from then on
+    const cores = result.series.find(s => s.name === 'cores'), card = result.series.find(s => s.name === 'card');
+    let note = t('sizesNote');
+    if (cores && card && card.points.length) {
+      const coresAt = n => cores.points.find(p => p.n === n)?.ms;
+      let from = null;
+      for (const p of card.points) {
+        const c = coresAt(p.n);
+        if (c === undefined) continue;
+        if (p.ms < c) { if (from === null) from = p.n; } else from = null;
+      }
+      if (from !== null) {
+        parts.push(`<line class="mark" x1="${x(from)}" y1="${T}" x2="${x(from)}" y2="${B}"/>`);
+        text(x(from) + 4, B - 6, t('fromN')(from.toLocaleString(lang)), 'start', 'strong');
+        note += ' ' + t('fromN')(from.toLocaleString(lang)) + '.';
+      } else note += ' ' + t('never') + '.';
+    }
+    $('experimentnote').textContent = note + (result.noCard ? ' ' + t('noCardHere')(result.noCard) : '');
+  }
+  svg.innerHTML = parts.join('');
 }
 
 // Run the step's program -- with its notes (notes.mjs): a call after each
@@ -799,6 +1052,8 @@ async function loadSteps() {
         prose: prose.innerHTML,
         program: program ? program.textContent : null,
         gpu: program ? program.classList.contains('gpu') : false,
+        race: program ? program.classList.contains('race') : false,
+        sizes: program ? program.classList.contains('sizes') : false,
       });
     }
   }
@@ -855,7 +1110,17 @@ if (new URLSearchParams(location.search).has('selftest') && compiler) {
                   output: output.textContent.trim().slice(0, 200), drawings: $('drawings').children.length,
                   pictures: lastPictures.map(p => ({ name: p.name, width: p.width, height: p.height, bytes: Array.from(p.bytes.slice(0, 0)).length, hash: Array.from(p.bytes).reduce((h, b) => Math.imul(h ^ b, 16777619) >>> 0, 2166136261) })) });
     }
-    report.push({ title: steps[i].title, chapter: steps[i].chapterId, gpu: steps[i].gpu, runs: seen });
+    // and its experiment: the race or the comparison, drawn
+    let tried = null;
+    if (steps[i].race || steps[i].sizes) {
+      await experiment();
+      const e = experiments.get(i);
+      tried = { kind: e?.kind, status: $('status').textContent, ok: $('status').className === 'ok',
+                points: e ? (e.kind === 'race' ? e.cores.length : e.series.reduce((n, s) => n + s.points.length, 0)) : 0,
+                card: e ? (e.kind === 'race' ? !!e.card : e.series.some(s => s.name === 'card' && s.points.length > 0)) : false,
+                drawn: $('experimentchart').children.length };
+    }
+    report.push({ title: steps[i].title, section: steps[i].section, chapter: steps[i].chapterId, gpu: steps[i].gpu, runs: seen, experiment: tried });
   }
   // and the values beside the code: the tour's step on values and bindings
   let notes = null;

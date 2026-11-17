@@ -44,5 +44,202 @@ print "`w * h` points"</programlisting>
       <link xlink:href="https://scaly.io/play/fractals/">fractal
       showcase</link> lets you zoom into it and fifteen more fractals, and race
       the cores against the card.</para>
+    <para>When the card took part, its bar shows where the time went: the
+      first run compiles the card's kernel, once; then the data goes to the
+      card and back, the card computes, and its results are read and checked.
+      What is left is the processor's own part of the program.</para>
+  </section>
+
+  <section xml:id="pg-race">
+    <title>Twice the Cores, Half the Time?</title>
+    <para>How much faster does a loop get with more cores? “Race” runs the
+      program on one core, on two, on four and so on up to all of them, then
+      on the graphics card, and draws how many times faster each was than one
+      core.</para>
+    <para>If every core helped fully, the points would lie on the dashed line:
+      twice the cores, half the time. They lie below it. Starting the cores
+      costs a little, the cores share the memory, and many processors have fast
+      cores and economical ones — once the fast ones are all at work, each
+      further core adds less. The card is a line of its own: you do not choose
+      how many of its cores it uses.</para>
+    <programlisting role="gpu-race">function colour(x: i32, y: i32, w: i32, h: i32) returns u32
+{
+    let cr (x as f32) * 3.0 / (w as f32) - 2.1
+    let ci (y as f32) * 2.0 / (h as f32) - 1.0
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    while k &lt; 500 and zr * zr + zi * zi &lt;= 4.0
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+        k := k + 1
+    }
+    if k = 500
+        return 0xFF000000
+    let shade ((k % 32) * 8) as u32
+    0xFF000000 | ((255 - shade) &lt;&lt; 16) | ((shade / 2) &lt;&lt; 8) | shade
+}
+
+let w: i32 900
+let h: i32 600
+var picture Vector[u32]((w * h) as size_t)
+relaxed for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, w, h))
+File.write_bytes("mandelbrot.`w`x`h`.rgba", picture.as_bytes())
+print "`w * h` points"</programlisting>
+    <para>Make the picture smaller — 300 × 200 — and race again: with less work,
+      starting the cores weighs more, and the curve flattens sooner.</para>
+  </section>
+
+  <section xml:id="pg-sizes">
+    <title>When the Card Pays</title>
+    <para>The card does not start for nothing: the data goes to it, the card is
+      told to begin, and the results come back — a cost for every loop it runs,
+      however small. This program runs the same loop for more and more points,
+      from 1024 up to a million, and prints how long each took; a
+      <code>Stopwatch</code> measures.</para>
+    <para>“Compare” runs it three times: on all cores, on the card, and where it
+      pays — there the program decides at every run of the loop where it goes.
+      Below a certain size the cores win, above it the card; the chart marks
+      where.</para>
+    <programlisting role="gpu-sizes">; a little work for each point: a hundred steps of the logistic map
+function work(i: i32) returns f32
+{
+    var x ((i % 1000) as f32) / 1000.0
+    var k: i32 0
+    while k &lt; 100
+    {
+        x := x * 3.9 * (1.0 - x)
+        k := k + 1
+    }
+    x
+}
+
+let most: i32 1048576
+var out Vector[f32](most as size_t)
+; once, small and not timed: the card compiles its kernel here
+let small: i32 1000
+relaxed for i in small
+    out.put(i as size_t, work(i))
+var n: i32 1024
+while n &lt;= most
+{
+    let watch Stopwatch.start()
+    relaxed for i in n
+        out.put(i as size_t, work(i))
+    print "size `n` `watch.milliseconds()`"
+    n := n * 4
+}</programlisting>
+    <para>The work for a point is a hundred steps of a little formula. Make it a
+      thousand — <code>while k &lt; 1000</code> — and compare again: with more
+      work in every point, the card pays sooner.</para>
+  </section>
+
+  <section xml:id="pg-spectral">
+    <title>A Sum, and What f32 Costs</title>
+    <para>Not every loop paints a picture. This one estimates the largest
+      singular value of a matrix by multiplying a vector with it again and
+      again — spectral-norm, a classic among benchmarks. Each product is a loop
+      over the rows, and each row a sum over the columns.</para>
+    <para>The card computes in <code>f32</code>, numbers with about seven
+      digits; the processor has <code>f64</code> too, with about sixteen. The
+      program does the same work in both, round by round, and draws how many
+      digits of each estimate are right. The <code>f64</code> loop stays on the
+      processor — a card in the browser has no <code>f64</code> —, the
+      <code>f32</code> loop may go to the card.</para>
+    <programlisting role="gpu">; The matrix: one number for every row i and column j.
+function a(i: i32, j: i32) returns f64
+    1.0 / ((((i + j) * (i + j + 1)) / 2 + i + 1) as f64)
+
+; The matrix times a vector, or the matrix turned: a sum over the
+; columns for every row -- in f64, and in f32.
+procedure times(v: Vector[f64], mutable out: Vector[f64], turned: bool)
+{
+    let n v.length as i32
+    for i in n
+    {
+        var sum 0.0
+        for j in n
+            sum := sum + (if turned: a(j, i) else a(i, j)) * v[j as size_t]
+        out.put(i as size_t, sum)
+    }
+}
+
+procedure times32(v: Vector[f32], mutable out: Vector[f32], turned: bool)
+{
+    let n v.length as i32
+    relaxed for i in n
+    {
+        var sum: f32 0.0
+        for j in n
+            sum := sum + (if turned: a(j, i) as f32 else a(i, j) as f32) * v[j as size_t]
+        out.put(i as size_t, sum)
+    }
+}
+
+; how many digits of a guess are right
+function digits(guess: f64, truth: f64) returns f64
+{
+    let off ((guess - truth) / truth).abs()
+    if off &lt; 0.0000000000000001
+        return 16.0
+    0.0 - log10(off)
+}
+
+let n: size_t 300
+let rounds 10
+var u Vector[f64](n)
+var v Vector[f64](n)
+var t Vector[f64](n)
+var u32 Vector[f32](n)
+var v32 Vector[f32](n)
+var t32 Vector[f32](n)
+for k in n
+{
+    u.put(k, 1.0)
+    u32.put(k, 1.0)
+}
+var guess64 Array[f64]()
+var guess32 Array[f64]()
+for r in rounds
+{
+    times(u, t, false)
+    times(t, v, true)
+    times(v, t, false)
+    times(t, u, true)
+    times32(u32, t32, false)
+    times32(t32, v32, true)
+    times32(v32, t32, false)
+    times32(t32, u32, true)
+    var uv 0.0
+    var vv 0.0
+    var uv32: f32 0.0
+    var vv32: f32 0.0
+    for k in n
+    {
+        uv := uv + u[k] * v[k]
+        vv := vv + v[k] * v[k]
+        uv32 := uv32 + u32[k] * v32[k]
+        vv32 := vv32 + v32[k] * v32[k]
+    }
+    guess64.add((uv / vv).sqrt())
+    guess32.add(((uv32 / vv32) as f64).sqrt())
+}
+let truth guess64[guess64.length - 1]
+print "the largest singular value: `truth`"
+var chart Chart("Correct digits, round by round")
+chart.axes("round", "digits")
+chart.series("f64")
+for r in rounds
+    chart.point(r + 1, digits(guess64[r as size_t], truth))
+chart.series("f32")
+for r in rounds
+    chart.point(r + 1, digits(guess32[r as size_t], truth))
+chart.show()</programlisting>
+    <para>After two rounds <code>f64</code> is as exact as it gets;
+      <code>f32</code> stops at about six digits, wherever it runs. That is the
+      price of <code>f32</code> — and the card is fast because it pays it.</para>
   </section>
 </chapter>

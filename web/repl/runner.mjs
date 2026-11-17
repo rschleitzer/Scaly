@@ -9,12 +9,16 @@
 //   { type: 'hello' }                    -> { type: 'ready', card, why }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, ms,
-//                                              pictures, drawings, cards, compiled }
+//                                              pictures, drawings, cards, compiled, parts }
 //
 // `gpu` is the card's mode for the run: 'off', 'on' or 'auto'. `ms` is how
 // long the program ran, `cards` how many loops the card took, `compiled`
 // how much of `ms` compiling the card's kernels took (a kernel is compiled
-// once, at its first run, and kept). `pictures` and
+// once, at its first run, and kept). `parts` is where the card's time
+// went in this run, in ms (gpu-host.mjs, report): `card` all of it,
+// `compile`, `there` (the run to the card's worker), `errors` (its check
+// for a fault), `read` (the results read back), `back` (the program woken
+// again) -- the rest of `card` is the card computing. `pictures` and
 // `drawings` are what worker.mjs hands back for a program `scaly run` ran:
 // the `.<w>x<h>.rgba` files and the SVG files it wrote.
 import { MemoryFiles, Wasi } from './wasi.mjs';
@@ -54,6 +58,8 @@ async function answer(data) {
   if (card) card.mode = data.gpu;
   const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
   const before = sum('card'), compiledBefore = sum('compile_ms');
+  const PARTS = ['card_ms', 'compile_ms', 'there_ms', 'errors_ms', 'read_ms', 'back_ms'];
+  const partsBefore = PARTS.map(sum);
   const files = new MemoryFiles();
   for (const dir of ['/tmp', '/work']) files.dirs.add(dir);
   const wasi = new Wasi({
@@ -81,6 +87,7 @@ async function answer(data) {
   const cards = sum('card') - before;
   // of the run: compiling the card's kernels, which only a kernel's first run pays
   const compiled = sum('compile_ms') - compiledBefore;
+  const parts = Object.fromEntries(PARTS.map((name, i) => [name.slice(0, -3), sum(name) - partsBefore[i]]));
   self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), ms,
-                     pictures, drawings, cards, compiled }, pictures.map(p => p.bytes.buffer));
+                     pictures, drawings, cards, compiled, parts }, pictures.map(p => p.bytes.buffer));
 }

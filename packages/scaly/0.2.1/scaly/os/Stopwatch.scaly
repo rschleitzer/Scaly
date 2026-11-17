@@ -1,0 +1,21 @@
+; A stopwatch: how long since it was started, in milliseconds, by the
+; system's monotonic clock (scaly_eio_now_ns, fiber/eio.c and its siblings
+; for Windows and WebAssembly).
+;
+;   let watch Stopwatch.start()
+;   ...
+;   print "took `watch.milliseconds()` ms"
+
+define Stopwatch
+(
+    started: i64
+)
+{
+    ; a stopwatch running from now
+    procedure start() returns Stopwatch
+        Stopwatch(scaly_eio_now_ns())
+
+    ; the milliseconds since it was started
+    procedure milliseconds(this) returns f64
+        ((scaly_eio_now_ns() - this.started) as f64) / 1000000.0
+}

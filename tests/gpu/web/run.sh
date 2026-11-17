@@ -39,9 +39,10 @@
 #    German (&lang=de): every step runs, the tour's step on values shows
 #    each value beside its line (web/repl/notes.mjs), a task's program as
 #    given is "not yet" and its solution is praised, a drawing step shows
-#    its drawing, and the step for the cores draws on
-#    one core what it draws on all of them -- and what the program draws
-#    natively. One of them
+#    its drawing, a step for the cores that paints draws on one core what
+#    it draws on all of them -- the Mandelbrot step what the program draws
+#    natively --, and a step with an experiment (the race over the cores,
+#    the sizes against the card) runs it and draws its chart. One of them
 #    (canvas.scaly) writes a picture, which the page's worker must hand
 #    back: the same but for a hundredth of its points at most -- its loop is
 #    `relaxed`.
@@ -531,12 +532,19 @@ for step in r['report']:
             fails.append('%s: %s %s' % (what, run['status'], run['output'][:120]))
         if step['chapter'] == 'pg-drawing' and run['drawings'] < 1:
             fails.append('%s: no drawing shown' % what)
-    if step['gpu']:
+    # a step for the cores that paints: one picture on one core and on all,
+    # and the Mandelbrot step's is the one the program draws natively
+    if step['gpu'] and any(run['pictures'] for run in step['runs']):
         hashes = {p['hash'] for run in step['runs'] for p in run['pictures']}
         if len(hashes) != 1:
             fails.append('%s: the pictures on one core and on all differ (%s)' % (step['title'], hashes))
-        elif hashes != {h}:
+        elif step.get('section') == 'pg-mandelbrot' and hashes != {h}:
             fails.append('%s: the picture is not the one the program draws natively' % step['title'])
+    # a step with an experiment (a race over the cores, the sizes against the
+    # card): it ran, and its chart has points
+    e = step.get('experiment')
+    if e is not None and (not e['ok'] or e['points'] < 2 or e['drawn'] < 3):
+        fails.append('%s: its %s %s, %d points, %d marks drawn' % (step['title'], e['kind'], e['status'], e['points'], e['drawn']))
 # the values beside the code (notes.mjs), of the tour's step on values:
 # `let answer 42`, `var count 0`, `count := count + 1`
 notes = r.get('notes') or {}

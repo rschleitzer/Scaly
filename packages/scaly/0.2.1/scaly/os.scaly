@@ -13,6 +13,7 @@ define os
     module Directory
     module Path
     module Tcp
+    module Stopwatch
 
     ; The environment variable `name` as bytes, a view of the process's
     ; environment; empty when it is not set.
