@@ -1627,6 +1627,7 @@
 
 <!ATTLIST book
 	xmlns	CDATA	#FIXED	"http://docbook.org/ns/docbook"
+	xmlns:mml	CDATA	#FIXED	"http://www.w3.org/1998/Math/MathML"
 	role	CDATA	#IMPLIED
 	%db.common.attributes;
 	%db.common.linking.attributes;
@@ -3288,7 +3289,7 @@
 
 >
 
-<!ELEMENT equation (((title|titleabbrev)*, (info)?), (alt)?, ((mediaobject)+|(mathphrase)+), (caption)?)>
+<!ELEMENT equation (((title|titleabbrev)*, (info)?), (alt)?, ((mediaobject)+|(mathphrase)+|mml:math), (caption)?)>
 
 <!ATTLIST equation
 	xmlns	CDATA	#FIXED	"http://docbook.org/ns/docbook"
@@ -3301,7 +3302,7 @@
 
 >
 
-<!ELEMENT informalequation ((info)?, (alt)?, ((mediaobject)+|(mathphrase)+), (caption)?)>
+<!ELEMENT informalequation ((info)?, (alt)?, ((mediaobject)+|(mathphrase)+|mml:math), (caption)?)>
 
 <!ATTLIST informalequation
 	xmlns	CDATA	#FIXED	"http://docbook.org/ns/docbook"
@@ -3311,7 +3312,7 @@
 
 >
 
-<!ELEMENT inlineequation ((alt)?, ((inlinemediaobject)+|(mathphrase)+))>
+<!ELEMENT inlineequation ((alt)?, ((inlinemediaobject)+|(mathphrase)+|mml:math))>
 
 <!ATTLIST inlineequation
 	xmlns	CDATA	#FIXED	"http://docbook.org/ns/docbook"
@@ -4197,3 +4198,77 @@
 
 >
 
+<!-- Presentation MathML, as DocBook 5 lets an equation hold it (mml:math
+     in equation, informalequation and inlineequation): the elements and
+     attributes a book here uses. dsssl/scaly-book.dsl hands them on to the
+     page as MathML, which the browser sets. -->
+<!ENTITY % mml.pres "mml:mrow|mml:mi|mml:mn|mml:mo|mml:mtext|mml:mspace|mml:mfrac|mml:msub|mml:msup|mml:msubsup|mml:msqrt|mml:mroot|mml:mover|mml:munder|mml:munderover|mml:mtable|mml:mstyle|mml:mpadded|mml:mphantom">
+<!ENTITY % mml.att "
+	display	CDATA	#IMPLIED
+	mathvariant	CDATA	#IMPLIED
+	stretchy	CDATA	#IMPLIED
+	form	CDATA	#IMPLIED
+	fence	CDATA	#IMPLIED
+	separator	CDATA	#IMPLIED
+	lspace	CDATA	#IMPLIED
+	rspace	CDATA	#IMPLIED
+	largeop	CDATA	#IMPLIED
+	movablelimits	CDATA	#IMPLIED
+	accent	CDATA	#IMPLIED
+	accentunder	CDATA	#IMPLIED
+	linethickness	CDATA	#IMPLIED
+	width	CDATA	#IMPLIED
+	height	CDATA	#IMPLIED
+	depth	CDATA	#IMPLIED
+	columnalign	CDATA	#IMPLIED
+	rowspacing	CDATA	#IMPLIED
+	columnspacing	CDATA	#IMPLIED
+	displaystyle	CDATA	#IMPLIED
+	scriptlevel	CDATA	#IMPLIED
+">
+<!ELEMENT mml:math (%mml.pres;)*>
+<!ATTLIST mml:math
+	xmlns:mml	CDATA	#FIXED	"http://www.w3.org/1998/Math/MathML"
+	%mml.att;>
+<!ELEMENT mml:mi (#PCDATA)>
+<!ATTLIST mml:mi %mml.att;>
+<!ELEMENT mml:mn (#PCDATA)>
+<!ATTLIST mml:mn %mml.att;>
+<!ELEMENT mml:mo (#PCDATA)>
+<!ATTLIST mml:mo %mml.att;>
+<!ELEMENT mml:mtext (#PCDATA)>
+<!ATTLIST mml:mtext %mml.att;>
+<!ELEMENT mml:mspace EMPTY>
+<!ATTLIST mml:mspace %mml.att;>
+<!ELEMENT mml:mrow (%mml.pres;)*>
+<!ATTLIST mml:mrow %mml.att;>
+<!ELEMENT mml:mstyle (%mml.pres;)*>
+<!ATTLIST mml:mstyle %mml.att;>
+<!ELEMENT mml:mpadded (%mml.pres;)*>
+<!ATTLIST mml:mpadded %mml.att;>
+<!ELEMENT mml:mphantom (%mml.pres;)*>
+<!ATTLIST mml:mphantom %mml.att;>
+<!ELEMENT mml:msqrt (%mml.pres;)*>
+<!ATTLIST mml:msqrt %mml.att;>
+<!ELEMENT mml:mfrac ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:mfrac %mml.att;>
+<!ELEMENT mml:msub ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:msub %mml.att;>
+<!ELEMENT mml:msup ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:msup %mml.att;>
+<!ELEMENT mml:mroot ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:mroot %mml.att;>
+<!ELEMENT mml:mover ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:mover %mml.att;>
+<!ELEMENT mml:munder ((%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:munder %mml.att;>
+<!ELEMENT mml:msubsup ((%mml.pres;), (%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:msubsup %mml.att;>
+<!ELEMENT mml:munderover ((%mml.pres;), (%mml.pres;), (%mml.pres;))>
+<!ATTLIST mml:munderover %mml.att;>
+<!ELEMENT mml:mtable (mml:mtr)*>
+<!ATTLIST mml:mtable %mml.att;>
+<!ELEMENT mml:mtr (mml:mtd)*>
+<!ATTLIST mml:mtr %mml.att;>
+<!ELEMENT mml:mtd (%mml.pres;)*>
+<!ATTLIST mml:mtd %mml.att;>

@@ -475,6 +475,16 @@ aside.sidebar-box { margin: 0 0 1.4em; padding: 14px 18px 4px; border: 1px solid
 
 .equation { margin: 0 0 1.2em; padding: 0.3em 0; text-align: center; overflow-x: auto; }
 .math { font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', Georgia, serif; font-size: 1.12em; font-style: italic; }
+/* Latin Modern Math (GUST, fonts/README-Latin-Modern-Math.txt): the formulas
+   of a book that has them (docs/ml.sh puts fonts/ beside its pages), loaded
+   only where a page holds a formula */
+@font-face {
+  font-family: 'Latin Modern Math';
+  src: url('fonts/latinmodern-math.otf') format('opentype');
+  font-display: swap;
+}
+math { font-family: 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', math; font-size: 1.1em; }
+.equation math { font-size: 1.25em; }
 div.lead > p { margin: 0; }
 
 figure.example { margin: 0 0 1.5em; }

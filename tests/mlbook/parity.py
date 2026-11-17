@@ -1,7 +1,7 @@
 """python3 parity.py <book.xml> <translated.xml> -- the translated book has
 the English one's chapters and sections, by id and in order, and in each the
-same programs and screens, character for character: the programs of the
-book are written once, in English, and stand in both.
+same programs, screens and formulas (mml:math), character for character:
+they are written once and stand in both.
 
 python3 parity.py --chapters <book.xml> -- the book's chapter files, in the
 order of its entities (what tests/book/run.sh runs).
@@ -11,7 +11,8 @@ import re
 import sys
 
 ENTITY = re.compile(r'<!ENTITY\s+\S+\s+SYSTEM\s+"([^"]+)"\s*>')
-TOKEN = re.compile(r'xml:id="([^"]+)"|<programlisting[^>]*>(.*?)</programlisting>|<screen>(.*?)</screen>', re.S)
+TOKEN = re.compile(r'xml:id="([^"]+)"|<programlisting[^>]*>(.*?)</programlisting>|<screen>(.*?)</screen>'
+                   r'|<mml:math[^>]*>(.*?)</mml:math>', re.S)
 
 
 def chapters(book):
@@ -27,8 +28,10 @@ def outline(book):
                 items.append(('id', m.group(1)))
             elif m.group(2) is not None:
                 items.append(('program', m.group(2)))
-            else:
+            elif m.group(3) is not None:
                 items.append(('screen', m.group(3)))
+            else:
+                items.append(('formula', m.group(4)))
     return items
 
 
@@ -48,5 +51,5 @@ for k in range(max(len(english), len(other))):
                  a[0] + ' ' + a[1][:60].strip() if a else 'nothing'))
         bad += 1
         break
-print('parity: %d ids, programs and screens alike' % len(english) if not bad else 'parity: FAIL')
+print('parity: %d ids, programs, screens and formulas alike' % len(english) if not bad else 'parity: FAIL')
 sys.exit(1 if bad else 0)

@@ -281,11 +281,15 @@ href="#field-points"
 >Two Kinds of Points</a
 ></h2
 ><p
->Let there be a plane with the coordinates <code
->x</code
+>Let there be a plane with the coordinates <math
+><mi
+>x</mi
+></math
 >
-      and <code
->y</code
+      and <math
+><mi
+>y</mi
+></math
 >, each from -6 to +6. Into this plane we put
       points of two kinds: orange and blue. In the programs the kind of a
       point is represented by a number: <code
@@ -298,10 +302,14 @@ href="#field-points"
 >A <em
 >model</em
 > is a function that computes, from the
-      coordinates <code
->x</code
-> and <code
->y</code
+      coordinates <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
 > of a place
       in this plane, a guess of the kind of a point at that place: a value
       between -1 and +1. At -1 the model is sure that a blue point lies
@@ -313,9 +321,37 @@ href="#field-points"
 >We could write such a function any way we like, for example</p
 ><div
 class="equation"
-><span
-class="math"
->f(x, y) = x / 6</span
+><math
+display="block"
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mfrac
+><mi
+>x</mi
+><mn
+>6</mn
+></mfrac
+></math
 ></div
 ><p
 >It is +1 at the right edge, -1 at the left and 0 on the upright
@@ -323,13 +359,143 @@ class="math"
       nearer the middle, the less sure it is. Or</p
 ><div
 class="equation"
-><span
-class="math"
->f(x, y) = cos(π·(x² + y²) / 72)</span
+><math
+display="block"
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+>(</mo
+><mfrac
+><mrow
+><mi
+>π</mi
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mn
+>72</mn
+></mfrac
+><mo
+>)</mo
+></mrow
+></mrow
+></math
 ></div
 ><p
->It is +1 at the centre, because cos 0 = 1, and -1 in the four
-      corners, because there x² + y² = 36 + 36 = 72 and cos π = -1; on the
+>It is +1 at the centre, because <math
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mn
+>0</mn
+></mrow
+><mo
+>=</mo
+><mn
+>1</mn
+></math
+>, and -1 in the four
+      corners, because there <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>=</mo
+><mn
+>36</mn
+><mo
+>+</mo
+><mn
+>36</mn
+><mo
+>=</mo
+><mn
+>72</mn
+></math
+> and <math
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mi
+>π</mi
+></mrow
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+></math
+>; on the
       circle of radius 6 around the centre it is 0. Whether such a function
       guesses well depends on the points: the first suits points that are
       orange on the right and blue on the left, the second an orange disc
@@ -384,20 +550,46 @@ href="#field-neuron"
 >:</p
 ><div
 class="equation"
-><span
-class="math"
->z = w<sub
->1</sub
->·x + w<sub
->2</sub
->·y + b</span
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>x</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>y</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
 ></div
 ><p
->Where <code
->z</code
+>Where <math
+><mi
+>z</mi
+></math
 > is positive the neuron guesses orange,
-      where it is negative, blue. The points where <code
->z</code
+      where it is negative, blue. The points where <math
+><mi
+>z</mi
+></math
 > is
       exactly 0 form a straight line, so a neuron parts the plane by a
       line: the weights turn it, the bias moves it. Here is a neuron with
@@ -443,14 +635,30 @@ class="screen"
 >Five of the six are right. The point <code
 >(0.5, -2.5)</code
 >
-      is orange but lies below the line <code
->x + y = 0</code
+      is orange but lies below the line <math
+><mi
+>x</mi
+><mo
+>+</mo
+><mi
+>y</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 >. Set
       <code
 >w2</code
 > to 0 and run it again: the line becomes the
-      upright axis, <code
->x = 0</code
+      upright axis, <math
+><mi
+>x</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 >, and all six are right.
       Turning the line by changing a weight until the guesses are right is
       exactly what learning will do, only by itself.</p
@@ -474,27 +682,79 @@ href="#field-loss"
       -1 and 1 by a smooth function, here the hyperbolic tangent:</p
 ><div
 class="equation"
-><span
-class="math"
->a = tanh(z)</span
+><math
+display="block"
+><mi
+>a</mi
+><mo
+>=</mo
+><mrow
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
 ></div
 ><p
 >Now the neuron answers as the beginning of the chapter asked of a
       model: near +1 or -1 where it is sure, near 0 where it is not. Such a squashing function is the neuron's
       <em
 >activation</em
->, and <code
->a</code
+>, and <math
+><mi
+>a</mi
+></math
 > its answer.
       Now the answer can be compared with the kind
-      <code
->t</code
+      <math
+><mi
+>t</mi
+></math
 > the point really has:</p
 ><div
 class="equation"
-><span
-class="math"
->L = ½·(a − t)²</span
+><math
+display="block"
+><mi
+>L</mi
+><mo
+>=</mo
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+></math
 ></div
 ><p
 >This is the <em
@@ -514,13 +774,27 @@ href="#field-gradient"
 ></h2
 ><p
 >Think of the loss as a landscape. Each choice of the three
-      numbers <code
->w1</code
->, <code
->w2</code
+      numbers <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>, <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
 > and
-      <code
->b</code
+      <math
+><mi
+>b</mi
+></math
 > is a place in it, and the loss there is its
       height. Learning is walking downhill. Which way is down can be read
       off each weight separately: how much does the loss change when the
@@ -528,39 +802,93 @@ href="#field-gradient"
       <em
 >derivative</em
 >, written
-      <code
->∂L/∂w1</code
+      <math
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 >.</p
 ><p
->The loss does not depend on <code
->w1</code
+>The loss does not depend on <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 > directly. It
-      depends on the answer <code
->a</code
+      depends on the answer <math
+><mi
+>a</mi
+></math
 >, the answer on the sum
-      <code
->z</code
->, and the sum on <code
->w1</code
+      <math
+><mi
+>z</mi
+></math
+>, and the sum on <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 >. Each link
       of that chain has a slope that is easy to say:</p
 ><ul
 ><li
 ><p
->the loss by the answer: <code
->a − t</code
+>the loss by the answer: <math
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+></math
 >;</p
 ></li
 ><li
 ><p
->the answer by the sum, the slope of tanh: <code
->1 − a²</code
+>the answer by the sum, the slope of tanh: <math
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+></math
 >;</p
 ></li
 ><li
 ><p
->the sum by the weight: <code
->x</code
+>the sum by the weight: <math
+><mi
+>x</mi
+></math
 >, the input the weight multiplies.</p
 ></li
 ></ul
@@ -571,17 +899,81 @@ href="#field-gradient"
       whole chain is the product of the slopes of its links:</p
 ><div
 class="equation"
-><span
-class="math"
->∂L/∂w<sub
->1</sub
-> = (a − t)·(1 − a²)·x</span
+><math
+display="block"
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mi
+>x</mi
+></math
 ></div
 ><p
->For <code
->w2</code
-> the last factor is <code
->y</code
+>For <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
+> the last factor is <math
+><mi
+>y</mi
+></math
 >,
       for the bias it is 1. Added up over all points and divided by their
       number, these derivatives are the <em
@@ -594,19 +986,55 @@ class="math"
       the other way,</p
 ><div
 class="equation"
-><span
-class="math"
->w<sub
->1</sub
-> ← w<sub
->1</sub
-> − η·∂L/∂w<sub
->1</sub
-></span
+><math
+display="block"
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>←</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>−</mo
+><mi
+>η</mi
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+></math
 ></div
 ><p
->where the small number <code
->η</code
+>where the small number <math
+><mi
+>η</mi
+></math
 > is the
       <em
 >learning rate</em
@@ -729,10 +1157,14 @@ href="#field-features"
 >A neuron parts the plane by a line, and some points no line can
       part. Put a disc of orange points inside a ring of blue ones: every
       line has orange and blue on both sides. The program below tries it
-      twice, first with <code
->x</code
-> and <code
->y</code
+      twice, first with <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
 > as
       the neuron's inputs, then with their squares:</p
 ><pre
@@ -822,20 +1254,70 @@ given x² and y²:
   step 400: loss 0.003, 16 of 16 right</code
 ></pre
 ><p
->Given <code
->x</code
-> and <code
->y</code
+>Given <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
 >, the neuron
       stays at a loss of 0.5, no better than not guessing at all. Given
-      <code
->x²</code
-> and <code
->y²</code
+      <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
+> and <math
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
 >, it learns every
       point. The neuron still draws a line, but a line in the inputs it is
-      given: <code
->w1·x² + w2·y² + b = 0</code
+      given: <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><mi
+>b</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 > is, on the plane, a
       circle. Choosing what a model sees is called
       <em
@@ -853,16 +1335,32 @@ href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y"
 >Open the circle with x and y as inputs.</a
 >
         The output stays a straight edge between two pale halves. Click on
-        <code
->x²</code
-> and <code
->y²</code
+        <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
+> and <math
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
 > in the network to
-        give them to the neuron, and on <code
->x</code
+        give them to the neuron, and on <math
+><mi
+>x</mi
+></math
 > and
-        <code
->y</code
+        <math
+><mi
+>y</mi
+></math
 > to take those away: the edge closes into a
         circle. Each small square shows what one input or neuron answers
         over the whole plane.</p
@@ -882,11 +1380,15 @@ href="#field-hidden"
       let neurons compute the inputs. A <em
 >hidden layer</em
 >
-      is a row of neurons that each read <code
->x</code
+      is a row of neurons that each read <math
+><mi
+>x</mi
+></math
 > and
-      <code
->y</code
+      <math
+><mi
+>y</mi
+></math
 > and each draw a line of their own. Their
       answers are the inputs of one more neuron, the
       <em
@@ -895,10 +1397,14 @@ href="#field-hidden"
       orange inside these two, blue outside this one.</p
 ><p
 >The data that shows it best is called XOR: orange where
-      <code
->x</code
-> and <code
->y</code
+      <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
 > have the same sign,
       blue where they do not, the four quarters of the plane alternating.
       No single line parts them, but two lines do, with something to
@@ -954,58 +1460,182 @@ href="#field-backprop"
       order in which it is computed.</p
 ><p
 >First everything is computed forward, as before: each hidden
-      neuron's answer <code
->hⱼ</code
+      neuron's answer <math
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+></math
 >, then the output's sum and its
-      answer <code
->a</code
+      answer <math
+><mi
+>a</mi
+></math
 >. Then backward. The output neuron's
       share of the error, the loss by its sum, is the familiar</p
 ><div
 class="equation"
-><span
-class="math"
->d = (a − t)·(1 − a²)</span
+><math
+display="block"
+><mi
+>d</mi
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
 ></div
 ><p
 >and its weights' derivatives follow from it as for a single
-      neuron: <code
->d·hⱼ</code
+      neuron: <math
+><mi
+>d</mi
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+></math
 > for the weight
-      <code
->vⱼ</code
+      <math
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+></math
 > that reads hidden neuron
-      <code
->j</code
->. Hidden neuron <code
->j</code
+      <math
+><mi
+>j</mi
+></math
+>. Hidden neuron <math
+><mi
+>j</mi
+></math
 > reaches the
       loss through that weight, so its answer's slope is
-      <code
->d·vⱼ</code
+      <math
+><mi
+>d</mi
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+></math
 >, and through its own tanh its share of the
       error becomes</p
 ><div
 class="equation"
-><span
-class="math"
->d<sub
->j</sub
-> = d·v<sub
->j</sub
->·(1 − h<sub
->j</sub
->²)</span
+><math
+display="block"
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mo
+>=</mo
+><mi
+>d</mi
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
 ></div
 ><p
 >From there its weights are once more a single neuron's:
-      <code
->dⱼ·x</code
->, <code
->dⱼ·y</code
+      <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mi
+>x</mi
+></math
+>, <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mi
+>y</mi
+></math
 > and
-      <code
->dⱼ</code
+      <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+></math
 > for its bias. The error is handed back through
       the network layer by layer, each layer's share computed from the
       share of the layer after it. That is
@@ -1181,8 +1811,16 @@ href="#field-test"
       <em
 >regularization</em
 >: an extra loss for large
-      weights, <code
->λ·w²</code
+      weights, <math
+><mi
+>λ</mi
+><msup
+><mi
+>w</mi
+><mn
+>2</mn
+></msup
+></math
 > for each weight. Its derivative
       shrinks every weight a little in every step, and a network with
       smaller weights draws smoother borders.</p

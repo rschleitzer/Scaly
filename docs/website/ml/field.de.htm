@@ -282,11 +282,15 @@ href="#field-points"
 >Zwei Sorten von Punkten</a
 ></h2
 ><p
->Gegeben sei eine Ebene mit den Koordinaten <code
->x</code
+>Gegeben sei eine Ebene mit den Koordinaten <math
+><mi
+>x</mi
+></math
 >
-      und <code
->y</code
+      und <math
+><mi
+>y</mi
+></math
 >, jeweils von -6 bis +6. In diese Ebene setzen
       wir Punkte zweier Sorten: orange und blau. In den Programmen wird die
       Sorte eines Punkts durch eine Zahl dargestellt: <code
@@ -299,10 +303,14 @@ href="#field-points"
 >Ein <em
 >Modell</em
 > ist eine Funktion, die aus den
-      Koordinaten <code
->x</code
-> und <code
->y</code
+      Koordinaten <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 > eines Orts
       in dieser Ebene eine Vermutung über die Sorte eines Punkts an diesem
       Ort berechnet, einen Wert zwischen -1 und +1. Bei -1 ist sich das
@@ -315,9 +323,37 @@ href="#field-points"
 >Eine solche Funktion könnten wir beliebig formulieren, etwa</p
 ><div
 class="equation"
-><span
-class="math"
->f(x, y) = x / 6</span
+><math
+display="block"
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mfrac
+><mi
+>x</mi
+><mn
+>6</mn
+></mfrac
+></math
 ></div
 ><p
 >Sie ist am rechten Rand +1, am linken -1 und auf der senkrechten
@@ -325,13 +361,143 @@ class="math"
       Mitte, desto unsicherer ist sie. Oder</p
 ><div
 class="equation"
-><span
-class="math"
->f(x, y) = cos(π·(x² + y²) / 72)</span
+><math
+display="block"
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+>(</mo
+><mfrac
+><mrow
+><mi
+>π</mi
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mn
+>72</mn
+></mfrac
+><mo
+>)</mo
+></mrow
+></mrow
+></math
 ></div
 ><p
->Sie ist im Mittelpunkt +1, denn cos 0 = 1, und in den vier Ecken
-      -1, denn dort ist x² + y² = 36 + 36 = 72 und cos π = -1; auf dem
+>Sie ist im Mittelpunkt +1, denn <math
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mn
+>0</mn
+></mrow
+><mo
+>=</mo
+><mn
+>1</mn
+></math
+>, und in den vier Ecken
+      -1, denn dort ist <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>=</mo
+><mn
+>36</mn
+><mo
+>+</mo
+><mn
+>36</mn
+><mo
+>=</mo
+><mn
+>72</mn
+></math
+> und <math
+><mrow
+><mi
+>cos</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mi
+>π</mi
+></mrow
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+></math
+>; auf dem
       Kreis mit dem Radius 6 um den Mittelpunkt ist sie 0. Ob eine solche
       Funktion gut vermutet, hängt von den Punkten ab: Die erste passt zu
       Punkten, die rechts orange und links blau sind, die zweite zu einer
@@ -386,20 +552,46 @@ href="#field-neuron"
 >:</p
 ><div
 class="equation"
-><span
-class="math"
->z = w<sub
->1</sub
->·x + w<sub
->2</sub
->·y + b</span
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>x</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>y</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
 ></div
 ><p
->Wo <code
->z</code
+>Wo <math
+><mi
+>z</mi
+></math
 > positiv ist, vermutet das Neuron orange,
-      wo es negativ ist, blau. Die Punkte, an denen <code
->z</code
+      wo es negativ ist, blau. Die Punkte, an denen <math
+><mi
+>z</mi
+></math
 >
       genau 0 ist, bilden eine Gerade; ein Neuron teilt die Ebene also
       durch eine Gerade: Die Gewichte drehen sie, der Bias verschiebt sie.
@@ -446,14 +638,30 @@ class="screen"
 >(0.5, -2.5)</code
 >
       ist orange, liegt aber unterhalb der Geraden
-      <code
->x + y = 0</code
+      <math
+><mi
+>x</mi
+><mo
+>+</mo
+><mi
+>y</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 >. Setz <code
 >w2</code
 > auf 0
       und führ es noch einmal aus: Die Gerade wird zur senkrechten
-      Achse, <code
->x = 0</code
+      Achse, <math
+><mi
+>x</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 >, und alle sechs stimmen. Die Gerade
       zu drehen, indem man ein Gewicht ändert, bis die Vermutungen stimmen,
       ist genau das, was Lernen tun wird, nur von selbst.</p
@@ -479,9 +687,29 @@ href="#field-loss"
       Tangens hyperbolicus:</p
 ><div
 class="equation"
-><span
-class="math"
->a = tanh(z)</span
+><math
+display="block"
+><mi
+>a</mi
+><mo
+>=</mo
+><mrow
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
 ></div
 ><p
 >So antwortet das Neuron, wie es zu Beginn des Kapitels von einem
@@ -490,18 +718,50 @@ class="math"
       <em
 >Aktivierung</em
 > des Neurons und
-      <code
->a</code
+      <math
+><mi
+>a</mi
+></math
 > seine Antwort. Jetzt lässt sich die Antwort mit
-      der Sorte <code
->t</code
+      der Sorte <math
+><mi
+>t</mi
+></math
 > vergleichen, die der Punkt wirklich
       hat:</p
 ><div
 class="equation"
-><span
-class="math"
->L = ½·(a − t)²</span
+><math
+display="block"
+><mi
+>L</mi
+><mo
+>=</mo
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+></math
 ></div
 ><p
 >Das ist der <em
@@ -524,13 +784,27 @@ href="#field-gradient"
 ></h2
 ><p
 >Stell dir den Fehler als Landschaft vor. Jede Wahl der drei
-      Zahlen <code
->w1</code
->, <code
->w2</code
+      Zahlen <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>, <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
 > und
-      <code
->b</code
+      <math
+><mi
+>b</mi
+></math
 > ist ein Ort darin, und der Fehler dort ist seine
       Höhe. Lernen heißt bergab gehen. Wo es bergab geht, lässt sich für
       jedes Gewicht einzeln ablesen: Wie stark ändert sich der Fehler, wenn
@@ -538,40 +812,94 @@ href="#field-gradient"
       <em
 >Ableitung</em
 > nach dem Gewicht, geschrieben
-      <code
->∂L/∂w1</code
+      <math
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 >.</p
 ><p
->Der Fehler hängt nicht direkt von <code
->w1</code
+>Der Fehler hängt nicht direkt von <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 > ab. Er
-      hängt von der Antwort <code
->a</code
+      hängt von der Antwort <math
+><mi
+>a</mi
+></math
 > ab, die Antwort von der
-      Summe <code
->z</code
-> und die Summe von <code
->w1</code
+      Summe <math
+><mi
+>z</mi
+></math
+> und die Summe von <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
 >.
       Jedes Glied dieser Kette hat eine Steigung, die leicht zu sagen
       ist:</p
 ><ul
 ><li
 ><p
->der Fehler nach der Antwort: <code
->a − t</code
+>der Fehler nach der Antwort: <math
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+></math
 >;</p
 ></li
 ><li
 ><p
->die Antwort nach der Summe, die Steigung von tanh: <code
->1 − a²</code
+>die Antwort nach der Summe, die Steigung von tanh: <math
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+></math
 >;</p
 ></li
 ><li
 ><p
->die Summe nach dem Gewicht: <code
->x</code
+>die Summe nach dem Gewicht: <math
+><mi
+>x</mi
+></math
 >, die Eingabe, die das Gewicht multipliziert.</p
 ></li
 ></ul
@@ -582,18 +910,82 @@ href="#field-gradient"
       Kette ist das Produkt der Steigungen ihrer Glieder.</p
 ><div
 class="equation"
-><span
-class="math"
->∂L/∂w<sub
->1</sub
-> = (a − t)·(1 − a²)·x</span
+><math
+display="block"
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mi
+>x</mi
+></math
 ></div
 ><p
->Für <code
->w2</code
+>Für <math
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+></math
 > ist der letzte Faktor
-      <code
->y</code
+      <math
+><mi
+>y</mi
+></math
 >, für den Bias 1. Über alle Punkte
       zusammengezählt und durch ihre Anzahl geteilt, sind diese Ableitungen
       der <em
@@ -606,19 +998,55 @@ class="math"
       wenig in die andere Richtung,</p
 ><div
 class="equation"
-><span
-class="math"
->w<sub
->1</sub
-> ← w<sub
->1</sub
-> − η·∂L/∂w<sub
->1</sub
-></span
+><math
+display="block"
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>←</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>−</mo
+><mi
+>η</mi
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+></math
 ></div
 ><p
->wobei die kleine Zahl <code
->η</code
+>wobei die kleine Zahl <math
+><mi
+>η</mi
+></math
 > die
       <em
 >Lernrate</em
@@ -743,10 +1171,14 @@ href="#field-features"
       kann keine Gerade teilen. Leg eine Scheibe oranger Punkte in
       einen Ring blauer: Jede Gerade hat Orange und Blau auf beiden Seiten.
       Das Programm unten versucht es zweimal, zuerst mit
-      <code
->x</code
-> und <code
->y</code
+      <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 > als Eingaben des
       Neurons, dann mit ihren Quadraten:</p
 ><pre
@@ -836,20 +1268,70 @@ given x² and y²:
   step 400: loss 0.003, 16 of 16 right</code
 ></pre
 ><p
->Mit <code
->x</code
-> und <code
->y</code
+>Mit <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 > bleibt das
       Neuron bei einem Fehler von 0,5, nicht besser, als gar nicht zu
-      raten. Mit <code
->x²</code
-> und <code
->y²</code
+      raten. Mit <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
+> und <math
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
 > lernt es
       jeden Punkt. Das Neuron zieht noch immer eine Gerade, aber eine Gerade
-      in den Eingaben, die es bekommt: <code
->w1·x² + w2·y² + b = 0</code
+      in den Eingaben, die es bekommt: <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><mi
+>b</mi
+><mo
+>=</mo
+><mn
+>0</mn
+></math
 >
       ist auf der Ebene ein Kreis. Auszuwählen, was ein Modell sieht, heißt
       <em
@@ -867,16 +1349,32 @@ href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y&#38;l
 >Öffne den Kreis mit x und y als Eingaben.</a
 >
         Die Ausgabe bleibt eine gerade Kante zwischen zwei blassen Hälften.
-        Klick im Netz auf <code
->x²</code
+        Klick im Netz auf <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
 > und
-        <code
->y²</code
+        <math
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
 >, um sie dem Neuron zu geben, und auf
-        <code
->x</code
-> und <code
->y</code
+        <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 >, um diese
         wegzunehmen: Die Kante schließt sich zum Kreis. Jedes kleine Quadrat
         zeigt, was eine Eingabe oder ein Neuron über der ganzen Ebene
@@ -898,10 +1396,14 @@ href="#field-hidden"
       Eine <em
 >verborgene Schicht</em
 > ist eine Reihe von
-      Neuronen, die jedes <code
->x</code
-> und <code
->y</code
+      Neuronen, die jedes <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 >
       lesen und jedes eine eigene Gerade ziehen. Ihre Antworten sind die
       Eingaben eines weiteren Neurons, der <em
@@ -911,10 +1413,14 @@ href="#field-hidden"
       blau außerhalb jener.</p
 ><p
 >Die Daten, an denen man das am besten sieht, heißen XOR: orange,
-      wo <code
->x</code
-> und <code
->y</code
+      wo <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
 > dasselbe Vorzeichen
       haben, blau, wo nicht, die vier Viertel der Ebene im Wechsel. Keine
       einzelne Gerade teilt sie, zwei Geraden schon, mit etwas, das sie
@@ -971,59 +1477,183 @@ href="#field-backprop"
       wird.</p
 ><p
 >Zuerst wird alles vorwärts gerechnet, wie bisher: die Antwort
-      <code
->hⱼ</code
+      <math
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+></math
 > jedes verborgenen Neurons, dann die Summe der
-      Ausgabe und ihre Antwort <code
->a</code
+      Ausgabe und ihre Antwort <math
+><mi
+>a</mi
+></math
 >. Dann rückwärts. Der
       Anteil des Ausgabeneurons am Fehler, der Fehler nach seiner Summe,
       ist das bekannte</p
 ><div
 class="equation"
-><span
-class="math"
->d = (a − t)·(1 − a²)</span
+><math
+display="block"
+><mi
+>d</mi
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
 ></div
 ><p
 >und die Ableitungen seiner Gewichte folgen daraus wie bei einem
-      einzelnen Neuron: <code
->d·hⱼ</code
+      einzelnen Neuron: <math
+><mi
+>d</mi
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+></math
 > für das Gewicht
-      <code
->vⱼ</code
->, das das verborgene Neuron <code
->j</code
+      <math
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+></math
+>, das das verborgene Neuron <math
+><mi
+>j</mi
+></math
 >
-      liest. Das verborgene Neuron <code
->j</code
+      liest. Das verborgene Neuron <math
+><mi
+>j</mi
+></math
 > erreicht den Fehler
       über dieses Gewicht, also ist die Steigung nach seiner Antwort
-      <code
->d·vⱼ</code
+      <math
+><mi
+>d</mi
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+></math
 >, und durch sein eigenes tanh wird sein Anteil
       am Fehler zu</p
 ><div
 class="equation"
-><span
-class="math"
->d<sub
->j</sub
-> = d·v<sub
->j</sub
->·(1 − h<sub
->j</sub
->²)</span
+><math
+display="block"
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mo
+>=</mo
+><mi
+>d</mi
+><msub
+><mi
+>v</mi
+><mi
+>j</mi
+></msub
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
 ></div
 ><p
 >Von da an sind seine Gewichte wieder die eines einzelnen Neurons:
-      <code
->dⱼ·x</code
->, <code
->dⱼ·y</code
+      <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mi
+>x</mi
+></math
+>, <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+><mi
+>y</mi
+></math
 > und
-      <code
->dⱼ</code
+      <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+></math
 > für seinen Bias. Der Fehler wird Schicht für
       Schicht rückwärts durch das Netz gereicht, der Anteil jeder Schicht
       aus dem Anteil der Schicht nach ihr berechnet. Das ist die
@@ -1206,8 +1836,16 @@ href="#field-test"
       <em
 >Regularisierung</em
 >: ein zusätzlicher Fehler für
-      große Gewichte, <code
->λ·w²</code
+      große Gewichte, <math
+><mi
+>λ</mi
+><msup
+><mi
+>w</mi
+><mn
+>2</mn
+></msup
+></math
 > für jedes Gewicht. Seine
       Ableitung schrumpft jedes Gewicht in jedem Schritt ein wenig, und ein
       Netz mit kleineren Gewichten zieht glattere Grenzen.</p

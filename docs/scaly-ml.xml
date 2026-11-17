@@ -8,7 +8,7 @@
      the field and those to come, stand under web/ and are linked from the
      boxes marked role="tryit". The programs are the same in both languages:
      tests/mlbook/run.sh runs every one and checks both. -->
-<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML" version="5.0">
   <title>Machine Learning with Scaly</title>
   <info>
     <abstract>

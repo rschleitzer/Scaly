@@ -548,6 +548,40 @@ window.SEARCH_INDEX = [
 (element informalequation
   (make element gi: "div" attributes: '(("class" "equation")) (process-children)))
 (element mathphrase (make element gi: "span" attributes: '(("class" "math")) (process-children)))
+
+;; MathML (mml:math and what it holds, docbook.dtd): every element handed on
+;; to the page without its prefix, with the attributes it has, which the
+;; browser then sets -- a formula on a line of its own (in an equation or an
+;; informalequation) as a block. Every other element without a rule of its
+;; own: its children, as before.
+(define %mml-attributes%
+  '("display" "mathvariant" "stretchy" "form" "fence" "separator" "lspace" "rspace"
+    "largeop" "movablelimits" "accent" "accentunder" "linethickness" "width" "height"
+    "depth" "columnalign" "rowspacing" "columnspacing" "displaystyle" "scriptlevel"))
+
+(define (mml-attributes nd)
+  (let loop ((names %mml-attributes%) (out '()))
+    (if (null? names)
+        (reverse out)
+        (let ((v (attribute-string (car names) nd)))
+          (loop (cdr names) (if v (cons (list (car names) v) out) out))))))
+
+(define (mml-element name)
+  (let* ((nd (current-node))
+         (block (and (equal? name "math")
+                     (member (gi (parent nd)) '("equation" "informalequation"))))
+         (attributes (mml-attributes nd)))
+    (make element gi: name
+          attributes: (if (and block (not (attribute-string "display" nd)))
+                          (cons (list "display" "block") attributes)
+                          attributes)
+      (process-children))))
+
+(default
+  (let ((g (gi)))
+    (if (and g (> (string-length g) 4) (equal? (substring g 0 4) "mml:"))
+        (mml-element (substring g 4 (string-length g)))
+        (process-children))))
 (element subscript (make element gi: "sub" (process-children)))
 (element superscript (make element gi: "sup" (process-children)))
 (element info (empty-sosofo))

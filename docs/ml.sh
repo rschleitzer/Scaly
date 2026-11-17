@@ -4,7 +4,8 @@
 # (dsssl/scaly-book.dsl) into website/ml/: the English pages as field.htm,
 # index.html and searchindex.js, the German ones beside them as
 # field.de.htm, index.de.html and searchindex.de.js, and book.css, book.js,
-# theme.js and words.js as html.sh puts them. Then runnable.py gives the
+# theme.js and words.js as html.sh puts them, and fonts/ with the formulas'
+# font. Then runnable.py gives the
 # listings that run their Run button (SCALY, default scalyc/build/scaly).
 cd "$(dirname "$0")" || exit 1
 export SP_ENCODING=utf-8
@@ -20,6 +21,7 @@ for book in scaly-ml.xml scaly-ml.de.xml; do
   mv ./*.htm index*.html searchindex*.js "$OUT/"
 done
 cp book/book.css book/book.js book/theme.js book/words.js "$OUT/"
+cp -R book/fonts "$OUT/"
 SCALY="${SCALY:-../scalyc/build/scaly}"
 [ -x "$SCALY" ] || { echo "ml.sh: no tool at $SCALY for the Run buttons -- ./build.sh builds it"; exit 1; }
 python3 runnable.py "$OUT" "$SCALY" || exit 1

@@ -7,13 +7,13 @@
 
   <section xml:id="field-points">
     <title>Two Kinds of Points</title>
-    <para>Let there be a plane with the coordinates <literal>x</literal>
-      and <literal>y</literal>, each from -6 to +6. Into this plane we put
+    <para>Let there be a plane with the coordinates <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>
+      and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, each from -6 to +6. Into this plane we put
       points of two kinds: orange and blue. In the programs the kind of a
       point is represented by a number: <literal>1</literal> for orange and
       <literal>-1</literal> for blue.</para>
     <para>A <emphasis>model</emphasis> is a function that computes, from the
-      coordinates <literal>x</literal> and <literal>y</literal> of a place
+      coordinates <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> of a place
       in this plane, a guess of the kind of a point at that place: a value
       between -1 and +1. At -1 the model is sure that a blue point lies
       there; at +1 it predicts an orange one with certainty. Values in
@@ -21,13 +21,13 @@
       leans to, and the nearer the value is to 0, the less sure it is; at
       0 it cannot decide.</para>
     <para>We could write such a function any way we like, for example</para>
-    <informalequation><mathphrase>f(x, y) = x / 6</mathphrase></informalequation>
+    <informalequation><mml:math><mml:mrow><mml:mi>f</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>,</mml:mo><mml:mi>y</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mfrac><mml:mi>x</mml:mi><mml:mn>6</mml:mn></mml:mfrac></mml:math></informalequation>
     <para>It is +1 at the right edge, -1 at the left and 0 on the upright
       axis: on the right it guesses orange, on the left blue, and the
       nearer the middle, the less sure it is. Or</para>
-    <informalequation><mathphrase>f(x, y) = cos(π·(x² + y²) / 72)</mathphrase></informalequation>
-    <para>It is +1 at the centre, because cos 0 = 1, and -1 in the four
-      corners, because there x² + y² = 36 + 36 = 72 and cos π = -1; on the
+    <informalequation><mml:math><mml:mrow><mml:mi>f</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>,</mml:mo><mml:mi>y</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mrow><mml:mi>cos</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo>(</mml:mo><mml:mfrac><mml:mrow><mml:mi>π</mml:mi><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mn>72</mml:mn></mml:mfrac><mml:mo>)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+    <para>It is +1 at the centre, because <inlineequation><mml:math><mml:mrow><mml:mi>cos</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mspace width="0.1667em"/><mml:mn>0</mml:mn></mml:mrow><mml:mo>=</mml:mo><mml:mn>1</mml:mn></mml:math></inlineequation>, and -1 in the four
+      corners, because there <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:mn>36</mml:mn><mml:mo>+</mml:mo><mml:mn>36</mml:mn><mml:mo>=</mml:mo><mml:mn>72</mml:mn></mml:math></inlineequation> and <inlineequation><mml:math><mml:mrow><mml:mi>cos</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mspace width="0.1667em"/><mml:mi>π</mml:mi></mml:mrow><mml:mo>=</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>1</mml:mn></mml:mrow></mml:math></inlineequation>; on the
       circle of radius 6 around the centre it is 0. Whether such a function
       guesses well depends on the points: the first suits points that are
       orange on the right and blue on the left, the second an orange disc
@@ -53,9 +53,9 @@
       multiplies each of its inputs by a number of its own, its
       <emphasis>weight</emphasis>, adds them up and adds one more number,
       its <emphasis>bias</emphasis>:</para>
-    <informalequation><mathphrase>z = w<subscript>1</subscript>·x + w<subscript>2</subscript>·y + b</mathphrase></informalequation>
-    <para>Where <literal>z</literal> is positive the neuron guesses orange,
-      where it is negative, blue. The points where <literal>z</literal> is
+    <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mi>y</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></informalequation>
+    <para>Where <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> is positive the neuron guesses orange,
+      where it is negative, blue. The points where <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> is
       exactly 0 form a straight line, so a neuron parts the plane by a
       line: the weights turn it, the bias moves it. Here is a neuron with
       weights we chose, 1 and 1 and a bias of 0, looking at six
@@ -89,9 +89,9 @@ for p in points
 (-1, -3) is -1: z = -4, the guess -1, right
 (-3, 1) is -1: z = -2, the guess -1, right</screen>
     <para>Five of the six are right. The point <literal>(0.5, -2.5)</literal>
-      is orange but lies below the line <literal>x + y = 0</literal>. Set
+      is orange but lies below the line <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:mi>y</mml:mi><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation>. Set
       <literal>w2</literal> to 0 and run it again: the line becomes the
-      upright axis, <literal>x = 0</literal>, and all six are right.
+      upright axis, <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation>, and all six are right.
       Turning the line by changing a weight until the guesses are right is
       exactly what learning will do, only by itself.</para>
   </section>
@@ -105,13 +105,13 @@ for p in points
       count does not say which way to turn.</para>
     <para>So the neuron's sum is first squashed into a number between
       -1 and 1 by a smooth function, here the hyperbolic tangent:</para>
-    <informalequation><mathphrase>a = tanh(z)</mathphrase></informalequation>
+    <informalequation><mml:math><mml:mi>a</mml:mi><mml:mo>=</mml:mo><mml:mrow><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
     <para>Now the neuron answers as the beginning of the chapter asked of a
       model: near +1 or -1 where it is sure, near 0 where it is not. Such a squashing function is the neuron's
-      <emphasis>activation</emphasis>, and <literal>a</literal> its answer.
+      <emphasis>activation</emphasis>, and <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation> its answer.
       Now the answer can be compared with the kind
-      <literal>t</literal> the point really has:</para>
-    <informalequation><mathphrase>L = ½·(a − t)²</mathphrase></informalequation>
+      <inlineequation><mml:math><mml:mi>t</mml:mi></mml:math></inlineequation> the point really has:</para>
+    <informalequation><mml:math><mml:mi>L</mml:mi><mml:mo>=</mml:mo><mml:mfrac><mml:mn>1</mml:mn><mml:mn>2</mml:mn></mml:mfrac><mml:msup><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mn>2</mml:mn></mml:msup></mml:math></informalequation>
     <para>This is the <emphasis>loss</emphasis> of one point: 0 where the
       answer is exactly the kind, larger the further it is from it, and
       every small change of a weight changes it a little. The loss of the
@@ -121,33 +121,33 @@ for p in points
   <section xml:id="field-gradient">
     <title>Downhill</title>
     <para>Think of the loss as a landscape. Each choice of the three
-      numbers <literal>w1</literal>, <literal>w2</literal> and
-      <literal>b</literal> is a place in it, and the loss there is its
+      numbers <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> and
+      <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> is a place in it, and the loss there is its
       height. Learning is walking downhill. Which way is down can be read
       off each weight separately: how much does the loss change when the
       weight changes a little? That is the weight's
       <emphasis>derivative</emphasis>, written
-      <literal>∂L/∂w1</literal>.</para>
-    <para>The loss does not depend on <literal>w1</literal> directly. It
-      depends on the answer <literal>a</literal>, the answer on the sum
-      <literal>z</literal>, and the sum on <literal>w1</literal>. Each link
+      <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>.</para>
+    <para>The loss does not depend on <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> directly. It
+      depends on the answer <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation>, the answer on the sum
+      <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>, and the sum on <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>. Each link
       of that chain has a slope that is easy to say:</para>
     <itemizedlist>
-      <listitem><para>the loss by the answer: <literal>a − t</literal>;</para></listitem>
-      <listitem><para>the answer by the sum, the slope of tanh: <literal>1 − a²</literal>;</para></listitem>
-      <listitem><para>the sum by the weight: <literal>x</literal>, the input the weight multiplies.</para></listitem>
+      <listitem><para>the loss by the answer: <inlineequation><mml:math><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi></mml:math></inlineequation>;</para></listitem>
+      <listitem><para>the answer by the sum, the slope of tanh: <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>;</para></listitem>
+      <listitem><para>the sum by the weight: <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>, the input the weight multiplies.</para></listitem>
     </itemizedlist>
     <para>The <emphasis>chain rule</emphasis> says that the slope of the
       whole chain is the product of the slopes of its links:</para>
-    <informalequation><mathphrase>∂L/∂w<subscript>1</subscript> = (a − t)·(1 − a²)·x</mathphrase></informalequation>
-    <para>For <literal>w2</literal> the last factor is <literal>y</literal>,
+    <informalequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mi>x</mml:mi></mml:math></informalequation>
+    <para>For <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> the last factor is <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>,
       for the bias it is 1. Added up over all points and divided by their
       number, these derivatives are the <emphasis>gradient</emphasis>: the
       direction in which the loss rises fastest. One step of
       <emphasis>gradient descent</emphasis> moves every weight a little
       the other way,</para>
-    <informalequation><mathphrase>w<subscript>1</subscript> ← w<subscript>1</subscript> − η·∂L/∂w<subscript>1</subscript></mathphrase></informalequation>
-    <para>where the small number <literal>η</literal> is the
+    <informalequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>←</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>−</mml:mo><mml:mi>η</mml:mi><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac></mml:math></informalequation>
+    <para>where the small number <inlineequation><mml:math><mml:mi>η</mml:mi></mml:math></inlineequation> is the
       <emphasis>learning rate</emphasis>. The program below starts the
       neuron of the last section from weights that guess badly and takes a
       hundred such steps:</para>
@@ -237,7 +237,7 @@ w1 1.158, w2 0.022, b 0.3</screen>
     <para>A neuron parts the plane by a line, and some points no line can
       part. Put a disc of orange points inside a ring of blue ones: every
       line has orange and blue on both sides. The program below tries it
-      twice, first with <literal>x</literal> and <literal>y</literal> as
+      twice, first with <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> as
       the neuron's inputs, then with their squares:</para>
     <programlisting>; A disc of points inside a ring of points: no line parts them, so one
 ; neuron given x and y cannot learn it. Given x² and y² instead, it can --
@@ -317,20 +317,20 @@ given x² and y²:
   step 200: loss 0.007, 16 of 16 right
   step 300: loss 0.004, 16 of 16 right
   step 400: loss 0.003, 16 of 16 right</screen>
-    <para>Given <literal>x</literal> and <literal>y</literal>, the neuron
+    <para>Given <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, the neuron
       stays at a loss of 0.5, no better than not guessing at all. Given
-      <literal>x²</literal> and <literal>y²</literal>, it learns every
+      <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> and <inlineequation><mml:math><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>, it learns every
       point. The neuron still draws a line, but a line in the inputs it is
-      given: <literal>w1·x² + w2·y² + b = 0</literal> is, on the plane, a
+      given: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:mi>b</mml:mi><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation> is, on the plane, a
       circle. Choosing what a model sees is called
       <emphasis>feature engineering</emphasis>, and good inputs can make a
       hard problem easy.</para>
     <sidebar role="tryit">
       <para><link xlink:href="https://scaly.io/play/field/#data=circle&amp;hidden=0&amp;inputs=x,y">Open the circle with x and y as inputs.</link>
         The output stays a straight edge between two pale halves. Click on
-        <literal>x²</literal> and <literal>y²</literal> in the network to
-        give them to the neuron, and on <literal>x</literal> and
-        <literal>y</literal> to take those away: the edge closes into a
+        <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> and <inlineequation><mml:math><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> in the network to
+        give them to the neuron, and on <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and
+        <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> to take those away: the edge closes into a
         circle. Each small square shows what one input or neuron answers
         over the whole plane.</para>
     </sidebar>
@@ -341,13 +341,13 @@ given x² and y²:
     <para>For a disc the right inputs are easy to guess. For most data they
       are not, and here comes the idea that makes neural networks strong:
       let neurons compute the inputs. A <emphasis>hidden layer</emphasis>
-      is a row of neurons that each read <literal>x</literal> and
-      <literal>y</literal> and each draw a line of their own. Their
+      is a row of neurons that each read <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and
+      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> and each draw a line of their own. Their
       answers are the inputs of one more neuron, the
       <emphasis>output</emphasis>, which combines the lines into regions:
       orange inside these two, blue outside this one.</para>
     <para>The data that shows it best is called XOR: orange where
-      <literal>x</literal> and <literal>y</literal> have the same sign,
+      <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> have the same sign,
       blue where they do not, the four quarters of the plane alternating.
       No single line parts them, but two lines do, with something to
       combine them.</para>
@@ -377,21 +377,21 @@ given x² and y²:
       answers, with a chain one link longer, and the clever part is the
       order in which it is computed.</para>
     <para>First everything is computed forward, as before: each hidden
-      neuron's answer <literal>hⱼ</literal>, then the output's sum and its
-      answer <literal>a</literal>. Then backward. The output neuron's
+      neuron's answer <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation>, then the output's sum and its
+      answer <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation>. Then backward. The output neuron's
       share of the error, the loss by its sum, is the familiar</para>
-    <informalequation><mathphrase>d = (a − t)·(1 − a²)</mathphrase></informalequation>
+    <informalequation><mml:math><mml:mi>d</mml:mi><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
     <para>and its weights' derivatives follow from it as for a single
-      neuron: <literal>d·hⱼ</literal> for the weight
-      <literal>vⱼ</literal> that reads hidden neuron
-      <literal>j</literal>. Hidden neuron <literal>j</literal> reaches the
+      neuron: <inlineequation><mml:math><mml:mi>d</mml:mi><mml:msub><mml:mi>h</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation> for the weight
+      <inlineequation><mml:math><mml:msub><mml:mi>v</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation> that reads hidden neuron
+      <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation>. Hidden neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> reaches the
       loss through that weight, so its answer's slope is
-      <literal>d·vⱼ</literal>, and through its own tanh its share of the
+      <inlineequation><mml:math><mml:mi>d</mml:mi><mml:msub><mml:mi>v</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation>, and through its own tanh its share of the
       error becomes</para>
-    <informalequation><mathphrase>d<subscript>j</subscript> = d·v<subscript>j</subscript>·(1 − h<subscript>j</subscript>²)</mathphrase></informalequation>
+    <informalequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:mi>d</mml:mi><mml:msub><mml:mi>v</mml:mi><mml:mi>j</mml:mi></mml:msub><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:msub><mml:mi>h</mml:mi><mml:mi>j</mml:mi></mml:msub><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
     <para>From there its weights are once more a single neuron's:
-      <literal>dⱼ·x</literal>, <literal>dⱼ·y</literal> and
-      <literal>dⱼ</literal> for its bias. The error is handed back through
+      <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub><mml:mi>x</mml:mi></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub><mml:mi>y</mml:mi></mml:math></inlineequation> and
+      <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation> for its bias. The error is handed back through
       the network layer by layer, each layer's share computed from the
       share of the layer after it. That is
       <emphasis>backpropagation</emphasis>, and it is the whole secret of
@@ -540,7 +540,7 @@ step 300: loss 0.001, 4 of 4 right</screen>
       loss stops falling and rises. That is
       <emphasis>overfitting</emphasis>. One cure is
       <emphasis>regularization</emphasis>: an extra loss for large
-      weights, <literal>λ·w²</literal> for each weight. Its derivative
+      weights, <inlineequation><mml:math><mml:mi>λ</mml:mi><mml:msup><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> for each weight. Its derivative
       shrinks every weight a little in every step, and a network with
       smaller weights draws smoother borders.</para>
     <sidebar role="tryit">
