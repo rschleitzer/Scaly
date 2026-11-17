@@ -3571,6 +3571,7 @@ thread_local int64_t io_wake_fd asm("io_wake_fd") = 0LL;
 thread_local bool io_watch_unsupported asm("io_watch_unsupported") = false;
 thread_local bool io_completions asm("io_completions") = false;
 thread_local void* task_default_pool asm("task_default_pool") = nullptr;
+thread_local bool task_on_worker asm("task_on_worker") = false;
 thread_local bool guard_installed asm("guard_installed") = false;
 thread_local uint64_t guard_page_size asm("guard_page_size") = (uint64_t)(0LL);
 static const int64_t FJ_SLOTS = 64LL;
@@ -11367,6 +11368,10 @@ __attribute__((weak)) void TaskPool_shutdown(TaskPool* pl)
 // packages/scaly/0.2.1/scaly/fiber.scaly
 __attribute__((weak)) int64_t TaskPool_ncpu()
 {
+    if (task_on_worker)
+    {
+        return 1LL;
+    }
     return ((int64_t)(scaly_eio_ncpu()));
 }
 
@@ -11408,6 +11413,7 @@ __attribute__((weak)) int64_t task_guarded_body(void* cell)
 __attribute__((weak)) void* task_worker(void* arg)
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    task_on_worker = true;
     uint64_t* cell = ((uint64_t*)(arg));
     TaskPool* pl = ((TaskPool*)(((*(cell)))));
     int64_t me = (((int64_t)(((*(((uint64_t*)((((((uint64_t)(cell))) + 8ULL))))))))));

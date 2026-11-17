@@ -1,0 +1,69 @@
+; A parallel `for` inside the round of another runs inline on the pool's
+; worker: TaskPool.ncpu answers 1 there, and every fork decision of the
+; emitted driver asks it. Until 2026-11-17 each worker made a pool of its
+; own for such an inner loop -- ncpu threads more per worker, kept until it
+; ended: spectral-norm, whose inner sums are parallel loops too, started 72
+; threads and more instead of 8, in a page each a Web Worker (2 s instead
+; of 40 ms on eight cores). The inner sums here are parallel loops in a
+; parallel loop's round; their results are the sequential ones, bit for bit.
+; Expected: worker ncpu 1
+; Expected: nested-ok
+
+; what a pool's worker is told about the cores it may fork onto
+procedure probe(mutable arg: pointer[void]) returns pointer[void]
+{
+    *(arg as pointer[i64]) := TaskPool.ncpu()
+    null
+}
+
+; a row's sum: a parallel loop itself (a reduction)
+function row(i: int, n: int) returns f64
+{
+    var sum 0.0
+    for j in n
+        sum := sum + 1.0 / ((i + j + 1) as f64)
+    sum
+}
+
+; the same sum in a plain while
+function row_inline(i: int, n: int) returns f64
+{
+    var sum 0.0
+    var j 0
+    while j < n
+    {
+        sum := sum + 1.0 / ((i + j + 1) as f64)
+        j := j + 1
+    }
+    sum
+}
+
+procedure main() returns int
+{
+    let pool TaskPool.create(2 as i64)
+    let g TaskGroup.create()
+    var slot u8[8]
+    *(slot as pointer[i64]) := 0 as i64
+    TaskPool.submit(pool, &probe, slot as pointer[void], g)
+    TaskGroup.wait(g)
+    TaskGroup.dispose(g)
+    TaskPool.shutdown(pool)
+    print "worker ncpu `*(slot as pointer[i64])`"
+
+    let n 600
+    var rows Vector[f64](n as size_t)
+    for i in n
+        rows.put(i as size_t, row(i, n))
+    var k 0
+    while k < n
+    {
+        if rows[k as size_t] <> row_inline(k, n)
+        {
+            print "row `k` differs"
+            return 1
+        }
+        k := k + 1
+    }
+    print "nested-ok"
+    0
+}

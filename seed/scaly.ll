@@ -372,6 +372,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @io_watch_unsupported = thread_local global i1 false
 @io_completions = thread_local global i1 false
 @task_default_pool = thread_local global ptr null
+@task_on_worker = thread_local global i1 false
 @guard_installed = thread_local global i1 false
 @guard_page_size = thread_local global i64 0
 @"8FJ_SLOTS" = internal constant i64 64
@@ -32476,6 +32477,13 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr i64 @_ZN8TaskPool4ncpuEv() {
 entry:
+  %global.load = load i1, ptr @task_on_worker, align 1
+  br i1 %global.load, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 1
+
+if.end:                                           ; preds = %entry
   %call = call i32 @scaly_eio_ncpu()
   %as.sext = sext i32 %call to i64
   ret i64 %as.sext
@@ -32728,6 +32736,7 @@ entry:
   %caught = alloca i32, align 4
   %byte3 = alloca ptr, align 8
   %byte = alloca [1 x i8], align 1
+  store i1 true, ptr @task_on_worker, align 1
   %deref = load i64, ptr %0, align 8
   %as.inttoptr = inttoptr i64 %deref to ptr
   %as.ptrtoint = ptrtoint ptr %0 to i64

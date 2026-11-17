@@ -715,6 +715,10 @@ mutable io_completions: bool false
 ; the main thread's lives until process exit.
 mutable task_default_pool: pointer[void] null
 
+; Whether this thread is a worker of a task pool (task_worker sets it): a
+; parallel loop that begins here runs inline (TaskPool.ncpu#).
+mutable task_on_worker: bool false
+
 ; Guard-page fault classifier state: installed once, reads only globals
 ; (it runs in signal context). guard_page_size is cached at create time
 ; so the classifier calls nothing at all.
@@ -3728,9 +3732,22 @@ define TaskPool
         Page.release_page_traced(pp, "TaskPool.pool_page")
     }
 
-    ; Online CPU count — the worker default for default_pool (3.3).
-    function ncpu() returns i64
+    ; The cores a parallel loop that begins on THIS thread may fork onto --
+    ; every fork decision of the emitted driver asks it, and default_pool
+    ; sizes its pool by it (3.3): the online CPU count, but 1 on a worker
+    ; of a pool. A loop inside a loop's round runs inline there, as the
+    ; outer loop holds the cores already. Until 2026-11-17 each worker made
+    ; a pool of its own for such an inner loop, its threads kept until the
+    ; worker ended: spectral-norm, whose inner sums are parallel loops too,
+    ; started 72 threads and more instead of 8 -- in a page each a Web
+    ; Worker, 2 s instead of 40 ms on eight cores, and Safari kept them
+    ; spinning after the page was gone.
+    procedure ncpu() returns i64
+    {
+        if task_on_worker
+            return 1
         scaly_eio_ncpu() as i64
+    }
 
     ; This thread's default pool, created on first demand with ncpu
     ; workers — the dispatch target of the promoted-for emission.
@@ -3785,8 +3802,9 @@ procedure task_guarded_body(cell: pointer[void]) returns i64
 ; per task; results the task keeps go into caller-owned disjoint slots
 ; (see the module header). Runs on its own OS thread: everything it
 ; touches arrives through the spawn cell.
-procedure task_worker(arg: pointer[void]) returns pointer[void]
+procedure task_worker(arg: pointer[void]) returns pointer[void] mutable task_on_worker
 {
+    task_on_worker := true
     let cell arg as pointer[size_t]
     let pl (*cell) as pointer[TaskPool]
     let me ((*(((cell as size_t) + 8) as pointer[size_t])) as i64)
