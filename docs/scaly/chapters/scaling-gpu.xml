@@ -271,6 +271,14 @@ mandelbrot 8000: 25402925 points inside</screen>
       with a loop, <userinput>off</userinput> for finding out what it
       costs to do without; a program that is to be fast sets
       neither.</para>
+    <para>The Scaly Playground lets you watch all of this in a browser, on
+      the cores and the graphics card of your own machine: its chapter
+      <quote>Many Cores, and the Card</quote> races a loop over one, two,
+      four and all cores and the card, draws from what size on the card
+      wins
+      (<uri xlink:href="https://scaly.io/play/playground.html#25">scaly.io/play/playground.html#25</uri>),
+      shows where the time of a run on the card goes, and what
+      <code>f32</code> costs against <code>f64</code>.</para>
   </section>
 
   <section xml:id="scaling-gpu-numbers">
