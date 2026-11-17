@@ -137,7 +137,10 @@ repro_ar() {
 # A tool of the LLVM the build uses: beside its llvm-config, else on PATH.
 repro_llvm_tool() {
   local t="$1"
-  if [ -n "${LLVM_PREFIX:-}" ] && [ -x "$LLVM_PREFIX/bin/$t" ]; then echo "$LLVM_PREFIX/bin/$t"; return; fi
+  if [ -n "${LLVM_PREFIX:-}" ]; then
+    [ -x "$LLVM_PREFIX/bin/$t" ] && { echo "$LLVM_PREFIX/bin/$t"; return; }
+    [ -x "$LLVM_PREFIX/bin/$t.exe" ] && { echo "$LLVM_PREFIX/bin/$t.exe"; return; }
+  fi
   command -v "$t" 2>/dev/null || command -v "$t-${LLVM_MAJOR:-21}" 2>/dev/null || true
 }
 

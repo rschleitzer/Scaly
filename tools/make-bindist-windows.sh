@@ -165,7 +165,10 @@ find "$STAGE/packages" -type f \( -name '*.o' -o -name '*.obj' \) | while read -
 cp LICENSE THIRD-PARTY-LICENSES.txt "$STAGE/"
 
 mkdir -p "$OUT"
-repro_buildinfo "$ZIP.buildinfo" "$VERSION" "windows-$ARCH" "$PROFILE" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages
+# The LLVM linked in is the static libraries' -- not what a llvm-config on
+# PATH says (the arm64 runner has an LLVM 22 there), and the unpacked clang
+# beside them has none.
+LLVM_PREFIX="$LIBS" repro_buildinfo "$ZIP.buildinfo" "$VERSION" "windows-$ARCH" "$PROFILE" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages
 repro_zip "$ZIP" "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages \
   || { echo "make-bindist-windows: FAIL — the zip"; exit 1; }
 echo "make-bindist-windows: OK -> $ZIP ($(du -h "$ZIP" | cut -f1)), $BUILT"
