@@ -57,10 +57,10 @@
       dieses Buch <emphasis>Lernen</emphasis>, und eine Funktion mit
       gefundenen Parametern ein <emphasis>trainiertes Modell</emphasis>.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#lang=de">Öffne die Seite mit dem zweiten Modell</link>
-        und schieb <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation>
-        hin und her: Die Färbung folgt der Formel. Ein großes <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> macht
-        die orange Scheibe groß, ein kleines klein.</para>
+      <para>Was eine offene Zahl bewirkt, kannst du selbst ausprobieren:
+        <link xlink:href="../play/model/#lang=de">Öffne die Seite mit dem Modell <inlineequation><mml:math><mml:mrow><mml:mi>f</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>,</mml:mo><mml:mi>y</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>c</mml:mi></mml:math></inlineequation></link>
+        und schieb <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> hin und her. Die Färbung folgt der Formel: Ein großes
+        <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> macht die orange Scheibe groß, ein kleines klein.</para>
     </sidebar>
   </section>
 
@@ -102,7 +102,7 @@
       Vermutungen stimmen, ist genau das, was Lernen tun wird, nur von
       selbst.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=neuron&amp;lang=de">Öffne die Seite mit dem Neuron</link>
+      <para><link xlink:href="../play/model/#model=neuron&amp;lang=de">Öffne die Seite mit dem Neuron</link>
         und zieh an <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>,
         <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>
         und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>:
@@ -187,18 +187,25 @@
     <informalequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>←</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>−</mml:mo><mml:mi>η</mml:mi><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac></mml:math></informalequation>
     <para>wobei die kleine Zahl <inlineequation><mml:math><mml:mi>η</mml:mi></mml:math></inlineequation> die
       <emphasis>Lernrate</emphasis> ist.</para>
+    <para>Und wann hört man auf? Wenn der Fehler klein genug ist, oder wenn
+      er kaum noch sinkt. Die Seiten dieses Kapitels hören auf, sobald der
+      Fehler unter 0,02 liegt oder in hundert Schritten um weniger als
+      0,0001 gesunken ist. Eine solche Regel heißt
+      <emphasis>Abbruchkriterium</emphasis>.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt.</link>
+      <para><link xlink:href="../play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt.</link>
         Es beginnt bei Werten, die schlecht raten: Nur zwei der sechs Punkte
-        stimmen. Drück „Ein Schritt“: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> rücken ein wenig,
-        die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
-        dreißig Schritten stimmen alle sechs, und <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> ist bald fast 0, wie
-        bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
+        stimmen. Drück mehrmals nacheinander auf „Ein Schritt“: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> rücken jeweils ein
+        Stück, die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
+        dreißig Schritten stimmen alle sechs, nach gut achtzig liegt der
+        Fehler unter 0,02, und das Lernen hört auf. <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> ist dann fast 0,
+        wie bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
         langsamer. Unter dem Bild steht der Schritt in Scaly.</para>
     </sidebar>
     <para>Probier auch die Startwerte <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>3</mml:mn></mml:mrow></mml:math></inlineequation>
-      (<link xlink:href="https://scaly.io/play/model/#model=descent&amp;w1=-3&amp;w2=-3&amp;lang=de">die Seite mit diesen Werten</link>):
-      Dann rührt sich das Neuron kaum. Fast alle Punkte liegen auf der
+      (<link xlink:href="../play/model/#model=descent&amp;w1=-3&amp;w2=-3&amp;lang=de">die Seite mit diesen Werten</link>):
+      Dann rührt sich das Neuron kaum, und nach hundert Schritten hält die
+      Seite an, weil der Fehler nicht mehr sinkt. Fast alle Punkte liegen auf der
       falschen Seite, und zwar weit weg von der Geraden, wo tanh fast ±1 ist
       und kaum noch steigt. Weil der Faktor <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> dort fast 0 ist, ist es
       auch der Gradient: Ein Neuron, das sich sicher irrt, lernt kaum. Man
@@ -213,12 +220,13 @@
       beispielsweise eine Scheibe oranger Punkte in einem Ring blauer: Jede
       Gerade hat dann Orange und Blau auf beiden Seiten.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt,</link>
+      <para><link xlink:href="../play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt,</link>
         und leg selbst ungünstige Punkte: einige orange in die Mitte und
         einen Ring blauer darum. Ein Klick setzt einen orangen Punkt, ein
         Rechtsklick einen blauen, ein Klick auf einen Punkt entfernt ihn.
-        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, und gibt
-        sich mit einer Ebene zufrieden, die überall unsicher ist.</para>
+        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, gibt
+        sich mit einer Ebene zufrieden, die überall unsicher ist, und hält
+        an, weil der Fehler nicht mehr sinkt.</para>
     </sidebar>
     <para>Dem Neuron fehlt dabei nicht die Rechenkunst, sondern der richtige
       Blick auf die Punkte. Geben wir ihm statt <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> deren Quadrate
@@ -252,10 +260,11 @@
       <emphasis>Feature Engineering</emphasis>, und gute Eingaben können ein
       schweres Problem leicht machen.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=squares&amp;lang=de">Öffne die Seite mit dem Neuron, das x² und y² bekommt.</link>
+      <para><link xlink:href="../play/model/#model=squares&amp;lang=de">Öffne die Seite mit dem Neuron, das x² und y² bekommt.</link>
         Es beginnt bei Scheibe und Ring und rät zunächst schlecht. Drück
         „Lernen“: Nach etwa hundert Schritten stimmen alle Punkte, und die
-        orange Fläche legt sich um die Scheibe. Auch hier kannst du Punkte
+        orange Fläche legt sich um die Scheibe; nach gut zweihundert liegt
+        der Fehler unter 0,02. Auch hier kannst du Punkte
         setzen und entfernen.</para>
     </sidebar>
   </section>
@@ -277,8 +286,8 @@
       einzelne Gerade teilt sie, zwei Geraden schon, mit etwas, das sie
       verbindet.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=xor&amp;hidden=0&amp;inputs=x,y&amp;lang=de">Öffne XOR ohne verborgene Schicht:</link>
-        Das Netz findet nichts. <link xlink:href="https://scaly.io/play/field/#data=xor&amp;hidden=3&amp;inputs=x,y&amp;lang=de">Mit einer verborgenen Schicht aus drei Neuronen</link>
+      <para><link xlink:href="../play/field/#data=xor&amp;hidden=0&amp;inputs=x,y&amp;lang=de">Öffne XOR ohne verborgene Schicht:</link>
+        Das Netz findet nichts. <link xlink:href="../play/field/#data=xor&amp;hidden=3&amp;inputs=x,y&amp;lang=de">Mit einer verborgenen Schicht aus drei Neuronen</link>
         lernt es die vier Viertel. Sieh dir die drei Quadrate der
         verborgenen Schicht an: Jedes ist eine gerade Kante, eine Gerade, und
         das Quadrat der Ausgabe ist ihre Verbindung. Die Linien zwischen
@@ -474,7 +483,7 @@ step 300: loss 0.001, 4 of 4 right</screen>
       Ableitung schrumpft jedes Gewicht in jedem Schritt ein wenig, und ein
       Netz mit kleineren Gewichten zieht glattere Grenzen.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=spiral&amp;noise=30&amp;hidden=8,8,8,8&amp;inputs=x,y,sinx,siny&amp;speed=30&amp;lang=de">Öffne die Spirale mit 30 % Rauschen und vier verborgenen Schichten zu acht.</link>
+      <para><link xlink:href="../play/field/#data=spiral&amp;noise=30&amp;hidden=8,8,8,8&amp;inputs=x,y,sinx,siny&amp;speed=30&amp;lang=de">Öffne die Spirale mit 30 % Rauschen und vier verborgenen Schichten zu acht.</link>
         Nach einigen Sekunden liegt der Trainingsfehler weit unter dem
         Testfehler, und die Ebene zeigt Inseln um einzelne Punkte. Wähl
         0,01 unter <guilabel>Regularisierung (L2)</guilabel> und klick auf

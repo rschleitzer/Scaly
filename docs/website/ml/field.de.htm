@@ -563,21 +563,77 @@ class="tryit"
 class="note-title"
 >Ausprobieren</p
 ><p
-><a
-href="https://scaly.io/play/model/#lang=de"
->Öffne die Seite mit dem zweiten Modell</a
+>Was eine offene Zahl bewirkt, kannst du selbst ausprobieren:
+        <a
+href="../play/model/#lang=de"
+>Öffne die Seite mit dem Modell <math
+><mrow
+><mi
+>f</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>x</mi
+><mo
+>,</mo
+><mi
+>y</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>c</mi
+></math
+></a
 >
         und schieb <math
 ><mi
 >c</mi
 ></math
->
-        hin und her: Die Färbung folgt der Formel. Ein großes <math
+> hin und her. Die Färbung folgt der Formel: Ein großes
+        <math
 ><mi
 >c</mi
 ></math
-> macht
-        die orange Scheibe groß, ein kleines klein.</p
+> macht die orange Scheibe groß, ein kleines klein.</p
 ></aside
 ></section
 ><section
@@ -720,7 +776,7 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/model/#model=neuron&#38;lang=de"
+href="../play/model/#model=neuron&#38;lang=de"
 >Öffne die Seite mit dem Neuron</a
 >
         und zieh an <math
@@ -1200,6 +1256,14 @@ rspace="0"
       <em
 >Lernrate</em
 > ist.</p
+><p
+>Und wann hört man auf? Wenn der Fehler klein genug ist, oder wenn
+      er kaum noch sinkt. Die Seiten dieses Kapitels hören auf, sobald der
+      Fehler unter 0,02 liegt oder in hundert Schritten um weniger als
+      0,0001 gesunken ist. Eine solche Regel heißt
+      <em
+>Abbruchkriterium</em
+>.</p
 ><aside
 class="tryit"
 ><p
@@ -1207,11 +1271,11 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/model/#model=descent&#38;lang=de"
+href="../play/model/#model=descent&#38;lang=de"
 >Öffne die Seite, auf der das Neuron lernt.</a
 >
         Es beginnt bei Werten, die schlecht raten: Nur zwei der sechs Punkte
-        stimmen. Drück „Ein Schritt“: <math
+        stimmen. Drück mehrmals nacheinander auf „Ein Schritt“: <math
 ><msub
 ><mi
 >w</mi
@@ -1231,9 +1295,10 @@ href="https://scaly.io/play/model/#model=descent&#38;lang=de"
 ><mi
 >b</mi
 ></math
-> rücken ein wenig,
-        die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
-        dreißig Schritten stimmen alle sechs, und <math
+> rücken jeweils ein
+        Stück, die Gerade dreht sich, der Fehler sinkt. Drück „Lernen“: Nach etwa
+        dreißig Schritten stimmen alle sechs, nach gut achtzig liegt der
+        Fehler unter 0,02, und das Lernen hört auf. <math
 ><msub
 ><mi
 >w</mi
@@ -1241,8 +1306,8 @@ href="https://scaly.io/play/model/#model=descent&#38;lang=de"
 >2</mn
 ></msub
 ></math
-> ist bald fast 0, wie
-        bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
+> ist dann fast 0,
+        wie bei unserem Versuch von Hand. Mit der Lernrate 0,01 geht es viel
         langsamer. Unter dem Bild steht der Schritt in Scaly.</p
 ></aside
 ><p
@@ -1272,10 +1337,11 @@ href="https://scaly.io/play/model/#model=descent&#38;lang=de"
 ></math
 >
       (<a
-href="https://scaly.io/play/model/#model=descent&#38;w1=-3&#38;w2=-3&#38;lang=de"
+href="../play/model/#model=descent&#38;w1=-3&#38;w2=-3&#38;lang=de"
 >die Seite mit diesen Werten</a
 >):
-      Dann rührt sich das Neuron kaum. Fast alle Punkte liegen auf der
+      Dann rührt sich das Neuron kaum, und nach hundert Schritten hält die
+      Seite an, weil der Fehler nicht mehr sinkt. Fast alle Punkte liegen auf der
       falschen Seite, und zwar weit weg von der Geraden, wo tanh fast ±1 ist
       und kaum noch steigt. Weil der Faktor <math
 ><mn
@@ -1316,14 +1382,15 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/model/#model=descent&#38;lang=de"
+href="../play/model/#model=descent&#38;lang=de"
 >Öffne die Seite, auf der das Neuron lernt,</a
 >
         und leg selbst ungünstige Punkte: einige orange in die Mitte und
         einen Ring blauer darum. Ein Klick setzt einen orangen Punkt, ein
         Rechtsklick einen blauen, ein Klick auf einen Punkt entfernt ihn.
-        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, und gibt
-        sich mit einer Ebene zufrieden, die überall unsicher ist.</p
+        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, gibt
+        sich mit einer Ebene zufrieden, die überall unsicher ist, und hält
+        an, weil der Fehler nicht mehr sinkt.</p
 ></aside
 ><p
 >Dem Neuron fehlt dabei nicht die Rechenkunst, sondern der richtige
@@ -1598,12 +1665,13 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/model/#model=squares&#38;lang=de"
+href="../play/model/#model=squares&#38;lang=de"
 >Öffne die Seite mit dem Neuron, das x² und y² bekommt.</a
 >
         Es beginnt bei Scheibe und Ring und rät zunächst schlecht. Drück
         „Lernen“: Nach etwa hundert Schritten stimmen alle Punkte, und die
-        orange Fläche legt sich um die Scheibe. Auch hier kannst du Punkte
+        orange Fläche legt sich um die Scheibe; nach gut zweihundert liegt
+        der Fehler unter 0,02. Auch hier kannst du Punkte
         setzen und entfernen.</p
 ></aside
 ></section
@@ -1658,11 +1726,11 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=xor&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
+href="../play/field/#data=xor&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
 >Öffne XOR ohne verborgene Schicht:</a
 >
         Das Netz findet nichts. <a
-href="https://scaly.io/play/field/#data=xor&#38;hidden=3&#38;inputs=x,y&#38;lang=de"
+href="../play/field/#data=xor&#38;hidden=3&#38;inputs=x,y&#38;lang=de"
 >Mit einer verborgenen Schicht aus drei Neuronen</a
 >
         lernt es die vier Viertel. Sieh dir die drei Quadrate der
@@ -2082,7 +2150,7 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=spiral&#38;noise=30&#38;hidden=8,8,8,8&#38;inputs=x,y,sinx,siny&#38;speed=30&#38;lang=de"
+href="../play/field/#data=spiral&#38;noise=30&#38;hidden=8,8,8,8&#38;inputs=x,y,sinx,siny&#38;speed=30&#38;lang=de"
 >Öffne die Spirale mit 30 % Rauschen und vier verborgenen Schichten zu acht.</a
 >
         Nach einigen Sekunden liegt der Trainingsfehler weit unter dem

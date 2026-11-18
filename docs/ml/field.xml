@@ -54,10 +54,10 @@
       <emphasis>learning</emphasis>, and a function with its parameters found
       a <emphasis>trained model</emphasis>.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/">Open the page with the second model</link>
-        and move <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation>
-        back and forth: the colouring follows the formula. A large <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> makes
-        the orange disc large, a small one small.</para>
+      <para>What an open number does, you can try for yourself:
+        <link xlink:href="../play/model/">open the page with the model <inlineequation><mml:math><mml:mrow><mml:mi>f</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>,</mml:mo><mml:mi>y</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>c</mml:mi></mml:math></inlineequation></link>
+        and move <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> back and forth. The colouring follows the formula: a
+        large <inlineequation><mml:math><mml:mi>c</mml:mi></mml:math></inlineequation> makes the orange disc large, a small one small.</para>
     </sidebar>
   </section>
 
@@ -97,7 +97,7 @@
     <para>Turning the line by changing a weight until the guesses are right
       is exactly what learning will do, only by itself.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=neuron">Open the page with the neuron</link>
+      <para><link xlink:href="../play/model/#model=neuron">Open the page with the neuron</link>
         and pull at <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>,
         <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>
         and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>:
@@ -174,18 +174,24 @@
     <informalequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>←</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>−</mml:mo><mml:mi>η</mml:mi><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac></mml:math></informalequation>
     <para>where the small number <inlineequation><mml:math><mml:mi>η</mml:mi></mml:math></inlineequation> is the
       <emphasis>learning rate</emphasis>.</para>
+    <para>And when does one stop? When the loss is small enough, or when it
+      hardly falls any more. The pages of this chapter stop as soon as the
+      loss is below 0.02 or has fallen by less than 0.0001 over a hundred
+      steps. Such a rule is called a <emphasis>stopping
+      criterion</emphasis>.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=descent">Open the page where the neuron learns.</link>
+      <para><link xlink:href="../play/model/#model=descent">Open the page where the neuron learns.</link>
         It begins with values that guess badly: only two of the six points
-        are right. Press “One step”: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> move a little, the
-        line turns, the loss falls. Press “Learn”: after some thirty steps
-        all six are right, and <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> is soon nearly 0, as in our attempt by
-        hand. With the learning rate 0.01 it goes much more slowly. Below the
+        are right. Press “One step” several times in a row: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> move a bit each time,
+        the line turns, the loss falls. Press “Learn”: after some thirty steps
+        all six are right; after a good eighty the loss is below 0.02, and
+        learning stops. <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> is then nearly 0, as in our attempt by hand. With the learning rate 0.01 it goes much more slowly. Below the
         picture stands the step in Scaly.</para>
     </sidebar>
     <para>Try the start values <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>3</mml:mn></mml:mrow></mml:math></inlineequation> as well
-      (<link xlink:href="https://scaly.io/play/model/#model=descent&amp;w1=-3&amp;w2=-3">the page with these values</link>):
-      then the neuron hardly moves. Nearly all points lie on the wrong
+      (<link xlink:href="../play/model/#model=descent&amp;w1=-3&amp;w2=-3">the page with these values</link>):
+      then the neuron hardly moves, and after a hundred steps the page
+      stops, since the loss no longer falls. Nearly all points lie on the wrong
       side, and far from the line, where tanh is nearly ±1 and hardly rises
       any more. Since the factor <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> is nearly 0 there, so is the
       gradient: a neuron that is sure and wrong hardly learns. This is
@@ -200,12 +206,13 @@
       points inside a ring of blue ones: every line then has orange and
       blue on both sides.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=descent">Open the page where the neuron learns</link>
+      <para><link xlink:href="../play/model/#model=descent">Open the page where the neuron learns</link>
         and put down unfavourable points yourself: some orange ones in the
         middle and a ring of blue ones around them. A click puts down an
         orange point, a right click a blue one, a click on a point takes it
-        away. Press “Learn”: the neuron finds no line that fits and settles
-        for a plane that is unsure everywhere.</para>
+        away. Press “Learn”: the neuron finds no line that fits, settles
+        for a plane that is unsure everywhere, and stops, since the loss no
+        longer falls.</para>
     </sidebar>
     <para>What the neuron lacks is not skill at sums but the right view of
       the points. Let us give it the squares of <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> as its inputs
@@ -238,10 +245,11 @@
       model sees is called <emphasis>feature engineering</emphasis>, and
       good inputs can make a hard problem easy.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/model/#model=squares">Open the page with the neuron given x² and y².</link>
+      <para><link xlink:href="../play/model/#model=squares">Open the page with the neuron given x² and y².</link>
         It begins with the disc and the ring and guesses badly at first.
         Press “Learn”: after some hundred steps all points are right, and
-        the orange area settles around the disc. Here too you can put down
+        the orange area settles around the disc; after a good two hundred
+        the loss is below 0.02. Here too you can put down
         points and take them away.</para>
     </sidebar>
   </section>
@@ -262,8 +270,8 @@
       No single line parts them, but two lines do, with something to
       combine them.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=xor&amp;hidden=0&amp;inputs=x,y">Open XOR without a hidden layer:</link>
-        the network finds nothing. <link xlink:href="https://scaly.io/play/field/#data=xor&amp;hidden=3&amp;inputs=x,y">With one hidden layer of three neurons</link>
+      <para><link xlink:href="../play/field/#data=xor&amp;hidden=0&amp;inputs=x,y">Open XOR without a hidden layer:</link>
+        the network finds nothing. <link xlink:href="../play/field/#data=xor&amp;hidden=3&amp;inputs=x,y">With one hidden layer of three neurons</link>
         it learns the four quarters. Look at the three squares of the
         hidden layer: each is a straight edge, one line, and the output's
         square is their combination. The lines between the squares are
@@ -454,7 +462,7 @@ step 300: loss 0.001, 4 of 4 right</screen>
       shrinks every weight a little in every step, and a network with
       smaller weights draws smoother borders.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="https://scaly.io/play/field/#data=spiral&amp;noise=30&amp;hidden=8,8,8,8&amp;inputs=x,y,sinx,siny&amp;speed=30">Open the spiral with 30 % noise and four hidden layers of eight.</link>
+      <para><link xlink:href="../play/field/#data=spiral&amp;noise=30&amp;hidden=8,8,8,8&amp;inputs=x,y,sinx,siny&amp;speed=30">Open the spiral with 30 % noise and four hidden layers of eight.</link>
         After some seconds the training loss is far below the test loss,
         and the plane shows islands around single points. Choose 0.01
         under <guilabel>Regularization (L2)</guilabel> and
