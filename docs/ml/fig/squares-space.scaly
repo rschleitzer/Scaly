@@ -1,0 +1,126 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; the disc and the ring once more, but each point drawn at u = x² across
+; and v = y² up, both from -2 to 22: the inputs the neuron of "Better
+; inputs" is given. There z = -u - v + 9 is again a straight line, orange
+; below it and blue above, and it parts the disc from the ring. The thin
+; lines are the axes u = 0 and v = 0. Each point of the picture is
+; computed, the rounds of the `for` on all cores; the picture goes to
+; picture.<size>x<size>.rgba, four bytes a point.
+define SIZE int 480
+define MARGIN f64 2.0          ; u and v begin at -MARGIN
+define HIGH f64 22.0
+
+; The disc and the ring of "Better inputs" (the same as web/model's): the
+; first five orange (+1), at their radius and angle in degrees, the others
+; blue (-1).
+function radius(k: int) returns f64
+{
+    if k = 0: 2.4 else if k = 1: 2.2 else if k = 2: 2.6 else if k = 3: 1.5 else if k = 4: 1.0
+        else if k = 5: 4.0 else if k = 6: 4.4 else if k = 7: 3.8 else if k = 8: 4.2 else if k = 9: 4.6
+        else if k = 10: 3.9 else if k = 11: 4.3 else 4.1
+}
+
+function angle(k: int) returns f64
+{
+    let degrees if k = 0: 20.0 else if k = 1: 110.0 else if k = 2: 225.0 else if k = 3: 300.0 else if k = 4: 160.0
+        else (((k - 5) * 45 + 20) as f64)
+    degrees * 3.141592653589793 / 180.0
+}
+
+function point_x(k: int) returns f64
+{
+    radius(k) * cos(angle(k))
+}
+
+function point_y(k: int) returns f64
+{
+    radius(k) * sin(angle(k))
+}
+
+function kind(k: int) returns f64
+{
+    if k < 5: 1.0 else 0.0 - 1.0
+}
+
+define Colour(r: f64, g: f64, b: f64)
+
+; The part `t` of the way from colour a to colour b.
+function mix(a: Colour, b: Colour, t: f64) returns Colour
+{
+    Colour(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+}
+
+; How much of a point is covered by a disc of radius `edge` whose middle is
+; `d` away: 1 inside, 0 outside, smooth across one point.
+function cover(d: f64, edge: f64) returns f64
+{
+    let c edge + 0.5 - d
+    if c < 0.0: 0.0 else if c > 1.0: 1.0 else c
+}
+
+; The guess v between -1 and 1 as the field's colour.
+function paint(v: f64) returns Colour
+{
+    let orange Colour(232.0, 133.0, 61.0)
+    let blue Colour(59.0, 125.0, 216.0)
+    let pale Colour(243.0, 243.0, 241.0)
+    mix(pale, if v > 0.0: orange else blue, (if v < 0.0: 0.0 - v else v) * 0.85)
+}
+
+; a point of kind `kind` and radius `size`, `d` away
+function dot(c: Colour, d: f64, kind: f64, size: f64) returns Colour
+{
+    var r mix(c, Colour(0.0, 0.0, 0.0), 0.35 * cover(d, size + 6.0))
+    r := mix(r, Colour(255.0, 255.0, 255.0), cover(d, size + 4.0))
+    mix(r, if kind > 0.0: Colour(232.0, 133.0, 61.0) else Colour(59.0, 125.0, 216.0), cover(d, size))
+}
+
+function packed(c: Colour) returns u32
+{
+    let r c.r.round_even() as u32
+    let g c.g.round_even() as u32
+    let b c.b.round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+; where a value of u or v lies across or up the picture, in points
+function across(u: f64) returns f64
+{
+    (u + MARGIN) / (HIGH + MARGIN) * (SIZE as f64)
+}
+
+function pixel(p: int) returns u32
+{
+    let px (p % SIZE) as f64 + 0.5
+    let py (p / SIZE) as f64 + 0.5
+    let u px / (SIZE as f64) * (HIGH + MARGIN) - MARGIN
+    let v ((SIZE as f64) - py) / (SIZE as f64) * (HIGH + MARGIN) - MARGIN
+    ; the guess, between +1 and -1 across one point where z = 0 runs
+    let z 9.0 - u - v
+    let slope 1.4142135623730951 * (HIGH + MARGIN) / (SIZE as f64)
+    var g z / slope
+    if g > 1.0
+        g := 1.0
+    if g < 0.0 - 1.0
+        g := 0.0 - 1.0
+    var c paint(g)
+    ; the axes
+    let ink Colour(110.0, 110.0, 116.0)
+    c := mix(c, ink, 0.5 * cover((px - across(0.0)).abs(), 1.0))
+    c := mix(c, ink, 0.5 * cover((py - ((SIZE as f64) - across(0.0))).abs(), 1.0))
+    var k 0
+    while k < 13
+    {
+        let dx px - across(point_x(k) * point_x(k))
+        let dy py - ((SIZE as f64) - across(point_y(k) * point_y(k)))
+        c := dot(c, (dx * dx + dy * dy).sqrt(), kind(k), 10.0)
+        k := k + 1
+    }
+    packed(c)
+}
+
+var picture Vector[u32]((SIZE * SIZE) as size_t)
+for p in SIZE * SIZE
+    picture.put(p as size_t, pixel(p))
+if File.write_bytes("picture.`SIZE`x`SIZE`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"

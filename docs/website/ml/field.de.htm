@@ -1353,10 +1353,10 @@ href="#field-features"
 >Bessere Eingaben</a
 ></h2
 ><p
->Ein Neuron teilt die Ebene durch eine Gerade, und manche Punkte
-      kann keine Gerade teilen, etwa eine Scheibe oranger Punkte in einem
-      Ring blauer: Jede Gerade hat dann Orange und Blau auf beiden
-      Seiten.</p
+>Ein Neuron teilt die Ebene durch eine Gerade. Manche Anordnungen
+      von Punkten kann man aber nicht durch eine Gerade teilen,
+      beispielsweise eine Scheibe oranger Punkte in einem Ring blauer: Jede
+      Gerade hat dann Orange und Blau auf beiden Seiten.</p
 ><aside
 class="tryit"
 ><p
@@ -1374,8 +1374,8 @@ href="https://scaly.io/play/model/#model=descent&#38;lang=de"
         sich mit einer Ebene zufrieden, die überall unsicher ist.</p
 ></aside
 ><p
->Das Programm unten versucht es zweimal, zuerst mit
-      <math
+>Dem Neuron fehlt dabei nicht die Rechenkunst, sondern der richtige
+      Blick auf die Punkte. Geben wir ihm statt <math
 ><mi
 >x</mi
 ></math
@@ -1383,124 +1383,16 @@ href="https://scaly.io/play/model/#model=descent&#38;lang=de"
 ><mi
 >y</mi
 ></math
-> als Eingaben des
-      Neurons, dann mit ihren Quadraten:</p
-><pre
-class="listing"
-><code
->; A disc of points inside a ring of points: no line parts them, so one
-; neuron given x and y cannot learn it. Given x² and y² instead, it can --
-; in those inputs the disc and the ring lie on two sides of a line.
-define Point(x: f64, y: f64, kind: f64)
-
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-; The neuron's two inputs at a point: x and y, or their squares.
-function inputs(p: Point, squared: bool) returns (f64, f64)
-{
-    if squared: (p.x * p.x, p.y * p.y) else (p.x, p.y)
-}
-
-procedure train(points: Array[Point], squared: bool)
-{
-    let n points.length as f64
-    var w1 0.0
-    var w2 0.0
-    var b 0.0
-    var step 0
-    while step &#60;= 400
-    {
-        var loss 0.0
-        var right 0
-        var g1 0.0
-        var g2 0.0
-        var gb 0.0
-        for p in points
-        {
-            let (u, v) inputs(p, squared)
-            let a tanh(w1 * u + w2 * v + b)
-            let e a - p.kind
-            loss := loss + 0.5 * e * e
-            if a * p.kind &#62; 0.0
-                right := right + 1
-            let dz e * (1.0 - a * a)
-            g1 := g1 + dz * u
-            g2 := g2 + dz * v
-            gb := gb + dz
-        }
-        if step % 100 = 0
-            print "  step `step`: loss `shown(loss / n)`, `right` of 16 right"
-        w1 := w1 - 0.1 * g1 / n
-        w2 := w2 - 0.1 * g2 / n
-        b := b - 0.1 * gb / n
-        step := step + 1
-    }
-}
-
-; eight points on a circle of radius 1, eight on one of radius 3
-var points Array[Point]()
-var k 0
-while k &#60; 8
-{
-    let t 0.7853981633974483 * (k as f64)
-    points.add(Point(cos(t), sin(t), 1.0))
-    points.add(Point(3.0 * cos(t + 0.4), 3.0 * sin(t + 0.4), 0.0 - 1.0))
-    k := k + 1
-}
-print "given x and y:"
-train(points, false)
-print "given x² and y²:"
-train(points, true)</code
-></pre
-><pre
-class="screen"
-><code
->given x and y:
-  step 0: loss 0.5, 0 of 16 right
-  step 100: loss 0.5, 7 of 16 right
-  step 200: loss 0.5, 7 of 16 right
-  step 300: loss 0.5, 7 of 16 right
-  step 400: loss 0.5, 7 of 16 right
-given x² and y²:
-  step 0: loss 0.5, 0 of 16 right
-  step 100: loss 0.015, 16 of 16 right
-  step 200: loss 0.007, 16 of 16 right
-  step 300: loss 0.004, 16 of 16 right
-  step 400: loss 0.003, 16 of 16 right</code
-></pre
-><p
->Mit <math
+> deren Quadrate
+      als Eingaben:</p
+><div
+class="equation"
+><math
+display="block"
 ><mi
->x</mi
-></math
-> und <math
-><mi
->y</mi
-></math
-> bleibt das
-      Neuron bei einem Fehler von 0,5, nicht besser, als gar nicht zu
-      raten. Mit <math
-><msup
-><mi
->x</mi
-><mn
->2</mn
-></msup
-></math
-> und <math
-><msup
-><mi
->y</mi
-><mn
->2</mn
-></msup
-></math
-> lernt es
-      jeden Punkt. Das Neuron zieht noch immer eine Gerade, aber eine Gerade
-      in den Eingaben, die es bekommt: <math
+>z</mi
+><mo
+>=</mo
 ><msub
 ><mi
 >w</mi
@@ -1531,13 +1423,218 @@ given x² and y²:
 >+</mo
 ><mi
 >b</mi
+></math
+></div
+><p
+>Mit <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+></math
+> und <math
+><mi
+>b</mi
 ><mo
 >=</mo
 ><mn
->0</mn
+>9</mn
 ></math
->
-      ist auf der Ebene ein Kreis. Auszuwählen, was ein Modell sieht, heißt
+> etwa ist <math
+><mi
+>z</mi
+></math
+> genau dort 0, wo <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>=</mo
+><mn
+>9</mn
+></math
+> ist, auf
+      dem Kreis mit dem Radius 3 um den Mittelpunkt. Innen ist <math
+><mi
+>z</mi
+></math
+> positiv,
+      außen negativ:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></mrow
+><mo
+>−</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><mn
+>9</mn
+></math
+></div
+><img
+src="fig/squares-plane.png"
+alt="Die Ebene mit einem orangen Kreis vom Radius 3 um den Mittelpunkt, sonst blau; die orangen Punkte der Scheibe liegen im Kreis, die blauen des Rings draußen."
+loading="lazy"></div
+><p
+>Warum kann das Neuron das plötzlich? Nennen wir seine neuen
+      Eingaben <math
+><mi
+>u</mi
+><mo
+>=</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
+> und <math
+><mi
+>v</mi
+><mo
+>=</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
+>. Dann ist <math
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>u</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>v</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> wieder eine Gerade, nur nicht in
+      der Ebene von <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
+>, sondern in der von <math
+><mi
+>u</mi
+></math
+> und <math
+><mi
+>v</mi
+></math
+>. Trägt man
+      die Punkte dort ein, liegt die Scheibe nahe am Nullpunkt und der Ring
+      weiter draußen, und eine Gerade trennt sie:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mi
+>u</mi
+></mrow
+><mo
+>−</mo
+><mi
+>v</mi
+><mo
+>+</mo
+><mn
+>9</mn
+></math
+></div
+><img
+src="fig/squares-space.png"
+alt="Dieselben Punkte über u = x² und v = y²: die orangen nahe am Nullpunkt unterhalb einer schrägen Geraden, die blauen weiter draußen darüber."
+loading="lazy"></div
+><p
+>Das Neuron zieht also noch immer eine Gerade, aber in den
+      Eingaben, die es bekommt; auf der Ebene der Punkte wird daraus ein
+      Kreis. Auszuwählen, was ein Modell sieht, heißt
       <em
 >Feature Engineering</em
 >, und gute Eingaben können ein
@@ -1549,40 +1646,13 @@ class="note-title"
 >Ausprobieren</p
 ><p
 ><a
-href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y&#38;lang=de"
->Öffne den Kreis mit x und y als Eingaben.</a
+href="https://scaly.io/play/model/#model=squares&#38;lang=de"
+>Öffne die Seite mit dem Neuron, das x² und y² bekommt.</a
 >
-        Die Ausgabe bleibt eine gerade Kante zwischen zwei blassen Hälften.
-        Klick im Netz auf <math
-><msup
-><mi
->x</mi
-><mn
->2</mn
-></msup
-></math
-> und
-        <math
-><msup
-><mi
->y</mi
-><mn
->2</mn
-></msup
-></math
->, um sie dem Neuron zu geben, und auf
-        <math
-><mi
->x</mi
-></math
-> und <math
-><mi
->y</mi
-></math
->, um diese
-        wegzunehmen: Die Kante schließt sich zum Kreis. Jedes kleine Quadrat
-        zeigt, was eine Eingabe oder ein Neuron über der ganzen Ebene
-        antwortet.</p
+        Es beginnt bei Scheibe und Ring und rät zunächst schlecht. Drück
+        „Lernen“: Nach etwa hundert Schritten stimmen alle Punkte, und die
+        orange Fläche legt sich um die Scheibe. Auch hier kannst du Punkte
+        setzen und entfernen.</p
 ></aside
 ></section
 ><section

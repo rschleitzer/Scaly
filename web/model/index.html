@@ -129,6 +129,8 @@ const TEXT = {
         sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. A ring marks each point the neuron guesses wrong.',
         right: (n, all) => `${n} of ${all} right`,
         placeSay: 'Click: an orange point. Right click: a blue one. Click on a point: it goes.', sixPoints: 'The six points',
+        squares: 'A neuron given x² and y²', discRing: 'Disc and ring',
+        saySquares: 'The neuron is given x² and y² instead of x and y and answers a = tanh(w₁x² + w₂y² + b): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
         loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
         sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
@@ -141,6 +143,8 @@ const TEXT = {
         sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Ein Ring markiert jeden Punkt, bei dem das Neuron falsch rät.',
         right: (n, all) => `${n} von ${all} richtig`,
         placeSay: 'Klick: ein oranger Punkt. Rechtsklick: ein blauer. Klick auf einen Punkt: Er verschwindet.', sixPoints: 'Die sechs Punkte',
+        squares: 'Ein Neuron mit x² und y²', discRing: 'Scheibe und Ring',
+        saySquares: 'Das Neuron bekommt x² und y² statt x und y und antwortet a = tanh(w₁x² + w₂y² + b): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
         loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
         sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
@@ -178,6 +182,7 @@ function translatePage() {
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
   document.querySelector('h1').textContent = t(model.title);
   document.querySelector('.say:not(#right)').textContent = t(model.say);
+  if (model.points === 'disc') $('sixPoints').textContent = t('discRing');
   if (said) $('status').textContent = said();
   showValues();
   if (model.learning) {
@@ -224,6 +229,15 @@ const MODELS = {
     formula: ([w1, w2, b]) => mi('a') + mo('=') + mi('tanh') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo>'
       + term(w1, mi('x'), true, 2) + term(w2, mi('y'), false, 2) + term(b, '', false, 2) + '<mo stretchy="false">)</mo></mrow>',
   },
+  squares: {
+    id: 3, title: 'squares', say: 'saySquares', source: 'descent', learning: true, points: 'disc',
+    params: [{ name: 'w1', label: sub(mi('w'), mn(1)), min: -3, max: 3, step: 0.01, value: 0.1 },
+             { name: 'w2', label: sub(mi('w'), mn(2)), min: -3, max: 3, step: 0.01, value: 0.1 },
+             { name: 'b', label: mi('b'), min: -10, max: 10, step: 0.01, value: 0 }],
+    formula: ([w1, w2, b]) => mi('a') + mo('=') + mi('tanh') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo>'
+      + term(w1, '<msup><mi>x</mi><mn>2</mn></msup>', true, 2) + term(w2, '<msup><mi>y</mi><mn>2</mn></msup>', false, 2)
+      + term(b, '', false, 2) + '<mo stretchy="false">)</mo></mrow>',
+  },
 };
 const asked = new URLSearchParams(location.hash.slice(1));
 const model = MODELS[asked.get('model')] ?? MODELS.cosine;
@@ -267,7 +281,12 @@ function send() {
 // one, a click on a point takes it away. The page keeps them and writes them
 // into the board; the program writes back what the model guesses at each.
 const SIX = [[2, 1.5, 1], [1, 3, 1], [0.5, -2.5, 1], [-2, -1, -1], [-1, -3, -1], [-3, 1, -1]];
-let points = SIX.map(p => p.slice());
+// a disc of orange points inside a ring of blue ones (the chapter's "Better inputs")
+const DISC = [[2.4, 20], [2.2, 110], [2.6, 225], [1.5, 300], [1.0, 160]].map(([r, a]) => [r, a, 1])
+  .concat([[4, 20], [4.4, 65], [3.8, 110], [4.2, 155], [4.6, 200], [3.9, 245], [4.3, 290], [4.1, 335]].map(([r, a]) => [r, a, -1]))
+  .map(([r, a, kind]) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180), kind]);
+const START = model.points === 'disc' ? DISC : SIX;
+let points = START.map(p => p.slice());
 let placings = 0;
 function sendPoints() {
   if (!board) return;
@@ -291,7 +310,7 @@ $('plane').addEventListener('pointerdown', e => {
   else if (points.length < MAXP) points.push([cx / SIZE * 12 - 6, 6 - cy / SIZE * 12, e.button === 2 || e.shiftKey ? -1 : 1]);
   sendPoints();
 });
-$('sixPoints').onclick = () => { points = SIX.map(p => p.slice()); sendPoints(); };
+$('sixPoints').onclick = () => { points = START.map(p => p.slice()); sendPoints(); };
 
 // learning (model 2): the program takes steps while board[5] is 1, or one
 // for each raise of board[6]

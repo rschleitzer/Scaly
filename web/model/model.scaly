@@ -9,6 +9,7 @@
 ;   2  the same neuron answering a = tanh(z), and learning: a step of
 ;      gradient descent moves w1, w2 and b a little towards a smaller loss
 ;      over the points
+;   3  the same, given x² and y² for its inputs instead of x and y
 ;
 ; The program keeps what the page shows in ONE vector of numbers, the
 ; board, and says before its loop where the board lies in its memory; the
@@ -18,10 +19,11 @@
 ; The head of the board, what the page writes:
 ;
 ;    0  a counter the page raises after it wrote slots 1 to 4
-;    1  which model, 0, 1 or 2
-;    2  c, or w1, w2 and b in 2, 3 and 4 (for model 2 where to begin)
-;    5  1 while model 2 learns, 0 while it waits
-;    6  a counter: raised, model 2 takes one step while it waits
+;    1  which model, 0 to 3
+;    2  c, or w1, w2 and b in 2, 3 and 4 (for models 2 and 3 where to
+;       begin)
+;    5  1 while model 2 or 3 learns, 0 while it waits
+;    6  a counter: raised, model 2 or 3 takes one step while it waits
 ;    7  the learning rate
 ;    8  a counter the page raises after it wrote the points
 ;    9  how many points there are, at most MAXP
@@ -30,9 +32,9 @@
 ;
 ;   32  the counter of slot 0 it has taken in
 ;   33  a counter raised with each picture
-;   35  w1, w2 and b of model 2 as it has learned them, in 35, 36 and 37
-;   38  the loss of model 2 over the points
-;   39  how many steps model 2 has taken
+;   35  w1, w2 and b of model 2 or 3 as it has learned them, in 35 to 37
+;   38  its loss over the points
+;   39  how many steps it has taken
 ;
 ; From slot 64 on the picture, SIZE x SIZE numbers between -1 and 1, row
 ; by row from the top, which the program writes; after it the points,
@@ -71,17 +73,24 @@ function neuron(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
 ; <<
 
 ; >> descent
+; The neuron's two inputs at a point: x and y, or their squares.
+function inputs(p: Point, squared: bool) returns (f64, f64)
+{
+    if squared: (p.x * p.x, p.y * p.y) else (p.x, p.y)
+}
+
 ; The loss over the first n points: for each the neuron's answer
 ; a = tanh(z) and half the square of how far it is from the point's kind,
 ; and of these the mean.
-function loss(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64) returns f64
+function loss(points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64, b: f64) returns f64
 {
     var sum 0.0
     var k 0
     while k < n
     {
         let p points[k]
-        let a tanh(w1 * p.x + w2 * p.y + b)
+        let (u, v) inputs(p, squared)
+        let a tanh(w1 * u + w2 * v + b)
         sum := sum + 0.5 * (a - p.kind) * (a - p.kind)
         k := k + 1
     }
@@ -92,7 +101,7 @@ function loss(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64) returns f
 ; values adds to the loss -- by the chain rule, (a - t)(1 - a²) times the
 ; input the value multiplies --, of these the mean, and each value moved a
 ; little against it.
-function step(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64, rate: f64) returns (f64, f64, f64)
+function step(points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64, b: f64, rate: f64) returns (f64, f64, f64)
 {
     if n = 0
         return (w1, w2, b)
@@ -103,10 +112,11 @@ function step(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64, rate: f64
     while k < n
     {
         let p points[k]
-        let a tanh(w1 * p.x + w2 * p.y + b)
+        let (u, v) inputs(p, squared)
+        let a tanh(w1 * u + w2 * v + b)
         let d (a - p.kind) * (1.0 - a * a)
-        g1 := g1 + d * p.x
-        g2 := g2 + d * p.y
+        g1 := g1 + d * u
+        g2 := g2 + d * v
         gb := gb + d
         k := k + 1
     }
@@ -138,6 +148,8 @@ function guess(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
 
 function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64) returns f64
 {
+    if which = 3
+        return tanh(neuron(x * x, y * y, a, b, c))
     if which = 2
         return tanh(neuron(x, y, a, b, c))
     if which = 1
@@ -171,26 +183,27 @@ procedure take_points(mutable points: Vector[Point], board: Vector[f64]) returns
 }
 
 ; What the neuron guesses at each point, into the board.
-procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, w1: f64, w2: f64, b: f64)
+procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64,
+                  b: f64)
 {
     var k 0
     while k < n
     {
-        let p points[k]
-        let z neuron(p.x, p.y, w1, w2, b)
+        let (u, v) inputs(points[k], squared)
+        let z neuron(u, v, w1, w2, b)
         board.put(POINTS + 4 * k + 3, if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0)
         k := k + 1
     }
 }
 
-; Model 2 as it stands, into the board.
-procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, w1: f64, w2: f64, b: f64,
-                  steps: int)
+; Model 2 or 3 as it stands, into the board.
+procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64,
+                  b: f64, steps: int)
 {
     board.put(35, w1)
     board.put(36, w2)
     board.put(37, b)
-    board.put(38, loss(points, n, w1, w2, b))
+    board.put(38, loss(points, n, squared, w1, w2, b))
     board.put(39, steps as f64)
 }
 
@@ -238,9 +251,10 @@ repeat
         n := take_points(points, board)
         change := true
     }
-    ; model 2 learns while the page says so, or takes the one step it asked for
+    ; models 2 and 3 learn while the page says so, or take the one step it asked for
+    let squared which = 3
     var go false
-    if which = 2
+    if which >= 2
     {
         if board[5] > 0.5
             go := true
@@ -250,7 +264,7 @@ repeat
     }
     if go
     {
-        let (w1, w2, w0) step(points, n, a, b, c, board[7])
+        let (w1, w2, w0) step(points, n, squared, a, b, c, board[7])
         a := w1
         b := w2
         c := w0
@@ -259,11 +273,11 @@ repeat
     }
     if change
     {
-        if which = 2
-            learned(board, points, n, a, b, c, steps)
+        if which >= 2
+            learned(board, points, n, squared, a, b, c, steps)
         picture(board, which, a, b, c)
         if which > 0
-            guesses(board, points, n, a, b, c)
+            guesses(board, points, n, squared, a, b, c)
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }

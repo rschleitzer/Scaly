@@ -1339,9 +1339,10 @@ href="#field-features"
 >Better Inputs</a
 ></h2
 ><p
->A neuron parts the plane by a line, and some points no line can
-      part, such as a disc of orange points inside a ring of blue ones:
-      every line then has orange and blue on both sides.</p
+>A neuron parts the plane by a line. But some arrangements of
+      points cannot be parted by a line, for example a disc of orange
+      points inside a ring of blue ones: every line then has orange and
+      blue on both sides.</p
 ><aside
 class="tryit"
 ><p
@@ -1359,7 +1360,8 @@ href="https://scaly.io/play/model/#model=descent"
         for a plane that is unsure everywhere.</p
 ></aside
 ><p
->The program below tries it twice, first with <math
+>What the neuron lacks is not skill at sums but the right view of
+      the points. Let us give it the squares of <math
 ><mi
 >x</mi
 ></math
@@ -1367,124 +1369,16 @@ href="https://scaly.io/play/model/#model=descent"
 ><mi
 >y</mi
 ></math
-> as
-      the neuron's inputs, then with their squares:</p
-><pre
-class="listing"
-><code
->; A disc of points inside a ring of points: no line parts them, so one
-; neuron given x and y cannot learn it. Given x² and y² instead, it can --
-; in those inputs the disc and the ring lie on two sides of a line.
-define Point(x: f64, y: f64, kind: f64)
-
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-; The neuron's two inputs at a point: x and y, or their squares.
-function inputs(p: Point, squared: bool) returns (f64, f64)
-{
-    if squared: (p.x * p.x, p.y * p.y) else (p.x, p.y)
-}
-
-procedure train(points: Array[Point], squared: bool)
-{
-    let n points.length as f64
-    var w1 0.0
-    var w2 0.0
-    var b 0.0
-    var step 0
-    while step &#60;= 400
-    {
-        var loss 0.0
-        var right 0
-        var g1 0.0
-        var g2 0.0
-        var gb 0.0
-        for p in points
-        {
-            let (u, v) inputs(p, squared)
-            let a tanh(w1 * u + w2 * v + b)
-            let e a - p.kind
-            loss := loss + 0.5 * e * e
-            if a * p.kind &#62; 0.0
-                right := right + 1
-            let dz e * (1.0 - a * a)
-            g1 := g1 + dz * u
-            g2 := g2 + dz * v
-            gb := gb + dz
-        }
-        if step % 100 = 0
-            print "  step `step`: loss `shown(loss / n)`, `right` of 16 right"
-        w1 := w1 - 0.1 * g1 / n
-        w2 := w2 - 0.1 * g2 / n
-        b := b - 0.1 * gb / n
-        step := step + 1
-    }
-}
-
-; eight points on a circle of radius 1, eight on one of radius 3
-var points Array[Point]()
-var k 0
-while k &#60; 8
-{
-    let t 0.7853981633974483 * (k as f64)
-    points.add(Point(cos(t), sin(t), 1.0))
-    points.add(Point(3.0 * cos(t + 0.4), 3.0 * sin(t + 0.4), 0.0 - 1.0))
-    k := k + 1
-}
-print "given x and y:"
-train(points, false)
-print "given x² and y²:"
-train(points, true)</code
-></pre
-><pre
-class="screen"
-><code
->given x and y:
-  step 0: loss 0.5, 0 of 16 right
-  step 100: loss 0.5, 7 of 16 right
-  step 200: loss 0.5, 7 of 16 right
-  step 300: loss 0.5, 7 of 16 right
-  step 400: loss 0.5, 7 of 16 right
-given x² and y²:
-  step 0: loss 0.5, 0 of 16 right
-  step 100: loss 0.015, 16 of 16 right
-  step 200: loss 0.007, 16 of 16 right
-  step 300: loss 0.004, 16 of 16 right
-  step 400: loss 0.003, 16 of 16 right</code
-></pre
-><p
->Given <math
+> as its inputs
+      instead:</p
+><div
+class="equation"
+><math
+display="block"
 ><mi
->x</mi
-></math
-> and <math
-><mi
->y</mi
-></math
->, the neuron
-      stays at a loss of 0.5, no better than not guessing at all. Given
-      <math
-><msup
-><mi
->x</mi
-><mn
->2</mn
-></msup
-></math
-> and <math
-><msup
-><mi
->y</mi
-><mn
->2</mn
-></msup
-></math
->, it learns every
-      point. The neuron still draws a line, but a line in the inputs it is
-      given: <math
+>z</mi
+><mo
+>=</mo
 ><msub
 ><mi
 >w</mi
@@ -1515,29 +1409,117 @@ given x² and y²:
 >+</mo
 ><mi
 >b</mi
+></math
+></div
+><p
+>With <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+></math
+> and <math
+><mi
+>b</mi
 ><mo
 >=</mo
 ><mn
->0</mn
+>9</mn
 ></math
-> is, on the plane, a
-      circle. Choosing what a model sees is called
-      <em
->feature engineering</em
->, and good inputs can make a
-      hard problem easy.</p
-><aside
-class="tryit"
+>, say, <math
+><mi
+>z</mi
+></math
+> is 0 exactly where <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>=</mo
+><mn
+>9</mn
+></math
+>, on the
+      circle of radius 3 around the centre. Inside, <math
+><mi
+>z</mi
+></math
+> is positive,
+      outside negative:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></mrow
+><mo
+>−</mo
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+><mo
+>+</mo
+><mn
+>9</mn
+></math
+></div
+><img
+src="fig/squares-plane.png"
+alt="The plane with an orange circle of radius 3 around the centre, blue elsewhere; the orange points of the disc lie inside the circle, the blue ones of the ring outside."
+loading="lazy"></div
 ><p
-class="note-title"
->Try it</p
-><p
-><a
-href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y"
->Open the circle with x and y as inputs.</a
->
-        The output stays a straight edge between two pale halves. Click on
-        <math
+>Why can the neuron do this all of a sudden? Let us call its new
+      inputs <math
+><mi
+>u</mi
+><mo
+>=</mo
 ><msup
 ><mi
 >x</mi
@@ -1546,6 +1528,10 @@ href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y"
 ></msup
 ></math
 > and <math
+><mi
+>v</mi
+><mo
+>=</mo
 ><msup
 ><mi
 >y</mi
@@ -1553,19 +1539,105 @@ href="https://scaly.io/play/field/#data=circle&#38;hidden=0&#38;inputs=x,y"
 >2</mn
 ></msup
 ></math
-> in the network to
-        give them to the neuron, and on <math
+>. Then <math
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>u</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>v</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> is a straight line again, only not in
+      the plane of <math
 ><mi
 >x</mi
 ></math
-> and
-        <math
+> and <math
 ><mi
 >y</mi
 ></math
-> to take those away: the edge closes into a
-        circle. Each small square shows what one input or neuron answers
-        over the whole plane.</p
+> but in that of <math
+><mi
+>u</mi
+></math
+> and <math
+><mi
+>v</mi
+></math
+>. Drawn there, the
+      disc lies near the origin and the ring further out, and a line parts
+      them:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><mi
+>z</mi
+><mo
+>=</mo
+><mrow
+><mo
+>−</mo
+><mi
+>u</mi
+></mrow
+><mo
+>−</mo
+><mi
+>v</mi
+><mo
+>+</mo
+><mn
+>9</mn
+></math
+></div
+><img
+src="fig/squares-space.png"
+alt="The same points over u = x² and v = y²: the orange ones near the origin below a slanting line, the blue ones further out above it."
+loading="lazy"></div
+><p
+>So the neuron still draws a line, but a line in the inputs it is
+      given; on the plane of the points it becomes a circle. Choosing what a
+      model sees is called <em
+>feature engineering</em
+>, and
+      good inputs can make a hard problem easy.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Try it</p
+><p
+><a
+href="https://scaly.io/play/model/#model=squares"
+>Open the page with the neuron given x² and y².</a
+>
+        It begins with the disc and the ring and guesses badly at first.
+        Press “Learn”: after some hundred steps all points are right, and
+        the orange area settles around the disc. Here too you can put down
+        points and take them away.</p
 ></aside
 ></section
 ><section
