@@ -272,36 +272,68 @@
   <section xml:id="field-hidden">
     <title>Verborgene Schichten</title>
     <para>Für eine Scheibe sind die richtigen Eingaben leicht zu erraten.
-      Für die meisten Daten sind sie es nicht, und hier kommt die Idee, die
-      neuronale Netze stark macht: Lass Neuronen die Eingaben berechnen.
-      Eine <emphasis>verborgene Schicht</emphasis> ist eine Reihe von
-      Neuronen, die jedes <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>
-      lesen und jedes eine eigene Gerade ziehen. Ihre Antworten sind die
-      Eingaben eines weiteren Neurons, der <emphasis>Ausgabe</emphasis>,
-      die die Geraden zu Gebieten verbindet: orange innerhalb dieser zwei,
-      blau außerhalb jener.</para>
-    <para>Die Daten, an denen man das am besten sieht, heißen XOR: orange,
-      wo <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> dasselbe Vorzeichen
-      haben, blau, wo nicht, die vier Viertel der Ebene im Wechsel. Keine
-      einzelne Gerade teilt sie, zwei Geraden schon, mit etwas, das sie
-      verbindet.</para>
+      Für die meisten Daten sind sie es nicht. Hier kommt die Idee, die
+      neuronale Netze stark macht: Wir lassen Neuronen die Eingaben
+      berechnen.</para>
+    <para>Nehmen wir mehrere Neuronen nebeneinander. Jedes bekommt <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und
+      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, jedes hat eigene Gewichte und einen eigenen Bias und zieht damit
+      seine eigene Gerade; seine Antwort sagt, auf welcher Seite davon ein
+      Punkt liegt. Dahinter setzen wir ein weiteres Neuron, die
+      <emphasis>Ausgabe</emphasis>. Es bekommt nicht <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, sondern
+      die Antworten der Neuronen davor. Die Neuronen dazwischen bilden eine
+      <emphasis>verborgene Schicht</emphasis>: Von außen sieht man nur die
+      Eingaben und die Ausgabe, ihre Antworten sind
+      Zwischenergebnisse.</para>
+    <para>Am besten sieht man das an den Daten, die XOR heißen: orange oben
+      rechts und unten links, blau in den beiden anderen Ecken. Keine
+      einzelne Gerade teilt sie. Zwei Neuronen in einer verborgenen Schicht
+      können es, wenn jedes eine der orangen Ecken abschneidet. Ihre Antwort
+      sei hier einfach das Vorzeichen <inlineequation><mml:math><mml:mi>sgn</mml:mi></mml:math></inlineequation> ihrer gewichteten Summe, +1 oder
+      −1. Das erste sagt +1 nur oben rechts:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mi>sgn</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:mi>y</mml:mi><mml:mo>−</mml:mo><mml:mn>3</mml:mn><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Ebene mit den XOR-Punkten, orange nur jenseits der Geraden x + y = 3 oben rechts, sonst blau.</alt>
+        <imageobject><imagedata fileref="fig/xor-h1.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>das zweite nur unten links:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mi>sgn</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mi>x</mml:mi></mml:mrow><mml:mo>−</mml:mo><mml:mi>y</mml:mi><mml:mo>−</mml:mo><mml:mn>3</mml:mn><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Ebene mit den XOR-Punkten, orange nur jenseits der Geraden x + y = −3 unten links, sonst blau.</alt>
+        <imageobject><imagedata fileref="fig/xor-h2.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>Die Ausgabe liest die beiden Antworten. Sagt eines der beiden +1,
+      ist <inlineequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:math></inlineequation> gleich +1, also orange; sagen beide −1, ist es −1, also
+      blau:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:math></informalequation>
+      <mediaobject>
+        <alt>Die Ebene mit den XOR-Punkten: orange in den Ecken oben rechts und unten links, dazwischen ein blaues Band; jeder Punkt liegt auf der Seite seiner Farbe.</alt>
+        <imageobject><imagedata fileref="fig/xor-out.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>Die Ausgabe verknüpft die beiden Geraden zu einem
+      <quote>oder</quote>: orange, wenn das erste oder das zweite Neuron ja
+      sagt. Zwei Geraden und ein Neuron, das sie verbindet, schaffen, was
+      eine Gerade allein nicht kann. Mit mehr Neuronen und mehr Schichten
+      lassen sich auf diese Weise beliebig verwickelte Grenzen bilden.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="../play/field/#data=xor&amp;hidden=0&amp;inputs=x,y&amp;lang=de">Öffne XOR ohne verborgene Schicht:</link>
-        Das Netz findet nichts. <link xlink:href="../play/field/#data=xor&amp;hidden=3&amp;inputs=x,y&amp;lang=de">Mit einer verborgenen Schicht aus drei Neuronen</link>
-        lernt es die vier Viertel. Sieh dir die drei Quadrate der
-        verborgenen Schicht an: Jedes ist eine gerade Kante, eine Gerade, und
-        das Quadrat der Ausgabe ist ihre Verbindung. Die Linien zwischen
-        den Quadraten sind die Gewichte, orange für positive, blau für
-        negative, je dicker, desto stärker.</para>
+      <para><link xlink:href="../play/model/#model=hidden&amp;lang=de">Öffne die Seite mit einem Netz aus einer verborgenen Schicht.</link>
+        Es hat drei verborgene Neuronen und beginnt bei den XOR-Punkten mit
+        kleinen Gewichten, die nur die Hälfte der Punkte richtig raten. Drück
+        „Lernen“: Nach gut hundert Schritten stimmen alle zwölf. Die kleinen
+        Bilder zeigen, welche Gerade jedes verborgene Neuron gefunden hat; die
+        Ausgabe verbindet sie. Wie das Netz seine dreizehn Zahlen findet,
+        zeigt der nächste Abschnitt.</para>
     </sidebar>
     <para>Dabei kommt es auf die Aktivierung an. Ohne sie würde ein
       Neuron, das Neuronen liest, Summen von Summen addieren, und das ist
       wieder nur eine Summe, eine Gerade; erst der Knick in der Antwort
-      jedes Neurons lässt die Schichten mehr können als ein einzelnes
-      Neuron. Das Spielfeld bietet vier an: <literal>tanh</literal>,
-      <literal>ReLU</literal> (die Summe selbst, wo sie positiv ist, sonst
-      0), <literal>sigmoid</literal> (wie tanh, aber zwischen 0 und 1) und
-      gar keine, die genau dieses Scheitern zeigt.</para>
+      jedes Neurons, hier das Vorzeichen, auf der Seite tanh, lässt die
+      Schichten mehr können als ein einzelnes Neuron.</para>
   </section>
 
   <section xml:id="field-backprop">

@@ -47,6 +47,10 @@
   .side { display: flex; flex-direction: column; gap: 22px; min-width: 300px; max-width: 420px; }
   math mn { font-variant-numeric: tabular-nums; }
   #sliders { display: flex; flex-direction: column; gap: 10px; }
+  .neuron-row { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; margin: 4px 0; }
+  .neuron-row canvas { width: 56px; height: 56px; border-radius: 4px; border: 1px solid var(--line); }
+  .neuron-row math { font-size: 1.15em; }
+  #formula .output math { font-size: 1.3em; }
   #sliders label { display: grid; grid-template-columns: 2.2em 1fr; align-items: center; gap: 8px; }
   #sliders math { font-size: 1.25em; }
   #right { color: var(--ink); font-weight: 600; }
@@ -102,7 +106,7 @@
         <span><span data-t="loss">Loss</span> <b id="lossValue">–</b></span>
         <span id="stepsValue"></span>
         <label><span data-t="rate">Learning rate</span> <select id="rate">
-          <option>0.01</option><option selected>0.1</option><option>1</option></select></label>
+          <option>0.01</option><option selected>0.1</option><option>0.3</option><option>1</option></select></label>
       </div>
       <p class="ended" id="ended" hidden></p>
     </div>
@@ -133,6 +137,8 @@ const TEXT = {
         right: (n, all) => `${n} of ${all} right`,
         placeSay: 'Click: an orange point. Right click: a blue one. Click on a point: it goes.', sixPoints: 'The six points',
         squares: 'A neuron given x² and y²', discRing: 'Disc and ring',
+        hiddenTitle: 'A network with a hidden layer', xorPoints: 'XOR',
+        sayHidden: 'Three hidden neurons, each with a line of its own (the small pictures show their answers h₁, h₂ and h₃), and an output neuron that reads them. The large picture is the network’s answer a; a ring marks each point it guesses wrong. How the numbers are found is the next section’s subject, backpropagation.',
         saySquares: 'The neuron is given x² and y² instead of x and y and answers a = tanh(w₁x² + w₂y² + b): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
         loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
@@ -149,6 +155,8 @@ const TEXT = {
         right: (n, all) => `${n} von ${all} richtig`,
         placeSay: 'Klick: ein oranger Punkt. Rechtsklick: ein blauer. Klick auf einen Punkt: Er verschwindet.', sixPoints: 'Die sechs Punkte',
         squares: 'Ein Neuron mit x² und y²', discRing: 'Scheibe und Ring',
+        hiddenTitle: 'Ein Netz mit einer verborgenen Schicht', xorPoints: 'XOR',
+        sayHidden: 'Drei verborgene Neuronen, jedes mit einer eigenen Geraden (die kleinen Bilder zeigen ihre Antworten h₁, h₂ und h₃), und ein Ausgabeneuron, das sie liest. Das große Bild ist die Antwort a des Netzes; ein Ring markiert jeden Punkt, bei dem es falsch rät. Wie die Zahlen gefunden werden, ist das Thema des nächsten Abschnitts, die Rückwärtsrechnung.',
         saySquares: 'Das Neuron bekommt x² und y² statt x und y und antwortet a = tanh(w₁x² + w₂y² + b): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
         loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
@@ -190,6 +198,7 @@ function translatePage() {
   document.querySelector('h1').textContent = t(model.title);
   document.querySelector('.say:not(#right)').textContent = t(model.say);
   if (model.points === 'disc') $('sixPoints').textContent = t('discRing');
+  if (model.points === 'xor') $('sixPoints').textContent = t('xorPoints');
   if (said) $('status').textContent = said();
   showValues();
   if (model.learning) {
@@ -244,6 +253,17 @@ const MODELS = {
       + term(w1, '<msup><mi>x</mi><mn>2</mn></msup>', true, 2) + term(w2, '<msup><mi>y</mi><mn>2</mn></msup>', false, 2)
       + term(b, '', false, 2) + '<mo stretchy="false">)</mo></mrow>',
   },
+  hidden: {
+    id: 4, title: 'hiddenTitle', say: 'sayHidden', source: 'network', learning: true, points: 'xor', rate: 0.3,
+    params: [], tiles: 3,
+    // one row for each hidden neuron, then the output; the numbers as learned
+    formula: net => [0, 1, 2].map(j => sub(mi('h'), mn(j + 1)) + mo('=') + mi('tanh') + mo('&#x2061;')
+        + '<mrow><mo stretchy="false">(</mo>' + term(net[3 * j], mi('x'), true, 2) + term(net[3 * j + 1], mi('y'), false, 2)
+        + term(net[3 * j + 2], '', false, 2) + '<mo stretchy="false">)</mo></mrow>')
+      .concat([mi('a') + mo('=') + mi('tanh') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo>'
+        + term(net[9], sub(mi('h'), mn(1)), true, 2) + term(net[10], sub(mi('h'), mn(2)), false, 2)
+        + term(net[11], sub(mi('h'), mn(3)), false, 2) + term(net[12], '', false, 2) + '<mo stretchy="false">)</mo></mrow>']),
+  },
 };
 const asked = new URLSearchParams(location.hash.slice(1));
 const model = MODELS[asked.get('model')] ?? MODELS.quadratic;
@@ -262,14 +282,27 @@ for (const q of model.params) {
   $('sliders').append(label);
 }
 $('learn').hidden = !model.learning;
+if (model.rate) $('rate').value = String(model.rate);
 const values = () => model.params.map(q => Number(q.input.value));
+// model 4's start (model.scaly, begin_network), until the program says what it has learned
+const NET_START = [0.5, -0.4, 0, 0.3, 0.8, 0, -0.7, 0.2, 0, 0.3, 0.1, -0.1, 0];
 // a learning model shows the values as the program has learned them
 let learned = null;
-function showValues() { $('formula').innerHTML = `<math display="block">${model.formula(learned ?? values())}</math>`; }
+function showValues() {
+  const f = model.formula(learned ?? (model.tiles ? NET_START : values()));
+  if (!Array.isArray(f)) { $('formula').innerHTML = `<math display="block">${f}</math>`; return; }
+  // a row for each hidden neuron, its picture beside it, then the output
+  $('formula').innerHTML = f.map((m, j) => j < model.tiles
+    ? `<div class="neuron-row"><canvas id="tile${j}" width="${TILE}" height="${TILE}"></canvas><math>${m}</math></div>`
+    : `<div class="output"><math display="block">${m}</math></div>`).join('');
+  tilesDrawn = false;
+}
 
 // --- the board (model.scaly says what lies where) ----------------------------
 
-const SIZE = 400, HEAD = 64, POINTS = HEAD + SIZE * SIZE, MAXP = 100, BOARD = POINTS + 4 * MAXP;
+const SIZE = 400, HEAD = 64, POINTS = HEAD + SIZE * SIZE, MAXP = 100, TILES = POINTS + 4 * MAXP, TILE = 96;
+const BOARD = TILES + 3 * TILE * TILE;
+let tilesDrawn = false;
 let board = null;           // a Float64Array over the program's board, in its memory
 let changes = 0, frame = -1;
 
@@ -287,11 +320,14 @@ function send() {
 // one, a click on a point takes it away. The page keeps them and writes them
 // into the board; the program writes back what the model guesses at each.
 const SIX = [[2, 1.5, 1], [1, 3, 1], [0.5, -2.5, 1], [-2, -1, -1], [-1, -3, -1], [-3, 1, -1]];
+// XOR: orange at the upper right and the lower left, blue at the other corners
+const XOR = [[3, 3, 1], [2, 4, 1], [4, 2, 1], [-3, -3, 1], [-2, -4, 1], [-4, -2, 1],
+             [3, -3, -1], [2, -4, -1], [4, -2, -1], [-3, 3, -1], [-2, 4, -1], [-4, 2, -1]];
 // a disc of orange points inside a ring of blue ones (the chapter's "Better inputs")
 const DISC = [[2.4, 20], [2.2, 110], [2.6, 225], [1.5, 300], [1.0, 160]].map(([r, a]) => [r, a, 1])
   .concat([[4, 20], [4.4, 65], [3.8, 110], [4.2, 155], [4.6, 200], [3.9, 245], [4.3, 290], [4.1, 335]].map(([r, a]) => [r, a, -1]))
   .map(([r, a, kind]) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180), kind]);
-const START = model.points === 'disc' ? DISC : SIX;
+const START = model.points === 'disc' ? DISC : model.points === 'xor' ? XOR : SIX;
 let points = START.map(p => p.slice());
 let placings = 0;
 function sendPoints() {
@@ -394,11 +430,12 @@ function picture() {
   $('right').hidden = n === 0;
   $('right').textContent = t('right')(right, n);
   if (model.learning) {
-    learned = [board[35], board[36], board[37]];
+    learned = model.tiles ? Array.from(board.subarray(41, 54)) : [board[35], board[36], board[37]];
     model.params.forEach((q, k) => { q.input.value = learned[k]; });
     $('lossValue').textContent = board[38].toLocaleString(lang, { minimumFractionDigits: 3, maximumFractionDigits: 4 });
     $('stepsValue').textContent = t('steps')(board[39]);
     showValues();
+    if (model.tiles) drawTiles();
     // learning ended by itself (model.scaly, finished): the page stops and says why
     const why = board[40];
     if (why > 0 && running) {
@@ -411,6 +448,24 @@ function picture() {
     $('ended').textContent = why === 1 ? t('goal') : why === 2 ? t('still') : '';
   }
 }
+// model 4's hidden neurons, each its answer over the plane, small
+function drawTiles() {
+  const z = palette.zero;
+  for (let j = 0; j < model.tiles; j++) {
+    const c = $('tile' + j);
+    if (!c) continue;
+    const img = new ImageData(TILE, TILE), px = img.data, base = TILES + j * TILE * TILE;
+    for (let q = 0; q < TILE * TILE; q++) {
+      const v = board[base + q], a = Math.min(1, Math.abs(v)) * 0.85, end = v > 0 ? palette.plus : palette.minus;
+      px[4 * q] = z[0] + (end[0] - z[0]) * a;
+      px[4 * q + 1] = z[1] + (end[1] - z[1]) * a;
+      px[4 * q + 2] = z[2] + (end[2] - z[2]) * a;
+      px[4 * q + 3] = 255;
+    }
+    c.getContext('2d').putImageData(img, 0, 0);
+  }
+}
+
 function tick() {
   if (board && board[33] !== frame && board[32] === changes) {
     frame = board[33];

@@ -257,35 +257,63 @@
   <section xml:id="field-hidden">
     <title>Hidden Layers</title>
     <para>For a disc the right inputs are easy to guess. For most data they
-      are not, and here comes the idea that makes neural networks strong:
-      let neurons compute the inputs. A <emphasis>hidden layer</emphasis>
-      is a row of neurons that each read <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and
-      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> and each draw a line of their own. Their
-      answers are the inputs of one more neuron, the
-      <emphasis>output</emphasis>, which combines the lines into regions:
-      orange inside these two, blue outside this one.</para>
-    <para>The data that shows it best is called XOR: orange where
-      <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> have the same sign,
-      blue where they do not, the four quarters of the plane alternating.
-      No single line parts them, but two lines do, with something to
-      combine them.</para>
+      are not. Here comes the idea that makes neural networks strong: we
+      let neurons compute the inputs.</para>
+    <para>Let us take several neurons side by side. Each is given <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and
+      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, each has weights and a bias of its own and so draws a line of its
+      own; its answer says on which side of it a point lies. Behind them we
+      put one more neuron, the <emphasis>output</emphasis>. It is given not
+      <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> but the answers of the neurons before it. The neurons in
+      between form a <emphasis>hidden layer</emphasis>: from outside one
+      sees only the inputs and the output, their answers are intermediate
+      results.</para>
+    <para>The data that shows it best is called XOR: orange at the upper
+      right and the lower left, blue at the other two corners. No single
+      line parts them. Two neurons in a hidden layer can, if each cuts off
+      one of the orange corners. Let their answer here simply be the sign
+      <inlineequation><mml:math><mml:mi>sgn</mml:mi></mml:math></inlineequation> of their weighted sum, +1 or −1. The first says +1 only at the
+      upper right:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mi>sgn</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:mi>y</mml:mi><mml:mo>−</mml:mo><mml:mn>3</mml:mn><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+      <mediaobject>
+        <alt>The plane with the points of XOR, orange only beyond the line x + y = 3 at the upper right, blue elsewhere.</alt>
+        <imageobject><imagedata fileref="fig/xor-h1.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>the second only at the lower left:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mi>sgn</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mi>x</mml:mi></mml:mrow><mml:mo>−</mml:mo><mml:mi>y</mml:mi><mml:mo>−</mml:mo><mml:mn>3</mml:mn><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></informalequation>
+      <mediaobject>
+        <alt>The plane with the points of XOR, orange only beyond the line x + y = −3 at the lower left, blue elsewhere.</alt>
+        <imageobject><imagedata fileref="fig/xor-h2.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>The output reads the two answers. If either of them says +1,
+      <inlineequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:math></inlineequation> is +1, so orange; if both say −1, it is −1, so blue:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:math></informalequation>
+      <mediaobject>
+        <alt>The plane with the points of XOR: orange at the upper right and lower left corners, a blue band between them; every point on the side of its colour.</alt>
+        <imageobject><imagedata fileref="fig/xor-out.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>The output joins the two lines into an <quote>or</quote>: orange
+      where the first or the second neuron says yes. Two lines and a neuron
+      that joins them do what one line alone cannot. With more neurons and
+      more layers, borders of any intricacy can be built this way.</para>
     <sidebar role="tryit">
-      <para><link xlink:href="../play/field/#data=xor&amp;hidden=0&amp;inputs=x,y">Open XOR without a hidden layer:</link>
-        the network finds nothing. <link xlink:href="../play/field/#data=xor&amp;hidden=3&amp;inputs=x,y">With one hidden layer of three neurons</link>
-        it learns the four quarters. Look at the three squares of the
-        hidden layer: each is a straight edge, one line, and the output's
-        square is their combination. The lines between the squares are
-        the weights, orange for positive, blue for negative, the thicker
-        the stronger.</para>
+      <para><link xlink:href="../play/model/#model=hidden">Open the page with a network of one hidden layer.</link>
+        It has three hidden neurons and begins on the points of XOR with
+        small weights that guess only half of the points right. Press
+        “Learn”: after a good hundred steps all twelve are right. The small
+        pictures show which line each hidden neuron has found; the output
+        joins them. How the network finds its thirteen numbers is the next
+        section’s subject.</para>
     </sidebar>
     <para>The activation matters here. Without one, a neuron reading
       neurons would add up sums of sums, which is again only a sum, one
-      line; it is the bend in each neuron's answer that lets the layers do
-      more than one neuron could. The field offers four:
-      <literal>tanh</literal>, <literal>ReLU</literal> (the sum itself where
-      it is positive, 0 elsewhere), <literal>sigmoid</literal> (like tanh,
-      but between 0 and 1) and none at all, which shows exactly that
-      failure.</para>
+      line; it is the bend in each neuron's answer, here the sign, on the
+      page tanh, that lets the layers do more than one neuron could.</para>
   </section>
 
   <section xml:id="field-backprop">

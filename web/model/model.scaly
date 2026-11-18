@@ -11,6 +11,8 @@
 ;      gradient descent moves w1, w2 and b a little towards a smaller loss
 ;      over the points
 ;   3  the same, given x² and y² for its inputs instead of x and y
+;   4  a network: three hidden neurons and an output that reads them,
+;      learning by backpropagation (its numbers in `net`, not the page's)
 ;
 ; The program keeps what the page shows in ONE vector of numbers, the
 ; board, and says before its loop where the board lies in its memory; the
@@ -20,7 +22,7 @@
 ; The head of the board, what the page writes:
 ;
 ;    0  a counter the page raises after it wrote slots 1 to 4
-;    1  which model, 0 to 3
+;    1  which model, 0 to 4
 ;    2  c, or w1, w2 and b in 2, 3 and 4 (for models 2 and 3 where to
 ;       begin)
 ;    5  1 while model 2 or 3 learns, 0 while it waits
@@ -38,18 +40,23 @@
 ;   39  how many steps it has taken
 ;   40  why it stopped learning by itself: 0 not, 1 the goal, 2 no headway
 ;       (`finished`); 0 again once the page lets it learn anew
+;   41  model 4's thirteen numbers as it has learned them (`network`)
 ;
 ; From slot 64 on the picture, SIZE x SIZE numbers between -1 and 1, row
 ; by row from the top, which the program writes; after it the points,
 ; four numbers each: x, y and the kind (+1 orange, -1 blue), which the
 ; page writes, and what the model guesses there (+1 or -1), which the
-; program writes.
+; program writes; after them, for model 4, what each hidden neuron answers
+; over the plane, TILE x TILE numbers each.
 
 define SIZE int 400
 define HEAD int 64
 define POINTS int 160064     ; HEAD + SIZE * SIZE
 define MAXP int 100
-define BOARD int 160464      ; POINTS + 4 * MAXP
+define TILES int 160464      ; POINTS + 4 * MAXP
+define TILE int 96
+define BOARD int 188112      ; TILES + 3 * TILE * TILE
+define NET int 13            ; model 4's numbers
 
 ; A point of the plane and its kind, +1 orange or -1 blue.
 define Point(x: f64, y: f64, kind: f64)
@@ -141,6 +148,115 @@ function finished(loss: f64, hundred_before: f64, steps: int) returns int
 }
 ; <<
 
+; >> network
+; A small network: three hidden neurons, each with a line of its own through
+; the plane, answering h = tanh(w1 x + w2 y + c); and an output neuron that
+; reads their answers, a = tanh(v1 h1 + v2 h2 + v3 h3 + b). Its thirteen
+; numbers stand in `net`: w1, w2 and c of each hidden neuron, then v1, v2,
+; v3 and b.
+function hidden(net: Vector[f64], j: int, x: f64, y: f64) returns f64
+{
+    tanh(net[3 * j] * x + net[3 * j + 1] * y + net[3 * j + 2])
+}
+
+function network(net: Vector[f64], x: f64, y: f64) returns f64
+{
+    var z net[12]
+    var j 0
+    while j < 3
+    {
+        z := z + net[9 + j] * hidden(net, j, x, y)
+        j := j + 1
+    }
+    tanh(z)
+}
+; <<
+
+; The network's loss over the first n points.
+function network_loss(net: Vector[f64], points: Vector[Point], n: int) returns f64
+{
+    var sum 0.0
+    var k 0
+    while k < n
+    {
+        let p points[k]
+        let a network(net, p.x, p.y)
+        sum := sum + 0.5 * (a - p.kind) * (a - p.kind)
+        k := k + 1
+    }
+    if n = 0: 0.0 else sum / (n as f64)
+}
+
+; One step of gradient descent for the network, by backpropagation: for each
+; point the output's share of the error, d = (a - t)(1 - a²), and from it
+; each hidden neuron's, d v_j (1 - h_j²); each number moved a little against
+; the mean of what it adds to the loss.
+procedure network_step(mutable net: Vector[f64], mutable grad: Vector[f64], points: Vector[Point], n: int,
+                       rate: f64)
+{
+    if n = 0
+        return
+    var i 0
+    while i < NET
+    {
+        grad.put(i, 0.0)
+        i := i + 1
+    }
+    var h Vector[f64](3)
+    var k 0
+    while k < n
+    {
+        let p points[k]
+        var z net[12]
+        var j 0
+        while j < 3
+        {
+            h.put(j, hidden(net, j, p.x, p.y))
+            z := z + net[9 + j] * h[j]
+            j := j + 1
+        }
+        let a tanh(z)
+        let d (a - p.kind) * (1.0 - a * a)
+        grad.put(12, grad[12] + d)
+        j := 0
+        while j < 3
+        {
+            grad.put(9 + j, grad[9 + j] + d * h[j])
+            let dj d * net[9 + j] * (1.0 - h[j] * h[j])
+            grad.put(3 * j, grad[3 * j] + dj * p.x)
+            grad.put(3 * j + 1, grad[3 * j + 1] + dj * p.y)
+            grad.put(3 * j + 2, grad[3 * j + 2] + dj)
+            j := j + 1
+        }
+        k := k + 1
+    }
+    i := 0
+    while i < NET
+    {
+        net.put(i, net[i] - rate * grad[i] / (n as f64))
+        i := i + 1
+    }
+}
+
+; Where model 4 begins: small weights, each hidden neuron another, so that
+; they do not learn alike.
+procedure begin_network(mutable net: Vector[f64])
+{
+    net.put(0, 0.5)
+    net.put(1, 0.0 - 0.4)
+    net.put(2, 0.0)
+    net.put(3, 0.3)
+    net.put(4, 0.8)
+    net.put(5, 0.0)
+    net.put(6, 0.0 - 0.7)
+    net.put(7, 0.2)
+    net.put(8, 0.0)
+    net.put(9, 0.3)
+    net.put(10, 0.1)
+    net.put(11, 0.0 - 0.1)
+    net.put(12, 0.0)
+}
+
 ; --- the picture ---------------------------------------------------------
 
 ; Where cell k of SIZE lies on the plane, from -6 to 6.
@@ -162,8 +278,10 @@ function guess(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
     if v > 1.0: 1.0 else if v < 0.0 - 1.0: 0.0 - 1.0 else v
 }
 
-function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64) returns f64
+function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64, net: Vector[f64]) returns f64
 {
+    if which = 4
+        return network(net, x, y)
     if which = 3
         return tanh(neuron(x * x, y * y, a, b, c))
     if which = 2
@@ -175,10 +293,29 @@ function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64) returns f64
 
 ; The picture, into the board: a round of the `for` for each of its points,
 ; on all cores.
-procedure picture(mutable board: Vector[f64], which: int, a: f64, b: f64, c: f64)
+procedure picture(mutable board: Vector[f64], which: int, a: f64, b: f64, c: f64, net: Vector[f64])
 {
     for p in SIZE * SIZE
-        board.put(HEAD + p, model(which, place(p % SIZE), 0.0 - place(p / SIZE), a, b, c))
+        board.put(HEAD + p, model(which, place(p % SIZE), 0.0 - place(p / SIZE), a, b, c, net))
+}
+
+; Where cell k of TILE lies on the plane, from -6 to 6.
+function tile_place(k: int) returns f64
+{
+    ((k as f64) + 0.5) * 12.0 / (TILE as f64) - 6.0
+}
+
+; What each of model 4's hidden neurons answers over the plane, into the board.
+procedure tiles(mutable board: Vector[f64], net: Vector[f64])
+{
+    var j 0
+    while j < 3
+    {
+        let base TILES + j * TILE * TILE
+        for q in TILE * TILE
+            board.put(base + q, hidden(net, j, tile_place(q % TILE), 0.0 - tile_place(q / TILE)))
+        j := j + 1
+    }
 }
 
 ; The points the page put into the board, into `points`; answers how many.
@@ -198,28 +335,40 @@ procedure take_points(mutable points: Vector[Point], board: Vector[f64]) returns
     n
 }
 
-; What the neuron guesses at each point, into the board.
-procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64,
-                  b: f64)
+; What the model guesses at each point, into the board.
+procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, which: int, w1: f64, w2: f64,
+                  b: f64, net: Vector[f64])
 {
     var k 0
     while k < n
     {
-        let (u, v) inputs(points[k], squared)
-        let z neuron(u, v, w1, w2, b)
+        let (u, v) inputs(points[k], which = 3)
+        let z if which = 4: network(net, points[k].x, points[k].y) else neuron(u, v, w1, w2, b)
         board.put(POINTS + 4 * k + 3, if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0)
         k := k + 1
     }
 }
 
-; Model 2 or 3 as it stands, into the board.
-procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, squared: bool, w1: f64, w2: f64,
-                  b: f64, steps: int)
+; The loss of a learning model (2, 3 or 4) as it stands.
+function model_loss(which: int, points: Vector[Point], n: int, w1: f64, w2: f64, b: f64, net: Vector[f64]) returns f64
+{
+    if which = 4: network_loss(net, points, n) else loss(points, n, which = 3, w1, w2, b)
+}
+
+; A learning model as it stands, into the board.
+procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, which: int, w1: f64, w2: f64,
+                  b: f64, net: Vector[f64], steps: int)
 {
     board.put(35, w1)
     board.put(36, w2)
     board.put(37, b)
-    board.put(38, loss(points, n, squared, w1, w2, b))
+    var i 0
+    while i < NET
+    {
+        board.put(41 + i, net[i])
+        i := i + 1
+    }
+    board.put(38, model_loss(which, points, n, w1, w2, b, net))
     board.put(39, steps as f64)
 }
 
@@ -236,6 +385,9 @@ board.put(2, 36.0)
 board.put(7, 0.1)
 print "board at `board.as_bytes().data as size_t`"
 var points Vector[Point](MAXP)
+var net Vector[f64](NET)
+var grad Vector[f64](NET)
+begin_network(net)
 var n 0
 var taken 0.0 - 1.0
 var placed 0.0
@@ -261,9 +413,11 @@ repeat
         c := board[4]
         if which = 0 and a < 0.1
             a := 0.1
+        if which = 4
+            begin_network(net)
         steps := 0
         since := 0
-        before := loss(points, n, which = 3, a, b, c)
+        before := model_loss(which, points, n, a, b, c, net)
         ended := 0
         board.put(40, 0.0)
         change := true
@@ -275,7 +429,7 @@ repeat
         n := take_points(points, board)
         ; new points: the loss is another, and learning may go on from here
         since := 0
-        before := loss(points, n, which = 3, a, b, c)
+        before := model_loss(which, points, n, a, b, c, net)
         ended := 0
         board.put(40, 0.0)
         change := true
@@ -289,7 +443,7 @@ repeat
         if board[5] > 0.5 and wanted < 0.5
         {
             since := 0
-            before := loss(points, n, squared, a, b, c)
+            before := model_loss(which, points, n, a, b, c, net)
             ended := 0
             board.put(40, 0.0)
         }
@@ -302,15 +456,20 @@ repeat
     }
     if go
     {
-        let (w1, w2, w0) step(points, n, squared, a, b, c, board[7])
-        a := w1
-        b := w2
-        c := w0
+        if which = 4
+            network_step(net, grad, points, n, board[7])
+        else
+        {
+            let (w1, w2, w0) step(points, n, squared, a, b, c, board[7])
+            a := w1
+            b := w2
+            c := w0
+        }
         steps := steps + 1
         since := since + 1
         if board[5] > 0.5
         {
-            let now loss(points, n, squared, a, b, c)
+            let now model_loss(which, points, n, a, b, c, net)
             ended := finished(now, before, since)
             if since % 100 = 0
                 before := now
@@ -321,10 +480,12 @@ repeat
     if change
     {
         if which >= 2
-            learned(board, points, n, squared, a, b, c, steps)
-        picture(board, which, a, b, c)
+            learned(board, points, n, which, a, b, c, net, steps)
+        picture(board, which, a, b, c, net)
+        if which = 4
+            tiles(board, net)
         if which > 0
-            guesses(board, points, n, squared, a, b, c)
+            guesses(board, points, n, which, a, b, c, net)
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }
