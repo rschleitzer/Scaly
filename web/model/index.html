@@ -49,6 +49,9 @@
   #sliders label { display: grid; grid-template-columns: 2.2em 1fr; align-items: center; gap: 8px; }
   #sliders math { font-size: 1.25em; }
   #right { color: var(--ink); font-weight: 600; }
+  .placing { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .placing button { font-size: 13px; padding: 4px 10px; }
+  canvas.placeable { cursor: crosshair; }
   #learn { display: flex; flex-direction: column; gap: 12px; }
   #learn .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   #learn .readout { display: flex; gap: 18px; flex-wrap: wrap; align-items: baseline; font-size: 14px; color: var(--muted); }
@@ -102,6 +105,10 @@
     </div>
     <p class="say" data-t="say">Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.</p>
     <p class="say" id="right" hidden></p>
+    <div class="placing" id="placing" hidden>
+      <span data-t="placeSay">Click: an orange point. Right click: a blue one. Click on a point: it goes.</span>
+      <button id="sixPoints" data-t="sixPoints">The six points</button>
+    </div>
     <span id="status"></span>
   </div>
 </main>
@@ -119,22 +126,24 @@ const LANGS = ['en', 'de'];
 const TEXT = {
   en: { title: 'A model', neuron: 'A neuron', book: 'The chapter', field: 'The field', language: 'Language',
         say: 'Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.',
-        sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. The points are the six of the chapter, a ring around each the neuron guesses wrong.',
-        right: n => `${n} of 6 right`,
+        sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. A ring marks each point the neuron guesses wrong.',
+        right: (n, all) => `${n} of ${all} right`,
+        placeSay: 'Click: an orange point. Right click: a blue one. Click on a point: it goes.', sixPoints: 'The six points',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
         loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
-        sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the six points; a ring marks each point it still guesses wrong.',
+        sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         inScaly: 'In Scaly', sourceSay: 'This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.',
 
         loading: 'The program loads …', isolation: 'This page needs a server with cross-origin isolation (COOP and COEP): it shares its memory with the program.',
         ended: s => `The program has ended (${s}). Load the page again to start it anew.`, cores: n => `Scaly in the page, ${n} cores` },
   de: { title: 'Ein Modell', neuron: 'Ein Neuron', book: 'Das Kapitel', field: 'Das Spielfeld', language: 'Sprache',
         say: 'Orange, wo das Modell +1 antwortet, blau, wo es −1 antwortet, blass, wo es unsicher ist; die Ebene reicht in beide Richtungen von −6 bis +6.',
-        sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Die Punkte sind die sechs aus dem Kapitel, ein Ring um jeden, bei dem das Neuron falsch rät.',
-        right: n => `${n} von 6 richtig`,
+        sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Ein Ring markiert jeden Punkt, bei dem das Neuron falsch rät.',
+        right: (n, all) => `${n} von ${all} richtig`,
+        placeSay: 'Klick: ein oranger Punkt. Rechtsklick: ein blauer. Klick auf einen Punkt: Er verschwindet.', sixPoints: 'Die sechs Punkte',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
         loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
-        sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den sechs Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
+        sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         inScaly: 'In Scaly', sourceSay: 'Diese Funktion rechnet die Seite an jedem ihrer Punkte: Sie ist aus dem Programm ausgeschnitten, das in der Seite läuft, model.scaly.',
 
         loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
@@ -240,7 +249,7 @@ function showValues() { $('formula').innerHTML = `<math display="block">${model.
 
 // --- the board (model.scaly says what lies where) ----------------------------
 
-const SIZE = 400, HEAD = 64, BOARD = HEAD + SIZE * SIZE;
+const SIZE = 400, HEAD = 64, POINTS = HEAD + SIZE * SIZE, MAXP = 100, BOARD = POINTS + 4 * MAXP;
 let board = null;           // a Float64Array over the program's board, in its memory
 let changes = 0, frame = -1;
 
@@ -252,6 +261,37 @@ function send() {
   board[7] = Number($('rate').value);
   board[0] = ++changes;     // last: the program takes in what is above once it sees this
 }
+
+// The points (models 1 and 2): the six of the chapter, or those the reader
+// put down -- a click an orange one, a right click (or shift-click) a blue
+// one, a click on a point takes it away. The page keeps them and writes them
+// into the board; the program writes back what the model guesses at each.
+const SIX = [[2, 1.5, 1], [1, 3, 1], [0.5, -2.5, 1], [-2, -1, -1], [-1, -3, -1], [-3, 1, -1]];
+let points = SIX.map(p => p.slice());
+let placings = 0;
+function sendPoints() {
+  if (!board) return;
+  points.slice(0, MAXP).forEach(([x, y, kind], k) => {
+    board[POINTS + 4 * k] = x; board[POINTS + 4 * k + 1] = y; board[POINTS + 4 * k + 2] = kind;
+  });
+  board[9] = Math.min(points.length, MAXP);
+  board[8] = ++placings;
+}
+const placeable = model.id > 0;
+$('placing').hidden = !placeable;
+$('plane').classList.toggle('placeable', placeable);
+$('plane').addEventListener('contextmenu', e => { if (placeable) e.preventDefault(); });
+$('plane').addEventListener('pointerdown', e => {
+  if (!placeable) return;
+  const r = $('plane').getBoundingClientRect();
+  const cx = (e.clientX - r.left) / r.width * SIZE, cy = (e.clientY - r.top) / r.height * SIZE;
+  // a point under the click goes; else a new one comes
+  const hit = points.findIndex(([x, y]) => Math.hypot((x + 6) / 12 * SIZE - cx, (6 - y) / 12 * SIZE - cy) <= 12);
+  if (hit >= 0) points.splice(hit, 1);
+  else if (points.length < MAXP) points.push([cx / SIZE * 12 - 6, 6 - cy / SIZE * 12, e.button === 2 || e.shiftKey ? -1 : 1]);
+  sendPoints();
+});
+$('sixPoints').onclick = () => { points = SIX.map(p => p.slice()); sendPoints(); };
 
 // learning (model 2): the program takes steps while board[5] is 1, or one
 // for each raise of board[6]
@@ -311,10 +351,10 @@ function picture() {
   const g = $('plane').getContext('2d');
   g.putImageData(image, 0, 0);
   // the points (the neuron's), a ring around each it guesses wrong
-  const n = board[34];
+  const n = placeable ? Math.min(board[9], MAXP) : 0;
   let right = 0;
   for (let k = 0; k < n; k++) {
-    const [x, y, kind, answer] = [0, 1, 2, 3].map(i => board[40 + 4 * k + i]);
+    const [x, y, kind, answer] = [0, 1, 2, 3].map(i => board[POINTS + 4 * k + i]);
     const px = (x + 6) / 12 * SIZE, py = (6 - y) / 12 * SIZE;
     if (answer === kind) right++;
     else {
@@ -327,7 +367,7 @@ function picture() {
     g.lineWidth = 2.5; g.strokeStyle = palette.dot; g.stroke();
   }
   $('right').hidden = n === 0;
-  $('right').textContent = t('right')(right);
+  $('right').textContent = t('right')(right, n);
   if (model.learning) {
     learned = [board[35], board[36], board[37]];
     model.params.forEach((q, k) => { q.input.value = learned[k]; });
@@ -377,6 +417,7 @@ async function start() {
     if (threads.handle(data)) return;
     if (data.type === 'watch') {
       board = new Float64Array(data.memory.buffer, data.address, BOARD);
+      sendPoints();
       send();
       learning();
       status(() => t('cores')(cpus));

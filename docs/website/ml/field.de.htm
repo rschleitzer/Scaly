@@ -795,8 +795,9 @@ href="https://scaly.io/play/model/#model=neuron&#38;lang=de"
 ></math
 >:
         Die Gerade dreht und verschiebt sich, und die Seite zählt, wie viele
-        der sechs Punkte richtig liegen. Unter dem Bild steht die Funktion
-        in Scaly, die die Seite dafür rechnet.</p
+        der sechs Punkte richtig liegen. Mit Klick und Rechtsklick kannst
+        du auch eigene Punkte setzen. Unter dem Bild steht die Funktion in
+        Scaly, die die Seite dafür rechnet.</p
 ></aside
 ></section
 ><section
@@ -916,6 +917,49 @@ stretchy="false"
       größer, je weiter sie davon weg ist, und jede kleine Änderung eines
       Gewichts ändert ihn ein wenig. Der Fehler des Modells ist der
       Mittelwert der Fehler aller Punkte.</p
+><p
+>Der Tangens hyperbolicus ist nicht die einzige Wahl. In großen
+      Netzen nimmt man heute meist eine noch einfachere Funktion,
+      <em
+>ReLU</em
+>: <math
+><mrow
+><mi
+>max</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>0</mn
+><mo
+>,</mo
+><mi
+>z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
+>, also <math
+><mi
+>z</mi
+></math
+> selbst, wo <math
+><mi
+>z</mi
+></math
+> positiv ist,
+      sonst 0. Ihre Steigung ist für positive <math
+><mi
+>z</mi
+></math
+> immer 1, während die von
+      tanh weit außen fast 0 wird. Was das beim Lernen ausmacht, zeigt sich
+      im nächsten Abschnitt.</p
 ></section
 ><section
 id="field-gradient"
@@ -1310,9 +1354,27 @@ href="#field-features"
 ></h2
 ><p
 >Ein Neuron teilt die Ebene durch eine Gerade, und manche Punkte
-      kann keine Gerade teilen. Leg eine Scheibe oranger Punkte in
-      einen Ring blauer: Jede Gerade hat Orange und Blau auf beiden Seiten.
-      Das Programm unten versucht es zweimal, zuerst mit
+      kann keine Gerade teilen, etwa eine Scheibe oranger Punkte in einem
+      Ring blauer: Jede Gerade hat dann Orange und Blau auf beiden
+      Seiten.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Ausprobieren</p
+><p
+><a
+href="https://scaly.io/play/model/#model=descent&#38;lang=de"
+>Öffne die Seite, auf der das Neuron lernt,</a
+>
+        und leg selbst ungünstige Punkte: einige orange in die Mitte und
+        einen Ring blauer darum. Ein Klick setzt einen orangen Punkt, ein
+        Rechtsklick einen blauen, ein Klick auf einen Punkt entfernt ihn.
+        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, und gibt
+        sich mit einer Ebene zufrieden, die überall unsicher ist.</p
+></aside
+><p
+>Das Programm unten versucht es zweimal, zuerst mit
       <math
 ><mi
 >x</mi

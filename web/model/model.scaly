@@ -4,10 +4,11 @@
 ;
 ;   0  f(x, y) = cos(pi (x² + y²) / c)          the parameter c
 ;   1  the neuron z = w1 x + w2 y + b, its guess the sign of z (orange
-;      where z > 0, blue where z < 0), and six points to guess
+;      where z > 0, blue where z < 0), and points to guess -- the six of
+;      the chapter, or those the reader put down
 ;   2  the same neuron answering a = tanh(z), and learning: a step of
 ;      gradient descent moves w1, w2 and b a little towards a smaller loss
-;      over the six points
+;      over the points
 ;
 ; The program keeps what the page shows in ONE vector of numbers, the
 ; board, and says before its loop where the board lies in its memory; the
@@ -22,42 +23,31 @@
 ;    5  1 while model 2 learns, 0 while it waits
 ;    6  a counter: raised, model 2 takes one step while it waits
 ;    7  the learning rate
+;    8  a counter the page raises after it wrote the points
+;    9  how many points there are, at most MAXP
 ;
 ; and what the program writes:
 ;
 ;   32  the counter of slot 0 it has taken in
 ;   33  a counter raised with each picture
-;   34  how many points there are (6 for the neurons, else 0)
 ;   35  w1, w2 and b of model 2 as it has learned them, in 35, 36 and 37
-;   38  the loss of model 2 over the six points
+;   38  the loss of model 2 over the points
 ;   39  how many steps model 2 has taken
-;   40  the points, four numbers each: x, y, the kind (+1 orange, -1
-;       blue) and what the model guesses there (+1 or -1)
 ;
 ; From slot 64 on the picture, SIZE x SIZE numbers between -1 and 1, row
-; by row from the top.
+; by row from the top, which the program writes; after it the points,
+; four numbers each: x, y and the kind (+1 orange, -1 blue), which the
+; page writes, and what the model guesses there (+1 or -1), which the
+; program writes.
 
 define SIZE int 400
 define HEAD int 64
-define BOARD int 160064      ; HEAD + SIZE * SIZE
-define POINTS int 40
+define POINTS int 160064     ; HEAD + SIZE * SIZE
+define MAXP int 100
+define BOARD int 160464      ; POINTS + 4 * MAXP
 
-; The six points of the chapter: the first three orange (+1), the others
-; blue (-1).
-function point_x(k: int) returns f64
-{
-    if k = 0: 2.0 else if k = 1: 1.0 else if k = 2: 0.5 else if k = 3: 0.0 - 2.0 else if k = 4: 0.0 - 1.0 else 0.0 - 3.0
-}
-
-function point_y(k: int) returns f64
-{
-    if k = 0: 1.5 else if k = 1: 3.0 else if k = 2: 0.0 - 2.5 else if k = 3: 0.0 - 1.0 else if k = 4: 0.0 - 3.0 else 1.0
-}
-
-function kind(k: int) returns f64
-{
-    if k < 3: 1.0 else 0.0 - 1.0
-}
+; A point of the plane and its kind, +1 orange or -1 blue.
+define Point(x: f64, y: f64, kind: f64)
 
 ; --- the models: what the page shows of this program, each between its
 ; two marker lines (index.html cuts it out of this file) -----------------
@@ -81,44 +71,47 @@ function neuron(x: f64, y: f64, w1: f64, w2: f64, b: f64) returns f64
 ; <<
 
 ; >> descent
-; The loss over the six points: for each the neuron's answer a = tanh(z)
-; and half the square of how far it is from the point's kind, and of these
-; the mean.
-function loss(w1: f64, w2: f64, b: f64) returns f64
+; The loss over the first n points: for each the neuron's answer
+; a = tanh(z) and half the square of how far it is from the point's kind,
+; and of these the mean.
+function loss(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64) returns f64
 {
     var sum 0.0
     var k 0
-    while k < 6
+    while k < n
     {
-        let a tanh(w1 * point_x(k) + w2 * point_y(k) + b)
-        sum := sum + 0.5 * (a - kind(k)) * (a - kind(k))
+        let p points[k]
+        let a tanh(w1 * p.x + w2 * p.y + b)
+        sum := sum + 0.5 * (a - p.kind) * (a - p.kind)
         k := k + 1
     }
-    sum / 6.0
+    if n = 0: 0.0 else sum / (n as f64)
 }
 
 ; One step of gradient descent: for each point what each of the three
 ; values adds to the loss -- by the chain rule, (a - t)(1 - a²) times the
 ; input the value multiplies --, of these the mean, and each value moved a
 ; little against it.
-function step(w1: f64, w2: f64, b: f64, rate: f64) returns (f64, f64, f64)
+function step(points: Vector[Point], n: int, w1: f64, w2: f64, b: f64, rate: f64) returns (f64, f64, f64)
 {
+    if n = 0
+        return (w1, w2, b)
     var g1 0.0
     var g2 0.0
     var gb 0.0
     var k 0
-    while k < 6
+    while k < n
     {
-        let x point_x(k)
-        let y point_y(k)
-        let a tanh(w1 * x + w2 * y + b)
-        let d (a - kind(k)) * (1.0 - a * a)
-        g1 := g1 + d * x
-        g2 := g2 + d * y
+        let p points[k]
+        let a tanh(w1 * p.x + w2 * p.y + b)
+        let d (a - p.kind) * (1.0 - a * a)
+        g1 := g1 + d * p.x
+        g2 := g2 + d * p.y
         gb := gb + d
         k := k + 1
     }
-    (w1 - rate * g1 / 6.0, w2 - rate * g2 / 6.0, b - rate * gb / 6.0)
+    let m n as f64
+    (w1 - rate * g1 / m, w2 - rate * g2 / m, b - rate * gb / m)
 }
 ; <<
 
@@ -160,34 +153,44 @@ procedure picture(mutable board: Vector[f64], which: int, a: f64, b: f64, c: f64
         board.put(HEAD + p, model(which, place(p % SIZE), 0.0 - place(p / SIZE), a, b, c))
 }
 
-; The six points, and what the neuron guesses at each.
-procedure points(mutable board: Vector[f64], which: int, w1: f64, w2: f64, b: f64)
+; The points the page put into the board, into `points`; answers how many.
+procedure take_points(mutable points: Vector[Point], board: Vector[f64]) returns int
 {
-    if which = 0
-    {
-        board.put(34, 0.0)
-        return
-    }
-    board.put(34, 6.0)
+    var n board[9] as int
+    if n < 0
+        n := 0
+    if n > MAXP
+        n := MAXP
     var k 0
-    while k < 6
+    while k < n
     {
-        let z neuron(point_x(k), point_y(k), w1, w2, b)
-        board.put(POINTS + 4 * k, point_x(k))
-        board.put(POINTS + 4 * k + 1, point_y(k))
-        board.put(POINTS + 4 * k + 2, kind(k))
+        points.put(k, Point(board[POINTS + 4 * k], board[POINTS + 4 * k + 1], board[POINTS + 4 * k + 2]))
+        k := k + 1
+    }
+    n
+}
+
+; What the neuron guesses at each point, into the board.
+procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, w1: f64, w2: f64, b: f64)
+{
+    var k 0
+    while k < n
+    {
+        let p points[k]
+        let z neuron(p.x, p.y, w1, w2, b)
         board.put(POINTS + 4 * k + 3, if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0)
         k := k + 1
     }
 }
 
 ; Model 2 as it stands, into the board.
-procedure learned(mutable board: Vector[f64], w1: f64, w2: f64, b: f64, steps: int)
+procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, w1: f64, w2: f64, b: f64,
+                  steps: int)
 {
     board.put(35, w1)
     board.put(36, w2)
     board.put(37, b)
-    board.put(38, loss(w1, w2, b))
+    board.put(38, loss(points, n, w1, w2, b))
     board.put(39, steps as f64)
 }
 
@@ -203,7 +206,10 @@ while k < BOARD
 board.put(2, 72.0)
 board.put(7, 0.1)
 print "board at `board.as_bytes().data as size_t`"
+var points Vector[Point](MAXP)
+var n 0
 var taken 0.0 - 1.0
+var placed 0.0
 var stepped 0.0
 var which 0
 var a 0.0
@@ -225,6 +231,13 @@ repeat
         steps := 0
         change := true
     }
+    ; the points the reader put down or took away; model 2 learns on from where it stands
+    if board[8] <> placed
+    {
+        placed := board[8]
+        n := take_points(points, board)
+        change := true
+    }
     ; model 2 learns while the page says so, or takes the one step it asked for
     var go false
     if which = 2
@@ -237,7 +250,7 @@ repeat
     }
     if go
     {
-        let (w1, w2, w0) step(a, b, c, board[7])
+        let (w1, w2, w0) step(points, n, a, b, c, board[7])
         a := w1
         b := w2
         c := w0
@@ -247,9 +260,10 @@ repeat
     if change
     {
         if which = 2
-            learned(board, a, b, c, steps)
+            learned(board, points, n, a, b, c, steps)
         picture(board, which, a, b, c)
-        points(board, which, a, b, c)
+        if which > 0
+            guesses(board, points, n, a, b, c)
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }

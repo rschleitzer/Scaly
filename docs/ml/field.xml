@@ -103,8 +103,9 @@
         <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>
         and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>:
         the line turns and moves, and the page counts how many of the six
-        points lie right. Below the picture stands the function in Scaly
-        that the page computes for it.</para>
+        points lie right. With a click and a right click you can put down
+        points of your own as well. Below the picture stands the function in
+        Scaly that the page computes for it.</para>
     </sidebar>
   </section>
 
@@ -134,6 +135,12 @@
       answer is exactly the kind, larger the further it is from it, and
       every small change of a weight changes it a little. The loss of the
       model is the mean of the losses of all points.</para>
+    <para>The hyperbolic tangent is not the only choice. In large networks
+      one mostly takes an even simpler function today,
+      <emphasis>ReLU</emphasis>: <inlineequation><mml:math><mml:mrow><mml:mi>max</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>0</mml:mn><mml:mo>,</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></inlineequation>, that is <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> itself where <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> is
+      positive and 0 elsewhere. Its slope is always 1 for positive <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>,
+      while that of tanh becomes nearly 0 far out. What that means for
+      learning shows in the next section.</para>
   </section>
 
   <section xml:id="field-gradient">
@@ -190,9 +197,17 @@
   <section xml:id="field-features">
     <title>Better Inputs</title>
     <para>A neuron parts the plane by a line, and some points no line can
-      part. Put a disc of orange points inside a ring of blue ones: every
-      line has orange and blue on both sides. The program below tries it
-      twice, first with <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> as
+      part, such as a disc of orange points inside a ring of blue ones:
+      every line then has orange and blue on both sides.</para>
+    <sidebar role="tryit">
+      <para><link xlink:href="https://scaly.io/play/model/#model=descent">Open the page where the neuron learns</link>
+        and put down unfavourable points yourself: some orange ones in the
+        middle and a ring of blue ones around them. A click puts down an
+        orange point, a right click a blue one, a click on a point takes it
+        away. Press “Learn”: the neuron finds no line that fits and settles
+        for a plane that is unsure everywhere.</para>
+    </sidebar>
+    <para>The program below tries it twice, first with <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> as
       the neuron's inputs, then with their squares:</para>
     <programlisting>; A disc of points inside a ring of points: no line parts them, so one
 ; neuron given x and y cannot learn it. Given x² and y² instead, it can --

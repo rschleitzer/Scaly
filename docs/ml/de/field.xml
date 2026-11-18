@@ -107,8 +107,9 @@
         <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>
         und <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>:
         Die Gerade dreht und verschiebt sich, und die Seite zählt, wie viele
-        der sechs Punkte richtig liegen. Unter dem Bild steht die Funktion
-        in Scaly, die die Seite dafür rechnet.</para>
+        der sechs Punkte richtig liegen. Mit Klick und Rechtsklick kannst
+        du auch eigene Punkte setzen. Unter dem Bild steht die Funktion in
+        Scaly, die die Seite dafür rechnet.</para>
     </sidebar>
   </section>
 
@@ -143,6 +144,12 @@
       größer, je weiter sie davon weg ist, und jede kleine Änderung eines
       Gewichts ändert ihn ein wenig. Der Fehler des Modells ist der
       Mittelwert der Fehler aller Punkte.</para>
+    <para>Der Tangens hyperbolicus ist nicht die einzige Wahl. In großen
+      Netzen nimmt man heute meist eine noch einfachere Funktion,
+      <emphasis>ReLU</emphasis>: <inlineequation><mml:math><mml:mrow><mml:mi>max</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>0</mml:mn><mml:mo>,</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></inlineequation>, also <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> selbst, wo <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> positiv ist,
+      sonst 0. Ihre Steigung ist für positive <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> immer 1, während die von
+      tanh weit außen fast 0 wird. Was das beim Lernen ausmacht, zeigt sich
+      im nächsten Abschnitt.</para>
   </section>
 
   <section xml:id="field-gradient">
@@ -202,9 +209,18 @@
   <section xml:id="field-features">
     <title>Bessere Eingaben</title>
     <para>Ein Neuron teilt die Ebene durch eine Gerade, und manche Punkte
-      kann keine Gerade teilen. Leg eine Scheibe oranger Punkte in
-      einen Ring blauer: Jede Gerade hat Orange und Blau auf beiden Seiten.
-      Das Programm unten versucht es zweimal, zuerst mit
+      kann keine Gerade teilen, etwa eine Scheibe oranger Punkte in einem
+      Ring blauer: Jede Gerade hat dann Orange und Blau auf beiden
+      Seiten.</para>
+    <sidebar role="tryit">
+      <para><link xlink:href="https://scaly.io/play/model/#model=descent&amp;lang=de">Öffne die Seite, auf der das Neuron lernt,</link>
+        und leg selbst ungünstige Punkte: einige orange in die Mitte und
+        einen Ring blauer darum. Ein Klick setzt einen orangen Punkt, ein
+        Rechtsklick einen blauen, ein Klick auf einen Punkt entfernt ihn.
+        Drück „Lernen“: Das Neuron findet keine Gerade, die passt, und gibt
+        sich mit einer Ebene zufrieden, die überall unsicher ist.</para>
+    </sidebar>
+    <para>Das Programm unten versucht es zweimal, zuerst mit
       <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> als Eingaben des
       Neurons, dann mit ihren Quadraten:</para>
     <programlisting>; A disc of points inside a ring of points: no line parts them, so one

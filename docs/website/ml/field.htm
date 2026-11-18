@@ -791,8 +791,9 @@ href="https://scaly.io/play/model/#model=neuron"
 ></math
 >:
         the line turns and moves, and the page counts how many of the six
-        points lie right. Below the picture stands the function in Scaly
-        that the page computes for it.</p
+        points lie right. With a click and a right click you can put down
+        points of your own as well. Below the picture stands the function in
+        Scaly that the page computes for it.</p
 ></aside
 ></section
 ><section
@@ -905,6 +906,49 @@ stretchy="false"
       answer is exactly the kind, larger the further it is from it, and
       every small change of a weight changes it a little. The loss of the
       model is the mean of the losses of all points.</p
+><p
+>The hyperbolic tangent is not the only choice. In large networks
+      one mostly takes an even simpler function today,
+      <em
+>ReLU</em
+>: <math
+><mrow
+><mi
+>max</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>0</mn
+><mo
+>,</mo
+><mi
+>z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+></math
+>, that is <math
+><mi
+>z</mi
+></math
+> itself where <math
+><mi
+>z</mi
+></math
+> is
+      positive and 0 elsewhere. Its slope is always 1 for positive <math
+><mi
+>z</mi
+></math
+>,
+      while that of tanh becomes nearly 0 far out. What that means for
+      learning shows in the next section.</p
 ></section
 ><section
 id="field-gradient"
@@ -1296,9 +1340,26 @@ href="#field-features"
 ></h2
 ><p
 >A neuron parts the plane by a line, and some points no line can
-      part. Put a disc of orange points inside a ring of blue ones: every
-      line has orange and blue on both sides. The program below tries it
-      twice, first with <math
+      part, such as a disc of orange points inside a ring of blue ones:
+      every line then has orange and blue on both sides.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Try it</p
+><p
+><a
+href="https://scaly.io/play/model/#model=descent"
+>Open the page where the neuron learns</a
+>
+        and put down unfavourable points yourself: some orange ones in the
+        middle and a ring of blue ones around them. A click puts down an
+        orange point, a right click a blue one, a click on a point takes it
+        away. Press “Learn”: the neuron finds no line that fits and settles
+        for a plane that is unsure everywhere.</p
+></aside
+><p
+>The program below tries it twice, first with <math
 ><mi
 >x</mi
 ></math
