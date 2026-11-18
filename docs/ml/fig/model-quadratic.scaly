@@ -1,5 +1,5 @@
 ; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
-; the model f(x, y) = cos(pi (x² + y²) / 72) as a colouring of the plane
+; the model f(x, y) = 1 - (x² + y²) / 36 as a colouring of the plane
 ; from -6 to 6, in the colours of the field (web/field) -- orange where it
 ; answers +1, blue where -1, pale where it is unsure. Each point of the
 ; picture is computed, the rounds of the `for` on all cores; the picture
@@ -41,7 +41,7 @@ function point(p: int) returns u32
     let x px * 12.0 / (SIZE as f64) - 6.0
     let y 6.0 - py * 12.0 / (SIZE as f64)
     let axis near_axis(px) + near_axis(py)
-    colour(cos(3.141592653589793 * (x * x + y * y) / 72.0), if axis > 1.0: 1.0 else axis)
+    colour(1.0 - (x * x + y * y) / 36.0, if axis > 1.0: 1.0 else axis)
 }
 
 var picture Vector[u32]((SIZE * SIZE) as size_t)

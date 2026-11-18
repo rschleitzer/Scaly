@@ -393,22 +393,12 @@ stretchy="false"
 ></mrow
 ><mo
 >=</mo
-><mrow
-><mi
->cos</mi
+><mn
+>1</mn
 ><mo
->⁡</mo
-><mrow
-><mo
->(</mo
+>−</mo
 ><mfrac
 ><mrow
-><mi
->π</mi
-><mrow
-><mo
-stretchy="false"
->(</mo
 ><msup
 ><mi
 >x</mi
@@ -423,44 +413,19 @@ stretchy="false"
 ><mn
 >2</mn
 ></msup
-><mo
-stretchy="false"
->)</mo
-></mrow
 ></mrow
 ><mn
->72</mn
+>36</mn
 ></mfrac
-><mo
->)</mo
-></mrow
-></mrow
 ></math
 ></div
 ><img
-src="fig/model-cosine.png"
-alt="Die Ebene, gefärbt nach dem Kosinus-Modell: eine orange Scheibe in der Mitte, blaue Ecken."
+src="fig/model-quadratic.png"
+alt="Die Ebene, gefärbt nach f(x, y) = 1 − (x² + y²)/36: eine orange Scheibe in der Mitte, blaue Ecken."
 loading="lazy"></div
 ><p
->Sie ist im Mittelpunkt +1, denn <math
-><mrow
-><mi
->cos</mi
-><mo
->⁡</mo
-><mspace
-width="0.1667em"
-></mspace
-><mn
->0</mn
-></mrow
-><mo
->=</mo
-><mn
->1</mn
-></math
->, und in den vier Ecken
-      -1, denn dort ist <math
+>Sie ist im Mittelpunkt +1, in den vier Ecken −1, denn dort ist
+      <math
 ><msup
 ><mi
 >x</mi
@@ -488,32 +453,31 @@ width="0.1667em"
 ><mn
 >72</mn
 ></math
-> und <math
-><mrow
+>, und auf dem Kreis mit dem Radius 6 um den Mittelpunkt, wo
+      <math
+><msup
 ><mi
->cos</mi
+>x</mi
+><mn
+>2</mn
+></msup
 ><mo
->⁡</mo
-><mspace
-width="0.1667em"
-></mspace
+>+</mo
+><msup
 ><mi
->π</mi
-></mrow
+>y</mi
+><mn
+>2</mn
+></msup
 ><mo
 >=</mo
-><mrow
-><mo
->−</mo
 ><mn
->1</mn
-></mrow
+>36</mn
 ></math
->; auf dem
-      Kreis mit dem Radius 6 um den Mittelpunkt ist sie 0. Ob eine solche
-      Funktion gut vermutet, hängt von den Punkten ab: Die erste passt zu
-      Punkten, die rechts orange und links blau sind, die zweite zu einer
-      orangen Scheibe in einem blauen Ring.</p
+> ist, ist sie 0. Ob eine solche Funktion gut vermutet, hängt von
+      den Punkten ab: Die erste passt zu Punkten, die rechts orange und
+      links blau sind, die zweite zu einer orangen Scheibe in einem blauen
+      Ring.</p
 ><p
 >Maschinelles Lernen hingegen denkt sich die Formel nicht aus. Es
       legt nur ihre allgemeine <em
@@ -522,8 +486,7 @@ width="0.1667em"
       mit offenen Zahlen, den <em
 >Parametern</em
 >. Im zweiten
-      Beispiel könnte die 72 eine solche offene Zahl sein,
-      <math
+      Beispiel könnte die 36 eine solche offene Zahl sein, <math
 ><mrow
 ><mi
 >f</mi
@@ -546,17 +509,10 @@ stretchy="false"
 ></mrow
 ><mo
 >=</mo
-><mrow
-><mi
->cos</mi
+><mn
+>1</mn
 ><mo
->⁡</mo
-><mrow
-><mo
-stretchy="false"
->(</mo
-><mi
->π</mi
+>−</mo
 ><mrow
 ><mo
 stretchy="false"
@@ -585,17 +541,14 @@ rspace="0"
 >/</mo
 ><mi
 >c</mi
-><mo
-stretchy="false"
->)</mo
-></mrow
-></mrow
 ></math
->, und <math
+>, und
+      <math
 ><mi
 >c</mi
 ></math
-> gäbe an, wie groß die orange Scheibe ist. Welche
+> gäbe an, wie groß die orange Scheibe ist; wo die Formel dabei
+      unter −1 fällt, zählt sie als −1. Welche
       Werte die Parameter bekommen, findet ein Programm aus Beispielen
       heraus, aus Punkten, deren Sorte bekannt ist. Dieses Finden nennt
       dieses Buch <em
@@ -619,13 +572,12 @@ href="https://scaly.io/play/model/#lang=de"
 >c</mi
 ></math
 >
-        hin und her: Die Färbung folgt der Formel. Ein großes
-        <math
+        hin und her: Die Färbung folgt der Formel. Ein großes <math
 ><mi
 >c</mi
 ></math
-> macht die
-        orange Scheibe groß, ein kleines lässt Ringe entstehen.</p
+> macht
+        die orange Scheibe groß, ein kleines klein.</p
 ></aside
 ></section
 ><section

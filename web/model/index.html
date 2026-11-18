@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A model</title>
-<meta name="description" content="A function made up by hand colours the plane -- f(x, y) = cos(π(x² + y²)/c), or a neuron z = w₁x + w₂y + b --; move its parameters and watch. Computed by a Scaly program in the page.">
+<meta name="description" content="A function made up by hand colours the plane -- f(x, y) = 1 − (x² + y²)/c, or a neuron z = w₁x + w₂y + b --; move its parameters, or let the neuron learn, and watch. Computed by a Scaly program in the page.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
 <style>
@@ -28,6 +28,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; padding: 12px 16px;
@@ -125,7 +126,7 @@ const $ = id => document.getElementById(id);
 const LANGS = ['en', 'de'];
 const TEXT = {
   en: { title: 'A model', neuron: 'A neuron', book: 'The chapter', field: 'The field', language: 'Language',
-        say: 'Orange where the model answers +1, blue where it answers −1, pale where it is unsure; the plane runs from −6 to +6 both ways.',
+        say: 'Orange where the model answers +1, blue where it answers −1 (and where the formula falls below −1, which counts as −1), pale where it is unsure; the plane runs from −6 to +6 both ways.',
         sayNeuron: 'Orange where z is positive, blue where it is negative; the line between them is where z is 0. A ring marks each point the neuron guesses wrong.',
         right: (n, all) => `${n} of ${all} right`,
         placeSay: 'Click: an orange point. Right click: a blue one. Click on a point: it goes.', sixPoints: 'The six points',
@@ -139,7 +140,7 @@ const TEXT = {
         loading: 'The program loads …', isolation: 'This page needs a server with cross-origin isolation (COOP and COEP): it shares its memory with the program.',
         ended: s => `The program has ended (${s}). Load the page again to start it anew.`, cores: n => `Scaly in the page, ${n} cores` },
   de: { title: 'Ein Modell', neuron: 'Ein Neuron', book: 'Das Kapitel', field: 'Das Spielfeld', language: 'Sprache',
-        say: 'Orange, wo das Modell +1 antwortet, blau, wo es −1 antwortet, blass, wo es unsicher ist; die Ebene reicht in beide Richtungen von −6 bis +6.',
+        say: 'Orange, wo das Modell +1 antwortet, blau, wo es −1 antwortet (und wo die Formel unter −1 fällt, was als −1 zählt), blass, wo es unsicher ist; die Ebene reicht in beide Richtungen von −6 bis +6.',
         sayNeuron: 'Orange, wo z positiv ist, blau, wo es negativ ist; die Gerade dazwischen ist, wo z 0 ist. Ein Ring markiert jeden Punkt, bei dem das Neuron falsch rät.',
         right: (n, all) => `${n} von ${all} richtig`,
         placeSay: 'Klick: ein oranger Punkt. Rechtsklick: ein blauer. Klick auf einen Punkt: Er verschwindet.', sixPoints: 'Die sechs Punkte',
@@ -206,13 +207,12 @@ const num = (v, digits = 1) => Math.abs(v).toLocaleString(lang, { minimumFractio
 const term = (v, rest, first, digits) => (v < 0 ? (first ? '<mrow><mo>−</mo>' : mo('−')) : first ? '<mrow>' : mo('+'))
   + mn(num(v, digits)) + (rest || '') + (first ? '</mrow>' : '');
 const MODELS = {
-  cosine: {
-    id: 0, title: 'title', say: 'say', source: 'cosine',
-    params: [{ name: 'c', label: mi('c'), min: 1, max: 150, step: 0.5, value: 72 }],
+  quadratic: {
+    id: 0, title: 'title', say: 'say', source: 'quadratic',
+    params: [{ name: 'c', label: mi('c'), min: 1, max: 150, step: 0.5, value: 36 }],
     formula: ([c]) => mi('f') + mo('&#x2061;') + '<mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow>'
-      + mo('=') + mi('cos') + mo('&#x2061;') + '<mrow><mo>(</mo><mfrac><mrow><mi>π</mi><mrow><mo stretchy="false">(</mo>'
-      + '<msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mrow>'
-      + mn(num(c)) + '</mfrac><mo>)</mo></mrow>',
+      + mo('=') + mn(1) + mo('−') + '<mfrac><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow>'
+      + mn(num(c)) + '</mfrac>',
   },
   neuron: {
     id: 1, title: 'neuron', say: 'sayNeuron', source: 'neuron',
@@ -240,7 +240,7 @@ const MODELS = {
   },
 };
 const asked = new URLSearchParams(location.hash.slice(1));
-const model = MODELS[asked.get('model')] ?? MODELS.cosine;
+const model = MODELS[asked.get('model')] ?? MODELS.quadratic;
 for (const q of model.params) {
   const v = Number(asked.get(q.name));
   if (asked.has(q.name) && v >= q.min && v <= q.max) q.value = v;

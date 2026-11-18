@@ -391,22 +391,12 @@ stretchy="false"
 ></mrow
 ><mo
 >=</mo
-><mrow
-><mi
->cos</mi
+><mn
+>1</mn
 ><mo
->⁡</mo
-><mrow
-><mo
->(</mo
+>−</mo
 ><mfrac
 ><mrow
-><mi
->π</mi
-><mrow
-><mo
-stretchy="false"
->(</mo
 ><msup
 ><mi
 >x</mi
@@ -421,44 +411,19 @@ stretchy="false"
 ><mn
 >2</mn
 ></msup
-><mo
-stretchy="false"
->)</mo
-></mrow
 ></mrow
 ><mn
->72</mn
+>36</mn
 ></mfrac
-><mo
->)</mo
-></mrow
-></mrow
 ></math
 ></div
 ><img
-src="fig/model-cosine.png"
-alt="The plane coloured by the cosine model: an orange disc in the middle, blue corners."
+src="fig/model-quadratic.png"
+alt="The plane coloured by f(x, y) = 1 − (x² + y²)/36: an orange disc in the middle, blue corners."
 loading="lazy"></div
 ><p
->It is +1 at the centre, because <math
-><mrow
-><mi
->cos</mi
-><mo
->⁡</mo
-><mspace
-width="0.1667em"
-></mspace
-><mn
->0</mn
-></mrow
-><mo
->=</mo
-><mn
->1</mn
-></math
->, and -1 in the four
-      corners, because there <math
+>It is +1 at the centre, −1 in the four corners, because there
+      <math
 ><msup
 ><mi
 >x</mi
@@ -486,32 +451,30 @@ width="0.1667em"
 ><mn
 >72</mn
 ></math
-> and <math
-><mrow
+>, and 0 on the circle of radius 6 around the centre, where
+      <math
+><msup
 ><mi
->cos</mi
+>x</mi
+><mn
+>2</mn
+></msup
 ><mo
->⁡</mo
-><mspace
-width="0.1667em"
-></mspace
+>+</mo
+><msup
 ><mi
->π</mi
-></mrow
+>y</mi
+><mn
+>2</mn
+></msup
 ><mo
 >=</mo
-><mrow
-><mo
->−</mo
 ><mn
->1</mn
-></mrow
+>36</mn
 ></math
->; on the
-      circle of radius 6 around the centre it is 0. Whether such a function
-      guesses well depends on the points: the first suits points that are
-      orange on the right and blue on the left, the second an orange disc
-      in a blue ring.</p
+>. Whether such a function guesses well depends on the points:
+      the first suits points that are orange on the right and blue on the
+      left, the second an orange disc in a blue ring.</p
 ><p
 >Machine learning, on the other hand, does not make the formula
       up. It fixes only its general <em
@@ -520,8 +483,7 @@ width="0.1667em"
       with numbers left open, the <em
 >parameters</em
 >. In the
-      second example the 72 could be such an open number,
-      <math
+      second example the 36 could be such an open number, <math
 ><mrow
 ><mi
 >f</mi
@@ -544,17 +506,10 @@ stretchy="false"
 ></mrow
 ><mo
 >=</mo
-><mrow
-><mi
->cos</mi
+><mn
+>1</mn
 ><mo
->⁡</mo
-><mrow
-><mo
-stretchy="false"
->(</mo
-><mi
->π</mi
+>−</mo
 ><mrow
 ><mo
 stretchy="false"
@@ -583,17 +538,14 @@ rspace="0"
 >/</mo
 ><mi
 >c</mi
-><mo
-stretchy="false"
->)</mo
-></mrow
-></mrow
 ></math
->, and <math
+>, and
+      <math
 ><mi
 >c</mi
 ></math
-> would decide how large the orange disc is. Which
+> would decide how large the orange disc is; where the formula
+      falls below −1, it counts as −1. Which
       values the parameters get, a program finds out from examples, points
       whose kind is known. Finding them is what this book calls
       <em
@@ -617,13 +569,12 @@ href="https://scaly.io/play/model/"
 >c</mi
 ></math
 >
-        back and forth: the colouring follows the formula. A large
-        <math
+        back and forth: the colouring follows the formula. A large <math
 ><mi
 >c</mi
 ></math
-> makes the
-        orange disc large; a small one makes rings appear.</p
+> makes
+        the orange disc large, a small one small.</p
 ></aside
 ></section
 ><section

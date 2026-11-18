@@ -2,7 +2,8 @@
 ; from -6 to 6, and the page moves its parameters -- or lets the program
 ; find them. Three models, the first ones of Machine Learning with Scaly:
 ;
-;   0  f(x, y) = cos(pi (x² + y²) / c)          the parameter c
+;   0  f(x, y) = 1 - (x² + y²) / c, and -1 where that falls below -1:
+;      the parameter c
 ;   1  the neuron z = w1 x + w2 y + b, its guess the sign of z (orange
 ;      where z > 0, blue where z < 0), and points to guess -- the six of
 ;      the chapter, or those the reader put down
@@ -54,12 +55,13 @@ define Point(x: f64, y: f64, kind: f64)
 ; --- the models: what the page shows of this program, each between its
 ; two marker lines (index.html cuts it out of this file) -----------------
 
-; >> cosine
-; The model made up by hand: +1 in the middle, -1 further out, and c says
-; how far.
-function cosine(x: f64, y: f64, c: f64) returns f64
+; >> quadratic
+; The model made up by hand: +1 in the middle, 0 on the circle x² + y² = c,
+; and less further out -- but never less than -1.
+function quadratic(x: f64, y: f64, c: f64) returns f64
 {
-    cos(3.141592653589793 * (x * x + y * y) / c)
+    let f 1.0 - (x * x + y * y) / c
+    if f < 0.0 - 1.0: 0.0 - 1.0 else f
 }
 ; <<
 
@@ -154,7 +156,7 @@ function model(which: int, x: f64, y: f64, a: f64, b: f64, c: f64) returns f64
         return tanh(neuron(x, y, a, b, c))
     if which = 1
         return guess(x, y, a, b, c)
-    cosine(x, y, a)
+    quadratic(x, y, a)
 }
 
 ; The picture, into the board: a round of the `for` for each of its points,
@@ -216,7 +218,7 @@ while k < BOARD
     board.put(k, 0.0)
     k := k + 1
 }
-board.put(2, 72.0)
+board.put(2, 36.0)
 board.put(7, 0.1)
 print "board at `board.as_bytes().data as size_t`"
 var points Vector[Point](MAXP)
