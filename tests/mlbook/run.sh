@@ -32,5 +32,13 @@ CHAPTERS=($(python3 "$HERE/parity.py" --chapters docs/scaly-ml.xml))
 FIG="$(mktemp -d)"
 python3 docs/figures.py "$FIG" "$("$ROOT/tools/scaly-of.sh" "$BIN")" docs/ml/fig/*.scaly || rc=1
 rm -rf "$FIG"
-BOOK_NAME=mlbook tests/book/run.sh "$BIN" "${CHAPTERS[@]}" || rc=1
+# the chapters that still hold a program (the code of the pages is not the
+# book's to run)
+LISTED=()
+for c in "${CHAPTERS[@]}"; do grep -q '<programlisting' "$c" && LISTED+=("$c"); done
+if [ ${#LISTED[@]} -gt 0 ]; then
+  BOOK_NAME=mlbook tests/book/run.sh "$BIN" "${LISTED[@]}" || rc=1
+else
+  echo "mlbook: no program in the book"
+fi
 exit $rc

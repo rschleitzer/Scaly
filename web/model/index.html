@@ -122,7 +122,7 @@
 <section class="code" id="code" hidden>
   <h2 data-t="inScaly">In Scaly</h2>
   <pre><code id="source"></code></pre>
-  <p class="say" data-t="sourceSay">This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.</p>
+  <p class="say" data-t="sourceSay">Cut out of the program running in the page, model.scaly.</p>
 </section>
 
 <script type="module">
@@ -138,14 +138,14 @@ const TEXT = {
         placeSay: 'Click: an orange point. Right click: a blue one. Click on a point: it goes.', sixPoints: 'The six points',
         squares: 'A neuron given x² and y²', discRing: 'Disc and ring',
         hiddenTitle: 'A network with a hidden layer', xorPoints: 'XOR',
-        sayHidden: 'Three hidden neurons, each with a line of its own (the small pictures show their answers h₁, h₂ and h₃), and an output neuron that reads them. The large picture is the network’s answer a; a ring marks each point it guesses wrong. How the numbers are found is the next section’s subject, backpropagation.',
+        sayHidden: 'Three hidden neurons, each with a line of its own (the small pictures show their answers h₁, h₂ and h₃), and an output neuron that reads them. The large picture is the network’s answer a; a ring marks each point it guesses wrong. How it finds its numbers is backpropagation, the procedure network_step in the program below.',
         saySquares: 'The neuron is given x² and y² instead of x and y and answers a = tanh(w₁x² + w₂y² + b): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
         loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
         goal: 'Done: the loss is below 0.02.',
         still: 'Stopped: the loss has hardly fallen over the last hundred steps (by less than 0.0001).',
         sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
-        inScaly: 'In Scaly', sourceSay: 'This function is what the page computes at each of its points: it is cut out of the program running in the page, model.scaly.',
+        inScaly: 'In Scaly', sourceSay: 'Cut out of the program running in the page, model.scaly.',
 
         loading: 'The program loads …', isolation: 'This page needs a server with cross-origin isolation (COOP and COEP): it shares its memory with the program.',
         ended: s => `The program has ended (${s}). Load the page again to start it anew.`, cores: n => `Scaly in the page, ${n} cores` },
@@ -156,14 +156,14 @@ const TEXT = {
         placeSay: 'Klick: ein oranger Punkt. Rechtsklick: ein blauer. Klick auf einen Punkt: Er verschwindet.', sixPoints: 'Die sechs Punkte',
         squares: 'Ein Neuron mit x² und y²', discRing: 'Scheibe und Ring',
         hiddenTitle: 'Ein Netz mit einer verborgenen Schicht', xorPoints: 'XOR',
-        sayHidden: 'Drei verborgene Neuronen, jedes mit einer eigenen Geraden (die kleinen Bilder zeigen ihre Antworten h₁, h₂ und h₃), und ein Ausgabeneuron, das sie liest. Das große Bild ist die Antwort a des Netzes; ein Ring markiert jeden Punkt, bei dem es falsch rät. Wie die Zahlen gefunden werden, ist das Thema des nächsten Abschnitts, die Rückwärtsrechnung.',
+        sayHidden: 'Drei verborgene Neuronen, jedes mit einer eigenen Geraden (die kleinen Bilder zeigen ihre Antworten h₁, h₂ und h₃), und ein Ausgabeneuron, das sie liest. Das große Bild ist die Antwort a des Netzes; ein Ring markiert jeden Punkt, bei dem es falsch rät. Wie es seine Zahlen findet, ist die Rückwärtsrechnung, die Prozedur network_step im Programm unten.',
         saySquares: 'Das Neuron bekommt x² und y² statt x und y und antwortet a = tanh(w₁x² + w₂y² + b): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
         loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
         goal: 'Fertig: Der Fehler liegt unter 0,02.',
         still: 'Angehalten: Der Fehler ist in den letzten hundert Schritten kaum noch gesunken (um weniger als 0,0001).',
         sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
-        inScaly: 'In Scaly', sourceSay: 'Diese Funktion rechnet die Seite an jedem ihrer Punkte: Sie ist aus dem Programm ausgeschnitten, das in der Seite läuft, model.scaly.',
+        inScaly: 'In Scaly', sourceSay: 'Ausgeschnitten aus dem Programm, das in der Seite läuft, model.scaly.',
 
         loading: 'Das Programm lädt …', isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt ihren Speicher mit dem Programm.',
         ended: s => `Das Programm ist beendet (${s}). Lade die Seite neu, um es wieder zu starten.`, cores: n => `Scaly in der Seite, ${n} Kerne` },

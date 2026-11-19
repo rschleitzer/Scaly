@@ -170,27 +170,13 @@ function network(net: Vector[f64], x: f64, y: f64) returns f64
     }
     tanh(z)
 }
-; <<
 
-; The network's loss over the first n points.
-function network_loss(net: Vector[f64], points: Vector[Point], n: int) returns f64
-{
-    var sum 0.0
-    var k 0
-    while k < n
-    {
-        let p points[k]
-        let a network(net, p.x, p.y)
-        sum := sum + 0.5 * (a - p.kind) * (a - p.kind)
-        k := k + 1
-    }
-    if n = 0: 0.0 else sum / (n as f64)
-}
-
-; One step of gradient descent for the network, by backpropagation: for each
-; point the output's share of the error, d = (a - t)(1 - a²), and from it
-; each hidden neuron's, d v_j (1 - h_j²); each number moved a little against
-; the mean of what it adds to the loss.
+; One step of learning by backpropagation. For each point: forward, each
+; hidden neuron's answer h_j and the output's answer a; then back, the
+; output's share of the error d = (a - t)(1 - a²), and from it each hidden
+; neuron's, d_j = d v_j (1 - h_j²). Each number's gradient is the sum of what
+; it adds over the points; at the end each number moves a little against
+; the mean of its gradient.
 procedure network_step(mutable net: Vector[f64], mutable grad: Vector[f64], points: Vector[Point], n: int,
                        rate: f64)
 {
@@ -236,6 +222,22 @@ procedure network_step(mutable net: Vector[f64], mutable grad: Vector[f64], poin
         net.put(i, net[i] - rate * grad[i] / (n as f64))
         i := i + 1
     }
+}
+; <<
+
+; The network's loss over the first n points.
+function network_loss(net: Vector[f64], points: Vector[Point], n: int) returns f64
+{
+    var sum 0.0
+    var k 0
+    while k < n
+    {
+        let p points[k]
+        let a network(net, p.x, p.y)
+        sum := sum + 0.5 * (a - p.kind) * (a - p.kind)
+        k := k + 1
+    }
+    if n = 0: 0.0 else sum / (n as f64)
 }
 
 ; Where model 4 begins: small weights, each hidden neuron another, so that

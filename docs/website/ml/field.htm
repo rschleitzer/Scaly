@@ -1890,10 +1890,20 @@ href="../play/model/#model=hidden"
         section’s subject.</p
 ></aside
 ><p
->The activation matters here. Without one, a neuron reading
-      neurons would add up sums of sums, which is again only a sum, one
-      line; it is the bend in each neuron's answer, here the sign, on the
-      page tanh, that lets the layers do more than one neuron could.</p
+>The activation matters here. If each neuron simply passed on its
+      weighted sum, the output would add up sums of sums, which is again
+      only a weighted sum of <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
+>, so again only a line. Only the
+      activation, which bends each neuron's sum, lets the layers do more
+      than one neuron could. In our example by hand that is the sign; in
+      the network from the box above, the hyperbolic tangent.</p
 ></section
 ><section
 id="field-backprop"
@@ -1906,8 +1916,8 @@ href="#field-backprop"
 ><p
 >How does a hidden neuron learn? Its weights are as far from the
       loss as can be, behind the output neuron. The chain rule still
-      answers, with a chain one link longer, and the clever part is the
-      order in which it is computed.</p
+      works, with a chain one link longer. The clever part is the order
+      in which it is computed.</p
 ><p
 >First everything is computed forward, as before: each hidden
       neuron's answer <math
@@ -2092,144 +2102,103 @@ stretchy="false"
       <em
 >backpropagation</em
 >, and it is the whole secret of
-      how networks of any depth learn. Here it is written out for XOR,
-      with three hidden neurons:</p
-><pre
-class="listing"
-><code
->; XOR: the kind is +1 where x and y have the same sign, -1 where not. No
-; line parts the kinds, and no single neuron learns it -- but three neurons
-; in a hidden layer, and one more that reads them, do. Learning them takes
-; the error back through both layers: backpropagation, written out by hand.
-define Point(x: f64, y: f64, kind: f64)
-define HIDDEN int 3
-
-function shown(v: f64) returns f64
-{
-    (v * 1000.0).round_even() / 1000.0
-}
-
-var points Array[Point]()
-points.add(Point(1.0, 1.0, 1.0))
-points.add(Point(0.0 - 1.0, 0.0 - 1.0, 1.0))
-points.add(Point(1.0, 0.0 - 1.0, 0.0 - 1.0))
-points.add(Point(0.0 - 1.0, 1.0, 0.0 - 1.0))
-let n points.length as f64
-
-; the hidden layer: neuron j has the weights w[2j] for x and w[2j+1] for y,
-; and the bias c[j]; the output neuron has the weights v[j] and the bias b
-var w Vector[f64](2 * HIDDEN)
-var c Vector[f64](HIDDEN)
-var v Vector[f64](HIDDEN)
-var b 0.0
-w.put(0, 0.5)
-w.put(1, 0.0 - 0.4)
-w.put(2, 0.3)
-w.put(3, 0.8)
-w.put(4, 0.0 - 0.7)
-w.put(5, 0.2)
-var k 0
-var j 0
-while j &#60; HIDDEN
-{
-    c.put(j, 0.0)
-    v.put(j, 0.3 - 0.2 * (j as f64))
-    j := j + 1
-}
-
-; the gradients, and what each hidden neuron answers
-var gw Vector[f64](2 * HIDDEN)
-var gc Vector[f64](HIDDEN)
-var gv Vector[f64](HIDDEN)
-var h Vector[f64](HIDDEN)
-let rate 0.5
-var step 0
-while step &#60;= 300
-{
-    k := 0
-    while k &#60; 2 * HIDDEN
-    {
-        gw.put(k, 0.0)
-        k := k + 1
-    }
-    j := 0
-    while j &#60; HIDDEN
-    {
-        gc.put(j, 0.0)
-        gv.put(j, 0.0)
-        j := j + 1
-    }
-    var gb 0.0
-    var loss 0.0
-    var right 0
-    for p in points
-    {
-        ; forward: the hidden layer, then the output
-        var z b
-        j := 0
-        while j &#60; HIDDEN
-        {
-            h.put(j, tanh(w[2 * j] * p.x + w[2 * j + 1] * p.y + c[j]))
-            z := z + v[j] * h[j]
-            j := j + 1
-        }
-        let a tanh(z)
-        let e a - p.kind
-        loss := loss + 0.5 * e * e
-        if a * p.kind &#62; 0.0
-            right := right + 1
-        ; back: the output neuron's share of the error ...
-        let d e * (1.0 - a * a)
-        gb := gb + d
-        j := 0
-        while j &#60; HIDDEN
-        {
-            gv.put(j, gv[j] + d * h[j])
-            ; ... and each hidden neuron's, through the weight that reads it
-            let dj d * v[j] * (1.0 - h[j] * h[j])
-            gw.put(2 * j, gw[2 * j] + dj * p.x)
-            gw.put(2 * j + 1, gw[2 * j + 1] + dj * p.y)
-            gc.put(j, gc[j] + dj)
-            j := j + 1
-        }
-    }
-    if step % 50 = 0
-        print "step `step`: loss `shown(loss / n)`, `right` of 4 right"
-    ; every weight a little against its gradient
-    k := 0
-    while k &#60; 2 * HIDDEN
-    {
-        w.put(k, w[k] - rate * gw[k] / n)
-        k := k + 1
-    }
-    j := 0
-    while j &#60; HIDDEN
-    {
-        c.put(j, c[j] - rate * gc[j] / n)
-        v.put(j, v[j] - rate * gv[j] / n)
-        j := j + 1
-    }
-    b := b - rate * gb / n
-    step := step + 1
-}</code
-></pre
-><pre
-class="screen"
-><code
->step 0: loss 0.52, 2 of 4 right
-step 50: loss 0.025, 4 of 4 right
-step 100: loss 0.006, 4 of 4 right
-step 150: loss 0.003, 4 of 4 right
-step 200: loss 0.002, 4 of 4 right
-step 250: loss 0.002, 4 of 4 right
-step 300: loss 0.001, 4 of 4 right</code
-></pre
+      how networks of any depth learn.</p
+><aside
+class="tryit"
 ><p
->The hidden neurons start from different weights on purpose. Had
+class="note-title"
+>Try it</p
+><p
+><a
+href="../play/model/#model=hidden"
+>Open the page with the network for XOR once more.</a
+>
+        Below the picture there is now the procedure
+        <code
+>network_step</code
+>: backpropagation as derived here.
+        For each point it computes forward the answers <math
+><msub
+><mi
+>h</mi
+><mi
+>j</mi
+></msub
+></math
+> and <math
+><mi
+>a</mi
+></math
+>,
+        then back <math
+><mi
+>d</mi
+></math
+> and from it each <math
+><msub
+><mi
+>d</mi
+><mi
+>j</mi
+></msub
+></math
+>, and at the end it
+        moves each of the thirteen numbers a little against its gradient.
+        Each press of <span
+class="gui"
+>One step</span
+> is one call of this
+        procedure.</p
+></aside
+><p
+>The hidden neurons on the page start from different weights on
+      purpose. Had
       they all started alike, they would answer alike, get the same
       gradient in every step and stay alike forever, three copies of one
-      line. The field starts its weights at random for the same
-      reason.</p
+      line. That is why a network usually starts from random
+      weights.</p
+><p
+>A network needs nothing more to learn, however many layers it
+      has: compute forward, hand the error back, move each weight a little
+      against its gradient. How far that carries shows on the
+      <em
+>field</em
+>, a page with a larger network than in our
+      boxes: up to six hidden layers of up to eight neurons, seven inputs
+      to choose from, the squares among them, and four arrangements of
+      points, a spiral among them. For each neuron a small square shows
+      what it answers over the whole plane, like our pictures for
+      XOR.</p
+><aside
+class="tryit"
+><p
+class="note-title"
+>Try it</p
+><p
+><a
+href="../play/field/#data=spiral&#38;inputs=x,y&#38;hidden=4&#38;speed=30"
+>Open the field with the spiral, only <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
+> as inputs and one hidden layer of four neurons.</a
+>
+        The network starts learning at once, but its loss falls only slowly
+        and stays high: four lines are not enough for the spiral. Then click
+        the inputs <span
+class="gui"
+>sin x</span
+> and <span
+class="gui"
+>sin y</span
+>
+        on the left. The network starts again, and after a few seconds its
+        loss has fallen to a fraction.</p
+></aside
 ></section
 ><section
 id="field-test"
