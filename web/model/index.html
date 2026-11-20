@@ -69,6 +69,10 @@
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; min-width: 6.5em; }
   button:disabled { opacity: .45; cursor: default; }
   .code { max-width: 860px; margin: 0 auto 40px; padding: 0 16px; }
+  .layers { max-width: 860px; margin: 0 auto 40px; padding: 0 16px; }
+  .layers h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .layers canvas { width: 100%; aspect-ratio: 880 / 560; background: var(--panel); cursor: grab; touch-action: pan-y; margin-bottom: 10px; }
+  .layers canvas.turning { cursor: grabbing; }
   .code h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
   .code pre { margin: 0 0 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
               overflow-x: auto; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -122,6 +126,11 @@
     <span id="status"></span>
   </div>
 </main>
+<section class="layers" id="layers" hidden>
+  <h2 data-t="layersTitle">The network in layers</h2>
+  <canvas id="stack" width="880" height="560" aria-label="The network's layers, one above the other" data-t-label="layersLabel"></canvas>
+  <p class="say" data-t="layersSay">Below, the inputs x and y; in the middle, the hidden layer; on top, the output. Each square shows what its neuron answers over the whole plane, and for the inputs simply x and y. The lines are the weights: orange positive, blue negative, the thicker the stronger. Drag to turn the network.</p>
+</section>
 <section class="code" id="code" hidden>
   <h2 data-t="inScaly">In Scaly</h2>
   <pre><code id="source"></code></pre>
@@ -144,6 +153,8 @@ const TEXT = {
         sayHidden: 'Three hidden neurons, each with a line of its own (the small pictures show their answers h₁, h₂ and h₃), and an output neuron that reads them. The large picture is the network’s answer a; a ring marks each point it guesses wrong. How it finds its numbers is backpropagation, the procedure network_step in the program below.',
         saySquares: 'The neuron is given x² and y² instead of x and y and answers a = tanh(w₁x² + w₂y² + b): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
+        layersTitle: 'The network in layers', layersLabel: 'The network’s layers, one above the other',
+        layersSay: 'Below, the inputs x and y; in the middle, the hidden layer; on top, the output. Each square shows what its neuron answers over the whole plane, and for the inputs simply x and y. The lines are the weights: orange positive, blue negative, the thicker the stronger. Drag to turn the network.',
         loss: 'Loss', rate: 'Learning rate', tempo: 'Speed', steps: n => `${n.toLocaleString('en')} steps`,
         goal: 'Done: the loss is below 0.02.',
         still: 'Stopped: the loss has hardly fallen over the last hundred steps (by less than 0.0001).',
@@ -162,6 +173,8 @@ const TEXT = {
         sayHidden: 'Drei verborgene Neuronen, jedes mit einer eigenen Geraden (die kleinen Bilder zeigen ihre Antworten h₁, h₂ und h₃), und ein Ausgabeneuron, das sie liest. Das große Bild ist die Antwort a des Netzes; ein Ring markiert jeden Punkt, bei dem es falsch rät. Wie es seine Zahlen findet, ist die Rückwärtsrechnung, die Prozedur network_step im Programm unten.',
         saySquares: 'Das Neuron bekommt x² und y² statt x und y und antwortet a = tanh(w₁x² + w₂y² + b): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
+        layersTitle: 'Das Netz in Schichten', layersLabel: 'Die Schichten des Netzes übereinander',
+        layersSay: 'Unten die Eingaben x und y, in der Mitte die verborgene Schicht, oben die Ausgabe. Jedes Quadrat zeigt, was sein Neuron über der ganzen Ebene antwortet, bei den Eingaben einfach x und y. Die Linien sind die Gewichte: orange positiv, blau negativ, je dicker, desto stärker. Zieh mit der Maus, um das Netz zu drehen.',
         loss: 'Fehler', rate: 'Lernrate', tempo: 'Tempo', steps: n => `${n.toLocaleString('de')} Schritte`,
         goal: 'Fertig: Der Fehler liegt unter 0,02.',
         still: 'Angehalten: Der Fehler ist in den letzten hundert Schritten kaum noch gesunken (um weniger als 0,0001).',
@@ -198,6 +211,7 @@ function translatePage() {
   $('lang').setAttribute('aria-label', t('language'));
   $('book').href = lang === 'de' ? '/ml/field.de.htm' : '/ml/field.htm';
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
   document.querySelector('h1').textContent = t(model.title);
   document.querySelector('.say:not(#right)').textContent = t(model.say);
   if (model.points === 'disc') $('sixPoints').textContent = t('discRing');
@@ -409,7 +423,7 @@ function readPalette() {
               plusCss: v('--plus'), minusCss: v('--minus'), ink: v('--ink'), dot: v('--dot') };
 }
 readPalette();
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readPalette(); frame = -1; });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readPalette(); stack.inputs = null; frame = -1; });
 
 const image = new ImageData(SIZE, SIZE);
 function picture() {
@@ -447,7 +461,7 @@ function picture() {
     $('lossValue').textContent = board[38].toLocaleString(lang, { minimumFractionDigits: 3, maximumFractionDigits: 4 });
     $('stepsValue').textContent = t('steps')(board[39]);
     showValues();
-    if (model.tiles) drawTiles();
+    if (model.tiles) { drawTiles(); drawStack(); }
     // learning ended by itself (model.scaly, finished): the page stops and says why
     const why = board[40];
     if (why > 0 && running) {
@@ -477,6 +491,105 @@ function drawTiles() {
     c.getContext('2d').putImageData(img, 0, 0);
   }
 }
+
+// --- the network in layers, in 3D ----------------------------------------------
+//
+// Model 4 drawn as a stack: the inputs x and y below, the hidden neurons in
+// the middle, the output on top, each a square lying flat that shows what it
+// answers over the plane, and between them the weights as lines (orange
+// positive, blue negative, thicker for larger). Seen from above and turned
+// by dragging; a flat square seen so is a parallelogram, which a canvas
+// draws with one affine transform, so no 3D library is needed.
+const stack = { yaw: -0.45, pitch: 0.5, inputs: null, hidden: [] };
+function valueTile(f) {
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const img = new ImageData(TILE, TILE), px = img.data, z = palette.zero;
+  for (let q = 0; q < TILE * TILE; q++) {
+    const v = f(((q % TILE) + 0.5) * 12 / TILE - 6, 6 - (Math.floor(q / TILE) + 0.5) * 12 / TILE);
+    const a = Math.min(1, Math.abs(v)) * 0.85, end = v > 0 ? palette.plus : palette.minus;
+    px[4 * q] = z[0] + (end[0] - z[0]) * a;
+    px[4 * q + 1] = z[1] + (end[1] - z[1]) * a;
+    px[4 * q + 2] = z[2] + (end[2] - z[2]) * a;
+    px[4 * q + 3] = 255;
+  }
+  c.getContext('2d').putImageData(img, 0, 0);
+  return c;
+}
+// where the squares lie: x across, y in depth, z up; each with its picture
+function stackLayers() {
+  if (!stack.inputs) stack.inputs = [valueTile((x, y) => x / 6), valueTile((x, y) => y / 6)];
+  const h = [0, 1, 2].map(j => $('tile' + j));
+  return [
+    [{ x: -0.75, z: 0, s: 1, img: stack.inputs[0], label: 'x' }, { x: 0.75, z: 0, s: 1, img: stack.inputs[1], label: 'y' }],
+    [0, 1, 2].map(j => ({ x: (j - 1) * 1.5, z: 1.7, s: 1, img: h[j], label: 'h' + '₁₂₃'[j] })),
+    [{ x: 0, z: 3.4, s: 1.5, img: $('plane'), label: 'a' }],
+  ];
+}
+function drawStack() {
+  const c = $('stack');
+  if (!c || $('layers').hidden) return;
+  const g = c.getContext('2d'), W = c.width, H = c.height;
+  const net = learned ?? NET_START;
+  const cy = Math.cos(stack.yaw), sy = Math.sin(stack.yaw), cp = Math.cos(stack.pitch), sp = Math.sin(stack.pitch);
+  const k = Math.min(W, H) * 0.95 / 4.6, mid = 1.7;
+  // a point of the world on the canvas, and how far back it lies
+  const at = (x, y, z) => {
+    const X = x * cy - y * sy, Y = x * sy + y * cy;
+    return { x: W / 2 + k * X, y: H / 2 - k * ((z - mid) * cp + Y * sp), back: Y * cp - z * sp };
+  };
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const layers = stackLayers();
+  const css = getComputedStyle(document.documentElement);
+  const line = css.getPropertyValue('--line').trim(), ink = css.getPropertyValue('--muted').trim();
+  const square = t => {
+    if (!t.img) return;
+    const r = t.s / 2, p00 = at(t.x - r, r, t.z), p10 = at(t.x + r, r, t.z), p01 = at(t.x - r, -r, t.z);
+    const w = t.img.width, hh = t.img.height;
+    g.save();
+    g.setTransform((p10.x - p00.x) / w, (p10.y - p00.y) / w, (p01.x - p00.x) / hh, (p01.y - p00.y) / hh, p00.x, p00.y);
+    g.drawImage(t.img, 0, 0);
+    g.restore();
+    const p11 = at(t.x + r, -r, t.z);
+    g.beginPath(); g.moveTo(p00.x, p00.y); g.lineTo(p10.x, p10.y); g.lineTo(p11.x, p11.y); g.lineTo(p01.x, p01.y); g.closePath();
+    g.lineWidth = 1; g.strokeStyle = line; g.stroke();
+    // the name, in front of the square
+    const n = at(t.x, -r - 0.2, t.z);
+    g.font = 'italic 20px "Latin Modern Math", serif';
+    g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(t.label, n.x, n.y);
+  };
+  const weight = (from, to, w) => {
+    const a = at(from.x, 0, from.z), b = at(to.x, 0, to.z);
+    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y);
+    g.lineWidth = 0.5 + 2.5 * Math.min(Math.abs(w), 3);
+    g.strokeStyle = w > 0 ? palette.plusCss : palette.minusCss;
+    g.globalAlpha = 0.85; g.stroke(); g.globalAlpha = 1;
+  };
+  const backToFront = row => row.slice().sort((p, q) => at(q.x, 0, q.z).back - at(p.x, 0, p.z).back);
+  backToFront(layers[0]).forEach(square);
+  layers[1].forEach((h, j) => { weight(layers[0][0], h, net[3 * j]); weight(layers[0][1], h, net[3 * j + 1]); });
+  backToFront(layers[1]).forEach(square);
+  layers[1].forEach((h, j) => weight(h, layers[2][0], net[9 + j]));
+  layers[2].forEach(square);
+}
+{
+  const c = $('stack');
+  let from = null;
+  c.addEventListener('pointerdown', e => { from = [e.clientX, e.clientY]; c.setPointerCapture(e.pointerId); c.classList.add('turning'); });
+  c.addEventListener('pointermove', e => {
+    if (!from) return;
+    stack.yaw += (e.clientX - from[0]) * 0.01;
+    stack.pitch = Math.min(1.2, Math.max(0.15, stack.pitch + (e.clientY - from[1]) * 0.01));
+    from = [e.clientX, e.clientY];
+    drawStack();
+  });
+  const end = () => { from = null; c.classList.remove('turning'); };
+  c.addEventListener('pointerup', end);
+  c.addEventListener('pointercancel', end);
+}
+$('layers').hidden = !model.tiles;
 
 function tick() {
   if (board && board[33] !== frame && board[32] === changes) {
