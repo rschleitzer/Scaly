@@ -472,7 +472,7 @@ loading="lazy"></div
 ><mn
 >36</mn
 ></math
->. Whether such a function guesses well depends on the points:
+>. Whether such a function can predict the points' kinds well depends on where they lie:
       the first suits points that are orange on the right and blue on the
       left, the second an orange disc in a blue ring.</p
 ><p
@@ -762,8 +762,9 @@ src="fig/neuron-x.png"
 alt="The plane parted by the upright axis, orange on the right, blue on the left; all six points on the side of their colour."
 loading="lazy"></div
 ><p
->Turning the line by changing a weight until the guesses are right
-      is exactly what learning will do, only by itself.</p
+>Changing the weights and the bias step by step until the
+      guesses are right is the essence of what we shall call
+      learning.</p
 ><aside
 class="tryit"
 ><p
@@ -812,9 +813,9 @@ href="#field-loss"
 >How Wrong</a
 ></h2
 ><p
->To change the weights by itself a program needs a number that
-      says how wrong the neuron is, a number that gets smaller as the
-      neuron gets better. Counting the wrong guesses does not serve: a
+>To change the weights by itself a program needs a measure of
+      how wrong the neuron is. This measure is a number that gets smaller
+      as the neuron gets better. Counting the wrong guesses does not serve: a
       small change of a weight usually changes no guess at all, so the
       count does not say which way to turn.</p
 ><p
@@ -857,15 +858,16 @@ src="fig/tanh.png"
 alt="The curve of tanh: near −1 on the left, rising through the origin and coming ever closer to 1 on the right; dashed, the lines at 1 and −1."
 loading="lazy"></div
 ><p
->Now the neuron answers as the beginning of the chapter asked of a
-      model: near +1 or -1 where it is sure, near 0 where it is not. Such a squashing function is the neuron's
+>With this function the model can answer as the beginning of the
+      chapter asked: near +1 or -1 where it is sure, near 0 where it is not. Such a function we shall call the neuron's
       <em
->activation</em
+>activation function</em
 >, and <math
 ><mi
 >a</mi
 ></math
-> its answer.
+> its answer for a
+      particular point of the plane.
       Now the answer can be compared with the kind
       <math
 ><mi
@@ -907,14 +909,19 @@ stretchy="false"
 ></math
 ></div
 ><p
->This is the <em
+><math
+><mi
+>L</mi
+></math
+> is the <em
 >loss</em
-> of one point: 0 where the
-      answer is exactly the kind, larger the further it is from it, and
-      every small change of a weight changes it a little. The loss of the
-      model is the mean of the losses of all points.</p
+> of one point: 0 where
+      the answer is exactly the kind, larger the further it is from it,
+      and every small change of a weight changes it a little. The mean of
+      the losses of all points is the neuron's loss, and that is the
+      measure we were looking for.</p
 ><p
->The hyperbolic tangent is not the only choice. In large networks
+>The hyperbolic tangent is not the only possible activation function. In large networks
       one mostly takes an even simpler function today,
       <em
 >ReLU</em
@@ -988,15 +995,46 @@ href="#field-gradient"
 >b</mi
 ></math
 >. Now we want to find the values for which it
-      becomes as small as possible. Since we do not want to compute every
-      conceivable combination, we begin with some values and move from
+      becomes as small as possible. Trying every combination is out of
+      the question: each of the three values can be any number, so there
+      are infinitely many. Even if we tried only 100 numbers for each
+      value, that would be <math
+><msup
+><mn
+>100</mn
+><mn
+>3</mn
+></msup
+></math
+>, a million combinations, and for each
+      we would have to compute the loss over all points. For three values
+      a computer still manages that, but the network for XOR that we build
+      later already has 13 numbers and so <math
+><msup
+><mn
+>100</mn
+><mn
+>13</mn
+></msup
+><mo
+>=</mo
+><msup
+><mn
+>10</mn
+><mn
+>26</mn
+></msup
+></math
+>
+      combinations, and large networks have millions of weights. So we
+      begin with some values and move from
       there step by step in the direction in which the loss falls fastest,
       with all three values at once. Which direction that is can be read
       off each value separately: how much does the loss change when the
       value changes a little? That is the <em
->derivative</em
->
-      of the loss by that value, for <math
+>partial
+      derivative</em
+> of the loss with respect to that value, for <math
 ><msub
 ><mi
 >w</mi
@@ -1026,7 +1064,19 @@ rspace="0"
 >1</mn
 ></msub
 ></math
->.</p
+>. It is
+      partial because only this one value changes while the others are
+      held fixed; the round <math
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+></math
+> instead of a <math
+><mi
+>d</mi
+></math
+> marks that.</p
 ><p
 >The loss does not depend on <math
 ><msub
@@ -1055,11 +1105,32 @@ rspace="0"
 ></msub
 ></math
 >. Each link
-      of that chain has a slope that is easy to say:</p
+      of that chain has a derivative that is easy to work out:</p
 ><ul
 ><li
 ><p
->the loss by the answer: <math
+>How much does the loss change when the answer
+        changes? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mi
 >a</mi
 ><mo
@@ -1067,11 +1138,58 @@ rspace="0"
 ><mi
 >t</mi
 ></math
->;</p
+>, the derivative of <math
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+></math
+>.</p
 ></li
 ><li
 ><p
->the answer by the sum, the slope of tanh: <math
+>How much does the answer change when the sum
+        changes? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mn
 >1</mn
 ><mo
@@ -1083,22 +1201,67 @@ rspace="0"
 >2</mn
 ></msup
 ></math
->;</p
+>, the derivative of tanh.</p
 ></li
 ><li
 ><p
->the sum by the weight: <math
+>How much does the sum change when <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>
+        changes? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mi
 >x</mi
 ></math
->, the input the weight multiplies.</p
+>, because <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+> is multiplied by <math
+><mi
+>x</mi
+></math
+>.</p
 ></li
 ></ul
 ><p
 >The <em
 >chain rule</em
-> says that the slope of the
-      whole chain is the product of the slopes of its links:</p
+> says that the derivative of the
+      whole chain is the product of the derivatives of its links:</p
 ><div
 class="equation"
 ><math
@@ -1111,6 +1274,70 @@ rspace="0"
 >∂</mo
 ><mi
 >L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+></mfrac
+><mo
+>·</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+></mfrac
+><mo
+>·</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
 ></mrow
 ><mrow
 ><mo
@@ -1178,7 +1405,7 @@ stretchy="false"
 ></math
 >,
       for the bias it is 1. Added up over all points and divided by their
-      number, these derivatives are the <em
+      number, these partial derivatives are the <em
 >gradient</em
 >: the
       direction in which the loss rises fastest. One step of
@@ -1355,7 +1582,7 @@ href="#field-features"
 >Better Inputs</a
 ></h2
 ><p
->A neuron parts the plane by a line. But some arrangements of
+>Our neuron parts the plane by a line. But some arrangements of
       points cannot be parted by a line, for example a disc of orange
       points inside a ring of blue ones: every line then has orange and
       blue on both sides.</p
@@ -1667,25 +1894,12 @@ href="#field-hidden"
 >Hidden Layers</a
 ></h2
 ><p
->For a disc the right inputs are easy to guess. For most data they
-      are not. Here comes the idea that makes neural networks strong: we
-      let neurons compute the inputs.</p
+>For a disc the right inputs are easy to guess; for most data
+      they are not. So we leave it to neurons to compute the inputs. It is
+      this idea that makes neural networks strong.</p
 ><p
->Let us take several neurons side by side. Each is given <math
-><mi
->x</mi
-></math
-> and
-      <math
-><mi
->y</mi
-></math
->, each has weights and a bias of its own and so draws a line of its
-      own; its answer says on which side of it a point lies. Behind them we
-      put one more neuron, the <em
->output</em
->. It is given not
-      <math
+>Let us take several neurons instead of one. Each of them is given
+      the same inputs <math
 ><mi
 >x</mi
 ></math
@@ -1693,11 +1907,39 @@ href="#field-hidden"
 ><mi
 >y</mi
 ></math
-> but the answers of the neurons before it. The neurons in
-      between form a <em
+>, but has weights and a bias of its own
+      and so draws a line of its own; its answer says on which side of it a
+      point lies. Neurons that read the same inputs like this form a
+      <em
+>layer</em
+>. Now we form
+      one more layer. It is given not <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
+> but the answers of the
+      neurons of the first layer, and here it consists of a single neuron,
+      the <em
+>output</em
+>. So the computation runs in two
+      stages: from <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
+> the first layer computes its answers, and from
+      those answers the output computes its own. From outside one sees only
+      the inputs and the output, so the layer in between is called a
+      <em
 >hidden layer</em
->: from outside one
-      sees only the inputs and the output, their answers are intermediate
+>; its answers are intermediate
       results.</p
 ><p
 >The data that shows it best is called XOR: orange at the upper
@@ -1866,6 +2108,178 @@ src="fig/xor-out.png"
 alt="The plane with the points of XOR: orange at the upper right and lower left corners, a blue band between them; every point on the side of its colour."
 loading="lazy"></div
 ><p
+>How the output manages that shows when each point is put where
+      the hidden layer takes it. The output is a neuron like our first one,
+      only its inputs are called <math
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+></math
+> and <math
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+></math
+> instead of <math
+><mi
+>x</mi
+></math
+> and <math
+><mi
+>y</mi
+></math
+>. So
+      it does not see the plane of the points but a new plane with the axes
+      <math
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+></math
+> and <math
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+></math
+>, and in it each point has the place <math
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+><mo
+>,</mo
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+><mo
+stretchy="false"
+>)</mo
+></math
+>: the
+      three orange points at the upper right land at <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>+</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+>, the three
+      at the lower left at <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>+</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+>, and all six blue ones at
+      <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+>. In this plane a single line parts the two kinds, and
+      that line is the one the output draws:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+><mo
+>+</mo
+><mn
+>1</mn
+><mo
+>=</mo
+><mn
+>0</mn
+></math
+></div
+><img
+src="fig/xor-space.png"
+alt="The plane of the answers h1 and h2: an orange point at (+1, −1), one at (−1, +1), a blue one at (−1, −1); the line h1 + h2 + 1 = 0 parts the blue one at the lower left from the orange ones."
+loading="lazy"></div
+><p
 >The output joins the two lines into an <q
 >or</q
 >: orange
@@ -1890,7 +2304,7 @@ href="../play/model/#model=hidden"
         section’s subject.</p
 ></aside
 ><p
->The activation matters here. If each neuron simply passed on its
+>The activation function matters here. If each neuron simply passed on its
       weighted sum, the output would add up sums of sums, which is again
       only a weighted sum of <math
 ><mi
@@ -1901,7 +2315,7 @@ href="../play/model/#model=hidden"
 >y</mi
 ></math
 >, so again only a line. Only the
-      activation, which bends each neuron's sum, lets the layers do more
+      activation function, which bends each neuron's sum, lets the layers do more
       than one neuron could. In our example by hand that is the sign; in
       the network from the box above, the hyperbolic tangent.</p
 ></section
@@ -2281,7 +2695,7 @@ class="filename"
 >,
       built for WebAssembly. It is this chapter's programs grown up: up to
       six hidden layers of up to eight neurons, seven inputs to choose
-      from, four activations, regularization, and backpropagation as in
+      from, four activation functions, regularization, and backpropagation as in
       the last section, only in loops over layers instead of written out.
       It keeps everything the page shows in one vector of numbers in its
       memory, which the page reads directly, without a copy; the picture

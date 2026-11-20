@@ -40,7 +40,7 @@
     </informalfigure>
     <para>It is +1 at the centre, −1 in the four corners, because there
       <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:mn>36</mml:mn><mml:mo>+</mml:mo><mml:mn>36</mml:mn><mml:mo>=</mml:mo><mml:mn>72</mml:mn></mml:math></inlineequation>, and 0 on the circle of radius 6 around the centre, where
-      <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:mn>36</mml:mn></mml:math></inlineequation>. Whether such a function guesses well depends on the points:
+      <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>+</mml:mo><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:mn>36</mml:mn></mml:math></inlineequation>. Whether such a function can predict the points' kinds well depends on where they lie:
       the first suits points that are orange on the right and blue on the
       left, the second an orange disc in a blue ring.</para>
     <para>Machine learning, on the other hand, does not make the formula
@@ -94,8 +94,9 @@
         <imageobject><imagedata fileref="fig/neuron-x.png"/></imageobject>
       </mediaobject>
     </informalfigure>
-    <para>Turning the line by changing a weight until the guesses are right
-      is exactly what learning will do, only by itself.</para>
+    <para>Changing the weights and the bias step by step until the
+      guesses are right is the essence of what we shall call
+      learning.</para>
     <sidebar role="tryit">
       <para><link xlink:href="../play/model/#model=neuron">Open the page with the neuron</link>
         and pull at <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>,
@@ -110,9 +111,9 @@
 
   <section xml:id="field-loss">
     <title>How Wrong</title>
-    <para>To change the weights by itself a program needs a number that
-      says how wrong the neuron is, a number that gets smaller as the
-      neuron gets better. Counting the wrong guesses does not serve: a
+    <para>To change the weights by itself a program needs a measure of
+      how wrong the neuron is. This measure is a number that gets smaller
+      as the neuron gets better. Counting the wrong guesses does not serve: a
       small change of a weight usually changes no guess at all, so the
       count does not say which way to turn.</para>
     <para>So we first map the weighted sum <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> to a number between −1
@@ -124,17 +125,19 @@
         <imageobject><imagedata fileref="fig/tanh.png"/></imageobject>
       </mediaobject>
     </informalfigure>
-    <para>Now the neuron answers as the beginning of the chapter asked of a
-      model: near +1 or -1 where it is sure, near 0 where it is not. Such a squashing function is the neuron's
-      <emphasis>activation</emphasis>, and <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation> its answer.
+    <para>With this function the model can answer as the beginning of the
+      chapter asked: near +1 or -1 where it is sure, near 0 where it is not. Such a function we shall call the neuron's
+      <emphasis>activation function</emphasis>, and <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation> its answer for a
+      particular point of the plane.
       Now the answer can be compared with the kind
       <inlineequation><mml:math><mml:mi>t</mml:mi></mml:math></inlineequation> the point really has:</para>
     <informalequation><mml:math><mml:mi>L</mml:mi><mml:mo>=</mml:mo><mml:mfrac><mml:mn>1</mml:mn><mml:mn>2</mml:mn></mml:mfrac><mml:msup><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mn>2</mml:mn></mml:msup></mml:math></informalequation>
-    <para>This is the <emphasis>loss</emphasis> of one point: 0 where the
-      answer is exactly the kind, larger the further it is from it, and
-      every small change of a weight changes it a little. The loss of the
-      model is the mean of the losses of all points.</para>
-    <para>The hyperbolic tangent is not the only choice. In large networks
+    <para><inlineequation><mml:math><mml:mi>L</mml:mi></mml:math></inlineequation> is the <emphasis>loss</emphasis> of one point: 0 where
+      the answer is exactly the kind, larger the further it is from it,
+      and every small change of a weight changes it a little. The mean of
+      the losses of all points is the neuron's loss, and that is the
+      measure we were looking for.</para>
+    <para>The hyperbolic tangent is not the only possible activation function. In large networks
       one mostly takes an even simpler function today,
       <emphasis>ReLU</emphasis>: <inlineequation><mml:math><mml:mrow><mml:mi>max</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>0</mml:mn><mml:mo>,</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow></mml:math></inlineequation>, that is <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> itself where <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation> is
       positive and 0 elsewhere. Its slope is always 1 for positive <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>,
@@ -146,28 +149,40 @@
     <title>Downhill</title>
     <para>So the loss of our neuron is a function of the three values
       <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>. Now we want to find the values for which it
-      becomes as small as possible. Since we do not want to compute every
-      conceivable combination, we begin with some values and move from
+      becomes as small as possible. Trying every combination is out of
+      the question: each of the three values can be any number, so there
+      are infinitely many. Even if we tried only 100 numbers for each
+      value, that would be <inlineequation><mml:math><mml:msup><mml:mn>100</mml:mn><mml:mn>3</mml:mn></mml:msup></mml:math></inlineequation>, a million combinations, and for each
+      we would have to compute the loss over all points. For three values
+      a computer still manages that, but the network for XOR that we build
+      later already has 13 numbers and so <inlineequation><mml:math><mml:msup><mml:mn>100</mml:mn><mml:mn>13</mml:mn></mml:msup><mml:mo>=</mml:mo><mml:msup><mml:mn>10</mml:mn><mml:mn>26</mml:mn></mml:msup></mml:math></inlineequation>
+      combinations, and large networks have millions of weights. So we
+      begin with some values and move from
       there step by step in the direction in which the loss falls fastest,
       with all three values at once. Which direction that is can be read
       off each value separately: how much does the loss change when the
-      value changes a little? That is the <emphasis>derivative</emphasis>
-      of the loss by that value, for <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> written <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>.</para>
+      value changes a little? That is the <emphasis>partial
+      derivative</emphasis> of the loss with respect to that value, for <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> written <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>. It is
+      partial because only this one value changes while the others are
+      held fixed; the round <inlineequation><mml:math><mml:mo lspace="0" rspace="0">∂</mml:mo></mml:math></inlineequation> instead of a <inlineequation><mml:math><mml:mi>d</mml:mi></mml:math></inlineequation> marks that.</para>
     <para>The loss does not depend on <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> directly. It
       depends on the answer <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation>, the answer on the sum
       <inlineequation><mml:math><mml:mi>z</mml:mi></mml:math></inlineequation>, and the sum on <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>. Each link
-      of that chain has a slope that is easy to say:</para>
+      of that chain has a derivative that is easy to work out:</para>
     <itemizedlist>
-      <listitem><para>the loss by the answer: <inlineequation><mml:math><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi></mml:math></inlineequation>;</para></listitem>
-      <listitem><para>the answer by the sum, the slope of tanh: <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>;</para></listitem>
-      <listitem><para>the sum by the weight: <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>, the input the weight multiplies.</para></listitem>
+      <listitem><para>How much does the loss change when the answer
+        changes? <inlineequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>a</mml:mi></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi></mml:math></inlineequation>, the derivative of <inlineequation><mml:math><mml:mfrac><mml:mn>1</mml:mn><mml:mn>2</mml:mn></mml:mfrac><mml:msup><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>.</para></listitem>
+      <listitem><para>How much does the answer change when the sum
+        changes? <inlineequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>a</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>z</mml:mi></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>, the derivative of tanh.</para></listitem>
+      <listitem><para>How much does the sum change when <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>
+        changes? <inlineequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>z</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mi>x</mml:mi></mml:math></inlineequation>, because <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> is multiplied by <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>.</para></listitem>
     </itemizedlist>
-    <para>The <emphasis>chain rule</emphasis> says that the slope of the
-      whole chain is the product of the slopes of its links:</para>
-    <informalequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mi>x</mml:mi></mml:math></informalequation>
+    <para>The <emphasis>chain rule</emphasis> says that the derivative of the
+      whole chain is the product of the derivatives of its links:</para>
+    <informalequation><mml:math><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>a</mml:mi></mml:mrow></mml:mfrac><mml:mo>·</mml:mo><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>a</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>z</mml:mi></mml:mrow></mml:mfrac><mml:mo>·</mml:mo><mml:mfrac><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>z</mml:mi></mml:mrow><mml:mrow><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:mrow></mml:mfrac><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mi>x</mml:mi></mml:math></informalequation>
     <para>For <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> the last factor is <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>,
       for the bias it is 1. Added up over all points and divided by their
-      number, these derivatives are the <emphasis>gradient</emphasis>: the
+      number, these partial derivatives are the <emphasis>gradient</emphasis>: the
       direction in which the loss rises fastest. One step of
       <emphasis>gradient descent</emphasis> moves each of the three values
       a little the other way,</para>
@@ -201,7 +216,7 @@
 
   <section xml:id="field-features">
     <title>Better Inputs</title>
-    <para>A neuron parts the plane by a line. But some arrangements of
+    <para>Our neuron parts the plane by a line. But some arrangements of
       points cannot be parted by a line, for example a disc of orange
       points inside a ring of blue ones: every line then has orange and
       blue on both sides.</para>
@@ -256,16 +271,21 @@
 
   <section xml:id="field-hidden">
     <title>Hidden Layers</title>
-    <para>For a disc the right inputs are easy to guess. For most data they
-      are not. Here comes the idea that makes neural networks strong: we
-      let neurons compute the inputs.</para>
-    <para>Let us take several neurons side by side. Each is given <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and
-      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, each has weights and a bias of its own and so draws a line of its
-      own; its answer says on which side of it a point lies. Behind them we
-      put one more neuron, the <emphasis>output</emphasis>. It is given not
-      <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> but the answers of the neurons before it. The neurons in
-      between form a <emphasis>hidden layer</emphasis>: from outside one
-      sees only the inputs and the output, their answers are intermediate
+    <para>For a disc the right inputs are easy to guess; for most data
+      they are not. So we leave it to neurons to compute the inputs. It is
+      this idea that makes neural networks strong.</para>
+    <para>Let us take several neurons instead of one. Each of them is given
+      the same inputs <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, but has weights and a bias of its own
+      and so draws a line of its own; its answer says on which side of it a
+      point lies. Neurons that read the same inputs like this form a
+      <emphasis>layer</emphasis>. Now we form
+      one more layer. It is given not <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> but the answers of the
+      neurons of the first layer, and here it consists of a single neuron,
+      the <emphasis>output</emphasis>. So the computation runs in two
+      stages: from <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> the first layer computes its answers, and from
+      those answers the output computes its own. From outside one sees only
+      the inputs and the output, so the layer in between is called a
+      <emphasis>hidden layer</emphasis>; its answers are intermediate
       results.</para>
     <para>The data that shows it best is called XOR: orange at the upper
       right and the lower left, blue at the other two corners. No single
@@ -297,6 +317,22 @@
         <imageobject><imagedata fileref="fig/xor-out.png"/></imageobject>
       </mediaobject>
     </informalfigure>
+    <para>How the output manages that shows when each point is put where
+      the hidden layer takes it. The output is a neuron like our first one,
+      only its inputs are called <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> instead of <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>. So
+      it does not see the plane of the points but a new plane with the axes
+      <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation>, and in it each point has the place <inlineequation><mml:math><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>,</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:math></inlineequation>: the
+      three orange points at the upper right land at <inlineequation><mml:math><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo>,</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo stretchy="false">)</mml:mo></mml:math></inlineequation>, the three
+      at the lower left at <inlineequation><mml:math><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo>,</mml:mo><mml:mrow><mml:mo>+</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo stretchy="false">)</mml:mo></mml:math></inlineequation>, and all six blue ones at
+      <inlineequation><mml:math><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo>,</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>1</mml:mn></mml:mrow><mml:mo stretchy="false">)</mml:mo></mml:math></inlineequation>. In this plane a single line parts the two kinds, and
+      that line is the one the output draws:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mo>+</mml:mo><mml:mn>1</mml:mn><mml:mo>=</mml:mo><mml:mn>0</mml:mn></mml:math></informalequation>
+      <mediaobject>
+        <alt>The plane of the answers h1 and h2: an orange point at (+1, −1), one at (−1, +1), a blue one at (−1, −1); the line h1 + h2 + 1 = 0 parts the blue one at the lower left from the orange ones.</alt>
+        <imageobject><imagedata fileref="fig/xor-space.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
     <para>The output joins the two lines into an <quote>or</quote>: orange
       where the first or the second neuron says yes. Two lines and a neuron
       that joins them do what one line alone cannot. With more neurons and
@@ -310,10 +346,10 @@
         joins them. How the network finds its thirteen numbers is the next
         section’s subject.</para>
     </sidebar>
-    <para>The activation matters here. If each neuron simply passed on its
+    <para>The activation function matters here. If each neuron simply passed on its
       weighted sum, the output would add up sums of sums, which is again
       only a weighted sum of <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>, so again only a line. Only the
-      activation, which bends each neuron's sum, lets the layers do more
+      activation function, which bends each neuron's sum, lets the layers do more
       than one neuron could. In our example by hand that is the sign; in
       the network from the box above, the hyperbolic tangent.</para>
   </section>
@@ -411,7 +447,7 @@
     <para>The page runs one Scaly program, <filename>field.scaly</filename>,
       built for WebAssembly. It is this chapter's programs grown up: up to
       six hidden layers of up to eight neurons, seven inputs to choose
-      from, four activations, regularization, and backpropagation as in
+      from, four activation functions, regularization, and backpropagation as in
       the last section, only in loops over layers instead of written out.
       It keeps everything the page shows in one vector of numbers in its
       memory, which the page reads directly, without a copy; the picture

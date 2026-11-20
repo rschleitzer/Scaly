@@ -474,8 +474,8 @@ loading="lazy"></div
 ><mn
 >36</mn
 ></math
-> ist, ist sie 0. Ob eine solche Funktion gut vermutet, hängt von
-      den Punkten ab: Die erste passt zu Punkten, die rechts orange und
+> ist, ist sie 0. Ob eine solche Funktion die Sorte der Punkte gut
+      vorhersagen kann, hängt davon ab, wie sie liegen: Die erste passt zu Punkten, die rechts orange und
       links blau sind, die zweite zu einer orangen Scheibe in einem blauen
       Ring.</p
 ><p
@@ -766,9 +766,9 @@ src="fig/neuron-x.png"
 alt="Die Ebene, durch die senkrechte Achse geteilt, rechts orange, links blau; alle sechs Punkte auf der Seite ihrer Farbe."
 loading="lazy"></div
 ><p
->Die Gerade zu drehen, indem man ein Gewicht ändert, bis die
-      Vermutungen stimmen, ist genau das, was Lernen tun wird, nur von
-      selbst.</p
+>Die Gewichte und den Bias schrittweise zu verändern, bis die
+      Vermutungen stimmen, ist das Wesen dessen, was wir als Lernen
+      bezeichnen wollen.</p
 ><aside
 class="tryit"
 ><p
@@ -817,11 +817,11 @@ href="#field-loss"
 >Wie falsch</a
 ></h2
 ><p
->Um die Gewichte von selbst zu ändern, braucht ein Programm eine
-      Zahl, die sagt, wie falsch das Neuron liegt, eine Zahl, die kleiner
-      wird, wenn das Neuron besser wird. Die falschen Vermutungen zu zählen
-      taugt dafür nicht: Eine kleine Änderung eines Gewichts ändert meist
-      gar keine Vermutung, also sagt die Zahl nicht, in welche Richtung zu
+>Um die Gewichte von selbst zu ändern, braucht ein Programm ein
+      Maß dafür, wie falsch das Neuron liegt. Dieses Maß ist eine Zahl, die
+      kleiner wird, wenn das Neuron besser wird. Die falschen Vermutungen zu zählen taugt dafür
+      nicht: Eine kleine Änderung eines Gewichts ändert meist gar keine
+      Vermutung, also sagt die Anzahl nicht, in welche Richtung zu
       drehen ist.</p
 ><p
 >Deshalb bilden wir die gewichtete Summe <math
@@ -864,17 +864,17 @@ src="fig/tanh.png"
 alt="Die Kurve von tanh: links nahe −1, steigt durch den Ursprung und nähert sich rechts 1; gestrichelt die Linien bei 1 und −1."
 loading="lazy"></div
 ><p
->So antwortet das Neuron, wie es zu Beginn des Kapitels von einem
-      Modell verlangt war: nahe +1 oder -1, wo es sich sicher ist, nahe 0,
-      wo nicht. Eine solche Funktion ist die
+>Mit dieser Funktion kann das Modell so antworten, wie es zu
+      Beginn des Kapitels verlangt war: nahe +1 oder -1, wo es sich sicher ist, nahe 0,
+      wo nicht. Eine solche Funktion wollen wir die
       <em
->Aktivierung</em
-> des Neurons und
+>Aktivierungsfunktion</em
+> des Neurons nennen und
       <math
 ><mi
 >a</mi
 ></math
-> seine Antwort. Jetzt lässt sich die Antwort mit
+> seine Antwort für einen bestimmten Punkt der Ebene. Jetzt lässt sich die Antwort mit
       der Sorte <math
 ><mi
 >t</mi
@@ -916,18 +916,23 @@ stretchy="false"
 ></math
 ></div
 ><p
->Das ist der <em
+><math
+><mi
+>L</mi
+></math
+> ist der <em
 >Fehler</em
-> eines Punkts (englisch
-      <em
+> eines Punkts
+      (englisch <em
 >loss</em
->): 0, wo die Antwort genau die Sorte ist,
-      größer, je weiter sie davon weg ist, und jede kleine Änderung eines
-      Gewichts ändert ihn ein wenig. Der Fehler des Modells ist der
-      Mittelwert der Fehler aller Punkte.</p
+>): 0, wo die Antwort genau die
+      Sorte ist, größer, je weiter sie davon weg ist, und jede kleine
+      Änderung eines Gewichts ändert ihn ein wenig. Der Mittelwert der
+      Fehler aller Punkte ist der Fehler des Neurons, und das ist das Maß,
+      das wir gesucht haben.</p
 ><p
->Der Tangens hyperbolicus ist nicht die einzige Wahl. In großen
-      Netzen nimmt man heute meist eine noch einfachere Funktion,
+>Der Tangens hyperbolicus ist nicht die einzige mögliche
+      Aktivierungsfunktion. In großen Netzen nimmt man heute meist eine noch einfachere Funktion,
       <em
 >ReLU</em
 >: <math
@@ -1000,14 +1005,45 @@ href="#field-gradient"
 >b</mi
 ></math
 >. Nun wollen wir die Werte finden, für die er
-      möglichst klein wird. Da wir nicht alle erdenklichen Kombinationen
-      ausrechnen wollen, beginnen wir mit irgendwelchen Werten und bewegen
+      möglichst klein wird. Alle Kombinationen auszuprobieren geht nicht:
+      Jeder der drei Werte kann jede Zahl sein, es gibt also unendlich
+      viele. Selbst wenn wir für jeden Wert nur 100 Zahlen durchprobierten,
+      wären das <math
+><msup
+><mn
+>100</mn
+><mn
+>3</mn
+></msup
+></math
+>, eine Million Kombinationen, und für jede
+      müssten wir den Fehler über alle Punkte ausrechnen. Für drei Werte
+      schafft ein Rechner das noch, aber schon das Netz für XOR, das wir
+      später bauen, hat 13 Zahlen und damit <math
+><msup
+><mn
+>100</mn
+><mn
+>13</mn
+></msup
+><mo
+>=</mo
+><msup
+><mn
+>10</mn
+><mn
+>26</mn
+></msup
+></math
+>
+      Kombinationen, und große Netze haben Millionen von Gewichten. Deshalb
+      beginnen wir mit irgendwelchen Werten und bewegen
       uns von dort Schritt für Schritt in die Richtung, in der der Fehler am
       stärksten abnimmt, mit allen drei Werten zugleich. Welche Richtung das
       ist, lässt sich für jeden Wert einzeln ablesen: Wie stark ändert sich
       der Fehler, wenn sich der Wert ein wenig ändert? Das ist die
       <em
->Ableitung</em
+>partielle Ableitung</em
 > des Fehlers nach diesem Wert, für
       <math
 ><msub
@@ -1039,7 +1075,19 @@ rspace="0"
 >1</mn
 ></msub
 ></math
->.</p
+>. Partiell
+      heißt sie, weil sich nur dieser eine Wert ändert und die anderen
+      festgehalten werden; das runde <math
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+></math
+> statt eines <math
+><mi
+>d</mi
+></math
+> zeigt das an.</p
 ><p
 >Der Fehler hängt nicht direkt von <math
 ><msub
@@ -1068,12 +1116,33 @@ rspace="0"
 ></msub
 ></math
 >.
-      Jedes Glied dieser Kette hat eine Steigung, die leicht zu sagen
-      ist:</p
+      Jedes Glied dieser Kette hat eine Ableitung, die sich leicht
+      ausrechnen lässt:</p
 ><ul
 ><li
 ><p
->der Fehler nach der Antwort: <math
+>Wie stark ändert sich der Fehler, wenn sich die
+        Antwort ändert? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mi
 >a</mi
 ><mo
@@ -1081,11 +1150,58 @@ rspace="0"
 ><mi
 >t</mi
 ></math
->;</p
+>, die Ableitung von <math
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+></math
+>.</p
 ></li
 ><li
 ><p
->die Antwort nach der Summe, die Steigung von tanh: <math
+>Wie stark ändert sich die Antwort, wenn sich die
+        Summe ändert? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mn
 >1</mn
 ><mo
@@ -1097,22 +1213,67 @@ rspace="0"
 >2</mn
 ></msup
 ></math
->;</p
+>, die Ableitung von tanh.</p
 ></li
 ><li
 ><p
->die Summe nach dem Gewicht: <math
+>Wie stark ändert sich die Summe, wenn sich <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+>
+        ändert? <math
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
 ><mi
 >x</mi
 ></math
->, die Eingabe, die das Gewicht multipliziert.</p
+>, denn <math
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></math
+> wird mit <math
+><mi
+>x</mi
+></math
+> multipliziert.</p
 ></li
 ></ul
 ><p
 >Die <em
 >Kettenregel</em
-> sagt: Die Steigung der ganzen
-      Kette ist das Produkt der Steigungen ihrer Glieder.</p
+> sagt: Die Ableitung der ganzen
+      Kette ist das Produkt der Ableitungen ihrer Glieder.</p
 ><div
 class="equation"
 ><math
@@ -1125,6 +1286,70 @@ rspace="0"
 >∂</mo
 ><mi
 >L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+></mrow
+></mfrac
+><mo
+>=</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+></mfrac
+><mo
+>·</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>a</mi
+></mrow
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
+></mrow
+></mfrac
+><mo
+>·</mo
+><mfrac
+><mrow
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>z</mi
 ></mrow
 ><mrow
 ><mo
@@ -1192,8 +1417,8 @@ stretchy="false"
 >y</mi
 ></math
 >, für den Bias 1. Über alle Punkte
-      zusammengezählt und durch ihre Anzahl geteilt, sind diese Ableitungen
-      der <em
+      zusammengezählt und durch ihre Anzahl geteilt, sind diese partiellen
+      Ableitungen der <em
 >Gradient</em
 >: die Richtung, in der der Fehler am
       schnellsten steigt. Ein Schritt des
@@ -1371,7 +1596,7 @@ href="#field-features"
 >Bessere Eingaben</a
 ></h2
 ><p
->Ein Neuron teilt die Ebene durch eine Gerade. Manche Anordnungen
+>Unser Neuron teilt die Ebene durch eine Gerade. Manche Anordnungen
       von Punkten kann man aber nicht durch eine Gerade teilen,
       beispielsweise eine Scheibe oranger Punkte in einem Ring blauer: Jede
       Gerade hat dann Orange und Blau auf beiden Seiten.</p
@@ -1684,26 +1909,13 @@ href="#field-hidden"
 >Verborgene Schichten</a
 ></h2
 ><p
->Für eine Scheibe sind die richtigen Eingaben leicht zu erraten.
-      Für die meisten Daten sind sie es nicht. Hier kommt die Idee, die
-      neuronale Netze stark macht: Wir lassen Neuronen die Eingaben
-      berechnen.</p
+>Für eine Scheibe sind die richtigen Eingaben leicht zu erraten,
+      für die meisten Daten nicht. Deshalb überlassen wir es Neuronen, die
+      Eingaben zu berechnen. Erst diese Idee macht neuronale Netze
+      stark.</p
 ><p
->Nehmen wir mehrere Neuronen nebeneinander. Jedes bekommt <math
-><mi
->x</mi
-></math
-> und
-      <math
-><mi
->y</mi
-></math
->, jedes hat eigene Gewichte und einen eigenen Bias und zieht damit
-      seine eigene Gerade; seine Antwort sagt, auf welcher Seite davon ein
-      Punkt liegt. Dahinter setzen wir ein weiteres Neuron, die
-      <em
->Ausgabe</em
->. Es bekommt nicht <math
+>Nehmen wir statt eines Neurons mehrere. Jedes von ihnen bekommt
+      dieselben Eingaben <math
 ><mi
 >x</mi
 ></math
@@ -1711,13 +1923,40 @@ href="#field-hidden"
 ><mi
 >y</mi
 ></math
->, sondern
-      die Antworten der Neuronen davor. Die Neuronen dazwischen bilden eine
-      <em
+>, hat aber eigene Gewichte und einen
+      eigenen Bias und zieht damit seine eigene Gerade; seine Antwort sagt,
+      auf welcher Seite davon ein Punkt liegt. Neuronen, die so dieselben
+      Eingaben lesen, bilden eine <em
+>Schicht</em
+>. Jetzt bilden
+      wir eine weitere Schicht. Sie bekommt nicht <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
+>, sondern die
+      Antworten der Neuronen der ersten Schicht, und besteht hier aus einem
+      einzigen Neuron, der <em
+>Ausgabe</em
+>. Die Rechnung läuft
+      also in zwei Stufen: Aus <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
+> berechnet die erste Schicht ihre
+      Antworten, aus diesen Antworten berechnet die Ausgabe ihre. Von außen
+      sieht man nur die Eingaben und die Ausgabe; die Schicht dazwischen
+      heißt deshalb <em
 >verborgene Schicht</em
->: Von außen sieht man nur die
-      Eingaben und die Ausgabe, ihre Antworten sind
-      Zwischenergebnisse.</p
+>, ihre Antworten
+      sind Zwischenergebnisse.</p
 ><p
 >Am besten sieht man das an den Daten, die XOR heißen: orange oben
       rechts und unten links, blau in den beiden anderen Ecken. Keine
@@ -1886,6 +2125,179 @@ src="fig/xor-out.png"
 alt="Die Ebene mit den XOR-Punkten: orange in den Ecken oben rechts und unten links, dazwischen ein blaues Band; jeder Punkt liegt auf der Seite seiner Farbe."
 loading="lazy"></div
 ><p
+>Wie die Ausgabe das schafft, sieht man, wenn man jeden Punkt
+      dorthin setzt, wohin ihn die verborgene Schicht bringt. Die Ausgabe
+      ist ein Neuron wie unser erstes, nur heißen ihre Eingaben <math
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+></math
+> und
+      <math
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+></math
+> statt <math
+><mi
+>x</mi
+></math
+> und <math
+><mi
+>y</mi
+></math
+>. Sie sieht also nicht die Ebene der Punkte,
+      sondern eine neue Ebene mit den Achsen <math
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+></math
+> und <math
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+></math
+>, und darin hat
+      jeder Punkt den Ort <math
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+><mo
+>,</mo
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+><mo
+stretchy="false"
+>)</mo
+></math
+>: Die drei orangen Punkte oben rechts
+      landen bei <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>+</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+>, die drei unten links bei <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>+</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+> und alle
+      sechs blauen bei <math
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>−</mo
+><mn
+>1</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></math
+>. In dieser Ebene trennt eine einzige
+      Gerade die beiden Sorten, und genau diese Gerade zieht die
+      Ausgabe:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mi
+>h</mi
+><mn
+>1</mn
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>h</mi
+><mn
+>2</mn
+></msub
+><mo
+>+</mo
+><mn
+>1</mn
+><mo
+>=</mo
+><mn
+>0</mn
+></math
+></div
+><img
+src="fig/xor-space.png"
+alt="Die Ebene der Antworten h1 und h2: ein oranger Punkt bei (+1, −1), einer bei (−1, +1), ein blauer bei (−1, −1); die Gerade h1 + h2 + 1 = 0 trennt den blauen unten links von den orangen."
+loading="lazy"></div
+><p
 >Die Ausgabe verknüpft die beiden Geraden zu einem
       <q
 >oder</q
@@ -1911,7 +2323,7 @@ href="../play/model/#model=hidden&#38;lang=de"
         zeigt der nächste Abschnitt.</p
 ></aside
 ><p
->Dabei kommt es auf die Aktivierung an. Gäbe jedes Neuron einfach
+>Dabei kommt es auf die Aktivierungsfunktion an. Gäbe jedes Neuron einfach
       seine gewichtete Summe weiter, dann würde die Ausgabe Summen von
       Summen addieren, und das ist wieder nur eine gewichtete Summe von <math
 ><mi
@@ -1922,7 +2334,7 @@ href="../play/model/#model=hidden&#38;lang=de"
 ><mi
 >y</mi
 ></math
->, also wieder nur eine Gerade. Erst die Aktivierung, die die
+>, also wieder nur eine Gerade. Erst die Aktivierungsfunktion, die die
       Summe jedes Neurons verbiegt, lässt die Schichten mehr können als ein
       einzelnes Neuron. In unserem Beispiel von Hand ist das das Vorzeichen,
       im Netz aus dem Kasten oben der Tangens hyperbolicus.</p
@@ -2310,7 +2722,7 @@ class="filename"
 >, für WebAssembly gebaut. Es sind die
       Programme dieses Kapitels, erwachsen geworden: bis zu sechs
       verborgene Schichten mit bis zu acht Neuronen, sieben Eingaben zur
-      Wahl, vier Aktivierungen, Regularisierung, und die Rückwärtsrechnung
+      Wahl, vier Aktivierungsfunktionen, Regularisierung, und die Rückwärtsrechnung
       wie im letzten Abschnitt, nur in Schleifen über die Schichten statt
       ausgeschrieben. Alles, was die Seite zeigt, hält es in einem Vektor
       von Zahlen in seinem Speicher, den die Seite direkt liest, ohne

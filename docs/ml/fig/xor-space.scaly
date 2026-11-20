@@ -1,0 +1,114 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; the XOR points once more, but each drawn where the hidden layer of
+; "Hidden layers" puts it, at h1 = sgn(x + y - 3) across and
+; h2 = sgn(-x - y - 3) up, both from -1.6 to 1.6. The three orange points
+; at the upper right land at (+1, -1), the three at the lower left at
+; (-1, +1), all six blue ones at (-1, -1). There the output's
+; z = h1 + h2 + 1 is a straight line, orange above it and blue below, and
+; it parts the kinds. The thin lines are the axes h1 = 0 and h2 = 0. Each
+; point of the picture is computed, the rounds of the `for` on all cores;
+; the picture goes to picture.<size>x<size>.rgba, four bytes a point.
+define SIZE int 480
+define WIDE f64 1.6            ; h1 and h2 run from -WIDE to WIDE
+
+; XOR: orange at the upper right and the lower left, blue at the other two
+; corners, three points each (the same as xor-out's).
+function point_x(k: int) returns f64
+{
+    let x if k % 3 = 0: 3.0 else if k % 3 = 1: 2.0 else 4.0
+    if k / 3 = 1 or k / 3 = 3: 0.0 - x else x
+}
+
+function point_y(k: int) returns f64
+{
+    let y if k % 3 = 0: 3.0 else if k % 3 = 1: 4.0 else 2.0
+    if k / 3 = 1 or k / 3 = 2: 0.0 - y else y
+}
+
+function kind(k: int) returns f64
+{
+    if k / 3 < 2: 1.0 else 0.0 - 1.0
+}
+
+function sign(z: f64) returns f64
+{
+    if z > 0.0: 1.0 else 0.0 - 1.0
+}
+
+; where the hidden layer puts point k
+function h1_of(k: int) returns f64
+{
+    sign(point_x(k) + point_y(k) - 3.0)
+}
+
+function h2_of(k: int) returns f64
+{
+    sign(0.0 - point_x(k) - point_y(k) - 3.0)
+}
+
+define Colour(r: f64, g: f64, b: f64)
+
+; The part `t` of the way from colour a to colour b.
+function mix(a: Colour, b: Colour, t: f64) returns Colour
+{
+    Colour(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+}
+
+; How much of a point is covered by a disc of radius `edge` whose middle is
+; `d` away: 1 inside, 0 outside, smooth across one point.
+function cover(d: f64, edge: f64) returns f64
+{
+    let c edge + 0.5 - d
+    if c < 0.0: 0.0 else if c > 1.0: 1.0 else c
+}
+
+; where a value of h1 or h2 lies across or up the picture, in points
+function across(h: f64) returns f64
+{
+    (h + WIDE) / (2.0 * WIDE) * (SIZE as f64)
+}
+
+function pixel(p: int) returns u32
+{
+    let px (p % SIZE) as f64 + 0.5
+    let py (p / SIZE) as f64 + 0.5
+    let h1 px / (SIZE as f64) * 2.0 * WIDE - WIDE
+    let h2 ((SIZE as f64) - py) / (SIZE as f64) * 2.0 * WIDE - WIDE
+    ; the output's guess, between +1 and -1 across one point where z = 0 runs
+    let z h1 + h2 + 1.0
+    let slope 1.4142135623730951 * 2.0 * WIDE / (SIZE as f64)
+    var v z / slope
+    if v > 1.0
+        v := 1.0
+    if v < 0.0 - 1.0
+        v := 0.0 - 1.0
+    let orange Colour(232.0, 133.0, 61.0)
+    let blue Colour(59.0, 125.0, 216.0)
+    let pale Colour(243.0, 243.0, 241.0)
+    var c mix(pale, if v > 0.0: orange else blue, (if v < 0.0: 0.0 - v else v) * 0.85)
+    ; the axes
+    let ink Colour(110.0, 110.0, 116.0)
+    c := mix(c, ink, 0.5 * cover((px - across(0.0)).abs(), 1.0))
+    c := mix(c, ink, 0.5 * cover((py - ((SIZE as f64) - across(0.0))).abs(), 1.0))
+    var k 0
+    while k < 12
+    {
+        let dx px - across(h1_of(k))
+        let dy py - ((SIZE as f64) - across(h2_of(k)))
+        let d (dx * dx + dy * dy).sqrt()
+        c := mix(c, Colour(0.0, 0.0, 0.0), 0.35 * cover(d, 21.0))
+        c := mix(c, Colour(255.0, 255.0, 255.0), cover(d, 19.0))
+        c := mix(c, if kind(k) > 0.0: orange else blue, cover(d, 15.0))
+        k := k + 1
+    }
+    let r c.r.round_even() as u32
+    let g c.g.round_even() as u32
+    let b c.b.round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+var picture Vector[u32]((SIZE * SIZE) as size_t)
+for p in SIZE * SIZE
+    picture.put(p as size_t, pixel(p))
+if File.write_bytes("picture.`SIZE`x`SIZE`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"
