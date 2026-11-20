@@ -61,6 +61,8 @@
   #learn .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   #learn .readout { display: flex; gap: 18px; flex-wrap: wrap; align-items: baseline; font-size: 14px; color: var(--muted); }
   #learn .ended { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+  #learn .readout .tempo { display: inline-flex; gap: 8px; align-items: center; }
+  #learn .readout .tempo input { width: 110px; }
   #learn .readout b { color: var(--ink); font: 600 16px ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
   button { font: inherit; font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
            border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
@@ -107,6 +109,7 @@
         <span id="stepsValue"></span>
         <label><span data-t="rate">Learning rate</span> <select id="rate">
           <option>0.01</option><option selected>0.1</option><option>0.3</option><option>1</option></select></label>
+        <label class="tempo"><span data-t="tempo">Speed</span> <input type="range" id="tempo" min="1" max="5" step="1" value="3"></label>
       </div>
       <p class="ended" id="ended" hidden></p>
     </div>
@@ -141,7 +144,7 @@ const TEXT = {
         sayHidden: 'Three hidden neurons, each with a line of its own (the small pictures show their answers h₁, h₂ and h₃), and an output neuron that reads them. The large picture is the network’s answer a; a ring marks each point it guesses wrong. How it finds its numbers is backpropagation, the procedure network_step in the program below.',
         saySquares: 'The neuron is given x² and y² instead of x and y and answers a = tanh(w₁x² + w₂y² + b): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
         learns: 'A neuron learns', stepOnce: 'One step', learnIt: 'Learn', pause: 'Pause', reset: 'Start again',
-        loss: 'Loss', rate: 'Learning rate', steps: n => `${n.toLocaleString('en')} steps`,
+        loss: 'Loss', rate: 'Learning rate', tempo: 'Speed', steps: n => `${n.toLocaleString('en')} steps`,
         goal: 'Done: the loss is below 0.02.',
         still: 'Stopped: the loss has hardly fallen over the last hundred steps (by less than 0.0001).',
         sayLearn: 'The neuron answers a = tanh(z): orange where it says +1, blue where it says −1, pale where it is unsure. Each step of gradient descent moves w₁, w₂ and b a little towards a smaller loss over the points; a ring marks each point it still guesses wrong.',
@@ -159,7 +162,7 @@ const TEXT = {
         sayHidden: 'Drei verborgene Neuronen, jedes mit einer eigenen Geraden (die kleinen Bilder zeigen ihre Antworten h₁, h₂ und h₃), und ein Ausgabeneuron, das sie liest. Das große Bild ist die Antwort a des Netzes; ein Ring markiert jeden Punkt, bei dem es falsch rät. Wie es seine Zahlen findet, ist die Rückwärtsrechnung, die Prozedur network_step im Programm unten.',
         saySquares: 'Das Neuron bekommt x² und y² statt x und y und antwortet a = tanh(w₁x² + w₂y² + b): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
         learns: 'Ein Neuron lernt', stepOnce: 'Ein Schritt', learnIt: 'Lernen', pause: 'Pause', reset: 'Neu beginnen',
-        loss: 'Fehler', rate: 'Lernrate', steps: n => `${n.toLocaleString('de')} Schritte`,
+        loss: 'Fehler', rate: 'Lernrate', tempo: 'Tempo', steps: n => `${n.toLocaleString('de')} Schritte`,
         goal: 'Fertig: Der Fehler liegt unter 0,02.',
         still: 'Angehalten: Der Fehler ist in den letzten hundert Schritten kaum noch gesunken (um weniger als 0,0001).',
         sayLearn: 'Das Neuron antwortet a = tanh(z): orange, wo es +1 sagt, blau, wo es −1 sagt, blass, wo es unsicher ist. Jeder Schritt des Gradientenabstiegs bewegt w₁, w₂ und b ein wenig in Richtung eines kleineren Fehlers über den Punkten; ein Ring markiert jeden Punkt, bei dem es noch falsch rät.',
@@ -283,6 +286,13 @@ for (const q of model.params) {
 }
 $('learn').hidden = !model.learning;
 if (model.rate) $('rate').value = String(model.rate);
+// the tempo: how long the program pauses after each learning step, so that
+// one can watch it learn; 3 is the default, 5 no pause at all
+const PAUSES = [200, 100, 40, 10, 0];
+{
+  const v = Number(asked.get('tempo'));
+  if (asked.has('tempo') && Number.isInteger(v) && v >= 1 && v <= 5) $('tempo').value = String(v);
+}
 const values = () => model.params.map(q => Number(q.input.value));
 // model 4's start (model.scaly, begin_network), until the program says what it has learned
 const NET_START = [0.5, -0.4, 0, 0.3, 0.8, 0, -0.7, 0.2, 0, 0.3, 0.1, -0.1, 0];
@@ -361,6 +371,7 @@ function learning() {
   if (!board) return;
   board[5] = running && !document.hidden ? 1 : 0;
   board[7] = Number($('rate').value);
+  board[10] = PAUSES[Number($('tempo').value) - 1];
 }
 $('run').onclick = () => {
   running = !running;
@@ -379,6 +390,7 @@ $('reset').onclick = () => {
   showValues();
 };
 $('rate').onchange = learning;
+$('tempo').oninput = learning;
 document.addEventListener('visibilitychange', learning);
 
 // a value between -1 and 1 as the field's colour (web/field)

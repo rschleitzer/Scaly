@@ -30,6 +30,8 @@
 ;    7  the learning rate
 ;    8  a counter the page raises after it wrote the points
 ;    9  how many points there are, at most MAXP
+;   10  how long to pause after each learning step, in milliseconds (the
+;       page's tempo: learning slow enough to watch)
 ;
 ; and what the program writes:
 ;
@@ -491,5 +493,5 @@ repeat
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }
-    Scheduler.sleep(if go: 40 else 10)
+    Scheduler.sleep(if go: board[10] as i64 else 10)
 }
