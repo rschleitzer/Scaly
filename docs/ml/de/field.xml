@@ -360,8 +360,10 @@
         kleinen Gewichten, die nur die Hälfte der Punkte richtig raten. Drück
         „Lernen“: Nach gut hundert Schritten stimmen alle zwölf. Die kleinen
         Bilder zeigen, welche Gerade jedes verborgene Neuron gefunden hat; die
-        Ausgabe verbindet sie. Wie das Netz seine dreizehn Zahlen findet,
-        zeigt der nächste Abschnitt.</para>
+        Ausgabe verbindet sie. Weiter unten auf der Seite steht das Netz in
+        Schichten übereinander, mit den Gewichten als Linien; zieh mit der
+        Maus daran, um es zu drehen. Wie das Netz seine dreizehn Zahlen
+        findet, zeigt der nächste Abschnitt.</para>
     </sidebar>
     <para>Dabei kommt es auf die Aktivierungsfunktion an. Gäbe jedes Neuron einfach
       seine gewichtete Summe weiter, dann würde die Ausgabe Summen von

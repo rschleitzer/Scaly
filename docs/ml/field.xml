@@ -343,7 +343,9 @@
         small weights that guess only half of the points right. Press
         “Learn”: after a good hundred steps all twelve are right. The small
         pictures show which line each hidden neuron has found; the output
-        joins them. How the network finds its thirteen numbers is the next
+        joins them. Further down the page the network stands in layers, one
+        above the other, with the weights as lines; drag it with the mouse
+        to turn it. How the network finds its thirteen numbers is the next
         section’s subject.</para>
     </sidebar>
     <para>The activation function matters here. If each neuron simply passed on its
