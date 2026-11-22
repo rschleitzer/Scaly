@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="498" height="644" viewBox="0 0 498 644">
+<style>@font-face { font-family: "Latin Modern Math"; src: url("../fonts/latinmodern-math.otf"); }</style>
+<rect x="0" y="0" width="498" height="644" fill="white"/>
+<rect x="52" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="52" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="52" y="352" width="60" height="60" fill="#efc3a3" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="352" width="60" height="60" fill="#efc3a3" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="52" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="52" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="52" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="112" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="52" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="52" width="60" height="60" fill="#efc3a3" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="52" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="52" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="112" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="112" width="60" height="60" fill="#efc3a3" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="112" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="112" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="232" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="292" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="352" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="352" width="60" height="60" fill="#e8853d" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="352" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="352" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="412" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="472" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="232" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="292" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="352" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<rect x="412" y="532" width="60" height="60" fill="#f3f3f1" stroke="#9a9aa0" stroke-width="1"/>
+<text x="112" y="218" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="44">&#119883;</text>
+<text x="199" y="126" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="44">&#119882;</text>
+<text x="352" y="636" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="44">&#119885;</text>
+<text x="82" y="391" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="36">&#119909;<tspan font-size="25" dy="9">&#119894;&#119896;</tspan></text>
+<text x="322" y="91" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="36">&#119908;<tspan font-size="25" dy="9">&#119896;&#119895;</tspan></text>
+<text x="322" y="391" text-anchor="middle" fill="#1d1d1f" font-family="Latin Modern Math, STIX Two Math, Cambria Math, serif" font-size="36">&#119911;<tspan font-size="25" dy="9">&#119894;&#119895;</tspan></text>
+</svg>

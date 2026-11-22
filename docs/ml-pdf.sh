@@ -11,6 +11,7 @@ export SP_ENCODING=utf-8
 
 DAZZLE="${DAZZLE:-../scalyc/build/dazzle}"
 [ -x "$DAZZLE" ] || { echo "ml-pdf.sh: no engine at $DAZZLE -- run ./mkp with the dazzle checkout beside this one"; exit 1; }
+DAZZLE="$(cd "$(dirname "$DAZZLE")" && pwd)/$(basename "$DAZZLE")"
 [ -d website/ml/fig ] || { echo "ml-pdf.sh: no pictures in website/ml/fig -- run ml.sh first"; exit 1; }
 HERE="$(pwd)"
 FONTS="$HERE/book/fonts"
@@ -20,5 +21,5 @@ done
 export DAZZLE_FONTS="$FONTS"
 cd website/ml || exit 1
 for book in scaly-ml scaly-ml.de; do
-  "$HERE/$DAZZLE" -t pdf -o "$book.pdf" -d "$HERE/dsssl/scaly-ml-print.dsl" "$HERE/$book.xml" || exit 1
+  "$DAZZLE" -t pdf -o "$book.pdf" -d "$HERE/dsssl/scaly-ml-print.dsl" "$HERE/$book.xml" || exit 1
 done

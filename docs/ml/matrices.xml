@@ -16,15 +16,15 @@
       <emphasis>matrix</emphasis> <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation>. The layer's weights we
       write as a matrix <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> too, a column for each neuron, so 2
       rows and 4 columns.</para>
-    <para>The sum of neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> for point <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> is then
-      row <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> with column <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> of
+    <para>The sum of neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> for point <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> is then
+      row <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> with column <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> of
       <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, multiplied number by number and added up, plus the
       neuron's bias:</para>
     <informalfigure role="beside">
-      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
+      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
       <mediaobject>
         <alt>Three blocks of cells: on the left X, a row for each point and two columns, on top W with two rows and a column for each neuron, below it Z. One row of X and one column of W are orange, and where they cross in Z the one number they make together is strong orange.</alt>
-        <imageobject><imagedata fileref="fig/matmul.png"/></imageobject>
+        <imageobject><imagedata fileref="fig/matmul.svg"/></imageobject>
       </mediaobject>
     </informalfigure>
     <para>All these sums together are a matrix again, <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation>, a

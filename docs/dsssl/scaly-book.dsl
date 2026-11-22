@@ -553,7 +553,8 @@ window.SEARCH_INDEX = [
 ;; a formula with a picture beside it (informalfigure role="beside"), a
 ;; picture of its own (an informalfigure without a role), and a picture: a
 ;; mediaobject's image (docs/figures.py draws the book's, into fig/ beside
-;; the pages), its alt the text of the mediaobject's alt
+;; the pages), its alt the text of the mediaobject's alt; a drawing (.svg)
+;; as an object
 (element informalfigure
   (let ((image (select-elements (descendants (current-node)) "imagedata")))
     (if (equal? (attribute-string "role") "beside")
@@ -568,14 +569,23 @@ window.SEARCH_INDEX = [
                 (process-children)))))))
 
 (element mediaobject
-  (let ((image (select-elements (descendants (current-node)) "imagedata"))
-        (alt (select-elements (children (current-node)) "alt")))
-    (if (node-list-empty? image)
-        (empty-sosofo)
-        (make empty-element gi: "img"
-              attributes: (list (list "src" (attribute-string "fileref" (node-list-first image)))
-                                (list "alt" (if (node-list-empty? alt) "" (data alt)))
-                                (list "loading" "lazy"))))))
+  (let* ((image (select-elements (descendants (current-node)) "imagedata"))
+         (alt (select-elements (children (current-node)) "alt"))
+         (text (if (node-list-empty? alt) "" (data alt)))
+         (ref (if (node-list-empty? image) "" (attribute-string "fileref" (node-list-first image))))
+         (n (string-length ref)))
+    (cond ((node-list-empty? image) (empty-sosofo))
+          ;; a drawing (SVG): an object, not an img -- only an object may
+          ;; load the formula font its letters ask for (fonts/ beside the
+          ;; pages); its alt is its content and its label
+          ((and (> n 4) (equal? (substring ref (- n 4) n) ".svg"))
+           (make element gi: "object"
+                 attributes: (list (list "type" "image/svg+xml") (list "data" ref)
+                                   (list "role" "img") (list "aria-label" text))
+             (literal text)))
+          (else
+           (make empty-element gi: "img"
+                 attributes: (list (list "src" ref) (list "alt" text) (list "loading" "lazy")))))))
 
 ;; a formula on a line of its own, and its text
 (element informalequation

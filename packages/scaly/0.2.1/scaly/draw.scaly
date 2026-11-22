@@ -15,6 +15,8 @@
 ;   sheet.circle(200, 150, 80, "gold")
 ;   sheet.line(0, 300, 400, 0, "white")
 ;   sheet.text(20, 40, "Hello", "white")
+;   sheet.box(20, 200, 60, 40, "white", "gray")
+;   sheet.math(50, 225, "x", "ij", 20, "black")
 ;   sheet.show()
 ;
 ;   var chart Chart("Squares")
@@ -24,6 +26,45 @@
 ;
 ; A colour is anything SVG understands: a name ("red", "gold"), "#2a5db0",
 ; "rgb(255, 128, 0)". Coordinates and sizes are whole numbers of points.
+; `math` writes a symbol as a formula sets it, a letter in the mathematical
+; italic of a formula font with its index below the line (x with "ij" is
+; x sub ij): the letters as character references (the mathematical
+; italic lies beyond the basic plane), the file stays ASCII.
+
+; A letter of a formula as an SVG character reference: a Latin letter in
+; its mathematical italic (U+1D434 on; the italic h is Planck's constant,
+; U+210E, whose place the block leaves empty), any other character as it is.
+function math_letter(c: char) returns String
+{
+    let n c as u32
+    if n = 0x68
+        return String("&#x210E;")
+    var code: u32 0
+    if n >= 0x61 and n <= 0x7A
+        code := 0x1D44E + n - 0x61
+    else if n >= 0x41 and n <= 0x5A
+        code := 0x1D434 + n - 0x41
+    if code = 0
+    {
+        var one StringBuilder()
+        one.append(c)
+        return svg_text(one.to_string())
+    }
+    "&#`code as int`;"
+}
+
+; the letters of a formula's text, each as math_letter writes it
+function math_text(text: String) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < text.get_length()
+    {
+        sb.append(math_letter(text.get(i) as char))
+        i := i + 1
+    }
+    sb.to_string()
+}
 
 ; how many drawings this thread has shown: the number in the next file's name
 mutable drawings_shown: int 0
@@ -85,6 +126,21 @@ define Drawing
     ; a filled rectangle, its top left corner at (x, y)
     procedure rect(mutable this, x: int, y: int, width: int, height: int, colour: String)
         this.parts.append "<rect x=\"`x`\" y=\"`y`\" width=\"`width`\" height=\"`height`\" fill=\"`svg_text(colour)`\"/>\n"
+
+    ; a filled rectangle with a border one point wide
+    procedure box(mutable this, x: int, y: int, width: int, height: int, colour: String, border: String)
+        this.parts.append "<rect x=\"`x`\" y=\"`y`\" width=\"`width`\" height=\"`height`\" fill=\"`svg_text(colour)`\" stroke=\"`svg_text(border)`\" stroke-width=\"1\"/>\n"
+
+    ; a symbol of a formula centred on (x, y), its baseline at y: `symbol`
+    ; in mathematical italic, `index` (none where empty) smaller below the
+    ; line, as a formula's font sets them
+    procedure math(mutable this, x: int, y: int, symbol: String, index: String, size: int, colour: String)
+    {
+        this.parts.append "<text x=\"`x`\" y=\"`y`\" text-anchor=\"middle\" fill=\"`svg_text(colour)`\" font-family=\"Latin Modern Math, STIX Two Math, Cambria Math, serif\" font-size=\"`size`\">`math_text(symbol)`"
+        if index.get_length() > 0
+            this.parts.append "<tspan font-size=\"`size * 7 / 10`\" dy=\"`size / 4`\">`math_text(index)`</tspan>"
+        this.parts.append "</text>\n"
+    }
 
     ; words, their line beginning at (x, y)
     procedure text(mutable this, x: int, y: int, words: String, colour: String)

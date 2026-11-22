@@ -58,7 +58,7 @@ rm -rf "$FIG"
 # every picture the books show has its program (docs/ml/fig) or is a picture
 # of a page (docs/ml/shot)
 for ref in $(grep -ho 'fileref="fig/[^"]*"' docs/ml/field.xml docs/ml/de/field.xml | sed 's/fileref="fig\/\(.*\)"/\1/' | sort -u); do
-  [ -f "docs/ml/fig/${ref%.png}.scaly" ] || [ -f "docs/ml/shot/$ref" ] || { echo "mlbook: no source for fig/$ref"; rc=1; }
+  [ -f "docs/ml/fig/${ref%.*}.scaly" ] || [ -f "docs/ml/shot/$ref" ] || { echo "mlbook: no source for fig/$ref"; rc=1; }
 done
 # the programs beside the book (docs/ml/prog/), each against what it says it
 # matches: circle.scaly, the circle learned with matrices, prints what the

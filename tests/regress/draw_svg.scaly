@@ -28,6 +28,22 @@ procedure main() returns int
     if has(svg, String(">a&lt;b &amp; &quot;c&quot;</text>")) = false
         return 4
 
+    ; a box: filled and framed; a symbol of a formula: x with the index ik
+    ; in mathematical italic, as character references (U+1D465, U+1D456,
+    ; U+1D458), the index smaller below the line; h is Planck's U+210E; a
+    ; character that is no Latin letter stays as it is
+    var formula Drawing(60, 40)
+    formula.box(1, 2, 30, 20, "#efc3a3", "gray")
+    formula.math(30, 30, "x", "ik", 20, "black")
+    formula.math(10, 10, "h", "1", 10, "black")
+    let f formula.svg()
+    if has(f, String("<rect x=\"1\" y=\"2\" width=\"30\" height=\"20\" fill=\"#efc3a3\" stroke=\"gray\" stroke-width=\"1\"/>")) = false
+        return 11
+    if has(f, String("text-anchor=\"middle\"")) = false or has(f, String("font-size=\"20\">&#119909;<tspan font-size=\"14\" dy=\"5\">&#119894;&#119896;</tspan></text>")) = false
+        return 12
+    if has(f, String(">&#x210E;<tspan font-size=\"7\" dy=\"2\">1</tspan></text>")) = false
+        return 13
+
     var chart Chart("Squares")
     for i in 5
         chart.add(i * i)

@@ -144,8 +144,8 @@
                 display?: #t
                 display-alignment: 'center
                 entity-system-id: (attribute-string "fileref" (node-list-first image))
-                max-width: 4.5cm
-                max-height: 4.5cm
+                max-width: 5.5cm
+                max-height: 7cm
                 scale: 'max-uniform))))
       (make display-group
         space-before: %block-sep%
@@ -273,7 +273,18 @@
     ((equal? name "mtext")
      (make unmath (process-children)))
     ((equal? name "mspace")
-     (make character char: #\U-2009 math-class: 'space))
+     ;; a width in whole em: that many em spaces, else a thin space
+     (let* ((w (attribute-string "width"))
+            (n (if (and w (> (string-length w) 2)
+                        (equal? (substring w (- (string-length w) 2) (string-length w)) "em"))
+                   (string->number (substring w 0 (- (string-length w) 2)))
+                   #f)))
+       (if (and n (>= n 1))
+           (let loop ((k n) (out (empty-sosofo)))
+             (if (< k 1)
+                 out
+                 (loop (- k 1) (sosofo-append out (make character char: #\U-2003 math-class: 'space)))))
+           (make character char: #\U-2009 math-class: 'space))))
     ((equal? name "mfrac")
      (make fraction
        (make math-sequence label: 'numerator

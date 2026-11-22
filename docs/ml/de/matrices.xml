@@ -16,15 +16,15 @@
       <emphasis>Matrix</emphasis> <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation>. Die Gewichte der Schicht
       schreiben wir ebenso als Matrix <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, eine Spalte je
       Neuron, also 2 Zeilen und 4 Spalten.</para>
-    <para>Die Summe von Neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> für Punkt <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> ist
-      dann Zeile <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> mit Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> von
+    <para>Die Summe von Neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> für Punkt <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> ist
+      dann Zeile <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> mit Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> von
       <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, Zahl für Zahl multipliziert und zusammengezählt, dazu
       der Bias des Neurons:</para>
     <informalfigure role="beside">
-      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
+      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
       <mediaobject>
         <alt>Drei Blöcke von Zellen: links X, eine Zeile je Punkt und zwei Spalten, oben W mit zwei Zeilen und einer Spalte je Neuron, darunter Z. Eine Zeile von X und eine Spalte von W sind orange, und wo sie sich in Z kreuzen, ist die eine Zahl, die sie zusammen ergeben, kräftig orange.</alt>
-        <imageobject><imagedata fileref="fig/matmul.png"/></imageobject>
+        <imageobject><imagedata fileref="fig/matmul.svg"/></imageobject>
       </mediaobject>
     </informalfigure>
     <para>Alle diese Summen zusammen sind wieder eine Matrix
