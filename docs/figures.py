@@ -21,15 +21,22 @@ import zlib
 
 
 def png(width, height, rgba):
+    # a picture whose every point is opaque is written without its opacity
+    # (colour type 2, not 6): smaller, and a PDF takes it as it is, where it
+    # would have to unpack one with an alpha channel (docs/ml-pdf.sh)
+    opaque = all(rgba[i] == 255 for i in range(3, len(rgba), 4))
+    channels = 3 if opaque else 4
+    if opaque:
+        rgba = bytes(b for i, b in enumerate(rgba) if i % 4 != 3)
     # each row filtered by "up" (2) or "sub" (1), whichever leaves smaller
     # numbers, then deflated
-    stride = width * 4
+    stride = width * channels
     rows = bytearray()
     above = bytes(stride)
     for y in range(height):
         row = rgba[y * stride:(y + 1) * stride]
         up = bytes((row[i] - above[i]) & 255 for i in range(stride))
-        sub = bytes((row[i] - (row[i - 4] if i >= 4 else 0)) & 255 for i in range(stride))
+        sub = bytes((row[i] - (row[i - channels] if i >= channels else 0)) & 255 for i in range(stride))
         cost = lambda r: sum(b if b < 128 else 256 - b for b in r)
         kind, data = (2, up) if cost(up) <= cost(sub) else (1, sub)
         rows.append(kind)
@@ -38,7 +45,7 @@ def png(width, height, rgba):
 
     def chunk(kind, data):
         return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6 if channels == 4 else 2, 0, 0, 0))
             + chunk(b'IDAT', zlib.compress(bytes(rows), 9)) + chunk(b'IEND', b''))
 
 

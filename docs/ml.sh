@@ -7,7 +7,8 @@
 # theme.js and words.js as html.sh puts them, and fonts/ with the formulas'
 # font. Then figures.py runs the pictures' programs (ml/fig/) and puts their
 # pictures into fig/ as PNG, beside them the pictures of pages (ml/shot/,
-# taken of web/field in a browser), and runnable.py gives the listings that run their Run button
+# taken of web/field in a browser), runnable.py gives the listings that run their Run button,
+# and ml-pdf.sh sets the book as PDF, scaly-ml.pdf and scaly-ml.de.pdf
 # (SCALY, default scalyc/build/scaly).
 cd "$(dirname "$0")" || exit 1
 export SP_ENCODING=utf-8
@@ -29,3 +30,5 @@ SCALY="${SCALY:-../scalyc/build/scaly}"
 python3 figures.py "$OUT" "$SCALY" ml/fig/*.scaly || exit 1
 cp ml/shot/*.png "$OUT/fig/" || exit 1
 python3 runnable.py "$OUT" "$SCALY" || exit 1
+# and the book as PDF beside the pages (ml-pdf.sh)
+./ml-pdf.sh || exit 1

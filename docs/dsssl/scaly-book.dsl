@@ -21,8 +21,8 @@
 ;;
 ;; The same sheet sets a companion book -- one whose info holds an abstract,
 ;; as Machine Learning with Scaly (docs/scaly-ml.xml, docs/ml.sh): the
-;; abstract is its lead, its bar links to the playground, the language and
-;; its other language, and a book in another language (xml:lang="de") has its
+;; abstract is its lead, its bar links to its other language, its PDF, the
+;; playground and the language, and a book in another language (xml:lang="de") has its
 ;; words in that language and its files named with it (field.de.htm,
 ;; index.de.html, searchindex.de.js), so that both stand in one directory.
 
@@ -65,6 +65,7 @@
     ("Search (S)" . "Suchen (S)") ("Search the book" . "Im Buch suchen") ("Start reading" . "Lesen")
     ("Note" . "Hinweis") ("Try it" . "Ausprobieren") ("Show the sections" . "Abschnitte zeigen")
     ("Elsewhere" . "Anderswo") ("Chapters" . "Kapitel") ("The playground" . "Der Playground")
+    ("The PDF" . "Das PDF")
     ("The language" . "Die Sprache") ("other-language" . "English")))
 
 (define (word en)
@@ -225,6 +226,9 @@
                           (list "aria-label" label) (list "title" label))
     (icon path)))
 
+;; the PDF of a companion book, in its language (docs/ml-pdf.sh)
+(define (companion-pdf) (string-append "scaly-ml" (suffix) ".pdf"))
+
 ;; other: the same page in the book's other language, for a companion book
 (define (topbar other)
   (make element gi: "header" attributes: '(("class" "topbar"))
@@ -238,6 +242,7 @@
       (if (companion?)
           (sosofo-append
             (make element gi: "a" attributes: (list (list "href" other)) (literal (word "other-language")))
+            (make element gi: "a" attributes: (list (list "href" (companion-pdf))) (literal "PDF"))
             (make element gi: "a" attributes: '(("href" "../play/")) (literal (word "The playground")))
             (make element gi: "a" attributes: '(("href" "../lang/")) (literal (word "The language"))))
           (sosofo-append
@@ -361,7 +366,8 @@ of what a program says and what it means, down to the grammar.")))
           (make element gi: "a" attributes: (list (list "class" "button primary") (list "href" (file-of (car parts))))
             (literal (word "Start reading")))
           (if (companion?)
-              (empty-sosofo)
+              (make element gi: "a" attributes: (list (list "class" "button") (list "href" (companion-pdf)))
+                (literal (word "The PDF")))
               (sosofo-append
                 (make element gi: "a" attributes: '(("class" "button") ("href" "../play/tour.html"))
                   (literal "Take the tour in the browser"))

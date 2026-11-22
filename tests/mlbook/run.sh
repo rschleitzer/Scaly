@@ -5,8 +5,9 @@
 # German book (docs/scaly-ml.de.xml) is the English one translated: the same
 # chapters and sections, by id and in order, and in each the same programs
 # and screens, character for character, and the same formulas (parity.py);
-# every formula reaches the page as MathML a browser sets (mathml.py), and
-# every picture's program draws its picture (docs/figures.py).
+# every formula reaches the page as MathML a browser sets (mathml.py),
+# every picture's program draws its picture (docs/figures.py), and both
+# books set as PDF with their formula font (docs/ml-pdf.sh's way).
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -31,6 +32,27 @@ CHAPTERS=($(python3 "$HERE/parity.py" --chapters docs/scaly-ml.xml))
 # (docs/figures.py)
 FIG="$(mktemp -d)"
 python3 docs/figures.py "$FIG" "$("$ROOT/tools/scaly-of.sh" "$BIN")" docs/ml/fig/*.scaly || rc=1
+# the books as PDF (docs/ml-pdf.sh's way, beside those pictures): the engine
+# sets both without a word on stderr, with the formulas' font embedded
+if [ -x "$DAZZLE" ]; then
+  cp docs/ml/shot/*.png "$FIG/fig/"
+  FONTS="$ROOT/docs/book/fonts"
+  for d in /System/Library/Fonts/Supplemental /System/Library/Fonts /Library/Fonts /usr/share/fonts; do
+    [ -d "$d" ] && FONTS="$FONTS:$d"
+  done
+  for book in scaly-ml scaly-ml.de; do
+    if ! (cd "$FIG" && DAZZLE_FONTS="$FONTS" SP_ENCODING=utf-8 "$DAZZLE" -t pdf -o "$book.pdf" \
+            -d "$ROOT/docs/dsssl/scaly-ml-print.dsl" "$ROOT/docs/$book.xml" 2> "$book.err") \
+       || [ -s "$FIG/$book.err" ]; then
+      echo "mlbook: the PDF $book does not set"; head -5 "$FIG/$book.err"; rc=1
+    elif ! grep -aq "/FontFile3" "$FIG/$book.pdf"; then
+      echo "mlbook: the PDF $book has no formula font"; rc=1
+    fi
+  done
+  [ $rc -eq 0 ] && echo "pdf: both books set"
+else
+  echo "pdf: SKIPPED (no engine at $DAZZLE)"
+fi
 rm -rf "$FIG"
 # every picture the books show has its program (docs/ml/fig) or is a picture
 # of a page (docs/ml/shot)

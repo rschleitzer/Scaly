@@ -16,9 +16,11 @@
 ;; (sidebar role="tryit"), a picture beside a formula, and the formulas,
 ;; MathML: each element becomes the DSSSL math flow object it is -- mfrac a
 ;; fraction, msub and msup a script, mrow a math sequence, a pair of
-;; parentheses around an mrow a fence --, a letter of an mi its mathematical
-;; italic, and each mo carries its math class (binary, relation, opening,
-;; ...), from which the engine spaces the formula. The pictures are those of
+;; parentheses around an mrow a fence --, each mo carries its math class
+;; (binary, relation, opening, ...), and a letter alone in an mi is italic;
+;; the engine sets them (dazzle's PDF backend: spacing by class, the
+;; constants of the font's MATH table, its mathematical italic). The
+;; pictures are those of
 ;; the web pages (fig/, beside the pages), so the book is set in website/ml.
 
 ;; ----------------------------------------------------------------- the page
@@ -42,23 +44,37 @@
 (define (book-lang) (lang-fix ($lang$)))
 (define (german?) (equal? (book-lang) "de"))
 
-(define %accent% (color (color-space "ISO/IEC 10179:1996//Color-Space Family::Device RGB")
-                        (/ 42 255) (/ 93 255) (/ 176 255)))
+(define (rgb r g b)
+  (color (color-space "ISO/IEC 10179:1996//Color-Space Family::Device RGB")
+         (/ r 255) (/ g 255) (/ b 255)))
+
+;; the web pages' green (book/book.css: --accent-strong, --accent-faint)
+(define %accent% (rgb 4 120 87))
+(define %accent-faint% (rgb 236 253 245))
 
 ;; ----------------------------------------------------------------- the book
 
 ;; the abstract of the book is its lead, before the first chapter
 (element info (empty-sosofo))
 
-;; a link to a page: its text in the accent colour (the engine's PDF has
-;; links within the document only)
+;; a link to a page: its text in the accent colour, and the page's address
+;; as the link's destination, which the PDF opens (an address the book gives
+;; relative to the site's /ml/ made absolute)
+(define (absolute-address href)
+  (cond ((and (>= (string-length href) 3) (equal? (substring href 0 3) "../"))
+         (string-append "https://scaly.io/" (substring href 3 (string-length href))))
+        ((and (>= (string-length href) 4) (equal? (substring href 0 4) "http")) href)
+        (else (string-append "https://scaly.io/ml/" href))))
+
 (element link
   (let ((href (attribute-string "xlink:href"))
         (linkend (attribute-string "linkend")))
     (if href
-        (make sequence
-          color: %accent%
-          (process-children))
+        (make link
+          destination: (sgml-document-address (absolute-address href) "")
+          (make sequence
+            color: %accent%
+            (process-children)))
         (let ((target (if linkend (element-with-id linkend) (empty-node-list))))
           (if (node-list-empty? target)
               (process-children)
@@ -66,38 +82,38 @@
                 destination: (node-list-address target)
                 (process-children)))))))
 
-;; "Try it": a box with its word above, in the accent colour
+;; "Try it": its word above, in the accent colour, all of it on the faint
+;; green of the web pages' boxes
 (element sidebar
   (if (equal? (attribute-string "role") "tryit")
-      (make box
-        display?: #t
-        box-type: 'border
-        line-thickness: 0.6pt
-        color: %accent%
+      (make display-group
         space-before: %block-sep%
         space-after: %block-sep%
-        start-indent: (inherited-start-indent)
-        end-indent: (inherited-end-indent)
-        (make display-group
-          start-indent: (+ (inherited-start-indent) 8pt)
-          end-indent: (+ (inherited-end-indent) 8pt)
-          space-before: 6pt
-          space-after: 6pt
-          color: (color (color-space "ISO/IEC 10179:1996//Color-Space Family::Device RGB") 0 0 0)
-          (make paragraph
-            font-family-name: %title-font-family%
-            font-weight: 'bold
-            font-size: (* %bf-size% 0.8)
-            color: %accent%
-            space-after: 3pt
-            keep-with-next?: #t
-            (literal (if (german?) "AUSPROBIEREN" "TRY IT")))
-          (process-children)))
-      (make box
-        display?: #t
-        box-type: 'border
-        line-thickness: 0.6pt
+        start-indent: (+ (inherited-start-indent) 8pt)
+        end-indent: (+ (inherited-end-indent) 8pt)
+        background-color: %accent-faint%
+        (make paragraph
+          font-family-name: %title-font-family%
+          font-weight: 'bold
+          font-size: (* %bf-size% 0.8)
+          color: %accent%
+          space-after: 0pt
+          keep-with-next?: #t
+          background-color: %accent-faint%
+          (literal (if (german?) "AUSPROBIEREN" "TRY IT")))
+        (process-children))
+      (make display-group
+        space-before: %block-sep%
+        space-after: %block-sep%
         (process-children))))
+
+;; the paragraphs of a box on its green
+(element (sidebar para)
+  (make paragraph
+    space-before: 0pt
+    space-after: 0pt
+    background-color: (if (equal? (attribute-string "role" (parent (current-node))) "tryit") %accent-faint% #f)
+    (process-children)))
 
 ;; a picture: a mediaobject's image, as wide as it may be
 (element mediaobject
@@ -153,18 +169,6 @@
 
 (define %math-font% "Latin Modern Math")
 
-;; the mathematical italic of a Latin or Greek letter (U+1D44E on; the
-;; italic h is Planck's constant, U+210E, the block leaves its place empty);
-;; by table, as the engine, like jade, has no char->integer
-(define %upright% "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρςστυφχψω")
-(define %italic% "𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍𝛼𝛽𝛾𝛿𝜀𝜁𝜂𝜃𝜄𝜅𝜆𝜇𝜈𝜉𝜊𝜋𝜌𝜍𝜎𝜏𝜐𝜑𝜒𝜓𝜔")
-
-(define (math-italic c)
-  (let loop ((i 0))
-    (cond ((>= i (string-length %upright%)) c)
-          ((equal? (string-ref %upright% i) c) (string-ref %italic% i))
-          (else (loop (+ i 1))))))
-
 (define (mml-gi nd)
   (let ((g (gi nd)))
     (if (and g (> (string-length g) 4) (equal? (substring g 0 4) "mml:"))
@@ -200,16 +204,12 @@
 
 ;; where an mo stands in its row: alone, first, last or between
 (define (mo-form nd)
-  (let* ((up (parent nd))
-         (sibs (element-children up))
-         (n (node-list-length sibs)))
-    (cond ((<= n 1) 'infix)
-          ((node-list=? nd (node-list-first sibs)) 'prefix)
-          ((node-list=? nd (node-list-ref sibs (- n 1))) 'postfix)
+  (let ((first? (absolute-first-sibling? nd))
+        (last? (absolute-last-sibling? nd)))
+    (cond ((and first? last?) 'infix)
+          (first? 'prefix)
+          (last? 'postfix)
           (else 'infix))))
-
-(define (node-list=? a b)
-  (equal? (all-element-number a) (all-element-number b)))
 
 ;; the math class of an operator: what the engine spaces it by (the TeX
 ;; classes, which the DSSSL standard names)
@@ -226,10 +226,13 @@
            (if (equal? (mo-form nd) 'prefix) 'ordinary 'binary))
           (else 'ordinary))))
 
+;; a token of a formula: its characters, each with the math class the
+;; engine spaces it by; a letter alone in an mi italic, which the engine sets
+;; in the mathematical italic of the formula's font
 (define (math-token text italic? class)
   (make sequence
     font-family-name: %math-font%
-    font-posture: 'upright
+    font-posture: (if italic? 'italic 'upright)
     font-weight: 'medium
     (let loop ((cs (string->list text)) (out (empty-sosofo)))
       (if (null? cs)
@@ -237,7 +240,7 @@
           (loop (cdr cs)
                 (sosofo-append out
                   (make character
-                    char: (if italic? (math-italic (car cs)) (car cs))
+                    char: (car cs)
                     math-class: class)))))))
 
 (define (mml-print name)
