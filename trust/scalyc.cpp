@@ -18541,6 +18541,7 @@ void Emitter_emit_package_stamp(Emitter&, LLVMOpaqueValue*) asm("_ZN7EmitterB6sc
 uint64_t Emitter_module_bitcode_hash(Emitter&) asm("_ZN7EmitterB6scalycB4v0_219module_bitcode_hashEv");
 void Emitter_emit_template_stubs(Emitter&) asm("_ZN7EmitterB6scalycB4v0_219emit_template_stubsEv");
 bool Emitter_jit_symbol_in_set(Emitter&, Array<String>*, Slice<uint8_t>&) asm("_ZN7EmitterB6scalycB4v0_217jit_symbol_in_setE6OptionIR5ArrayI6StringEE5SliceIcE");
+void Emitter_emit_jit_missing(Emitter&, Slice<uint8_t>&) asm("_ZN7EmitterB6scalycB4v0_216emit_jit_missingE5SliceIcE");
 void Emitter_emit_jit_stubs(Emitter&, Array<String>*) asm("_ZN7EmitterB6scalycB4v0_214emit_jit_stubsER5ArrayI6StringE");
 void Emitter_jit_clear_thread_locals(Emitter&) asm("_ZN7EmitterB6scalycB4v0_223jit_clear_thread_localsEv");
 void Emitter_jit_import_externals(Emitter&) asm("_ZN7EmitterB6scalycB4v0_220jit_import_externalsEv");
@@ -149386,17 +149387,7 @@ __attribute__((weak)) void Emitter_emit_jit_stubs(Emitter& scaly_self, Array<Str
                         LLVMOpaqueBasicBlock* saved_block = LLVMGetInsertBlock(this_->builder);
                         LLVMOpaqueBasicBlock* block = LLVMAppendBasicBlockInContext(this_->context, func, ((const char*)"jitstub"));
                         LLVMPositionBuilderAtEnd(this_->builder, block);
-                        LLVMOpaqueType* func_ty = LLVMGlobalGetValueType(func);
-                        LLVMOpaqueType* ret_ty = LLVMGetReturnType(func_ty);
-                        if (((int64_t)LLVMGetTypeKind(ret_ty) == LLVMTypeKind_Void()))
-                        {
-                            LLVMBuildRetVoid(this_->builder);
-                        }
-                        if (((int64_t)LLVMGetTypeKind(ret_ty) != LLVMTypeKind_Void()))
-                        {
-                            LLVMOpaqueValue* zero = LLVMConstNull(ret_ty);
-                            LLVMBuildRet(this_->builder, zero);
-                        }
+                        Emitter_emit_jit_missing(*(this_), scaly_lvalue(Slice<uint8_t>{(uint64_t)(name_len), name_ptr}));
                         if (((saved_block) != (nullptr)))
                         {
                             LLVMPositionBuilderAtEnd(this_->builder, saved_block);
@@ -149407,6 +149398,45 @@ __attribute__((weak)) void Emitter_emit_jit_stubs(Emitter& scaly_self, Array<Str
         }
         func = LLVMGetNextFunction(func);
     }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_emit_jit_missing(Emitter& scaly_self, Slice<uint8_t>& name)
+{
+    Emitter* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    LLVMOpaqueType* void_ty = LLVMVoidTypeInContext(this_->context);
+    LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+    LLVMOpaqueType* i32_ty = LLVMInt32TypeInContext(this_->context);
+    Vector<LLVMOpaqueType*>* ptys = ({ Vector<LLVMOpaqueType*>* scaly_t1 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t1 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t1), 1ULL); scaly_t1; });
+    Vector_put62<LLVMOpaqueType*>((*ptys), 0ULL, ptr_ty);
+    LLVMOpaqueType* flush_ty = LLVMFunctionType(i32_ty, ((*ptys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* flush_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\006fflush"}), flush_ty);
+    Vector<LLVMOpaqueValue*>* a0 = ({ Vector<LLVMOpaqueValue*>* scaly_t2 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t2 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t2), 1ULL); scaly_t2; });
+    Vector_put62<LLVMOpaqueValue*>((*a0), 0ULL, LLVMConstPointerNull(ptr_ty));
+    LLVMBuildCall2(this_->builder, flush_ty, flush_fn, ((*a0)).data, (uint32_t)1ULL, ((const char*)""));
+    LLVMOpaqueType* puts_ty = LLVMFunctionType(void_ty, ((*ptys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* puts_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\034_Z11scaly_eputsP10const_char"}), puts_ty);
+    StringBuilder* text = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+    StringBuilder_append2((*text), scaly_lvalue(String{(uint8_t*)"\007Scaly: "}));
+    uint64_t k = 0ULL;
+    while ((k < (name).length))
+    {
+        StringBuilder_append((*text), Slice4<uint8_t>(name, k));
+        k = (k + 1ULL);
+    }
+    StringBuilder_append2((*text), scaly_lvalue(String{(uint8_t*)"\113 is defined nowhere in this run (a standard library newer than this tool\077)\012"}));
+    Vector<LLVMOpaqueValue*>* a1 = ({ Vector<LLVMOpaqueValue*>* scaly_t4 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t4 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t4), 1ULL); scaly_t4; });
+    Vector_put62<LLVMOpaqueValue*>((*a1), 0ULL, LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, scaly_lvalue(StringBuilder_to_string(&scaly_local.f, (*text)))), ((const char*)".jit.missing")));
+    LLVMBuildCall2(this_->builder, puts_ty, puts_fn, ((*a1)).data, (uint32_t)1ULL, ((const char*)""));
+    Vector<LLVMOpaqueType*>* etys = ({ Vector<LLVMOpaqueType*>* scaly_t5 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t5 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t5), 1ULL); scaly_t5; });
+    Vector_put62<LLVMOpaqueType*>((*etys), 0ULL, i32_ty);
+    LLVMOpaqueType* exit_ty = LLVMFunctionType(void_ty, ((*etys)).data, (uint32_t)1ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* exit_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\004exit"}), exit_ty);
+    Vector<LLVMOpaqueValue*>* a2 = ({ Vector<LLVMOpaqueValue*>* scaly_t6 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t6 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t6), 1ULL); scaly_t6; });
+    Vector_put62<LLVMOpaqueValue*>((*a2), 0ULL, LLVMConstInt(i32_ty, 25ULL, (int32_t)0ULL));
+    LLVMBuildCall2(this_->builder, exit_ty, exit_fn, ((*a2)).data, (uint32_t)1ULL, ((const char*)""));
+    LLVMBuildUnreachable(this_->builder);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
