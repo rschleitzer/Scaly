@@ -1591,7 +1591,16 @@ href="scaling-why.htm#scaling-why-functions"
 > counted
         below <code
 >width</code
-> inside the round;</p
+> inside the round — directly, or through
+        a procedure whose whole body is such a <code
+>put</code
+> into a
+        vector of its receiver, like a matrix's <code
+>put(i, j, v)</code
+>
+        that writes <code
+>this.data.put(i * this.cols + j, v)</code
+>;</p
 ></li
 ><li
 ><p
