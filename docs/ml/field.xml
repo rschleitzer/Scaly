@@ -591,22 +591,28 @@
 
   <section xml:id="field-program">
     <title>The Field's Program</title>
-    <para>The page runs one Scaly program, <filename>field.scaly</filename>,
-      built for WebAssembly. It is this chapter's programs grown up: everything the page
-      lets you set, and backpropagation as in the section
-      “Backpropagation”, only in loops over layers instead of written
-      out.
-      It keeps everything the page shows in one vector of numbers in its
-      memory, which the page reads directly, without a copy; the picture
-      of the network's answer over the plane is a <literal>for</literal>
-      over its 6400 points, which Scaly spreads over the cores of the
-      machine by itself. Its source is
+    <para>Behind the page stands one Scaly program,
+      <filename>field.scaly</filename>, built for WebAssembly. It is the
+      program of the <link xlink:href="../play/model/#model=hidden">page with the network for XOR</link>
+      grown up: everything the page lets you set, and the backpropagation
+      that <literal>network_step</literal> writes out for a network with
+      one hidden layer, here in loops over any number of layers. The
+      numbers the page shows it reads straight out of the program's
+      memory, without a copy. The picture of the plane is a
+      <literal>for</literal> over its 6400 points, which Scaly spreads over
+      the cores of the machine by itself. The same program also runs
+      without the page, on the command line: <literal>field 0 500</literal>
+      lets the network with hidden layers of four and two neurons learn the
+      circle for 500 steps, writes down the two losses every hundred steps
+      and at the end how many of the 200 test points it places rightly. Its
+      source is
       <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/web/field/field.scaly">on GitHub</link>.</para>
     <para>Everything this chapter derived by hand, the chain rule through
       every link and the gradient of every weight, a program can derive
-      too. That is the subject of the chapters ahead: first how Scaly
-      holds many numbers at once, in tensors, then a tape that records
-      the forward computation and plays it back to get every
+      too. That is the subject of the chapters ahead: first how to write
+      the computation for all points at once, with matrices, and how Scaly
+      holds these many numbers and computes with them fast; then a tape
+      that records the forward computation and plays it back to get every
       derivative.</para>
   </section>
 </chapter>

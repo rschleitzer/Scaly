@@ -3125,21 +3125,33 @@ href="#field-program"
 >Das Programm des Spielfelds</a
 ></h2
 ><p
->Die Seite führt ein einziges Scaly-Programm aus,
+>Hinter der Seite steht ein einziges Scaly-Programm,
       <code
 class="filename"
 >field.scaly</code
->, für WebAssembly gebaut. Es sind die
-      Programme dieses Kapitels, erwachsen geworden: alles, was die Seite
-      einstellen lässt, und die Rückwärtsrechnung wie im Abschnitt
-      „Rückwärtsrechnung“, nur in Schleifen über die Schichten statt
-      ausgeschrieben. Alles, was die Seite zeigt, hält es in einem Vektor
-      von Zahlen in seinem Speicher, den die Seite direkt liest, ohne
-      Kopie; das Bild der Antwort des Netzes über der Ebene ist ein
-      <code
+>, für WebAssembly gebaut. Es ist das
+      Programm der <a
+href="../play/model/#model=hidden&#38;lang=de"
+>Seite mit dem Netz für XOR</a
+>,
+      erwachsen geworden: alles, was die Seite einstellen lässt, und die
+      Rückwärtsrechnung, die <code
+>network_step</code
+> für ein Netz
+      mit einer verborgenen Schicht ausschreibt, hier in Schleifen über
+      beliebig viele Schichten. Die Zahlen, die die Seite zeigt, liest sie
+      direkt aus dem Speicher des Programms, ohne Kopie. Das Bild der Ebene
+      ist ein <code
 >for</code
-> über ihre 6400 Punkte, das Scaly von selbst
-      auf die Kerne des Rechners verteilt. Der Quelltext liegt
+> über ihre 6400 Punkte, das Scaly von
+      selbst auf die Kerne des Rechners verteilt. Dasselbe Programm läuft
+      auch ohne Seite, auf der Kommandozeile: <code
+>field 0 500</code
+>
+      lässt das Netz mit verborgenen Schichten aus vier und zwei Neuronen
+      500 Schritte am Kreis lernen, schreibt alle hundert Schritte die
+      beiden Fehler hin und am Ende, wie viele der 200 Testpunkte es richtig
+      einordnet. Der Quelltext liegt
       <a
 href="https://github.com/rschleitzer/Scaly/blob/master/web/field/field.scaly"
 >auf GitHub</a
@@ -3148,9 +3160,10 @@ href="https://github.com/rschleitzer/Scaly/blob/master/web/field/field.scaly"
 >Alles, was dieses Kapitel von Hand hergeleitet hat, die
       Kettenregel durch jedes Glied und den Gradienten jedes Gewichts, kann
       auch ein Programm herleiten. Davon handeln die nächsten Kapitel:
-      zuerst, wie Scaly viele Zahlen auf einmal hält, in Tensoren, dann ein
-      Band, das die Rechnung vorwärts aufzeichnet und rückwärts abspielt,
-      um jede Ableitung zu bekommen.</p
+      zuerst, wie man die Rechnung für alle Punkte auf einmal schreibt, mit
+      Matrizen, und wie Scaly diese vielen Zahlen hält und schnell
+      verrechnet; dann ein Band, das die Rechnung vorwärts aufzeichnet und
+      rückwärts abspielt, um jede Ableitung zu bekommen.</p
 ></section
 ></article
 ><nav
