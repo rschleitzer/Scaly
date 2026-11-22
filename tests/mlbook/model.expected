@@ -1,0 +1,6 @@
+descent: 2 of 6 right at the start, all from step 21, ended 1 at step 81
+descent_slow: 2 of 6 right at the start, all from step 195, ended 1 at step 807
+saturated: 1 of 6 right at the start, never all, ended 2 at step 100
+disc_plain: 7 of 13 right at the start, never all, ended 2 at step 200
+squares: 5 of 13 right at the start, all from step 23, ended 1 at step 223
+xor: 6 of 12 right at the start, all from step 29, ended 1 at step 106

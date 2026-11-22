@@ -98,6 +98,28 @@ else
   echo "prog: circle.py SKIPPED (no python3)"
 fi
 rm -f "$FIG.circle" "$FIG.field"
+# the model page's numbers (model_check.py: web/model/model.scaly's routines
+# on web/model/index.html's start), which chapter 2's boxes tell in words:
+#   descent       two of six right, all six after a good twenty steps, the
+#                 goal after a good eighty
+#   descent_slow  with the rate 0.01 "much slower"
+#   saturated     w1 = w2 = -3: almost all wrong, stops after a hundred steps
+#   disc_plain    a disc and a ring for the plain neuron: it stops, no headway
+#   squares       given x² and y²: all right after a good twenty steps, the
+#                 goal after a good two hundred
+#   xor           the network: half right, all twelve after nearly thirty
+#                 steps, the goal after a good hundred
+# A line that moves owes a look at the sentence that tells it.
+if NODE=$(tools/node.sh 2> /dev/null); then
+  if python3 tests/mlbook/model_check.py "$NODE" "$SCALY" > "$FIG.model" 2>&1 && cmp -s "$FIG.model" tests/mlbook/model.expected; then
+    echo "prog: the model page's numbers are the ones chapter 2 tells"
+  else
+    echo "mlbook: the model page's numbers moved (tests/mlbook/model.expected):"; diff tests/mlbook/model.expected "$FIG.model" | head -8; rc=1
+  fi
+  rm -f "$FIG.model"
+else
+  echo "prog: the model page's numbers SKIPPED (no node that starts)"
+fi
 # every program beside the book builds (product.scaly prints times, so it is
 # built, not run)
 for p in docs/ml/prog/*.scaly; do

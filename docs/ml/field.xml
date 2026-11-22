@@ -198,8 +198,7 @@
       <para><link xlink:href="../play/model/#model=descent">Open the page where the neuron learns.</link>
         It begins with values that guess badly: only two of the six points
         are right. Press “One step” several times in a row: <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub></mml:math></inlineequation>, <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> move a bit each time,
-        the line turns, the loss falls. Press “Learn”: after some thirty steps
-        all six are right; after a good eighty the loss is below 0.02, and
+        the line turns, the loss falls. Press “Learn”: after a good twenty steps all six are right; after a good eighty the loss is below 0.02, and
         learning stops. <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub></mml:math></inlineequation> is then nearly 0, as in our attempt by hand. With the learning rate 0.01 it goes much more slowly. Below the
         picture stands the step in Scaly.</para>
     </sidebar>
@@ -262,7 +261,7 @@
     <sidebar role="tryit">
       <para><link xlink:href="../play/model/#model=squares">Open the page with the neuron given x² and y².</link>
         It begins with the disc and the ring and guesses badly at first.
-        Press “Learn”: after some hundred steps all points are right, and
+        Press “Learn”: after a good twenty steps all points are right, and
         the orange area settles around the disc; after a good two hundred
         the loss is below 0.02. Here too you can put down
         points and take them away.</para>
@@ -341,7 +340,7 @@
       <para><link xlink:href="../play/model/#model=hidden">Open the page with a network of one hidden layer.</link>
         It has three hidden neurons and begins on the points of XOR with
         small weights that guess only half of the points right. Press
-        “Learn”: after a good hundred steps all twelve are right. The small
+        “Learn”: after nearly thirty steps all twelve are right, after a good hundred the loss is below 0.02, and learning stops. The small
         pictures show which line each hidden neuron has found; the output
         joins them. Further down the page the network stands in layers, one
         above the other, with the weights as lines; drag it with the mouse

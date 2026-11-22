@@ -339,6 +339,14 @@ procedure take_points(mutable points: Vector[Point], board: Vector[f64]) returns
     n
 }
 
+; What the model guesses at a point: +1, -1, or 0 on the line between.
+function guess_at(p: Point, which: int, w1: f64, w2: f64, b: f64, net: Vector[f64]) returns f64
+{
+    let (u, v) inputs(p, which = 3)
+    let z if which = 4: network(net, p.x, p.y) else neuron(u, v, w1, w2, b)
+    if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0
+}
+
 ; What the model guesses at each point, into the board.
 procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, which: int, w1: f64, w2: f64,
                   b: f64, net: Vector[f64])
@@ -346,9 +354,7 @@ procedure guesses(mutable board: Vector[f64], points: Vector[Point], n: int, whi
     var k 0
     while k < n
     {
-        let (u, v) inputs(points[k], which = 3)
-        let z if which = 4: network(net, points[k].x, points[k].y) else neuron(u, v, w1, w2, b)
-        board.put(POINTS + 4 * k + 3, if z > 0.0: 1.0 else if z < 0.0: 0.0 - 1.0 else 0.0)
+        board.put(POINTS + 4 * k + 3, guess_at(points[k], which, w1, w2, b, net))
         k := k + 1
     }
 }
@@ -376,6 +382,47 @@ procedure learned(mutable board: Vector[f64], points: Vector[Point], n: int, whi
     board.put(39, steps as f64)
 }
 
+; A learning model's run: which model, its three numbers (models 2 and 3;
+; model 4's stand in `net`), the steps it has taken, those since learning
+; began anew, the loss a hundred steps before (or where it began), and why
+; learning stopped by itself (`finished`), 0 while it may go on.
+define Run(var which: int, var a: f64, var b: f64, var c: f64, var steps: int,
+           var since: int, var before: f64, var ended: int)
+
+; One learning step of model 2, 3 or 4; while the page lets it learn, it
+; also asks whether learning ends by itself.
+procedure advance(mutable run: Run, mutable net: Vector[f64], mutable grad: Vector[f64],
+                  points: Vector[Point], n: int, rate: f64, learning: bool)
+{
+    if run.which = 4
+        network_step(net, grad, points, n, rate)
+    else
+    {
+        let (w1, w2, w0) step(points, n, run.which = 3, run.a, run.b, run.c, rate)
+        run.a := w1
+        run.b := w2
+        run.c := w0
+    }
+    run.steps := run.steps + 1
+    run.since := run.since + 1
+    if learning
+    {
+        let now model_loss(run.which, points, n, run.a, run.b, run.c, net)
+        run.ended := finished(now, run.before, run.since)
+        if run.since % 100 = 0
+            run.before := now
+    }
+}
+
+; Learning anew from where the run stands: the loss there is where the
+; next hundred steps are measured from.
+procedure begin_anew(mutable run: Run, points: Vector[Point], n: int, net: Vector[f64])
+{
+    run.since := 0
+    run.before := model_loss(run.which, points, n, run.a, run.b, run.c, net)
+    run.ended := 0
+}
+
 ; --- the run -------------------------------------------------------------
 
 var board Vector[f64](BOARD)
@@ -396,14 +443,7 @@ var n 0
 var taken 0.0 - 1.0
 var placed 0.0
 var stepped 0.0
-var which 0
-var a 0.0
-var b 0.0
-var c 0.0
-var steps 0
-var since 0                  ; steps since learning began anew
-var before 0.0               ; the loss a hundred steps before, or where it began
-var ended 0                  ; why learning stopped by itself (finished), 0 while it may go on
+var run Run(0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0)
 var wanted 0.0               ; what slot 5 said last
 repeat
 {
@@ -411,18 +451,16 @@ repeat
     if board[0] <> taken
     {
         taken := board[0]
-        which := board[1] as int
-        a := board[2]
-        b := board[3]
-        c := board[4]
-        if which = 0 and a < 0.1
-            a := 0.1
-        if which = 4
+        run.which := board[1] as int
+        run.a := board[2]
+        run.b := board[3]
+        run.c := board[4]
+        if run.which = 0 and run.a < 0.1
+            run.a := 0.1
+        if run.which = 4
             begin_network(net)
-        steps := 0
-        since := 0
-        before := model_loss(which, points, n, a, b, c, net)
-        ended := 0
+        run.steps := 0
+        begin_anew(run, points, n, net)
         board.put(40, 0.0)
         change := true
     }
@@ -432,27 +470,22 @@ repeat
         placed := board[8]
         n := take_points(points, board)
         ; new points: the loss is another, and learning may go on from here
-        since := 0
-        before := model_loss(which, points, n, a, b, c, net)
-        ended := 0
+        begin_anew(run, points, n, net)
         board.put(40, 0.0)
         change := true
     }
     ; models 2 and 3 learn while the page says so, or take the one step it asked for
-    let squared which = 3
     var go false
-    if which >= 2
+    if run.which >= 2
     {
         ; the page lets it learn anew: it goes on until it ends by itself again
         if board[5] > 0.5 and wanted < 0.5
         {
-            since := 0
-            before := model_loss(which, points, n, a, b, c, net)
-            ended := 0
+            begin_anew(run, points, n, net)
             board.put(40, 0.0)
         }
         wanted := board[5]
-        if board[5] > 0.5 and ended = 0
+        if board[5] > 0.5 and run.ended = 0
             go := true
         else if board[6] <> stepped
             go := true
@@ -460,36 +493,20 @@ repeat
     }
     if go
     {
-        if which = 4
-            network_step(net, grad, points, n, board[7])
-        else
-        {
-            let (w1, w2, w0) step(points, n, squared, a, b, c, board[7])
-            a := w1
-            b := w2
-            c := w0
-        }
-        steps := steps + 1
-        since := since + 1
+        advance(run, net, grad, points, n, board[7], board[5] > 0.5)
         if board[5] > 0.5
-        {
-            let now model_loss(which, points, n, a, b, c, net)
-            ended := finished(now, before, since)
-            if since % 100 = 0
-                before := now
-            board.put(40, ended as f64)
-        }
+            board.put(40, run.ended as f64)
         change := true
     }
     if change
     {
-        if which >= 2
-            learned(board, points, n, which, a, b, c, net, steps)
-        picture(board, which, a, b, c, net)
-        if which = 4
+        if run.which >= 2
+            learned(board, points, n, run.which, run.a, run.b, run.c, net, run.steps)
+        picture(board, run.which, run.a, run.b, run.c, net)
+        if run.which = 4
             tiles(board, net)
-        if which > 0
-            guesses(board, points, n, which, a, b, c, net)
+        if run.which > 0
+            guesses(board, points, n, run.which, run.a, run.b, run.c, net)
         board.put(32, taken)
         board.put(33, board[33] + 1.0)
     }
