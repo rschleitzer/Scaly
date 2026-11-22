@@ -1,5 +1,5 @@
 ; The matrix product C = A B for square matrices of sizes 64 to 2048
-; (Machine Learning with Scaly, chapter 2, "Fast"): how long one product
+; (Machine Learning with Scaly, chapter 3, "Fast"): how long one product
 ; takes. A round of the `for` makes one number of C, row i of A times
 ; column j of B; the numbers are f32, which a graphics card computes.
 ;

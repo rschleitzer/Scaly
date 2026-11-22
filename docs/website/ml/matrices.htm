@@ -66,10 +66,54 @@ class="part"
 ><div
 class="part-row"
 ><a
-href="field.htm"
+href="why.htm"
 ><span
 class="num"
 >1.</span
+>Why Without Python</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="why.htm#why-two"
+><span
+class="num"
+>1.1</span
+>Two Languages</a
+></li
+><li
+><a
+href="why.htm#why-one"
+><span
+class="num"
+>1.2</span
+>One Language Down to the Card</a
+></li
+><li
+><a
+href="why.htm#why-cost"
+><span
+class="num"
+>1.3</span
+>What We Give Up</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.htm"
+><span
+class="num"
+>2.</span
 >A First Model</a
 ><button
 class="fold"
@@ -84,7 +128,7 @@ class="sections"
 href="field.htm#field-points"
 ><span
 class="num"
->1.1</span
+>2.1</span
 >Two Kinds of Points</a
 ></li
 ><li
@@ -92,7 +136,7 @@ class="num"
 href="field.htm#field-neuron"
 ><span
 class="num"
->1.2</span
+>2.2</span
 >One Neuron</a
 ></li
 ><li
@@ -100,7 +144,7 @@ class="num"
 href="field.htm#field-loss"
 ><span
 class="num"
->1.3</span
+>2.3</span
 >How Wrong</a
 ></li
 ><li
@@ -108,7 +152,7 @@ class="num"
 href="field.htm#field-gradient"
 ><span
 class="num"
->1.4</span
+>2.4</span
 >Downhill</a
 ></li
 ><li
@@ -116,7 +160,7 @@ class="num"
 href="field.htm#field-features"
 ><span
 class="num"
->1.5</span
+>2.5</span
 >Better Inputs</a
 ></li
 ><li
@@ -124,7 +168,7 @@ class="num"
 href="field.htm#field-hidden"
 ><span
 class="num"
->1.6</span
+>2.6</span
 >Hidden Layers</a
 ></li
 ><li
@@ -132,7 +176,7 @@ class="num"
 href="field.htm#field-backprop"
 ><span
 class="num"
->1.7</span
+>2.7</span
 >Backpropagation</a
 ></li
 ><li
@@ -140,7 +184,7 @@ class="num"
 href="field.htm#field-field"
 ><span
 class="num"
->1.8</span
+>2.8</span
 >The Field</a
 ></li
 ><li
@@ -148,7 +192,7 @@ class="num"
 href="field.htm#field-test"
 ><span
 class="num"
->1.9</span
+>2.9</span
 >Generalization</a
 ></li
 ><li
@@ -156,7 +200,7 @@ class="num"
 href="field.htm#field-program"
 ><span
 class="num"
->1.10</span
+>2.10</span
 >The Field's Program</a
 ></li
 ></ol
@@ -170,7 +214,7 @@ href="matrices.htm"
 aria-current="page"
 ><span
 class="num"
->2.</span
+>3.</span
 >Many Points at Once</a
 ><button
 class="fold"
@@ -185,7 +229,7 @@ class="sections"
 href="matrices.htm#matrices-rows"
 ><span
 class="num"
->2.1</span
+>3.1</span
 >A Row for Each Point</a
 ></li
 ><li
@@ -193,7 +237,7 @@ class="num"
 href="matrices.htm#matrices-backprop"
 ><span
 class="num"
->2.2</span
+>3.2</span
 >Backpropagation with Matrices</a
 ></li
 ><li
@@ -201,7 +245,7 @@ class="num"
 href="matrices.htm#matrices-memory"
 ><span
 class="num"
->2.3</span
+>3.3</span
 >Where the Numbers Live</a
 ></li
 ><li
@@ -209,7 +253,7 @@ class="num"
 href="matrices.htm#matrices-fast"
 ><span
 class="num"
->2.4</span
+>3.4</span
 >Fast</a
 ></li
 ></ol
@@ -327,7 +371,7 @@ id="content"
 ><article
 ><p
 class="part-label"
->Chapter 2</p
+>Chapter 3</p
 ><h1
 id="matrices"
 >Many Points at Once</h1
@@ -632,7 +676,7 @@ href="#matrices-backprop"
 >Backpropagation with Matrices</a
 ></h2
 ><p
->Backwards it works the same way. In chapter 1 every neuron had,
+>Backwards it works the same way. In chapter 2 every neuron had,
       for every point, its share of the error, the error after its sum.
       Write these shares one under the other as well, a row for each point
       and a column for each neuron, and they make a matrix <math
@@ -805,7 +849,7 @@ stretchy="false"
 ></mrow
 ></msub
 ></math
-> of chapter 1. The sum itself is a matrix product again: row
+> of chapter 2. The sum itself is a matrix product again: row
       <math
 ><mi
 >i</mi
@@ -894,7 +938,7 @@ stretchy="false"
 ></math
 ></div
 ><p
->What remains are the derivatives of the weights. In chapter 1
+>What remains are the derivatives of the weights. In chapter 2
       every point added to weight <math
 ><msub
 ><mi

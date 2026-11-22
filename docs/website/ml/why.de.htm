@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html
+lang="de"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Warum ohne Python - Maschinelles Lernen mit Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.de.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Inhalt"
+><a
+class="sidebar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><ol
+class="toc"
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="why.de.htm"
+aria-current="page"
+><span
+class="num"
+>1.</span
+>Warum ohne Python</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="why.de.htm#why-two"
+><span
+class="num"
+>1.1</span
+>Zwei Sprachen</a
+></li
+><li
+><a
+href="why.de.htm#why-one"
+><span
+class="num"
+>1.2</span
+>Eine Sprache bis auf die Karte</a
+></li
+><li
+><a
+href="why.de.htm#why-cost"
+><span
+class="num"
+>1.3</span
+>Was wir aufgeben</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.de.htm"
+><span
+class="num"
+>2.</span
+>Ein erstes Modell</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.de.htm#field-points"
+><span
+class="num"
+>2.1</span
+>Zwei Sorten von Punkten</a
+></li
+><li
+><a
+href="field.de.htm#field-neuron"
+><span
+class="num"
+>2.2</span
+>Ein Neuron</a
+></li
+><li
+><a
+href="field.de.htm#field-loss"
+><span
+class="num"
+>2.3</span
+>Wie falsch</a
+></li
+><li
+><a
+href="field.de.htm#field-gradient"
+><span
+class="num"
+>2.4</span
+>Bergab</a
+></li
+><li
+><a
+href="field.de.htm#field-features"
+><span
+class="num"
+>2.5</span
+>Bessere Eingaben</a
+></li
+><li
+><a
+href="field.de.htm#field-hidden"
+><span
+class="num"
+>2.6</span
+>Verborgene Schichten</a
+></li
+><li
+><a
+href="field.de.htm#field-backprop"
+><span
+class="num"
+>2.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.de.htm#field-field"
+><span
+class="num"
+>2.8</span
+>Das Spielfeld</a
+></li
+><li
+><a
+href="field.de.htm#field-test"
+><span
+class="num"
+>2.9</span
+>Verallgemeinerung</a
+></li
+><li
+><a
+href="field.de.htm#field-program"
+><span
+class="num"
+>2.10</span
+>Das Programm des Spielfelds</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="matrices.de.htm"
+><span
+class="num"
+>3.</span
+>Viele Punkte auf einmal</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="matrices.de.htm#matrices-rows"
+><span
+class="num"
+>3.1</span
+>Eine Zeile je Punkt</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-backprop"
+><span
+class="num"
+>3.2</span
+>Backpropagation mit Matrizen</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-memory"
+><span
+class="num"
+>3.3</span
+>Wo die Zahlen liegen</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-fast"
+><span
+class="num"
+>3.4</span
+>Schnell</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Inhalt"
+title="Inhalt"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Farben"
+title="Farben"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Suchen (S)"
+title="Suchen (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><nav
+class="topbar-links"
+aria-label="Anderswo"
+><a
+href="why.htm"
+>English</a
+><a
+href="scaly-ml.de.pdf"
+>PDF</a
+><a
+href="../play/"
+>Der Playground</a
+><a
+href="../lang/"
+>Die Sprache</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Im Buch suchen"
+aria-label="Im Buch suchen"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Kapitel 1</p
+><h1
+id="why"
+>Warum ohne Python</h1
+><p
+>Fast alles maschinelle Lernen wird heute in Python geschrieben. In
+    diesem Kapitel sehen wir uns an, warum das so ist, was es kostet und
+    warum wir in diesem Buch einen anderen Weg gehen.</p
+><section
+id="why-two"
+><h2
+><a
+class="header"
+href="#why-two"
+>Zwei Sprachen</a
+></h2
+><p
+>Ein neuronales Netz rechnet sehr viele sehr einfache Dinge:
+      Multiplikationen, Additionen, hier und da ein tanh. In Python
+      geschrieben, ist jedes davon langsam, denn Python sieht bei jeder Zahl
+      aufs Neue nach, was für ein Wert sie ist und was ein Pluszeichen für
+      sie bedeutet. Deshalb rechnet in Python kaum jemand selbst. Die Arbeit
+      tun Bibliotheken, die in C, C++ oder CUDA geschrieben sind, NumPy für
+      Matrizen, PyTorch und JAX für ganze Netze, und Python sagt ihnen nur,
+      was sie tun sollen.</p
+><p
+>Das geht gut, solange alles, was man vorhat, in die Aufrufe dieser
+      Bibliotheken passt. Wer eine Schleife braucht, die es dort nicht gibt,
+      schreibt sie in der zweiten Sprache, in C++ oder CUDA, und verbindet
+      beide. Man arbeitet dann mit zwei Sprachen, und was eigentlich
+      gerechnet wird, steht in der, die man gerade nicht vor sich
+      hat.</p
+><p
+>Wie groß der Unterschied ist, zeigt das Programm aus Kapitel 3,
+      das einen Kreis lernt: einmal in Python, Schleife für Schleife wie in
+      Scaly, einmal mit NumPy, wo jede Schicht eine Zeile ist, und einmal in
+      Scaly. Alle drei lernen dasselbe Netz auf denselben Punkten von
+      denselben Startgewichten aus. Gemessen sind 5000 Lernschritte auf
+      einem MacBook Pro mit M1 Pro:</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Fassung</th
+><th
+>Zeit</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>Python, Schleife für Schleife</td
+><td
+>24,6 s</td
+></tr
+><tr
+><td
+>Python mit NumPy</td
+><td
+>0,25 s</td
+></tr
+><tr
+><td
+>Scaly</td
+><td
+>0,10 s</td
+></tr
+></tbody
+></table
+></div
+><p
+>Python allein braucht 250-mal so lange wie Scaly. NumPy holt das
+      fast ganz auf, obwohl unsere Matrizen so klein sind, dass bei jedem
+      Aufruf der Weg von Python in die Bibliothek mehr kostet als die
+      Rechnung selbst.</p
+><p
+>Die Zahlen, die die Programme unterwegs ausgeben, sind bis zum
+      200. Schritt bei Python und Scaly dieselben, Ziffer für Ziffer;
+      danach weichen die letzten Stellen ab. Python nimmt tanh aus der
+      C-Bibliothek des Systems, Scaly sein eigenes, und die beiden
+      unterscheiden sich in etwa einem von zweihundert Fällen in der letzten
+      Stelle; meist liegt dann Scalys Ergebnis näher am genauen Wert. NumPy
+      zählt die Summen in anderer Reihenfolge zusammen und weicht schon beim
+      ersten Schritt in der letzten Stelle ab. Nach den 500 Schritten der
+      Programme erkennen alle drei dieselben 188 von 200 Testpunkten
+      richtig, nach den 5000 der Messung alle 200. Die drei Programme
+      stehen <a
+href="https://github.com/rschleitzer/Scaly/tree/master/docs/ml/prog"
+>auf GitHub</a
+>.</p
+></section
+><section
+id="why-one"
+><h2
+><a
+class="header"
+href="#why-one"
+>Eine Sprache bis auf die Karte</a
+></h2
+><p
+>In Scaly gibt es die zweite Sprache nicht. Eine Schleife, die du
+      schreibst, wird über LLVM in Maschinencode übersetzt, wie ein
+      C-Programm; sie ist schnell, weil sie selbst schnell ist, und nicht,
+      weil eine Bibliothek sie ersetzt. Das Programm, das du liest, ist das
+      Programm, das rechnet.</p
+><p
+>Und es skaliert von selbst. Ein <code
+>for</code
+>, dessen Runden
+      voneinander unabhängig sind, verteilt Scaly auf die Kerne des
+      Prozessors und auf die Grafikkarte, wo es sich lohnt, ohne dass im
+      Programm etwas davon steht. Den Speicher räumt kein Garbage Collector
+      auf: Jeder Aufruf gibt frei, was er angelegt hat, wenn er zurückkehrt.
+      Beides sehen wir in Kapitel 3 genauer an. Und dieselben Programme
+      laufen auch im Browser: Die Seiten neben diesem Buch rechnen mit
+      Scaly-Programmen, für WebAssembly gebaut.</p
+></section
+><section
+id="why-cost"
+><h2
+><a
+class="header"
+href="#why-cost"
+>Was wir aufgeben</a
+></h2
+><p
+>Das hat seinen Preis. Um Python herum ist ein großer Vorrat
+      entstanden: fertige Netze, trainierte Gewichte, Bibliotheken für jedes
+      Datenformat, Werkzeuge zum Anschauen. Davon können wir nichts nehmen.
+      Wir schreiben jedes Stück selbst, vom einzelnen Neuron bis zum
+      Lernschritt, und genau darum geht es in diesem Buch: Was ein Netz tut,
+      steht dann vor dir, im Text und im Programm.</p
+><p
+>Auch in der Geschwindigkeit haben die großen Bibliotheken einen
+      Vorsprung, wo sie für eine Aufgabe von Hand optimiert sind. Ein
+      Matrixprodukt mit 2048 Zeilen und Spalten rechnet NumPy auf diesem Mac
+      in 9 Millisekunden, mit Apples Bibliothek Accelerate; die schlichte
+      Schleife aus Kapitel 3 braucht dafür auf der Grafikkarte
+      0,27 Sekunden. Diesen Abstand nehmen wir uns später vor: Wir
+      schreiben das Matrixprodukt selbst besser und messen es gegen die
+      Bibliotheken der Hersteller.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Kapitel"
+><span
+class="prev"
+></span
+><a
+class="next"
+rel="next"
+href="field.de.htm"
+><span
+class="pager-label"
+>Weiter</span
+><span
+class="pager-title"
+>Ein erstes Modell</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>

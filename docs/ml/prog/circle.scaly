@@ -1,4 +1,4 @@
-; The circle learned with matrices (Machine Learning with Scaly, chapter 2,
+; The circle learned with matrices (Machine Learning with Scaly, chapter 3,
 ; "Many Points at Once"):
 ; the network of the field's `field 0 500` -- the inputs x and y, hidden
 ; layers of four and two neurons, tanh, the output tanh, learning rate

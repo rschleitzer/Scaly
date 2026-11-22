@@ -1,0 +1,93 @@
+<chapter xml:id="why">
+  <title>Warum ohne Python</title>
+
+  <para>Fast alles maschinelle Lernen wird heute in Python geschrieben. In
+    diesem Kapitel sehen wir uns an, warum das so ist, was es kostet und
+    warum wir in diesem Buch einen anderen Weg gehen.</para>
+
+  <section xml:id="why-two">
+    <title>Zwei Sprachen</title>
+    <para>Ein neuronales Netz rechnet sehr viele sehr einfache Dinge:
+      Multiplikationen, Additionen, hier und da ein tanh. In Python
+      geschrieben, ist jedes davon langsam, denn Python sieht bei jeder Zahl
+      aufs Neue nach, was für ein Wert sie ist und was ein Pluszeichen für
+      sie bedeutet. Deshalb rechnet in Python kaum jemand selbst. Die Arbeit
+      tun Bibliotheken, die in C, C++ oder CUDA geschrieben sind, NumPy für
+      Matrizen, PyTorch und JAX für ganze Netze, und Python sagt ihnen nur,
+      was sie tun sollen.</para>
+    <para>Das geht gut, solange alles, was man vorhat, in die Aufrufe dieser
+      Bibliotheken passt. Wer eine Schleife braucht, die es dort nicht gibt,
+      schreibt sie in der zweiten Sprache, in C++ oder CUDA, und verbindet
+      beide. Man arbeitet dann mit zwei Sprachen, und was eigentlich
+      gerechnet wird, steht in der, die man gerade nicht vor sich
+      hat.</para>
+    <para>Wie groß der Unterschied ist, zeigt das Programm aus Kapitel 3,
+      das einen Kreis lernt: einmal in Python, Schleife für Schleife wie in
+      Scaly, einmal mit NumPy, wo jede Schicht eine Zeile ist, und einmal in
+      Scaly. Alle drei lernen dasselbe Netz auf denselben Punkten von
+      denselben Startgewichten aus. Gemessen sind 5000 Lernschritte auf
+      einem MacBook Pro mit M1 Pro:</para>
+    <informaltable>
+      <tgroup cols="2">
+        <thead>
+          <row><entry>Fassung</entry><entry>Zeit</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>Python, Schleife für Schleife</entry><entry>24,6 s</entry></row>
+          <row><entry>Python mit NumPy</entry><entry>0,25 s</entry></row>
+          <row><entry>Scaly</entry><entry>0,10 s</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>Python allein braucht 250-mal so lange wie Scaly. NumPy holt das
+      fast ganz auf, obwohl unsere Matrizen so klein sind, dass bei jedem
+      Aufruf der Weg von Python in die Bibliothek mehr kostet als die
+      Rechnung selbst.</para>
+    <para>Die Zahlen, die die Programme unterwegs ausgeben, sind bis zum
+      200. Schritt bei Python und Scaly dieselben, Ziffer für Ziffer;
+      danach weichen die letzten Stellen ab. Python nimmt tanh aus der
+      C-Bibliothek des Systems, Scaly sein eigenes, und die beiden
+      unterscheiden sich in etwa einem von zweihundert Fällen in der letzten
+      Stelle; meist liegt dann Scalys Ergebnis näher am genauen Wert. NumPy
+      zählt die Summen in anderer Reihenfolge zusammen und weicht schon beim
+      ersten Schritt in der letzten Stelle ab. Nach den 500 Schritten der
+      Programme erkennen alle drei dieselben 188 von 200 Testpunkten
+      richtig, nach den 5000 der Messung alle 200. Die drei Programme
+      stehen <link xlink:href="https://github.com/rschleitzer/Scaly/tree/master/docs/ml/prog">auf GitHub</link>.</para>
+  </section>
+
+  <section xml:id="why-one">
+    <title>Eine Sprache bis auf die Karte</title>
+    <para>In Scaly gibt es die zweite Sprache nicht. Eine Schleife, die du
+      schreibst, wird über LLVM in Maschinencode übersetzt, wie ein
+      C-Programm; sie ist schnell, weil sie selbst schnell ist, und nicht,
+      weil eine Bibliothek sie ersetzt. Das Programm, das du liest, ist das
+      Programm, das rechnet.</para>
+    <para>Und es skaliert von selbst. Ein <literal>for</literal>, dessen Runden
+      voneinander unabhängig sind, verteilt Scaly auf die Kerne des
+      Prozessors und auf die Grafikkarte, wo es sich lohnt, ohne dass im
+      Programm etwas davon steht. Den Speicher räumt kein Garbage Collector
+      auf: Jeder Aufruf gibt frei, was er angelegt hat, wenn er zurückkehrt.
+      Beides sehen wir in Kapitel 3 genauer an. Und dieselben Programme
+      laufen auch im Browser: Die Seiten neben diesem Buch rechnen mit
+      Scaly-Programmen, für WebAssembly gebaut.</para>
+  </section>
+
+  <section xml:id="why-cost">
+    <title>Was wir aufgeben</title>
+    <para>Das hat seinen Preis. Um Python herum ist ein großer Vorrat
+      entstanden: fertige Netze, trainierte Gewichte, Bibliotheken für jedes
+      Datenformat, Werkzeuge zum Anschauen. Davon können wir nichts nehmen.
+      Wir schreiben jedes Stück selbst, vom einzelnen Neuron bis zum
+      Lernschritt, und genau darum geht es in diesem Buch: Was ein Netz tut,
+      steht dann vor dir, im Text und im Programm.</para>
+    <para>Auch in der Geschwindigkeit haben die großen Bibliotheken einen
+      Vorsprung, wo sie für eine Aufgabe von Hand optimiert sind. Ein
+      Matrixprodukt mit 2048 Zeilen und Spalten rechnet NumPy auf diesem Mac
+      in 9 Millisekunden, mit Apples Bibliothek Accelerate; die schlichte
+      Schleife aus Kapitel 3 braucht dafür auf der Grafikkarte
+      0,27 Sekunden. Diesen Abstand nehmen wir uns später vor: Wir
+      schreiben das Matrixprodukt selbst besser und messen es gegen die
+      Bibliotheken der Hersteller.</para>
+  </section>
+</chapter>

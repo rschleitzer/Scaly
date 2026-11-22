@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book SYSTEM "docbook.dtd" [
+  <!ENTITY why SYSTEM "ml/why.xml">
   <!ENTITY field SYSTEM "ml/field.xml">
   <!ENTITY matrices SYSTEM "ml/matrices.xml">
 ]>
@@ -18,6 +19,7 @@
         pages where a network learns while you watch.</para>
     </abstract>
   </info>
+&why;
 &field;
 &matrices;
 </book>

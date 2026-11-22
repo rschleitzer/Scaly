@@ -71,6 +71,32 @@ if [ -s "$FIG.circle" ] && cmp -s "$FIG.circle" "$FIG.field"; then
 else
   echo "mlbook: circle.scaly does not print what field 0 500 prints"; diff "$FIG.field" "$FIG.circle" | head -5; rc=1
 fi
+# the Python versions beside it (chapter 1 says so): circle.py prints what
+# circle.scaly prints up to the 200th step, digit for digit (after that the
+# system's tanh and Scaly's differ in a last place), and both Python versions
+# get the same test points right
+"$SCALY" run docs/ml/prog/circle.scaly > "$FIG.circle" 2>&1
+if command -v python3 > /dev/null; then
+  python3 docs/ml/prog/circle.py > "$FIG.py" 2>&1
+  if [ "$(head -3 "$FIG.py")" = "$(head -3 "$FIG.circle")" ] && [ "$(tail -1 "$FIG.py")" = "$(tail -1 "$FIG.circle")" ]; then
+    echo "prog: circle.py prints what circle.scaly prints to step 200, and its last line"
+  else
+    echo "mlbook: circle.py does not print what circle.scaly prints"; diff "$FIG.circle" "$FIG.py" | head -5; rc=1
+  fi
+  if python3 -c "import numpy" 2> /dev/null; then
+    python3 docs/ml/prog/circle_numpy.py > "$FIG.py" 2>&1
+    if [ "$(tail -1 "$FIG.py")" = "$(tail -1 "$FIG.circle")" ]; then
+      echo "prog: circle_numpy.py gets the same test points right"
+    else
+      echo "mlbook: circle_numpy.py ends otherwise: $(tail -1 "$FIG.py")"; rc=1
+    fi
+  else
+    echo "prog: circle_numpy.py SKIPPED (no numpy)"
+  fi
+  rm -f "$FIG.py"
+else
+  echo "prog: circle.py SKIPPED (no python3)"
+fi
 rm -f "$FIG.circle" "$FIG.field"
 # every program beside the book builds (product.scaly prints times, so it is
 # built, not run)

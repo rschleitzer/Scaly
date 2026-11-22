@@ -66,10 +66,54 @@ class="part"
 ><div
 class="part-row"
 ><a
-href="field.de.htm"
+href="why.de.htm"
 ><span
 class="num"
 >1.</span
+>Warum ohne Python</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="why.de.htm#why-two"
+><span
+class="num"
+>1.1</span
+>Zwei Sprachen</a
+></li
+><li
+><a
+href="why.de.htm#why-one"
+><span
+class="num"
+>1.2</span
+>Eine Sprache bis auf die Karte</a
+></li
+><li
+><a
+href="why.de.htm#why-cost"
+><span
+class="num"
+>1.3</span
+>Was wir aufgeben</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.de.htm"
+><span
+class="num"
+>2.</span
 >Ein erstes Modell</a
 ><button
 class="fold"
@@ -84,7 +128,7 @@ class="sections"
 href="field.de.htm#field-points"
 ><span
 class="num"
->1.1</span
+>2.1</span
 >Zwei Sorten von Punkten</a
 ></li
 ><li
@@ -92,7 +136,7 @@ class="num"
 href="field.de.htm#field-neuron"
 ><span
 class="num"
->1.2</span
+>2.2</span
 >Ein Neuron</a
 ></li
 ><li
@@ -100,7 +144,7 @@ class="num"
 href="field.de.htm#field-loss"
 ><span
 class="num"
->1.3</span
+>2.3</span
 >Wie falsch</a
 ></li
 ><li
@@ -108,7 +152,7 @@ class="num"
 href="field.de.htm#field-gradient"
 ><span
 class="num"
->1.4</span
+>2.4</span
 >Bergab</a
 ></li
 ><li
@@ -116,7 +160,7 @@ class="num"
 href="field.de.htm#field-features"
 ><span
 class="num"
->1.5</span
+>2.5</span
 >Bessere Eingaben</a
 ></li
 ><li
@@ -124,7 +168,7 @@ class="num"
 href="field.de.htm#field-hidden"
 ><span
 class="num"
->1.6</span
+>2.6</span
 >Verborgene Schichten</a
 ></li
 ><li
@@ -132,7 +176,7 @@ class="num"
 href="field.de.htm#field-backprop"
 ><span
 class="num"
->1.7</span
+>2.7</span
 >Backpropagation</a
 ></li
 ><li
@@ -140,7 +184,7 @@ class="num"
 href="field.de.htm#field-field"
 ><span
 class="num"
->1.8</span
+>2.8</span
 >Das Spielfeld</a
 ></li
 ><li
@@ -148,7 +192,7 @@ class="num"
 href="field.de.htm#field-test"
 ><span
 class="num"
->1.9</span
+>2.9</span
 >Verallgemeinerung</a
 ></li
 ><li
@@ -156,7 +200,7 @@ class="num"
 href="field.de.htm#field-program"
 ><span
 class="num"
->1.10</span
+>2.10</span
 >Das Programm des Spielfelds</a
 ></li
 ></ol
@@ -170,7 +214,7 @@ href="matrices.de.htm"
 aria-current="page"
 ><span
 class="num"
->2.</span
+>3.</span
 >Viele Punkte auf einmal</a
 ><button
 class="fold"
@@ -185,7 +229,7 @@ class="sections"
 href="matrices.de.htm#matrices-rows"
 ><span
 class="num"
->2.1</span
+>3.1</span
 >Eine Zeile je Punkt</a
 ></li
 ><li
@@ -193,7 +237,7 @@ class="num"
 href="matrices.de.htm#matrices-backprop"
 ><span
 class="num"
->2.2</span
+>3.2</span
 >Backpropagation mit Matrizen</a
 ></li
 ><li
@@ -201,7 +245,7 @@ class="num"
 href="matrices.de.htm#matrices-memory"
 ><span
 class="num"
->2.3</span
+>3.3</span
 >Wo die Zahlen liegen</a
 ></li
 ><li
@@ -209,7 +253,7 @@ class="num"
 href="matrices.de.htm#matrices-fast"
 ><span
 class="num"
->2.4</span
+>3.4</span
 >Schnell</a
 ></li
 ></ol
@@ -327,7 +371,7 @@ id="content"
 ><article
 ><p
 class="part-label"
->Kapitel 2</p
+>Kapitel 3</p
 ><h1
 id="matrices"
 >Viele Punkte auf einmal</h1
@@ -633,7 +677,7 @@ href="#matrices-backprop"
 >Backpropagation mit Matrizen</a
 ></h2
 ><p
->Rückwärts geht es genauso. In Kapitel 1 hatte jedes Neuron für
+>Rückwärts geht es genauso. In Kapitel 2 hatte jedes Neuron für
       jeden Punkt seinen Anteil am Fehler, den Fehler nach seiner Summe.
       Schreiben wir auch diese Anteile untereinander, eine Zeile je Punkt
       und eine Spalte je Neuron, entsteht eine Matrix <math
@@ -806,7 +850,7 @@ stretchy="false"
 ></mrow
 ></msub
 ></math
-> aus Kapitel 1. Die Summe selbst ist wieder ein
+> aus Kapitel 2. Die Summe selbst ist wieder ein
       Matrixprodukt: Zeile <math
 ><mi
 >i</mi
@@ -896,7 +940,7 @@ stretchy="false"
 ></math
 ></div
 ><p
->Bleiben die Ableitungen der Gewichte. In Kapitel 1 trug jeder
+>Bleiben die Ableitungen der Gewichte. In Kapitel 2 trug jeder
       Punkt zum Gewicht <math
 ><msub
 ><mi

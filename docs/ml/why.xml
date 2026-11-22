@@ -1,0 +1,88 @@
+<chapter xml:id="why">
+  <title>Why Without Python</title>
+
+  <para>Almost all machine learning today is written in Python. In this
+    chapter we look at why that is, what it costs, and why this book takes
+    another road.</para>
+
+  <section xml:id="why-two">
+    <title>Two Languages</title>
+    <para>A neural network computes a great many very simple things:
+      multiplications, additions, a tanh here and there. Written in Python,
+      each of them is slow, because Python looks again at every number to
+      see what kind of value it is and what a plus sign means for it. That
+      is why hardly anyone computes in Python itself. The work is done by
+      libraries written in C, C++ or CUDA, NumPy for matrices, PyTorch and
+      JAX for whole networks, and Python only tells them what to do.</para>
+    <para>That works well as long as everything you have in mind fits into
+      the calls of these libraries. Whoever needs a loop they do not have
+      writes it in the second language, in C++ or CUDA, and connects the
+      two. Then you work in two languages, and what is actually computed is
+      written in the one you do not have in front of you.</para>
+    <para>How big the difference is shows in the program from chapter 3
+      that learns a circle: once in Python, loop by loop as in Scaly, once
+      with NumPy, where each layer is one line, and once in Scaly. All three
+      learn the same network on the same points from the same starting
+      weights. Measured are 5000 learning steps on a MacBook Pro with an
+      M1 Pro:</para>
+    <informaltable>
+      <tgroup cols="2">
+        <thead>
+          <row><entry>Version</entry><entry>Time</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>Python, loop by loop</entry><entry>24.6 s</entry></row>
+          <row><entry>Python with NumPy</entry><entry>0.25 s</entry></row>
+          <row><entry>Scaly</entry><entry>0.10 s</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>Python alone takes 250 times as long as Scaly. NumPy makes up
+      almost all of it, although our matrices are so small that with every
+      call the way from Python into the library costs more than the
+      computation itself.</para>
+    <para>The numbers the programs print along the way are the same in
+      Python and Scaly up to the 200th step, digit for digit; after that the
+      last places differ. Python takes tanh from the system's C library,
+      Scaly its own, and the two differ in the last place in about one case
+      in two hundred; then Scaly's result is mostly the one closer to the
+      exact value. NumPy adds up the sums in another order and differs in
+      the last place from the first step on. After the 500 steps of the
+      programs all three get the same 188 of 200 test points right, after
+      the 5000 of the measurement all 200. The three programs are
+      <link xlink:href="https://github.com/rschleitzer/Scaly/tree/master/docs/ml/prog">on GitHub</link>.</para>
+  </section>
+
+  <section xml:id="why-one">
+    <title>One Language Down to the Card</title>
+    <para>In Scaly there is no second language. A loop you write is
+      translated through LLVM into machine code, like a C program; it is
+      fast because it is fast itself, not because a library replaces it.
+      The program you read is the program that computes.</para>
+    <para>And it scales by itself. A <literal>for</literal> whose rounds are
+      independent of each other Scaly spreads over the processor's cores
+      and onto the graphics card where that pays, without anything about it
+      in the program. No garbage collector clears the memory: every call
+      frees what it made when it returns. We look at both more closely in
+      chapter 3. And the same programs also run in the browser: the pages
+      beside this book compute with Scaly programs built for
+      WebAssembly.</para>
+  </section>
+
+  <section xml:id="why-cost">
+    <title>What We Give Up</title>
+    <para>That has its price. Around Python a large store has grown: ready
+      networks, trained weights, libraries for every data format, tools to
+      look at it all. We can take none of it. We write every piece
+      ourselves, from the single neuron to the learning step, and that is
+      exactly what this book is about: what a network does is then in front
+      of you, in the text and in the program.</para>
+    <para>In speed, too, the big libraries are ahead where they are
+      hand-tuned for one task. A matrix product of 2048 rows and columns
+      takes NumPy 9 milliseconds on this Mac, with Apple's Accelerate
+      library; the plain loop from chapter 3 takes 0.27 seconds for it
+      on the graphics card. We will take on that gap later: we write the
+      matrix product better ourselves and measure it against the
+      manufacturers' libraries.</para>
+  </section>
+</chapter>
