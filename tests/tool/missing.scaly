@@ -1,0 +1,9 @@
+; `scaly run` of a program that calls a routine defined nowhere in the run --
+; neither in the program, nor in a package object, nor in the tool's own image
+; (a standard-library routine newer than the tool is one). The JIT's stub for
+; it ends the run where it is called, naming the symbol (exit 25); until
+; 2026-11-22 it answered zero and the run went on as if nothing had happened.
+function '_Z5ghostv'() returns int extern
+print "before"
+let g '_Z5ghostv'()
+print "after `g`"

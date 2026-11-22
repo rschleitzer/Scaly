@@ -24,6 +24,9 @@
 #              from its sources, an empty cache)
 #   run        the same program through `scaly run`, arguments handed on;
 #              tests/tool/globals.scaly, whose narrow constants aborted the JIT
+#   missing    tests/tool/missing.scaly calls a routine nothing in the run
+#              defines: the run ends at the call, rc 25, naming the symbol,
+#              after what the program printed before it
 #   native     the cache holds the C and assembly files THIS target takes,
 #              chosen by name: one fcontext for this architecture, no
 #              `_windows` file on a POSIX host (eio_windows.c there instead)
@@ -323,6 +326,9 @@ if scaly_jit_available 2>/dev/null; then
   [ "$out" = "18 7 5" ] && ok || bad "run globals: got '$(echo "$out" | tail -1)'"
   out=$("$SCALY" run tests/tool/delegates.scaly 2>&1)
   [ "$out" = "6 15 4 18" ] && ok || bad "run delegates: got '$(echo "$out" | tail -1)'"
+  out=$("$SCALY" run tests/tool/missing.scaly 2>&1); rc=$?
+  [ "$rc" = 25 ] && [ "$out" = "$(printf 'before\nScaly: _Z5ghostv is defined nowhere in this run (a standard library newer than this tool?)')" ] && ok \
+    || bad "run missing: rc=$rc '$(echo "$out" | tr '\n' '|')'"
 fi
 
 # native

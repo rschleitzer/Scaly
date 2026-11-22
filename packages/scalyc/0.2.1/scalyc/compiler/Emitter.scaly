@@ -9746,20 +9746,17 @@ define Emitter
                                         is_scaly_mangled := false
                                 }
                             }
+                            ; The stub ENDS the run, loudly, naming the symbol
+                            ; (exit 25): it is reached only where a call was
+                            ; meant to go somewhere -- a standard-library
+                            ; routine newer than this tool's image answered a
+                            ; silent zero before 2026-11-22 (`Drawing.box`).
                             if is_scaly_mangled
                             {
                                 let saved_block LLVMGetInsertBlock(builder)
                                 let block LLVMAppendBasicBlockInContext(context, func, "jitstub")
                                 LLVMPositionBuilderAtEnd(builder, block)
-                                let func_ty LLVMGlobalGetValueType(func)
-                                let ret_ty LLVMGetReturnType(func_ty)
-                                if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
-                                    LLVMBuildRetVoid builder
-                                if LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Void()
-                                {
-                                    let zero LLVMConstNull(ret_ty)
-                                    LLVMBuildRet(builder, zero)
-                                }
+                                this.emit_jit_missing(Slice[char](name_len, name_ptr))
                                 if saved_block <> null
                                     LLVMPositionBuilderAtEnd(builder, saved_block)
                             }
@@ -9768,6 +9765,46 @@ define Emitter
                 }
                 func := LLVMGetNextFunction(func)
             }
+        }
+
+        ; The body of a JIT stub: what the program printed so far flushed
+        ; (fflush(null)), then `Scaly: <symbol> is defined nowhere in this run`
+        ; on standard error (scaly_eputs, which every tool's image has), then
+        ; exit 25.
+        procedure emit_jit_missing(mutable this, name: Slice[char])
+        {
+            let void_ty LLVMVoidTypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let i32_ty LLVMInt32TypeInContext(context)
+            var ptys Vector[LLVMTypeRef](1)
+            ptys.put(0, ptr_ty)
+            let flush_ty LLVMFunctionType(i32_ty, ptys.data, 1, 0)
+            let flush_fn this.get_parfor_runtime_fn("fflush", flush_ty)
+            var a0 Vector[LLVMValueRef](1)
+            a0.put(0, LLVMConstPointerNull(ptr_ty))
+            LLVMBuildCall2(builder, flush_ty, flush_fn, a0.data, 1, "")
+            let puts_ty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            let puts_fn this.get_parfor_runtime_fn("_Z11scaly_eputsP10const_char", puts_ty)
+            var text StringBuilder()
+            text.append "Scaly: "
+            var k: size_t 0
+            while k < name.length
+            {
+                text.append(name[k])
+                k := k + 1
+            }
+            text.append " is defined nowhere in this run (a standard library newer than this tool?)\n"
+            var a1 Vector[LLVMValueRef](1)
+            a1.put(0, LLVMBuildGlobalStringPtr(builder, text.to_string().to_c_string(), ".jit.missing"))
+            LLVMBuildCall2(builder, puts_ty, puts_fn, a1.data, 1, "")
+            var etys Vector[LLVMTypeRef](1)
+            etys.put(0, i32_ty)
+            let exit_ty LLVMFunctionType(void_ty, etys.data, 1, 0)
+            let exit_fn this.get_parfor_runtime_fn("exit", exit_ty)
+            var a2 Vector[LLVMValueRef](1)
+            a2.put(0, LLVMConstInt(i32_ty, 25, 0))
+            LLVMBuildCall2(builder, exit_ty, exit_fn, a2.data, 1, "")
+            LLVMBuildUnreachable builder
         }
 
         ; Drop the thread-local bit from every global the JIT module DEFINES.
