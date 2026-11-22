@@ -51,4 +51,45 @@
       Handvoll Matrixoperationen statt für jede einzelne
       Multiplikation.</para>
   </section>
+
+  <section xml:id="matrices-backprop">
+    <title>Backpropagation mit Matrizen</title>
+    <para>Rückwärts geht es genauso. In Kapitel 1 hatte jedes Neuron für
+      jeden Punkt seinen Anteil am Fehler, den Fehler nach seiner Summe.
+      Schreiben wir auch diese Anteile untereinander, eine Zeile je Punkt
+      und eine Spalte je Neuron, entsteht eine Matrix <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>, so groß
+      wie <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation>: <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> ist der Anteil von Neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> am
+      Fehler für Punkt <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation>. Für die Ausgabe ist das eine einzige
+      Spalte, Zeile für Zeile das bekannte <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></inlineequation>.</para>
+    <para>Eine Schicht weiter vorn bekommt Neuron <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> seinen
+      Anteil über alle Gewichte, mit denen die Neuronen der Schicht dahinter
+      seine Antwort lesen, und durch sein eigenes tanh:</para>
+    <informalequation><mml:math><mml:msub><mml:mrow><mml:mi>d</mml:mi><mml:mo>′</mml:mo></mml:mrow><mml:mrow><mml:mi>i</mml:mi><mml:mi>k</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mo>∑</mml:mo><mml:mrow><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:msub><mml:mi>d</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mi>k</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msubsup><mml:mi>h</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>k</mml:mi></mml:mrow><mml:mn>2</mml:mn></mml:msubsup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>Bei einer einzigen Ausgabe hat die Summe einen Summanden, und das
+      ist das <inlineequation><mml:math><mml:mi>d</mml:mi><mml:msub><mml:mi>v</mml:mi><mml:mrow><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> aus Kapitel 1. Die Summe selbst ist wieder ein
+      Matrixprodukt: Zeile <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> mit Zeile
+      <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>. Damit daraus Zeile mal Spalte wird,
+      wird <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> gespiegelt, seine Zeilen werden Spalten; das heißt
+      die <emphasis>Transponierte</emphasis> <inlineequation><mml:math><mml:msup><mml:mi>W</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation>. Das
+      tanh wirkt auf jede Zahl für sich, Zahl mal Zahl an derselben Stelle,
+      geschrieben <inlineequation><mml:math><mml:mo>⊙</mml:mo></mml:math></inlineequation>:</para>
+    <informalequation><mml:math><mml:mi>D</mml:mi><mml:mo>′</mml:mo><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>D</mml:mi><mml:msup><mml:mi>W</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo>⊙</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>H</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>Bleiben die Ableitungen der Gewichte. In Kapitel 1 trug jeder
+      Punkt zum Gewicht <inlineequation><mml:math><mml:msub><mml:mi>v</mml:mi><mml:mrow><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> das Produkt <inlineequation><mml:math><mml:mi>d</mml:mi><mml:msub><mml:mi>h</mml:mi><mml:mrow><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> bei: die Antwort, die
+      das Gewicht liest, mal den Anteil des Neurons, das sie liest. Über alle
+      Punkte zusammengezählt und durch ihre Anzahl geteilt, war das die
+      Ableitung. Für <inlineequation><mml:math><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mi>k</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> ist es genauso, Punkt <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> trägt
+      <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>k</mml:mi></mml:mrow></mml:msub><mml:msub><mml:mi>d</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> bei, und die Summe über alle Punkte ist Zeile
+      <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation> mal Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>:</para>
+    <informalequation><mml:math><mml:msub><mml:mo>∑</mml:mo><mml:mrow><mml:mi>i</mml:mi></mml:mrow></mml:msub><mml:msub><mml:mi>h</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>k</mml:mi></mml:mrow></mml:msub><mml:msub><mml:mi>d</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mi>k</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></informalequation>
+    <para>Alle diese Summen zusammen sind das Matrixprodukt <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi></mml:math></inlineequation>,
+      so groß wie <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, eine Zahl für jedes Gewicht. Der Bias liest
+      statt einer Antwort immer 1, seine Summen sind darum einfach die
+      Spaltensummen von <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>. Damit ist ein ganzer Lernschritt in
+      Matrizen geschrieben: vorwärts für jede Schicht ihr
+      <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation>, rückwärts für jede Schicht ihr
+      <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>, daraus <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi></mml:math></inlineequation> und die Spaltensummen, und dann
+      wird jedes Gewicht wie bisher um seine Ableitung verringert, geteilt
+      durch die Anzahl der Punkte und mal die Lernrate.</para>
+  </section>
 </chapter>

@@ -188,6 +188,14 @@ class="num"
 >2.1</span
 >A Row for Each Point</a
 ></li
+><li
+><a
+href="matrices.htm#matrices-backprop"
+><span
+class="num"
+>2.2</span
+>Backpropagation with Matrices</a
+></li
 ></ol
 ></li
 ></ol
@@ -558,6 +566,475 @@ stretchy="false"
       prepares the next chapter: a program that forms derivatives by
       itself then needs a rule for a handful of matrix operations instead
       of for every single multiplication.</p
+></section
+><section
+id="matrices-backprop"
+><h2
+><a
+class="header"
+href="#matrices-backprop"
+>Backpropagation with Matrices</a
+></h2
+><p
+>Backwards it works the same way. In chapter 1 every neuron had,
+      for every point, its share of the error, the error after its sum.
+      Write these shares one under the other as well, a row for each point
+      and a column for each neuron, and they make a matrix <math
+><mi
+>D</mi
+></math
+> the
+      size of <math
+><mi
+>Z</mi
+></math
+>: <math
+><msub
+><mi
+>d</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> is neuron <math
+><mi
+>j</mi
+></math
+>'s share of the
+      error for point <math
+><mi
+>i</mi
+></math
+>. For the output it is a single column,
+      row by row the familiar <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+>.</p
+><p
+>One layer further forward, neuron <math
+><mi
+>k</mi
+></math
+> gets its share
+      through all the weights with which the neurons of the layer behind
+      read its answer, and through its own tanh:</p
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mrow
+><mi
+>d</mi
+><mo
+>′</mo
+></mrow
+><mrow
+><mi
+>i</mi
+><mi
+>k</mi
+></mrow
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mo
+>∑</mo
+><mrow
+><mi
+>j</mi
+></mrow
+></msub
+><msub
+><mi
+>d</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><msub
+><mi
+>w</mi
+><mrow
+><mi
+>k</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msubsup
+><mi
+>h</mi
+><mrow
+><mi
+>i</mi
+><mi
+>k</mi
+></mrow
+><mn
+>2</mn
+></msubsup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>With a single output the sum has one term, and that is the
+      <math
+><mi
+>d</mi
+><msub
+><mi
+>v</mi
+><mrow
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> of chapter 1. The sum itself is a matrix product again: row
+      <math
+><mi
+>i</mi
+></math
+> of <math
+><mi
+>D</mi
+></math
+> with row <math
+><mi
+>k</mi
+></math
+> of <math
+><mi
+>W</mi
+></math
+>.
+      To make that a row times a column, <math
+><mi
+>W</mi
+></math
+> is mirrored, its rows
+      becoming columns; that is called the <em
+>transpose</em
+>
+      <math
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+></math
+>. The tanh acts on each number on its own,
+      number times number at the same place, written <math
+><mo
+>⊙</mo
+></math
+>:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>D</mi
+><mo
+>′</mo
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>D</mi
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+>⊙</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>H</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>What remains are the derivatives of the weights. In chapter 1
+      every point added to weight <math
+><msub
+><mi
+>v</mi
+><mrow
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> the product <math
+><mi
+>d</mi
+><msub
+><mi
+>h</mi
+><mrow
+><mi
+>j</mi
+></mrow
+></msub
+></math
+>: the answer
+      the weight reads, times the share of the neuron that reads it. Added
+      up over all points and divided by their number, that was the
+      derivative. For <math
+><msub
+><mi
+>w</mi
+><mrow
+><mi
+>k</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> it is the same, point <math
+><mi
+>i</mi
+></math
+> adds
+      <math
+><msub
+><mi
+>h</mi
+><mrow
+><mi
+>i</mi
+><mi
+>k</mi
+></mrow
+></msub
+><msub
+><mi
+>d</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+>, and the sum over all points is row <math
+><mi
+>k</mi
+></math
+> of
+      <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+></math
+> times column <math
+><mi
+>j</mi
+></math
+> of <math
+><mi
+>D</mi
+></math
+>:</p
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mo
+>∑</mo
+><mrow
+><mi
+>i</mi
+></mrow
+></msub
+><msub
+><mi
+>h</mi
+><mrow
+><mi
+>i</mi
+><mi
+>k</mi
+></mrow
+></msub
+><msub
+><mi
+>d</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>=</mo
+><msub
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mi
+>k</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+></div
+><p
+>All these sums together are the matrix product <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+>,
+      the size of <math
+><mi
+>W</mi
+></math
+>, one number for each weight. The bias reads
+      a 1 instead of an answer, so its sums are simply the column sums of
+      <math
+><mi
+>D</mi
+></math
+>. With that a whole learning step is written in
+      matrices: forwards, each layer's <math
+><mi
+>Z</mi
+></math
+> and <math
+><mi
+>H</mi
+></math
+>;
+      backwards, each layer's <math
+><mi
+>D</mi
+></math
+>, from it <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+> and the
+      column sums; and then every weight is decreased by its derivative as
+      before, divided by the number of points and times the learning
+      rate.</p
 ></section
 ></article
 ><nav

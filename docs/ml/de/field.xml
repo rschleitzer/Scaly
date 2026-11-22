@@ -375,7 +375,7 @@
   </section>
 
   <section xml:id="field-backprop">
-    <title>Rückwärtsrechnung</title>
+    <title>Backpropagation</title>
     <para>Wie lernt ein verborgenes Neuron? Seine Gewichte sind so weit vom
       Fehler entfernt wie nur möglich, hinter dem Ausgabeneuron. Die
       Kettenregel funktioniert trotzdem, mit einer Kette, die ein Glied
@@ -400,13 +400,13 @@
       <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation> für seinen Bias. Der Fehler wird Schicht für
       Schicht rückwärts durch das Netz gereicht, der Anteil jeder Schicht
       aus dem Anteil der Schicht nach ihr berechnet. Das ist die
-      <emphasis>Rückwärtsrechnung</emphasis> (englisch
-      <emphasis>backpropagation</emphasis>), und sie ist das ganze
+      <emphasis>Backpropagation</emphasis>, die Rückwärtsrechnung durch das
+      Netz, und sie ist das ganze
       Geheimnis, wie Netze jeder Tiefe lernen.</para>
     <sidebar role="tryit">
       <para><link xlink:href="../play/model/#model=hidden&amp;lang=de">Öffne noch einmal die Seite mit dem Netz für XOR.</link>
         Unter dem Bild steht jetzt die Prozedur
-        <literal>network_step</literal>: die Rückwärtsrechnung, so wie
+        <literal>network_step</literal>: die Backpropagation, so wie
         hier hergeleitet. Für jeden Punkt rechnet sie vorwärts die
         Antworten <inlineequation><mml:math><mml:msub><mml:mi>h</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>a</mml:mi></mml:math></inlineequation>, dann rückwärts
         <inlineequation><mml:math><mml:mi>d</mml:mi></mml:math></inlineequation> und daraus jedes <inlineequation><mml:math><mml:msub><mml:mi>d</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></inlineequation>, und am Ende
@@ -624,7 +624,7 @@
       <filename>field.scaly</filename>, für WebAssembly gebaut. Es ist das
       Programm der <link xlink:href="../play/model/#model=hidden&amp;lang=de">Seite mit dem Netz für XOR</link>,
       erwachsen geworden: alles, was die Seite einstellen lässt, und die
-      Rückwärtsrechnung, die <literal>network_step</literal> für ein Netz
+      Backpropagation, die <literal>network_step</literal> für ein Netz
       mit einer verborgenen Schicht ausschreibt, hier in Schleifen über
       beliebig viele Schichten. Die Zahlen, die die Seite zeigt, liest sie
       direkt aus dem Speicher des Programms, ohne Kopie. Das Bild der Ebene

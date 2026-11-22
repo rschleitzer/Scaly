@@ -134,7 +134,7 @@ href="field.de.htm#field-backprop"
 ><span
 class="num"
 >1.7</span
->Rückwärtsrechnung</a
+>Backpropagation</a
 ></li
 ><li
 ><a
@@ -187,6 +187,14 @@ href="matrices.de.htm#matrices-rows"
 class="num"
 >2.1</span
 >Eine Zeile je Punkt</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-backprop"
+><span
+class="num"
+>2.2</span
+>Backpropagation mit Matrizen</a
 ></li
 ></ol
 ></li
@@ -2386,7 +2394,7 @@ id="field-backprop"
 ><a
 class="header"
 href="#field-backprop"
->Rückwärtsrechnung</a
+>Backpropagation</a
 ></h2
 ><p
 >Wie lernt ein verborgenes Neuron? Seine Gewichte sind so weit vom
@@ -2577,11 +2585,9 @@ stretchy="false"
       Schicht rückwärts durch das Netz gereicht, der Anteil jeder Schicht
       aus dem Anteil der Schicht nach ihr berechnet. Das ist die
       <em
->Rückwärtsrechnung</em
-> (englisch
-      <em
->backpropagation</em
->), und sie ist das ganze
+>Backpropagation</em
+>, die Rückwärtsrechnung durch das
+      Netz, und sie ist das ganze
       Geheimnis, wie Netze jeder Tiefe lernen.</p
 ><aside
 class="tryit"
@@ -2596,7 +2602,7 @@ href="../play/model/#model=hidden&#38;lang=de"
         Unter dem Bild steht jetzt die Prozedur
         <code
 >network_step</code
->: die Rückwärtsrechnung, so wie
+>: die Backpropagation, so wie
         hier hergeleitet. Für jeden Punkt rechnet sie vorwärts die
         Antworten <math
 ><msub
@@ -3163,7 +3169,7 @@ href="../play/model/#model=hidden&#38;lang=de"
 >Seite mit dem Netz für XOR</a
 >,
       erwachsen geworden: alles, was die Seite einstellen lässt, und die
-      Rückwärtsrechnung, die <code
+      Backpropagation, die <code
 >network_step</code
 > für ein Netz
       mit einer verborgenen Schicht ausschreibt, hier in Schleifen über

@@ -107,6 +107,33 @@
         space-after: %block-sep%
         (process-children))))
 
+;; the element after nd among its siblings, #f where none
+(define (next-element nd)
+  (let loop ((nl (follow nd)))
+    (cond ((node-list-empty? nl) #f)
+          ((gi (node-list-first nl)) (node-list-first nl))
+          (else (loop (node-list-rest nl))))))
+
+;; a paragraph that announces a formula (the formula follows it) stays on
+;; the page of its formula: Walsh's $paragraph$ (dbprint.dsl), kept with
+;; what follows
+(element para
+  (let ((next (next-element (current-node))))
+    (if (and next (equal? (gi next) "informalequation"))
+        (make paragraph
+          first-line-start-indent: (if (is-first-para)
+                                       %para-indent-firstpara%
+                                       %para-indent%)
+          space-before: %para-sep%
+          space-after: (if (INLIST?) 0pt %para-sep%)
+          quadding: %default-quadding%
+          hyphenate?: %hyphenation%
+          language: (dsssl-language-code)
+          country: (dsssl-country-code)
+          keep-with-next?: #t
+          (process-children-trim))
+        ($paragraph$))))
+
 ;; the paragraphs of a box on its green
 (element (sidebar para)
   (make paragraph
