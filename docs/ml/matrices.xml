@@ -222,4 +222,78 @@ function zeros(rows: int, cols: int) returns Matrix
     print "step `step` train `train` test `test`"
 }</programlisting>
   </section>
+  <section xml:id="matrices-fast">
+    <title>Fast</title>
+    <para>That leaves the question of how fast all this is. For our circle
+      it is hardly worth asking: built with <command>scaly build
+      --release</command>, the program takes a hundredth of a second for its
+      500 learning steps. With images it is another matter; the handwritten
+      digits of MNIST are 60,000 images of 784 points each. How the time
+      grows with the size shows in the matrix product on its own, <inlineequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mi>B</mml:mi></mml:math></inlineequation> for
+      two square matrices of <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> rows and columns:</para>
+    <programlisting role="fragment">function product(A: Vector[f32], B: Vector[f32], n: int) returns Vector[f32]
+{
+    var C Vector[f32]#((n * n) as size_t)
+    for t in n * n
+    {
+        let i t / n
+        let j t % n
+        var s: f32 0.0
+        var k 0
+        while k &lt; n
+        {
+            let a A[(i * n + k) as size_t]
+            s := s + a * B[(k * n + j) as size_t]
+            k := k + 1
+        }
+        C.put(t as size_t, s)
+    }
+    C
+}</programlisting>
+    <para>A round of the loop makes one number of <inlineequation><mml:math><mml:mi>C</mml:mi></mml:math></inlineequation>, row <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation>
+      times column <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>B</mml:mi></mml:math></inlineequation>. Here the matrices are just their
+      <literal>Vector</literal>, row after row, and their numbers are <literal>f32</literal> instead
+      of <literal>f64</literal>: they take half the memory, and that is how a graphics
+      card computes. The time for one product, measured on a MacBook Pro
+      with an M1 Pro, with one core, with all ten, on the graphics card,
+      and as Scaly decides by itself:</para>
+    <informaltable>
+      <tgroup cols="5">
+        <thead>
+          <row><entry>n</entry><entry>one core</entry><entry>all cores</entry><entry>card</entry><entry>Scaly decides</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>64</entry><entry>0.18 ms</entry><entry>0.10 ms</entry><entry>0.33 ms</entry><entry>0.12 ms</entry></row>
+          <row><entry>128</entry><entry>1.7 ms</entry><entry>0.29 ms</entry><entry>0.43 ms</entry><entry>0.33 ms</entry></row>
+          <row><entry>256</entry><entry>15.6 ms</entry><entry>2.0 ms</entry><entry>1.06 ms</entry><entry>1.7 ms</entry></row>
+          <row><entry>512</entry><entry>127 ms</entry><entry>17.9 ms</entry><entry>5.0 ms</entry><entry>5.0 ms</entry></row>
+          <row><entry>1024</entry><entry>1.08 s</entry><entry>0.20 s</entry><entry>35 ms</entry><entry>35 ms</entry></row>
+          <row><entry>2048</entry><entry>25.4 s</entry><entry>8.0 s</entry><entry>0.27 s</entry><entry>0.27 s</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>With one core the time grows like <inlineequation><mml:math><mml:msup><mml:mi>n</mml:mi><mml:mn>3</mml:mn></mml:msup></mml:math></inlineequation>: twice the size is eight
+      times the work. Only from 1024 to 2048 it takes about 24 times as long. The
+      numbers of a column of <inlineequation><mml:math><mml:mi>B</mml:mi></mml:math></inlineequation> lie far apart in memory, each <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> places
+      after the one before, and at 2048 they no longer fit into the
+      processor's fast intermediate memory, the cache; it then mostly waits
+      for memory. All cores together are faster from 64 on, at 1024 a good
+      five times. The graphics card overtakes them between 128 and 256, and
+      at 2048 it computes thirty times as fast as all the cores.</para>
+    <para>The last column is the one that matters. The program says only
+      <literal>for</literal>; where it goes, Scaly decides while it runs: it measures
+      what a round costs and hands the loop to the cores or to the card
+      where that pays. It makes the faster choice; only at 256, where cores
+      and card are close, it switches between the two and ends up in
+      between. And
+      everywhere the result is the same, bit for bit: the card adds up every
+      sum in the same order as the processor.</para>
+    <para>The loops of our circle program are of the same kind. Each round
+      fills one row of the matrix it writes, and so that Scaly sees this,
+      the inner loops run up to that matrix's number of columns:
+      <literal>while j &lt; H.cols</literal> in <literal>layer</literal>. So Scaly spreads all six
+      loops over the points across the cores by itself as soon as that
+      pays; with 200 points it does not pay yet. The whole measuring
+      program is <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/product.scaly">on GitHub</link>.</para>
+  </section>
 </chapter>

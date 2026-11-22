@@ -227,4 +227,80 @@ function zeros(rows: int, cols: int) returns Matrix
     print "step `step` train `train` test `test`"
 }</programlisting>
   </section>
+  <section xml:id="matrices-fast">
+    <title>Schnell</title>
+    <para>Bleibt die Frage, wie schnell das alles geht. Für unseren Kreis
+      ist sie kaum der Rede wert: Mit <command>scaly build --release</command>
+      gebaut, braucht das Programm für seine 500 Lernschritte eine
+      Hundertstelsekunde. Bei Bildern sieht das anders aus; die
+      handgeschriebenen Ziffern von MNIST sind 60 000 Bilder mit je 784
+      Punkten. Wie die Zeit mit der Größe wächst, zeigt das Matrixprodukt
+      für sich, <inlineequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mi>B</mml:mi></mml:math></inlineequation> für zwei quadratische Matrizen mit <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> Zeilen und
+      Spalten:</para>
+    <programlisting role="fragment">function product(A: Vector[f32], B: Vector[f32], n: int) returns Vector[f32]
+{
+    var C Vector[f32]#((n * n) as size_t)
+    for t in n * n
+    {
+        let i t / n
+        let j t % n
+        var s: f32 0.0
+        var k 0
+        while k &lt; n
+        {
+            let a A[(i * n + k) as size_t]
+            s := s + a * B[(k * n + j) as size_t]
+            k := k + 1
+        }
+        C.put(t as size_t, s)
+    }
+    C
+}</programlisting>
+    <para>Eine Runde der Schleife bildet eine Zahl von <inlineequation><mml:math><mml:mi>C</mml:mi></mml:math></inlineequation>, Zeile <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> von
+      <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation> mal Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>B</mml:mi></mml:math></inlineequation>. Die Matrizen sind hier nur ihr
+      <literal>Vector</literal>, Zeile für Zeile, und ihre Zahlen sind <literal>f32</literal> statt
+      <literal>f64</literal>: Sie brauchen halb so viel Speicher, und so rechnet eine
+      Grafikkarte. Die Zeit für ein Produkt, gemessen auf einem MacBook Pro
+      mit M1 Pro, mit einem Kern, mit allen zehn, auf der Grafikkarte
+      und so, wie Scaly selbst entscheidet:</para>
+    <informaltable>
+      <tgroup cols="5">
+        <thead>
+          <row><entry>n</entry><entry>ein Kern</entry><entry>alle Kerne</entry><entry>Karte</entry><entry>Scaly entscheidet</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>64</entry><entry>0,18 ms</entry><entry>0,10 ms</entry><entry>0,33 ms</entry><entry>0,12 ms</entry></row>
+          <row><entry>128</entry><entry>1,7 ms</entry><entry>0,29 ms</entry><entry>0,43 ms</entry><entry>0,33 ms</entry></row>
+          <row><entry>256</entry><entry>15,6 ms</entry><entry>2,0 ms</entry><entry>1,06 ms</entry><entry>1,7 ms</entry></row>
+          <row><entry>512</entry><entry>127 ms</entry><entry>17,9 ms</entry><entry>5,0 ms</entry><entry>5,0 ms</entry></row>
+          <row><entry>1024</entry><entry>1,08 s</entry><entry>0,20 s</entry><entry>35 ms</entry><entry>35 ms</entry></row>
+          <row><entry>2048</entry><entry>25,4 s</entry><entry>8,0 s</entry><entry>0,27 s</entry><entry>0,27 s</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>Mit einem Kern wächst die Zeit wie <inlineequation><mml:math><mml:msup><mml:mi>n</mml:mi><mml:mn>3</mml:mn></mml:msup></mml:math></inlineequation>: Doppelte Größe ist
+      achtfache Arbeit. Nur von 1024 auf 2048 dauert es rund 24-mal so lange. Die
+      Zahlen einer Spalte von <inlineequation><mml:math><mml:mi>B</mml:mi></mml:math></inlineequation> liegen im Speicher weit auseinander, jede
+      <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> Plätze nach der vorigen, und bei 2048 passen sie nicht mehr in den
+      schnellen Zwischenspeicher des Prozessors, den Cache; er wartet dann
+      vor allem auf den Speicher. Alle Kerne zusammen sind schon bei 64
+      schneller, bei 1024 gut fünfmal. Die Grafikkarte überholt sie zwischen
+      128 und 256, und bei 2048 rechnet sie dreißigmal so schnell wie alle
+      Kerne.</para>
+    <para>Die letzte Spalte ist die, auf die es ankommt. Im Programm steht
+      nur ein <literal>for</literal>; wohin es geht, entscheidet Scaly, während es läuft:
+      Es misst, was eine Runde kostet, und gibt die Schleife an die Kerne
+      oder an die Karte, wo sich das lohnt. Es trifft dabei die schnellere Wahl,
+      nur bei 256, wo Kerne und Karte nahe beieinanderliegen, wechselt es
+      zwischen beiden und landet dazwischen. Und überall kommt dasselbe heraus, Bit für
+      Bit: Die Karte rechnet jede Summe in derselben Reihenfolge wie der
+      Prozessor.</para>
+    <para>Die Schleifen unseres Kreisprogramms sind von derselben Art. Jede
+      Runde füllt eine Zeile der Matrix, in die sie schreibt, und damit
+      Scaly das sieht, laufen die inneren Schleifen bis zu deren
+      Spaltenzahl: <literal>while j &lt; H.cols</literal> in <literal>layer</literal>. Alle sechs
+      Schleifen über die Punkte verteilt Scaly darum selbst auf die Kerne,
+      sobald sich das lohnt; bei 200 Punkten lohnt es sich noch nicht. Das
+      ganze Messprogramm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/product.scaly">auf GitHub</link>.</para>
+  </section>
 </chapter>

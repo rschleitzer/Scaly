@@ -204,6 +204,14 @@ class="num"
 >2.3</span
 >Wo die Zahlen liegen</a
 ></li
+><li
+><a
+href="matrices.de.htm#matrices-fast"
+><span
+class="num"
+>2.4</span
+>Schnell</a
+></li
 ></ol
 ></li
 ></ol
@@ -1112,22 +1120,22 @@ stretchy="false"
 ><pre
 class="listing fragment"
 ><code
->function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+>function back(D: Matrix, W: Matrix, H: Matrix) returns Matrix
 {
-    var below zeros(d.rows, w.rows)
-    for i in d.rows
+    var below zeros(D.rows, W.rows)
+    for i in D.rows
     {
         var k 0
-        while k &#60; w.rows
+        while k &#60; below.cols
         {
             var s 0.0
             var j 0
-            while j &#60; w.cols
+            while j &#60; W.cols
             {
-                s := s + d.at(i, j) * w.at(k, j)
+                s := s + D.at(i, j) * W.at(k, j)
                 j := j + 1
             }
-            let out h.at(i, k)
+            let out H.at(i, k)
             below.put(i, k, s * (1.0 - out * out))
             k := k + 1
         }
@@ -1237,23 +1245,23 @@ class="listing fragment"
 ><pre
 class="listing fragment"
 ><code
->procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+>procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
 {
     ; forward, layer by layer
-    let h1 layer(x, net.w1, net.b1)
-    let h2 layer(h1, net.w2, net.b2)
-    let a layer(h2, net.w3, net.b3)
+    let H1 layer(X, net.W1, net.b1)
+    let H2 layer(H1, net.W2, net.b2)
+    let A layer(H2, net.W3, net.b3)
     ; backward, layer by layer
-    let d3 out_share(a, t)
-    let d2 back(d3, net.w3, h2)
-    let d1 back(d2, net.w2, h1)
+    let D3 out_share(A, T)
+    let D2 back(D3, net.W3, H2)
+    let D1 back(D2, net.W2, H1)
     ; every weight a little against its gradient
-    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
-    descend(net.b3, bias_grad(d3), rate, x.rows)
-    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
-    descend(net.b2, bias_grad(d2), rate, x.rows)
-    descend(net.w1, weight_grad(x, d1), rate, x.rows)
-    descend(net.b1, bias_grad(d1), rate, x.rows)
+    descend(net.W3, weight_grad(H2, D3), rate, X.rows)
+    descend(net.b3, bias_grad(D3), rate, X.rows)
+    descend(net.W2, weight_grad(H1, D2), rate, X.rows)
+    descend(net.b2, bias_grad(D2), rate, X.rows)
+    descend(net.W1, weight_grad(X, D1), rate, X.rows)
+    descend(net.b1, bias_grad(D1), rate, X.rows)
 }</code
 ></pre
 ><p
@@ -1276,7 +1284,7 @@ class="listing fragment"
 >back</code
 > braucht die alten. Die Punkte kommen in diesen
       Zeilen nur noch als <code
->x.rows</code
+>X.rows</code
 > vor, ihre Anzahl, durch die
       <code
 >descend</code
@@ -1414,14 +1422,251 @@ function zeros(rows: int, cols: int) returns Matrix
 ><pre
 class="listing fragment"
 ><code
->procedure report(step: int, net: Net, x: Matrix, t: Matrix,
-                 tx: Matrix, tt: Matrix)
+>procedure report(step: int, net: Net, X: Matrix, T: Matrix,
+                 TX: Matrix, TT: Matrix)
 {
-    let train loss(answer(net, x), t)
-    let test loss(answer(net, tx), tt)
+    let train loss(answer(net, X), T)
+    let test loss(answer(net, TX), TT)
     print "step `step` train `train` test `test`"
 }</code
 ></pre
+></section
+><section
+id="matrices-fast"
+><h2
+><a
+class="header"
+href="#matrices-fast"
+>Schnell</a
+></h2
+><p
+>Bleibt die Frage, wie schnell das alles geht. Für unseren Kreis
+      ist sie kaum der Rede wert: Mit <code
+class="command"
+>scaly build --release</code
+>
+      gebaut, braucht das Programm für seine 500 Lernschritte eine
+      Hundertstelsekunde. Bei Bildern sieht das anders aus; die
+      handgeschriebenen Ziffern von MNIST sind 60 000 Bilder mit je 784
+      Punkten. Wie die Zeit mit der Größe wächst, zeigt das Matrixprodukt
+      für sich, <math
+><mi
+>C</mi
+><mo
+>=</mo
+><mi
+>A</mi
+><mi
+>B</mi
+></math
+> für zwei quadratische Matrizen mit <math
+><mi
+>n</mi
+></math
+> Zeilen und
+      Spalten:</p
+><pre
+class="listing fragment"
+><code
+>function product(A: Vector[f32], B: Vector[f32], n: int) returns Vector[f32]
+{
+    var C Vector[f32]#((n * n) as size_t)
+    for t in n * n
+    {
+        let i t / n
+        let j t % n
+        var s: f32 0.0
+        var k 0
+        while k &#60; n
+        {
+            let a A[(i * n + k) as size_t]
+            s := s + a * B[(k * n + j) as size_t]
+            k := k + 1
+        }
+        C.put(t as size_t, s)
+    }
+    C
+}</code
+></pre
+><p
+>Eine Runde der Schleife bildet eine Zahl von <math
+><mi
+>C</mi
+></math
+>, Zeile <math
+><mi
+>i</mi
+></math
+> von
+      <math
+><mi
+>A</mi
+></math
+> mal Spalte <math
+><mi
+>j</mi
+></math
+> von <math
+><mi
+>B</mi
+></math
+>. Die Matrizen sind hier nur ihr
+      <code
+>Vector</code
+>, Zeile für Zeile, und ihre Zahlen sind <code
+>f32</code
+> statt
+      <code
+>f64</code
+>: Sie brauchen halb so viel Speicher, und so rechnet eine
+      Grafikkarte. Die Zeit für ein Produkt, gemessen auf einem MacBook Pro
+      mit M1 Pro, mit einem Kern, mit allen zehn, auf der Grafikkarte
+      und so, wie Scaly selbst entscheidet:</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>n</th
+><th
+>ein Kern</th
+><th
+>alle Kerne</th
+><th
+>Karte</th
+><th
+>Scaly entscheidet</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>64</td
+><td
+>0,18 ms</td
+><td
+>0,10 ms</td
+><td
+>0,33 ms</td
+><td
+>0,12 ms</td
+></tr
+><tr
+><td
+>128</td
+><td
+>1,7 ms</td
+><td
+>0,29 ms</td
+><td
+>0,43 ms</td
+><td
+>0,33 ms</td
+></tr
+><tr
+><td
+>256</td
+><td
+>15,6 ms</td
+><td
+>2,0 ms</td
+><td
+>1,06 ms</td
+><td
+>1,7 ms</td
+></tr
+><tr
+><td
+>512</td
+><td
+>127 ms</td
+><td
+>17,9 ms</td
+><td
+>5,0 ms</td
+><td
+>5,0 ms</td
+></tr
+><tr
+><td
+>1024</td
+><td
+>1,08 s</td
+><td
+>0,20 s</td
+><td
+>35 ms</td
+><td
+>35 ms</td
+></tr
+><tr
+><td
+>2048</td
+><td
+>25,4 s</td
+><td
+>8,0 s</td
+><td
+>0,27 s</td
+><td
+>0,27 s</td
+></tr
+></tbody
+></table
+></div
+><p
+>Mit einem Kern wächst die Zeit wie <math
+><msup
+><mi
+>n</mi
+><mn
+>3</mn
+></msup
+></math
+>: Doppelte Größe ist
+      achtfache Arbeit. Nur von 1024 auf 2048 dauert es rund 24-mal so lange. Die
+      Zahlen einer Spalte von <math
+><mi
+>B</mi
+></math
+> liegen im Speicher weit auseinander, jede
+      <math
+><mi
+>n</mi
+></math
+> Plätze nach der vorigen, und bei 2048 passen sie nicht mehr in den
+      schnellen Zwischenspeicher des Prozessors, den Cache; er wartet dann
+      vor allem auf den Speicher. Alle Kerne zusammen sind schon bei 64
+      schneller, bei 1024 gut fünfmal. Die Grafikkarte überholt sie zwischen
+      128 und 256, und bei 2048 rechnet sie dreißigmal so schnell wie alle
+      Kerne.</p
+><p
+>Die letzte Spalte ist die, auf die es ankommt. Im Programm steht
+      nur ein <code
+>for</code
+>; wohin es geht, entscheidet Scaly, während es läuft:
+      Es misst, was eine Runde kostet, und gibt die Schleife an die Kerne
+      oder an die Karte, wo sich das lohnt. Es trifft dabei die schnellere Wahl,
+      nur bei 256, wo Kerne und Karte nahe beieinanderliegen, wechselt es
+      zwischen beiden und landet dazwischen. Und überall kommt dasselbe heraus, Bit für
+      Bit: Die Karte rechnet jede Summe in derselben Reihenfolge wie der
+      Prozessor.</p
+><p
+>Die Schleifen unseres Kreisprogramms sind von derselben Art. Jede
+      Runde füllt eine Zeile der Matrix, in die sie schreibt, und damit
+      Scaly das sieht, laufen die inneren Schleifen bis zu deren
+      Spaltenzahl: <code
+>while j &#60; H.cols</code
+> in <code
+>layer</code
+>. Alle sechs
+      Schleifen über die Punkte verteilt Scaly darum selbst auf die Kerne,
+      sobald sich das lohnt; bei 200 Punkten lohnt es sich noch nicht. Das
+      ganze Messprogramm steht <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/product.scaly"
+>auf GitHub</a
+>.</p
 ></section
 ></article
 ><nav

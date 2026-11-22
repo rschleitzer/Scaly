@@ -72,6 +72,14 @@ else
   echo "mlbook: circle.scaly does not print what field 0 500 prints"; diff "$FIG.field" "$FIG.circle" | head -5; rc=1
 fi
 rm -f "$FIG.circle" "$FIG.field"
+# every program beside the book builds (product.scaly prints times, so it is
+# built, not run)
+for p in docs/ml/prog/*.scaly; do
+  if ! "$SCALY" build "$p" -o "$FIG.prog" > "$FIG.prog.log" 2>&1; then
+    echo "mlbook: $p does not build"; head -5 "$FIG.prog.log"; rc=1
+  fi
+done
+rm -f "$FIG.prog" "$FIG.prog.log"
 # every piece of a program the books show (role="fragment") stands in a
 # program beside the book (docs/ml/prog/), character for character
 python3 - "${CHAPTERS[@]}" docs/ml/de/*.xml <<'PY' || rc=1
