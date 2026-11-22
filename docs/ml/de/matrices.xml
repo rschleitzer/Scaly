@@ -103,22 +103,22 @@
     <para>Im Programm dieses Kapitels ist jede dieser Formeln eine
       Funktion. <literal>back</literal> bildet aus dem <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> einer Schicht, ihren Gewichten
       <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> und den Antworten <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> der Schicht davor deren <inlineequation><mml:math><mml:mi>D</mml:mi><mml:mo>′</mml:mo></mml:math></inlineequation>:</para>
-    <programlisting role="fragment">function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+    <programlisting role="fragment">function back(D: Matrix, W: Matrix, H: Matrix) returns Matrix
 {
-    var below zeros(d.rows, w.rows)
-    for i in d.rows
+    var below zeros(D.rows, W.rows)
+    for i in D.rows
     {
         var k 0
-        while k &lt; w.rows
+        while k &lt; below.cols
         {
             var s 0.0
             var j 0
-            while j &lt; w.cols
+            while j &lt; W.cols
             {
-                s := s + d.at(i, j) * w.at(k, j)
+                s := s + D.at(i, j) * W.at(k, j)
                 j := j + 1
             }
-            let out h.at(i, k)
+            let out H.at(i, k)
             below.put(i, k, s * (1.0 - out * out))
             k := k + 1
         }
@@ -138,29 +138,29 @@
       zusammen, <literal>out_share</literal> bildet das <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> der Ausgabe, und
       <literal>descend</literal> verringert jede Zahl einer Matrix um ihre Ableitung.
       Damit ist der ganze Lernschritt:</para>
-    <programlisting role="fragment">procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+    <programlisting role="fragment">procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
 {
     ; forward, layer by layer
-    let h1 layer(x, net.w1, net.b1)
-    let h2 layer(h1, net.w2, net.b2)
-    let a layer(h2, net.w3, net.b3)
+    let H1 layer(X, net.W1, net.b1)
+    let H2 layer(H1, net.W2, net.b2)
+    let A layer(H2, net.W3, net.b3)
     ; backward, layer by layer
-    let d3 out_share(a, t)
-    let d2 back(d3, net.w3, h2)
-    let d1 back(d2, net.w2, h1)
+    let D3 out_share(A, T)
+    let D2 back(D3, net.W3, H2)
+    let D1 back(D2, net.W2, H1)
     ; every weight a little against its gradient
-    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
-    descend(net.b3, bias_grad(d3), rate, x.rows)
-    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
-    descend(net.b2, bias_grad(d2), rate, x.rows)
-    descend(net.w1, weight_grad(x, d1), rate, x.rows)
-    descend(net.b1, bias_grad(d1), rate, x.rows)
+    descend(net.W3, weight_grad(H2, D3), rate, X.rows)
+    descend(net.b3, bias_grad(D3), rate, X.rows)
+    descend(net.W2, weight_grad(H1, D2), rate, X.rows)
+    descend(net.b2, bias_grad(D2), rate, X.rows)
+    descend(net.W1, weight_grad(X, D1), rate, X.rows)
+    descend(net.b1, bias_grad(D1), rate, X.rows)
 }</programlisting>
     <para>Oben die drei Zeilen vorwärts, darunter die drei rückwärts, von
       der Ausgabe zur Eingabe, denn jedes <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> entsteht aus dem <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> der
       Schicht dahinter. Erst wenn alle <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> da sind, ändern sich die
       Gewichte: <literal>back</literal> braucht die alten. Die Punkte kommen in diesen
-      Zeilen nur noch als <literal>x.rows</literal> vor, ihre Anzahl, durch die
+      Zeilen nur noch als <literal>X.rows</literal> vor, ihre Anzahl, durch die
       <literal>descend</literal> teilt. Das ganze Programm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly">auf
       GitHub</link>.</para>
   </section>
@@ -219,11 +219,11 @@ function zeros(rows: int, cols: int) returns Matrix
       auf dieser Seite und bleiben: Nach 50 000 Schritten, mit einer
       Ausgabe alle 100 Schritte, sind es 18,7 MB. Darum ist die Ausgabe
       eine Prozedur für sich, und was in ihr entsteht, geht mit ihr:</para>
-    <programlisting role="fragment">procedure report(step: int, net: Net, x: Matrix, t: Matrix,
-                 tx: Matrix, tt: Matrix)
+    <programlisting role="fragment">procedure report(step: int, net: Net, X: Matrix, T: Matrix,
+                 TX: Matrix, TT: Matrix)
 {
-    let train loss(answer(net, x), t)
-    let test loss(answer(net, tx), tt)
+    let train loss(answer(net, X), T)
+    let test loss(answer(net, TX), TT)
     print "step `step` train `train` test `test`"
 }</programlisting>
   </section>

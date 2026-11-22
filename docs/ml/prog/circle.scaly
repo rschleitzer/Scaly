@@ -52,71 +52,76 @@ function zeros(rows: int, cols: int) returns Matrix
 ; A layer for all points at once, tanh(X W + b): row i of X is a point's
 ; inputs, column j of W the weights of neuron j, b its biases. Each sum
 ; begins with its bias, as in the field.
-function layer(x: Matrix, w: Matrix, b: Matrix) returns Matrix
+function layer(X: Matrix, W: Matrix, b: Matrix) returns Matrix
 {
-    var a zeros(x.rows, w.cols)
-    for i in x.rows
+    var H zeros(X.rows, W.cols)
+    for i in X.rows
     {
         var j 0
-        while j < w.cols
+        while j < H.cols
         {
             var z b.at(0, j)
             var k 0
-            while k < x.cols
+            while k < X.cols
             {
-                z := z + w.at(k, j) * x.at(i, k)
+                z := z + W.at(k, j) * X.at(i, k)
                 k := k + 1
             }
-            a.put(i, j, tanh(z))
+            H.put(i, j, tanh(z))
             j := j + 1
         }
     }
-    a
+    H
 }
 
 ; Half the squared error of every point, averaged.
-function loss(a: Matrix, t: Matrix) returns f64
+function loss(A: Matrix, T: Matrix) returns f64
 {
     var sum 0.0
     var i 0
-    while i < a.rows
+    while i < A.rows
     {
-        let e a.at(i, 0) - t.at(i, 0)
+        let e A.at(i, 0) - T.at(i, 0)
         sum := sum + 0.5 * e * e
         i := i + 1
     }
-    sum / (a.rows as f64)
+    sum / (A.rows as f64)
 }
 
-; The output's share of the error, point by point: (a - t)(1 - a²).
-function out_share(a: Matrix, t: Matrix) returns Matrix
+; The output's share of the error, number by number: (a - t)(1 - a²).
+function out_share(A: Matrix, T: Matrix) returns Matrix
 {
-    var d zeros(a.rows, 1)
-    for i in a.rows
+    var D zeros(A.rows, A.cols)
+    for i in D.rows
     {
-        let o a.at(i, 0)
-        d.put(i, 0, (o - t.at(i, 0)) * (1.0 - o * o))
+        var j 0
+        while j < D.cols
+        {
+            let o A.at(i, j)
+            D.put(i, j, (o - T.at(i, j)) * (1.0 - o * o))
+            j := j + 1
+        }
     }
-    d
+    D
 }
 
 ; The shares of the layer below: D Wᵀ, and each times its slope 1 - h².
-function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+function back(D: Matrix, W: Matrix, H: Matrix) returns Matrix
 {
-    var below zeros(d.rows, w.rows)
-    for i in d.rows
+    var below zeros(D.rows, W.rows)
+    for i in D.rows
     {
         var k 0
-        while k < w.rows
+        while k < below.cols
         {
             var s 0.0
             var j 0
-            while j < w.cols
+            while j < W.cols
             {
-                s := s + d.at(i, j) * w.at(k, j)
+                s := s + D.at(i, j) * W.at(k, j)
                 j := j + 1
             }
-            let out h.at(i, k)
+            let out H.at(i, k)
             below.put(i, k, s * (1.0 - out * out))
             k := k + 1
         }
@@ -125,93 +130,93 @@ function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
 }
 
 ; The weights' gradient, summed over the points: Hᵀ D.
-function weight_grad(h: Matrix, d: Matrix) returns Matrix
+function weight_grad(H: Matrix, D: Matrix) returns Matrix
 {
-    var g zeros(h.cols, d.cols)
-    for k in h.cols
+    var G zeros(H.cols, D.cols)
+    for k in H.cols
     {
         var j 0
-        while j < d.cols
+        while j < G.cols
         {
             var s 0.0
             var i 0
-            while i < d.rows
+            while i < D.rows
             {
-                s := s + d.at(i, j) * h.at(i, k)
+                s := s + D.at(i, j) * H.at(i, k)
                 i := i + 1
             }
-            g.put(k, j, s)
+            G.put(k, j, s)
             j := j + 1
         }
     }
-    g
+    G
 }
 
 ; The biases' gradient, summed over the points.
-function bias_grad(d: Matrix) returns Matrix
+function bias_grad(D: Matrix) returns Matrix
 {
-    var g zeros(1, d.cols)
-    for j in d.cols
+    var G zeros(1, D.cols)
+    for j in D.cols
     {
         var s 0.0
         var i 0
-        while i < d.rows
+        while i < D.rows
         {
-            s := s + d.at(i, j)
+            s := s + D.at(i, j)
             i := i + 1
         }
-        g.put(0, j, s)
+        G.put(0, j, s)
     }
-    g
+    G
 }
 
 ; Each number moved against its gradient, the gradient averaged over the
 ; points.
-procedure descend(mutable w: Matrix, g: Matrix, rate: f64, points: int)
+procedure descend(mutable W: Matrix, G: Matrix, rate: f64, points: int)
 {
     var k 0
-    while k < w.rows * w.cols
+    while k < W.rows * W.cols
     {
-        w.data.put(k, w.data[k] - rate * (g.data[k] / (points as f64)))
+        W.data.put(k, W.data[k] - rate * (G.data[k] / (points as f64)))
         k := k + 1
     }
 }
 
 ; --- the network ------------------------------------------------------------
 
-define Net(w1: Matrix, b1: Matrix, w2: Matrix, b2: Matrix, w3: Matrix, b3: Matrix)
+define Net(W1: Matrix, b1: Matrix, W2: Matrix, b2: Matrix, W3: Matrix, b3: Matrix)
 
-; The output for all the points of x.
-function answer(net: Net, x: Matrix) returns Matrix
-    layer(layer(layer(x, net.w1, net.b1), net.w2, net.b2), net.w3, net.b3)
+; The output for all the points of X.
+function answer(net: Net, X: Matrix) returns Matrix
+    layer(layer(layer(X, net.W1, net.b1), net.W2, net.b2), net.W3, net.b3)
 
-; One step of gradient descent over all the points of x at once.
-procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+; One step of gradient descent over all the points of X at once.
+procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
 {
     ; forward, layer by layer
-    let h1 layer(x, net.w1, net.b1)
-    let h2 layer(h1, net.w2, net.b2)
-    let a layer(h2, net.w3, net.b3)
+    let H1 layer(X, net.W1, net.b1)
+    let H2 layer(H1, net.W2, net.b2)
+    let A layer(H2, net.W3, net.b3)
     ; backward, layer by layer
-    let d3 out_share(a, t)
-    let d2 back(d3, net.w3, h2)
-    let d1 back(d2, net.w2, h1)
+    let D3 out_share(A, T)
+    let D2 back(D3, net.W3, H2)
+    let D1 back(D2, net.W2, H1)
     ; every weight a little against its gradient
-    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
-    descend(net.b3, bias_grad(d3), rate, x.rows)
-    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
-    descend(net.b2, bias_grad(d2), rate, x.rows)
-    descend(net.w1, weight_grad(x, d1), rate, x.rows)
-    descend(net.b1, bias_grad(d1), rate, x.rows)
+    descend(net.W3, weight_grad(H2, D3), rate, X.rows)
+    descend(net.b3, bias_grad(D3), rate, X.rows)
+    descend(net.W2, weight_grad(H1, D2), rate, X.rows)
+    descend(net.b2, bias_grad(D2), rate, X.rows)
+    descend(net.W1, weight_grad(X, D1), rate, X.rows)
+    descend(net.b1, bias_grad(D1), rate, X.rows)
 }
 
 ; The losses on the training and on the test points. A procedure of its
 ; own: the answers it computes lie on its page and go with it.
-procedure report(step: int, net: Net, x: Matrix, t: Matrix,
-                 tx: Matrix, tt: Matrix)
+procedure report(step: int, net: Net, X: Matrix, T: Matrix,
+                 TX: Matrix, TT: Matrix)
 {
-    let train loss(answer(net, x), t)
-    let test loss(answer(net, tx), tt)
+    let train loss(answer(net, X), T)
+    let test loss(answer(net, TX), TT)
     print "step `step` train `train` test `test`"
 }
 
@@ -235,11 +240,11 @@ while place < 7 * 72
     if at < 64
     {
         if block = 0 and i < 4 and m < 2
-            net.w1.put(m, i, r)
+            net.W1.put(m, i, r)
         if block = 1 and i < 2 and m < 4
-            net.w2.put(m, i, r)
+            net.W2.put(m, i, r)
         if block = 2 and i < 1 and m < 2
-            net.w3.put(m, i, r)
+            net.W3.put(m, i, r)
     }
     else
     {
@@ -256,10 +261,10 @@ while place < 7 * 72
 ; 400 points of the circle, the field's way: of each four the first two
 ; orange (+1) inside a radius of 2.5, the others blue (-1) in the ring from
 ; 3.5 to 5; of each two the second a test point.
-var x zeros(200, 2)
-var t zeros(200, 1)
-var tx zeros(200, 2)
-var tt zeros(200, 1)
+var X zeros(200, 2)
+var T zeros(200, 1)
+var TX zeros(200, 2)
+var TT zeros(200, 1)
 var p 0
 while p < 400
 {
@@ -271,15 +276,15 @@ while p < 400
     between(0.0 - 5.0, 5.0)
     if p % 2 = 0
     {
-        x.put(p / 2, 0, r * sin(angle))
-        x.put(p / 2, 1, r * cos(angle))
-        t.put(p / 2, 0, kind)
+        X.put(p / 2, 0, r * sin(angle))
+        X.put(p / 2, 1, r * cos(angle))
+        T.put(p / 2, 0, kind)
     }
     else
     {
-        tx.put(p / 2, 0, r * sin(angle))
-        tx.put(p / 2, 1, r * cos(angle))
-        tt.put(p / 2, 0, kind)
+        TX.put(p / 2, 0, r * sin(angle))
+        TX.put(p / 2, 1, r * cos(angle))
+        TT.put(p / 2, 0, kind)
     }
     p := p + 1
 }
@@ -288,16 +293,16 @@ var s 0
 while s <= 500
 {
     if s % 100 = 0
-        report(s, net, x, t, tx, tt)
-    step(net, x, t, 0.03)
+        report(s, net, X, T, TX, TT)
+    step(net, X, T, 0.03)
     s := s + 1
 }
-let out answer(net, tx)
+let A answer(net, TX)
 var right 0
 p := 0
 while p < 200
 {
-    if out.at(p, 0) * tt.at(p, 0) > 0.0
+    if A.at(p, 0) * TT.at(p, 0) > 0.0
         right := right + 1
     p := p + 1
 }
