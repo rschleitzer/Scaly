@@ -4571,6 +4571,26 @@ define Emitter
                 fields.put(4, i64_ty)
                 return LLVMStructTypeInContext(context, fields.data, 5, 0)
             }
+            if name = "StringBuilder"
+            {
+                ; StringBuilder: { buffer: Array[char] { length: size_t,
+                ;                  capacity: size_t, data: pointer[char] } }.
+                ; Without this entry a record holding one BY VALUE outside
+                ; the stdlib (Drawing's `parts`, read through its interface)
+                ; laid the field out as the 8-byte placeholder where the
+                ; stdlib's methods write 24: a program allocated the record
+                ; too small, and the first append ran over what lay after it
+                ; (2026-11-22, `sheet.rect(.., "a`3`")` at top level faulted
+                ; in memmove).
+                var array_fields Vector[LLVMTypeRef](3)
+                array_fields.put(0, i64_ty)
+                array_fields.put(1, i64_ty)
+                array_fields.put(2, ptr_ty)
+                let array_ty LLVMStructTypeInContext(context, array_fields.data, 3, 0)
+                var fields Vector[LLVMTypeRef](1)
+                fields.put(0, array_ty)
+                return LLVMStructTypeInContext(context, fields.data, 1, 0)
+            }
             if name = "TraceEntry"
             {
                 ; TraceEntry: { name: pointer[const_char], push_count: i64,

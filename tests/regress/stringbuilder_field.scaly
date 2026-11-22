@@ -1,0 +1,50 @@
+; A record holding a StringBuilder BY VALUE outside the standard library
+; (2026-11-22): the program laid the field out as an 8-byte placeholder
+; where the library's methods write the builder's 24 bytes, so a record of
+; the program was allocated too small and the field after it was
+; overwritten; the stdlib's Drawing (`parts`), read through its interface,
+; faulted in memmove at its first append with a String built at top level.
+define Log
+(
+    before: int
+    var text: StringBuilder
+    after: int
+)
+
+procedure fill(mutable log: Log)
+{
+    var i 0
+    while i < 100
+    {
+        log.text.append("line `i`\n")
+        i := i + 1
+    }
+}
+
+var log Log(11, StringBuilder(), 22)
+fill(log)
+if log.before <> 11 or log.after <> 22
+{
+    print "FAIL: the fields beside the builder were overwritten"
+    exit 1
+}
+if log.text.to_string().get_length() <> 790
+{
+    print "FAIL: the builder holds `log.text.to_string().get_length()` bytes"
+    exit 1
+}
+
+; the stdlib's drawing, at top level, with a String built here
+var sheet Drawing(10, 10)
+var k 0
+while k < 50
+{
+    sheet.rect(k, 1, 2, 2, "#`k`0`k`")
+    k := k + 1
+}
+if sheet.svg().contains("fill=\"#49049\"") = false
+{
+    print "FAIL: the drawing lost a rectangle"
+    exit 1
+}
+print "PASS"
