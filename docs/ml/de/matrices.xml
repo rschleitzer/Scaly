@@ -164,4 +164,67 @@
       <literal>descend</literal> teilt. Das ganze Programm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly">auf
       GitHub</link>.</para>
   </section>
+  <section xml:id="matrices-memory">
+    <title>Wo die Zahlen liegen</title>
+    <para>Eine Matrix ist im Programm ein Record aus ihren beiden Größen und
+      einem <literal>Vector[f64]</literal> mit ihren Zahlen, Zeile für Zeile
+      hintereinander. Zeilen und Spalten zählen dort von 0 an, und die Zahl
+      in Zeile <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> und Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> steht an Stelle <inlineequation><mml:math><mml:mi>i</mml:mi><mml:mo>·</mml:mo><mml:mi>n</mml:mi><mml:mo>+</mml:mo><mml:mi>j</mml:mi></mml:math></inlineequation>, wenn die Matrix <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation>
+      Spalten hat:</para>
+    <programlisting role="fragment">define Matrix(rows: int, cols: int, data: Vector[f64])
+{
+    function at(this, i: int, j: int) returns f64
+        this.data[i * this.cols + j]
+
+    procedure put(mutable this, i: int, j: int, v: f64)
+        this.data.put(i * this.cols + j, v)
+}
+
+function zeros(rows: int, cols: int) returns Matrix
+{
+    var data Vector[f64]#(rows * cols)
+    for k in rows * cols
+        data.put(k, 0.0)
+    Matrix(rows, cols, data)
+}</programlisting>
+    <para><literal>zeros</literal> legt eine Matrix an, in der jede Zahl 0 ist. Das
+      <literal>#</literal> hinter dem Typ sagt, wo ihre Zahlen liegen; dazu
+      gleich.</para>
+    <para>Ein Lernschritt legt eine ganze Reihe solcher Matrizen an:
+      vorwärts die Antworten der drei Schichten, rückwärts die drei <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>,
+      dazu die Ableitungen der Gewichte. Zusammen sind das gut 2800 Zahlen
+      oder 22 KB je Schritt, für 50 000 Schritte 1,1 GB. Gebraucht wird
+      davon immer nur ein Schritt: Sind die Gewichte verändert, ist alles
+      andere überholt.</para>
+    <para>Andere Sprachen räumen solche Zwischenwerte mit einem
+      <emphasis>Garbage Collector</emphasis> weg, der von Zeit zu Zeit
+      nachsieht, was das Programm noch erreicht; in C gibt man jeden
+      einzeln mit <literal>free</literal> zurück. Scaly tut keins von beiden. Was ein
+      Aufruf anlegt, liegt auf einer Speicherseite dieses Aufrufs, und
+      kehrt er zurück, wird die ganze Seite auf einmal frei. Was er
+      zurückgibt, muss das überleben, und das legt er darum gleich auf der
+      Seite seines Aufrufers an. Das ist das <literal>#</literal> in <literal>zeros</literal>. Dass
+      <literal>layer</literal>, <literal>back</literal> und die anderen Funktionen ihr Ergebnis aus
+      <literal>zeros</literal> zurückgeben, sieht der Compiler selbst und reicht die
+      Seite weiter. So liegen alle Matrizen eines Lernschritts auf der
+      Seite von <literal>step</literal>, und die wird frei, wenn <literal>step</literal>
+      zurückkehrt. Nur die Gewichte bleiben: Sie hat das Hauptprogramm
+      angelegt, und <literal>descend</literal> schreibt in sie hinein.</para>
+    <para>Gemessen braucht das Programm mit 500 Schritten höchstens 2,08 MB
+      Speicher und mit 50 000 Schritten genauso viel. Die Lernschritte
+      kommen und gehen, der Speicher wächst nicht mit.</para>
+    <para>Eine Falle gibt es dabei. Auch das Hauptprogramm hat eine Seite,
+      und die lebt bis zum Ende. Schreibt man die Ausgabe der Fehler direkt
+      in die Hauptschleife, liegen die Antworten, die sie dafür berechnet,
+      auf dieser Seite und bleiben: Nach 50 000 Schritten, mit einer
+      Ausgabe alle 100 Schritte, sind es 18,7 MB. Darum ist die Ausgabe
+      eine Prozedur für sich, und was in ihr entsteht, geht mit ihr:</para>
+    <programlisting role="fragment">procedure report(step: int, net: Net, x: Matrix, t: Matrix,
+                 tx: Matrix, tt: Matrix)
+{
+    let train loss(answer(net, x), t)
+    let test loss(answer(net, tx), tt)
+    print "step `step` train `train` test `test`"
+}</programlisting>
+  </section>
 </chapter>

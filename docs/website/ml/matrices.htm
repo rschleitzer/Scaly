@@ -196,6 +196,14 @@ class="num"
 >2.2</span
 >Backpropagation with Matrices</a
 ></li
+><li
+><a
+href="matrices.htm#matrices-memory"
+><span
+class="num"
+>2.3</span
+>Where the Numbers Live</a
+></li
 ></ol
 ></li
 ></ol
@@ -1274,6 +1282,141 @@ href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly
 >on
       GitHub</a
 >.</p
+></section
+><section
+id="matrices-memory"
+><h2
+><a
+class="header"
+href="#matrices-memory"
+>Where the Numbers Live</a
+></h2
+><p
+>In the program a matrix is a record of its two sizes and a
+      <code
+>Vector[f64]</code
+> with its numbers, row after row. Rows and columns
+      count from 0 there, and the number in row <math
+><mi
+>i</mi
+></math
+> and column <math
+><mi
+>j</mi
+></math
+> is at
+      place <math
+><mi
+>i</mi
+><mo
+>·</mo
+><mi
+>n</mi
+><mo
+>+</mo
+><mi
+>j</mi
+></math
+> when the matrix has <math
+><mi
+>n</mi
+></math
+> columns:</p
+><pre
+class="listing fragment"
+><code
+>define Matrix(rows: int, cols: int, data: Vector[f64])
+{
+    function at(this, i: int, j: int) returns f64
+        this.data[i * this.cols + j]
+
+    procedure put(mutable this, i: int, j: int, v: f64)
+        this.data.put(i * this.cols + j, v)
+}
+
+function zeros(rows: int, cols: int) returns Matrix
+{
+    var data Vector[f64]#(rows * cols)
+    for k in rows * cols
+        data.put(k, 0.0)
+    Matrix(rows, cols, data)
+}</code
+></pre
+><p
+><code
+>zeros</code
+> makes a matrix in which every number is 0. The
+      <code
+>#</code
+> after the type says where its numbers live; more on that in
+      a moment.</p
+><p
+>A learning step makes quite a few such matrices: forward the
+      answers of the three layers, backward the three <math
+><mi
+>D</mi
+></math
+>, and the
+      derivatives of the weights. Together that is a good 2800 numbers or
+      22 KB a step, 1.1 GB for 50,000 steps. Only one step of it is ever
+      needed: once the weights have changed, everything else is out of
+      date.</p
+><p
+>Other languages clear such intermediate values away with a
+      <em
+>garbage collector</em
+>, which looks from time to
+      time at what the program can still reach; in C you give each one
+      back with <code
+>free</code
+>. Scaly does neither. What a call makes lives on
+      a memory page of that call, and when it returns, the whole page is
+      freed at once. What it returns must outlive that, so it makes it
+      right away on its caller's page. That is the <code
+>#</code
+> in
+      <code
+>zeros</code
+>. That <code
+>layer</code
+>, <code
+>back</code
+> and the other functions
+      return their result from <code
+>zeros</code
+>, the compiler sees by itself,
+      and it hands the page on. So all the matrices of a learning step
+      live on the page of <code
+>step</code
+>, and that is freed when <code
+>step</code
+>
+      returns. Only the weights stay: the main program made them, and
+      <code
+>descend</code
+> writes into them.</p
+><p
+>Measured, the program needs at most 2.08 MB of memory with 500
+      steps, and just as much with 50,000 steps. The learning steps come
+      and go, and the memory does not grow with them.</p
+><p
+>There is one trap. The main program has a page too, and it lives
+      until the end. Write the output of the losses straight into the main
+      loop, and the answers it computes for it lie on that page and stay:
+      after 50,000 steps, with an output every 100 steps, that is 18.7 MB.
+      So the output is a procedure of its own, and what comes about in it
+      goes with it:</p
+><pre
+class="listing fragment"
+><code
+>procedure report(step: int, net: Net, x: Matrix, t: Matrix,
+                 tx: Matrix, tt: Matrix)
+{
+    let train loss(answer(net, x), t)
+    let test loss(answer(net, tx), tt)
+    print "step `step` train `train` test `test`"
+}</code
+></pre
 ></section
 ></article
 ><nav

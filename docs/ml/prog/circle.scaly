@@ -207,9 +207,12 @@ procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
 
 ; The losses on the training and on the test points. A procedure of its
 ; own: the answers it computes lie on its page and go with it.
-procedure report(step: int, net: Net, x: Matrix, t: Matrix, tx: Matrix, tt: Matrix)
+procedure report(step: int, net: Net, x: Matrix, t: Matrix,
+                 tx: Matrix, tt: Matrix)
 {
-    print "step `step` train `loss(answer(net, x), t)` test `loss(answer(net, tx), tt)`"
+    let train loss(answer(net, x), t)
+    let test loss(answer(net, tx), tt)
+    print "step `step` train `train` test `test`"
 }
 
 ; --- the run ----------------------------------------------------------------

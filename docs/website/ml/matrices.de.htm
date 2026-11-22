@@ -196,6 +196,14 @@ class="num"
 >2.2</span
 >Backpropagation mit Matrizen</a
 ></li
+><li
+><a
+href="matrices.de.htm#matrices-memory"
+><span
+class="num"
+>2.3</span
+>Wo die Zahlen liegen</a
+></li
 ></ol
 ></li
 ></ol
@@ -1277,6 +1285,143 @@ href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly
 >auf
       GitHub</a
 >.</p
+></section
+><section
+id="matrices-memory"
+><h2
+><a
+class="header"
+href="#matrices-memory"
+>Wo die Zahlen liegen</a
+></h2
+><p
+>Eine Matrix ist im Programm ein Record aus ihren beiden Größen und
+      einem <code
+>Vector[f64]</code
+> mit ihren Zahlen, Zeile für Zeile
+      hintereinander. Zeilen und Spalten zählen dort von 0 an, und die Zahl
+      in Zeile <math
+><mi
+>i</mi
+></math
+> und Spalte <math
+><mi
+>j</mi
+></math
+> steht an Stelle <math
+><mi
+>i</mi
+><mo
+>·</mo
+><mi
+>n</mi
+><mo
+>+</mo
+><mi
+>j</mi
+></math
+>, wenn die Matrix <math
+><mi
+>n</mi
+></math
+>
+      Spalten hat:</p
+><pre
+class="listing fragment"
+><code
+>define Matrix(rows: int, cols: int, data: Vector[f64])
+{
+    function at(this, i: int, j: int) returns f64
+        this.data[i * this.cols + j]
+
+    procedure put(mutable this, i: int, j: int, v: f64)
+        this.data.put(i * this.cols + j, v)
+}
+
+function zeros(rows: int, cols: int) returns Matrix
+{
+    var data Vector[f64]#(rows * cols)
+    for k in rows * cols
+        data.put(k, 0.0)
+    Matrix(rows, cols, data)
+}</code
+></pre
+><p
+><code
+>zeros</code
+> legt eine Matrix an, in der jede Zahl 0 ist. Das
+      <code
+>#</code
+> hinter dem Typ sagt, wo ihre Zahlen liegen; dazu
+      gleich.</p
+><p
+>Ein Lernschritt legt eine ganze Reihe solcher Matrizen an:
+      vorwärts die Antworten der drei Schichten, rückwärts die drei <math
+><mi
+>D</mi
+></math
+>,
+      dazu die Ableitungen der Gewichte. Zusammen sind das gut 2800 Zahlen
+      oder 22 KB je Schritt, für 50 000 Schritte 1,1 GB. Gebraucht wird
+      davon immer nur ein Schritt: Sind die Gewichte verändert, ist alles
+      andere überholt.</p
+><p
+>Andere Sprachen räumen solche Zwischenwerte mit einem
+      <em
+>Garbage Collector</em
+> weg, der von Zeit zu Zeit
+      nachsieht, was das Programm noch erreicht; in C gibt man jeden
+      einzeln mit <code
+>free</code
+> zurück. Scaly tut keins von beiden. Was ein
+      Aufruf anlegt, liegt auf einer Speicherseite dieses Aufrufs, und
+      kehrt er zurück, wird die ganze Seite auf einmal frei. Was er
+      zurückgibt, muss das überleben, und das legt er darum gleich auf der
+      Seite seines Aufrufers an. Das ist das <code
+>#</code
+> in <code
+>zeros</code
+>. Dass
+      <code
+>layer</code
+>, <code
+>back</code
+> und die anderen Funktionen ihr Ergebnis aus
+      <code
+>zeros</code
+> zurückgeben, sieht der Compiler selbst und reicht die
+      Seite weiter. So liegen alle Matrizen eines Lernschritts auf der
+      Seite von <code
+>step</code
+>, und die wird frei, wenn <code
+>step</code
+>
+      zurückkehrt. Nur die Gewichte bleiben: Sie hat das Hauptprogramm
+      angelegt, und <code
+>descend</code
+> schreibt in sie hinein.</p
+><p
+>Gemessen braucht das Programm mit 500 Schritten höchstens 2,08 MB
+      Speicher und mit 50 000 Schritten genauso viel. Die Lernschritte
+      kommen und gehen, der Speicher wächst nicht mit.</p
+><p
+>Eine Falle gibt es dabei. Auch das Hauptprogramm hat eine Seite,
+      und die lebt bis zum Ende. Schreibt man die Ausgabe der Fehler direkt
+      in die Hauptschleife, liegen die Antworten, die sie dafür berechnet,
+      auf dieser Seite und bleiben: Nach 50 000 Schritten, mit einer
+      Ausgabe alle 100 Schritte, sind es 18,7 MB. Darum ist die Ausgabe
+      eine Prozedur für sich, und was in ihr entsteht, geht mit ihr:</p
+><pre
+class="listing fragment"
+><code
+>procedure report(step: int, net: Net, x: Matrix, t: Matrix,
+                 tx: Matrix, tt: Matrix)
+{
+    let train loss(answer(net, x), t)
+    let test loss(answer(net, tx), tt)
+    print "step `step` train `train` test `test`"
+}</code
+></pre
 ></section
 ></article
 ><nav
