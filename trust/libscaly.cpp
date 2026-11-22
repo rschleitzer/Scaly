@@ -3312,11 +3312,15 @@ extern "C" void scaly_card_write(uint32_t, uint64_t, void*, uint64_t);
 extern "C" void scaly_card_read(uint32_t, uint64_t, void*, uint64_t);
 extern "C" int32_t scaly_card_load(uint32_t, uint64_t, const char*, uint64_t, uint64_t);
 extern "C" void scaly_panic_card(const char*);
+String math_letter(scaly_frame*, uint8_t) asm("_Z11math_letterPN4scaly6memory4PageEc");
+String math_text(scaly_frame*, String&) asm("_Z9math_textPN4scaly6memory4PageE6String");
 String svg_text(scaly_frame*, String&) asm("_Z8svg_textPN4scaly6memory4PageE6String");
 String Drawing_attribute(scaly_frame*, String&) asm("_ZN7Drawing9attributeEPN4scaly6memory4PageE6String");
 void Drawing_line(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4lineEiiii6String");
 void Drawing_circle(Drawing&, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing6circleEiii6String");
 void Drawing_rect(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4rectEiiii6String");
+void Drawing_box(Drawing&, int64_t, int64_t, int64_t, int64_t, String&, String&) asm("_ZN7Drawing3boxEiiii6String6String");
+void Drawing_math(Drawing&, int64_t, int64_t, String&, String&, int64_t, String&) asm("_ZN7Drawing4mathEii6String6Stringi6String");
 void Drawing_text(Drawing&, int64_t, int64_t, String&, String&) asm("_ZN7Drawing4textEii6String6String");
 String Drawing_svg(scaly_frame*, Drawing&) asm("_ZN7Drawing3svgEPN4scaly6memory4PageE");
 bool Drawing_show(Drawing&) asm("_ZN7Drawing4showEv");
@@ -12933,6 +12937,56 @@ __attribute__((weak)) double Stopwatch_milliseconds(Stopwatch& scaly_self)
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String math_letter(scaly_frame* scaly_rp, uint8_t c)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    uint32_t n = ((uint32_t)(c));
+    if ((n == (uint32_t)104ULL))
+    {
+        return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init7((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\010&#x210E;"})); scaly_t1; }));
+    }
+    uint32_t code = (uint32_t)0ULL;
+    if (((n >= (uint32_t)97ULL) ? (n <= (uint32_t)122ULL) : false))
+    {
+        code = (((uint32_t)119886ULL + n) - (uint32_t)97ULL);
+    }
+    else
+    {
+        if (((n >= (uint32_t)65ULL) ? (n <= (uint32_t)90ULL) : false))
+        {
+            code = (((uint32_t)119860ULL + n) - (uint32_t)65ULL);
+        }
+    }
+    if ((code == (uint32_t)0ULL))
+    {
+        StringBuilder* one = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+        StringBuilder_append((*one), c);
+        return svg_text(scaly_rp, scaly_lvalue(StringBuilder_to_string(scaly_rp, (*one))));
+    }
+    {
+        StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+        StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002&#"}));
+        StringBuilder_append8((*isb$), (((int64_t)(code))));
+        StringBuilder_append((*isb$), ((uint8_t)';'));
+        return StringBuilder_to_string(scaly_rp, (*isb$));
+    }
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String math_text(scaly_frame* scaly_rp, String& text)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    uint64_t i = 0ULL;
+    while ((i < String_get_length(text)))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(math_letter(&scaly_local.f, ((uint8_t)(String_get(text, i))))));
+        i = (i + 1ULL);
+    }
+    return StringBuilder_to_string(scaly_rp, (*sb));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
 __attribute__((weak)) String svg_text(scaly_frame* scaly_rp, String& text)
 {
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
@@ -13045,6 +13099,78 @@ __attribute__((weak)) void Drawing_rect(Drawing& scaly_self, int64_t x, int64_t 
         }
         scaly_t1;
     })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_box(Drawing& scaly_self, int64_t x, int64_t y, int64_t width, int64_t height, String& colour, String& border)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011<rect x=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 y=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011\042 width=\042"}));
+            StringBuilder_append8((*isb$), (width));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012\042 height=\042"}));
+            StringBuilder_append8((*isb$), (height));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012\042 stroke=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, border))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\025\042 stroke-width=\0421\042/>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_math(Drawing& scaly_self, int64_t x, int64_t y, String& symbol, String& index, int64_t size, String& colour)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011<text x=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 y=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\035\042 text-anchor=\042middle\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\121\042 font-family=\042Latin Modern Math, STIX Two Math, Cambria Math, serif\042 font-size=\042"}));
+            StringBuilder_append8((*isb$), (size));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002\042>"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((math_text(&scaly_local.f, symbol))));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+    if ((String_get_length(index) > 0ULL))
+    {
+        StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\022<tspan font-size=\042"}));
+            StringBuilder_append8((*isb$), (((size * 7LL) / 10LL)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006\042 dy=\042"}));
+            StringBuilder_append8((*isb$), ((size / 4LL)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002\042>"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((math_text(&scaly_local.f, index))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010</tspan>"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    })));
+    }
+    StringBuilder_append2(this_->parts, scaly_lvalue(String{(uint8_t*)"\010</text>\012"}));
 }
 
 // packages/scaly/0.2.1/scaly/draw.scaly
