@@ -1,0 +1,54 @@
+<chapter xml:id="matrices">
+  <title>Viele Punkte auf einmal</title>
+
+  <para>Unser Netz rechnet bisher Punkt für Punkt. In diesem Kapitel
+    schreiben wir dieselbe Rechnung für alle Punkte auf einmal, mit
+    Matrizen, und sehen, wie Scaly die vielen Zahlen hält und schnell
+    verrechnet.</para>
+
+  <section xml:id="matrices-rows">
+    <title>Eine Zeile je Punkt</title>
+    <para>Ein Neuron bildet für einen Punkt seine gewichtete Summe
+      <inlineequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mi>y</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation>. Für die 200 Trainingspunkte des Kreises sind
+      das 200 Summen, und eine Schicht aus vier Neuronen bildet 800.
+      Schreiben wir die Eingaben aller Punkte untereinander, eine Zeile je
+      Punkt, entsteht eine Tabelle aus 200 Zeilen und 2 Spalten, eine
+      <emphasis>Matrix</emphasis> <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation>. Die Gewichte der Schicht
+      schreiben wir ebenso als Matrix <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, eine Spalte je
+      Neuron, also 2 Zeilen und 4 Spalten.</para>
+    <para>Die Summe von Neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> für Punkt <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> ist
+      dann Zeile <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> von <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> mit Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> von
+      <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, Zahl für Zahl multipliziert und zusammengezählt, dazu
+      der Bias des Neurons:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
+      <mediaobject>
+        <alt>Drei Blöcke von Zellen: links X, eine Zeile je Punkt und zwei Spalten, oben W mit zwei Zeilen und einer Spalte je Neuron, darunter Z. Eine Zeile von X und eine Spalte von W sind orange, und wo sie sich in Z kreuzen, ist die eine Zahl, die sie zusammen ergeben, kräftig orange.</alt>
+        <imageobject><imagedata fileref="fig/matmul.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>Alle diese Summen zusammen sind wieder eine Matrix
+      <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation>, eine Zeile je Punkt und eine Spalte je Neuron. Die
+      Rechnung, die sie aus <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> und <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> bildet, heißt
+      <emphasis>Matrixprodukt</emphasis> und wird geschrieben wie eine
+      Multiplikation:</para>
+    <informalequation><mml:math><mml:mi>Z</mml:mi><mml:mo>=</mml:mo><mml:mi>X</mml:mi><mml:mi>W</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi><mml:mspace width="2em"/><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>Den Bias zählen wir dabei zu jeder Zeile, und tanh wirkt auf jede
+      Zahl für sich. Jede weitere Schicht ist dieselbe Zeile noch einmal,
+      mit <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> statt <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> als Eingabe. Die ganze
+      Vorwärtsrechnung unseres Netzes sind drei solche Zeilen.</para>
+    <para>Was gewinnen wir dadurch? Gerechnet wird genau dasselbe:
+      dieselben Multiplikationen und Additionen in derselben Reihenfolge,
+      und das Programm dieses Kapitels kommt Zahl für Zahl auf das Ergebnis
+      des Spielfelds. Gewonnen ist dreierlei. Das Programm wird klarer: Die
+      Vorwärtsrechnung sind drei Zeilen, und die Zahl der Punkte kommt in
+      ihnen nicht mehr vor. Das Matrixprodukt ist die eine Rechnung, für die
+      Prozessoren und Grafikkarten gebaut sind; große Matrizen verteilen
+      sich gut auf die Kerne und auf die Karte. Bei unseren 200 Punkten und
+      vier Neuronen ist davon noch nichts zu merken, die Matrizen sind
+      winzig. Und es bereitet das nächste Kapitel vor: Ein Programm,
+      das Ableitungen selbst bildet, braucht dann eine Regel für eine
+      Handvoll Matrixoperationen statt für jede einzelne
+      Multiplikation.</para>
+  </section>
+</chapter>

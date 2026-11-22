@@ -1,0 +1,83 @@
+; A picture for Machine Learning with Scaly (docs/figures.py makes it a PNG):
+; the matrix product Z = X W as three blocks of cells. On the left X, one
+; row for each point (eight shown) and a column for each input (two); on
+; top W, a column for each neuron (four) and a row for each input; below W
+; and right of X, Z, a row for each point and a column for each neuron. One
+; row of X and one column of W are orange, and where they cross in Z the
+; one number they make together is orange at full strength. Each point of
+; the picture is computed, the rounds of the `for` on all cores; the picture
+; goes to picture.<width>x<height>.rgba, four bytes a point.
+define WIDTH int 320
+define HEIGHT int 480
+define CELL int 40
+define MARGIN int 20
+; the row of X and the column of W shown
+define ROW int 2
+define COLUMN int 1
+
+define Colour(r: f64, g: f64, b: f64)
+
+; The part `t` of the way from colour a to colour b.
+function mix(a: Colour, b: Colour, t: f64) returns Colour
+{
+    Colour(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+}
+
+; What the cell at column cx and row cy is: X at columns 0 and 1 from row 3,
+; W at columns 3 to 6 in rows 0 and 1, Z below W beside X.
+function block_colour(cx: int, cy: int) returns f64
+{
+    ; 0: no cell; 1 a pale cell; 2 a cell of the row or column; 3 the one
+    ; number of Z
+    if cx >= 0 and cx < 2 and cy >= 3 and cy < 11
+        return if cy - 3 = ROW: 2.0 else 1.0
+    if cx >= 3 and cx < 7 and cy >= 0 and cy < 2
+        return if cx - 3 = COLUMN: 2.0 else 1.0
+    if cx >= 3 and cx < 7 and cy >= 3 and cy < 11
+    {
+        if cx - 3 = COLUMN and cy - 3 = ROW
+            return 3.0
+        return 1.0
+    }
+    0.0
+}
+
+function pixel(p: int) returns u32
+{
+    let px p % WIDTH - MARGIN
+    let py p / WIDTH - MARGIN
+    let page Colour(255.0, 255.0, 255.0)
+    let pale Colour(243.0, 243.0, 241.0)
+    let orange Colour(232.0, 133.0, 61.0)
+    let ink Colour(110.0, 110.0, 116.0)
+    var c page
+    if px >= 0 and py >= 0
+    {
+        let cx px / CELL
+        let cy py / CELL
+        let kind block_colour(cx, cy)
+        if kind > 0.0
+        {
+            c := pale
+            if kind = 2.0
+                c := mix(pale, orange, 0.45)
+            if kind = 3.0
+                c := orange
+            ; the cell's border, one point wide
+            let inside_x px % CELL
+            let inside_y py % CELL
+            if inside_x = 0 or inside_y = 0 or inside_x = CELL - 1 or inside_y = CELL - 1
+                c := mix(c, ink, 0.6)
+        }
+    }
+    let r c.r.round_even() as u32
+    let g c.g.round_even() as u32
+    let b c.b.round_even() as u32
+    r | (g << 8) | (b << 16) | ((255 as u32) << 24)
+}
+
+var picture Vector[u32]((WIDTH * HEIGHT) as size_t)
+for p in WIDTH * HEIGHT
+    picture.put(p as size_t, pixel(p))
+if File.write_bytes("picture.`WIDTH`x`HEIGHT`.rgba", picture.as_bytes()) = false
+    print "the picture could not be written"

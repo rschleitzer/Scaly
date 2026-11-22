@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html
+lang="de"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Viele Punkte auf einmal - Maschinelles Lernen mit Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.de.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Inhalt"
+><a
+class="sidebar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.de.htm"
+><span
+class="num"
+>1.</span
+>Ein erstes Modell</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.de.htm#field-points"
+><span
+class="num"
+>1.1</span
+>Zwei Sorten von Punkten</a
+></li
+><li
+><a
+href="field.de.htm#field-neuron"
+><span
+class="num"
+>1.2</span
+>Ein Neuron</a
+></li
+><li
+><a
+href="field.de.htm#field-loss"
+><span
+class="num"
+>1.3</span
+>Wie falsch</a
+></li
+><li
+><a
+href="field.de.htm#field-gradient"
+><span
+class="num"
+>1.4</span
+>Bergab</a
+></li
+><li
+><a
+href="field.de.htm#field-features"
+><span
+class="num"
+>1.5</span
+>Bessere Eingaben</a
+></li
+><li
+><a
+href="field.de.htm#field-hidden"
+><span
+class="num"
+>1.6</span
+>Verborgene Schichten</a
+></li
+><li
+><a
+href="field.de.htm#field-backprop"
+><span
+class="num"
+>1.7</span
+>Rückwärtsrechnung</a
+></li
+><li
+><a
+href="field.de.htm#field-field"
+><span
+class="num"
+>1.8</span
+>Das Spielfeld</a
+></li
+><li
+><a
+href="field.de.htm#field-test"
+><span
+class="num"
+>1.9</span
+>Verallgemeinerung</a
+></li
+><li
+><a
+href="field.de.htm#field-program"
+><span
+class="num"
+>1.10</span
+>Das Programm des Spielfelds</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="matrices.de.htm"
+aria-current="page"
+><span
+class="num"
+>2.</span
+>Viele Punkte auf einmal</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="matrices.de.htm#matrices-rows"
+><span
+class="num"
+>2.1</span
+>Eine Zeile je Punkt</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Inhalt"
+title="Inhalt"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Farben"
+title="Farben"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Suchen (S)"
+title="Suchen (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><nav
+class="topbar-links"
+aria-label="Anderswo"
+><a
+href="matrices.htm"
+>English</a
+><a
+href="scaly-ml.de.pdf"
+>PDF</a
+><a
+href="../play/"
+>Der Playground</a
+><a
+href="../lang/"
+>Die Sprache</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Im Buch suchen"
+aria-label="Im Buch suchen"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Kapitel 2</p
+><h1
+id="matrices"
+>Viele Punkte auf einmal</h1
+><p
+>Unser Netz rechnet bisher Punkt für Punkt. In diesem Kapitel
+    schreiben wir dieselbe Rechnung für alle Punkte auf einmal, mit
+    Matrizen, und sehen, wie Scaly die vielen Zahlen hält und schnell
+    verrechnet.</p
+><section
+id="matrices-rows"
+><h2
+><a
+class="header"
+href="#matrices-rows"
+>Eine Zeile je Punkt</a
+></h2
+><p
+>Ein Neuron bildet für einen Punkt seine gewichtete Summe
+      <math
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>x</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>y</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+>. Für die 200 Trainingspunkte des Kreises sind
+      das 200 Summen, und eine Schicht aus vier Neuronen bildet 800.
+      Schreiben wir die Eingaben aller Punkte untereinander, eine Zeile je
+      Punkt, entsteht eine Tabelle aus 200 Zeilen und 2 Spalten, eine
+      <em
+>Matrix</em
+> <math
+><mi
+>X</mi
+></math
+>. Die Gewichte der Schicht
+      schreiben wir ebenso als Matrix <math
+><mi
+>W</mi
+></math
+>, eine Spalte je
+      Neuron, also 2 Zeilen und 4 Spalten.</p
+><p
+>Die Summe von Neuron <math
+><mi
+>j</mi
+></math
+> für Punkt <math
+><mi
+>p</mi
+></math
+> ist
+      dann Zeile <math
+><mi
+>p</mi
+></math
+> von <math
+><mi
+>X</mi
+></math
+> mit Spalte <math
+><mi
+>j</mi
+></math
+> von
+      <math
+><mi
+>W</mi
+></math
+>, Zahl für Zahl multipliziert und zusammengezählt, dazu
+      der Bias des Neurons:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mi
+>z</mi
+><mrow
+><mi
+>p</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>x</mi
+><mrow
+><mi
+>p</mi
+><mn
+>1</mn
+></mrow
+></msub
+><msub
+><mi
+>w</mi
+><mrow
+><mn
+>1</mn
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>x</mi
+><mrow
+><mi
+>p</mi
+><mn
+>2</mn
+></mrow
+></msub
+><msub
+><mi
+>w</mi
+><mrow
+><mn
+>2</mn
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>b</mi
+><mi
+>j</mi
+></msub
+></math
+></div
+><img
+src="fig/matmul.png"
+alt="Drei Blöcke von Zellen: links X, eine Zeile je Punkt und zwei Spalten, oben W mit zwei Zeilen und einer Spalte je Neuron, darunter Z. Eine Zeile von X und eine Spalte von W sind orange, und wo sie sich in Z kreuzen, ist die eine Zahl, die sie zusammen ergeben, kräftig orange."
+loading="lazy"></div
+><p
+>Alle diese Summen zusammen sind wieder eine Matrix
+      <math
+><mi
+>Z</mi
+></math
+>, eine Zeile je Punkt und eine Spalte je Neuron. Die
+      Rechnung, die sie aus <math
+><mi
+>X</mi
+></math
+> und <math
+><mi
+>W</mi
+></math
+> bildet, heißt
+      <em
+>Matrixprodukt</em
+> und wird geschrieben wie eine
+      Multiplikation:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>Z</mi
+><mo
+>=</mo
+><mi
+>X</mi
+><mi
+>W</mi
+><mo
+>+</mo
+><mi
+>b</mi
+><mspace
+width="2em"
+></mspace
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>Den Bias zählen wir dabei zu jeder Zeile, und tanh wirkt auf jede
+      Zahl für sich. Jede weitere Schicht ist dieselbe Zeile noch einmal,
+      mit <math
+><mi
+>H</mi
+></math
+> statt <math
+><mi
+>X</mi
+></math
+> als Eingabe. Die ganze
+      Vorwärtsrechnung unseres Netzes sind drei solche Zeilen.</p
+><p
+>Was gewinnen wir dadurch? Gerechnet wird genau dasselbe:
+      dieselben Multiplikationen und Additionen in derselben Reihenfolge,
+      und das Programm dieses Kapitels kommt Zahl für Zahl auf das Ergebnis
+      des Spielfelds. Gewonnen ist dreierlei. Das Programm wird klarer: Die
+      Vorwärtsrechnung sind drei Zeilen, und die Zahl der Punkte kommt in
+      ihnen nicht mehr vor. Das Matrixprodukt ist die eine Rechnung, für die
+      Prozessoren und Grafikkarten gebaut sind; große Matrizen verteilen
+      sich gut auf die Kerne und auf die Karte. Bei unseren 200 Punkten und
+      vier Neuronen ist davon noch nichts zu merken, die Matrizen sind
+      winzig. Und es bereitet das nächste Kapitel vor: Ein Programm,
+      das Ableitungen selbst bildet, braucht dann eine Regel für eine
+      Handvoll Matrixoperationen statt für jede einzelne
+      Multiplikation.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Kapitel"
+><a
+class="prev"
+rel="prev"
+href="field.de.htm"
+><span
+class="pager-label"
+>Zurück</span
+><span
+class="pager-title"
+>Ein erstes Modell</span
+></a
+><span
+class="next"
+></span
+></nav
+></main
+></div
+></body
+></html
+>

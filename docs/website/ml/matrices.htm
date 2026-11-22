@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Many Points at Once - Machine Learning with Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.htm"
+><span
+class="num"
+>1.</span
+>A First Model</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.htm#field-points"
+><span
+class="num"
+>1.1</span
+>Two Kinds of Points</a
+></li
+><li
+><a
+href="field.htm#field-neuron"
+><span
+class="num"
+>1.2</span
+>One Neuron</a
+></li
+><li
+><a
+href="field.htm#field-loss"
+><span
+class="num"
+>1.3</span
+>How Wrong</a
+></li
+><li
+><a
+href="field.htm#field-gradient"
+><span
+class="num"
+>1.4</span
+>Downhill</a
+></li
+><li
+><a
+href="field.htm#field-features"
+><span
+class="num"
+>1.5</span
+>Better Inputs</a
+></li
+><li
+><a
+href="field.htm#field-hidden"
+><span
+class="num"
+>1.6</span
+>Hidden Layers</a
+></li
+><li
+><a
+href="field.htm#field-backprop"
+><span
+class="num"
+>1.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.htm#field-field"
+><span
+class="num"
+>1.8</span
+>The Field</a
+></li
+><li
+><a
+href="field.htm#field-test"
+><span
+class="num"
+>1.9</span
+>Generalization</a
+></li
+><li
+><a
+href="field.htm#field-program"
+><span
+class="num"
+>1.10</span
+>The Field's Program</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="matrices.htm"
+aria-current="page"
+><span
+class="num"
+>2.</span
+>Many Points at Once</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="matrices.htm#matrices-rows"
+><span
+class="num"
+>2.1</span
+>A Row for Each Point</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="matrices.de.htm"
+>Deutsch</a
+><a
+href="scaly-ml.pdf"
+>PDF</a
+><a
+href="../play/"
+>The playground</a
+><a
+href="../lang/"
+>The language</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 2</p
+><h1
+id="matrices"
+>Many Points at Once</h1
+><p
+>Our network computes point by point so far. In this chapter we
+    write the same computation for all points at once, with matrices, and
+    see how Scaly holds the many numbers and computes with them
+    fast.</p
+><section
+id="matrices-rows"
+><h2
+><a
+class="header"
+href="#matrices-rows"
+>A Row for Each Point</a
+></h2
+><p
+>A neuron forms its weighted sum for one point,
+      <math
+><mi
+>z</mi
+><mo
+>=</mo
+><msub
+><mi
+>w</mi
+><mn
+>1</mn
+></msub
+><mi
+>x</mi
+><mo
+>+</mo
+><msub
+><mi
+>w</mi
+><mn
+>2</mn
+></msub
+><mi
+>y</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+>. For the 200 training points of the circle
+      those are 200 sums, and a layer of four neurons forms 800. Writing
+      the inputs of all points one below the other, a row for each point,
+      gives a table of 200 rows and 2 columns, a
+      <em
+>matrix</em
+> <math
+><mi
+>X</mi
+></math
+>. The layer's weights we
+      write as a matrix <math
+><mi
+>W</mi
+></math
+> too, a column for each neuron, so 2
+      rows and 4 columns.</p
+><p
+>The sum of neuron <math
+><mi
+>j</mi
+></math
+> for point <math
+><mi
+>p</mi
+></math
+> is then
+      row <math
+><mi
+>p</mi
+></math
+> of <math
+><mi
+>X</mi
+></math
+> with column <math
+><mi
+>j</mi
+></math
+> of
+      <math
+><mi
+>W</mi
+></math
+>, multiplied number by number and added up, plus the
+      neuron's bias:</p
+><div
+class="beside"
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mi
+>z</mi
+><mrow
+><mi
+>p</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>x</mi
+><mrow
+><mi
+>p</mi
+><mn
+>1</mn
+></mrow
+></msub
+><msub
+><mi
+>w</mi
+><mrow
+><mn
+>1</mn
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>x</mi
+><mrow
+><mi
+>p</mi
+><mn
+>2</mn
+></mrow
+></msub
+><msub
+><mi
+>w</mi
+><mrow
+><mn
+>2</mn
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>+</mo
+><msub
+><mi
+>b</mi
+><mi
+>j</mi
+></msub
+></math
+></div
+><img
+src="fig/matmul.png"
+alt="Three blocks of cells: on the left X, a row for each point and two columns, on top W with two rows and a column for each neuron, below it Z. One row of X and one column of W are orange, and where they cross in Z the one number they make together is strong orange."
+loading="lazy"></div
+><p
+>All these sums together are a matrix again, <math
+><mi
+>Z</mi
+></math
+>, a
+      row for each point and a column for each neuron. The computation that
+      forms it from <math
+><mi
+>X</mi
+></math
+> and <math
+><mi
+>W</mi
+></math
+> is called the
+      <em
+>matrix product</em
+> and is written like a
+      multiplication:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>Z</mi
+><mo
+>=</mo
+><mi
+>X</mi
+><mi
+>W</mi
+><mo
+>+</mo
+><mi
+>b</mi
+><mspace
+width="2em"
+></mspace
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>The bias is added to every row, and tanh acts on each number by
+      itself. Every further layer is the same line again, with
+      <math
+><mi
+>H</mi
+></math
+> instead of <math
+><mi
+>X</mi
+></math
+> as its input. The whole forward
+      computation of our network is three such lines.</p
+><p
+>What do we gain by this? The computation is exactly the same:
+      the same multiplications and additions in the same order, and the
+      program of this chapter arrives number for number at the field's
+      result. Gained are three things. The program becomes clearer: the
+      forward computation is three lines, and the number of points no
+      longer appears in them. The matrix product is the one computation
+      processors and graphics cards are built for; large matrices spread
+      well over the cores and onto the card. With our 200 points and four
+      neurons none of this shows yet, the matrices are tiny. And it
+      prepares the next chapter: a program that forms derivatives by
+      itself then needs a rule for a handful of matrix operations instead
+      of for every single multiplication.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="field.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>A First Model</span
+></a
+><span
+class="next"
+></span
+></nav
+></main
+></div
+></body
+></html
+>

@@ -1,0 +1,53 @@
+<chapter xml:id="matrices">
+  <title>Many Points at Once</title>
+
+  <para>Our network computes point by point so far. In this chapter we
+    write the same computation for all points at once, with matrices, and
+    see how Scaly holds the many numbers and computes with them
+    fast.</para>
+
+  <section xml:id="matrices-rows">
+    <title>A Row for Each Point</title>
+    <para>A neuron forms its weighted sum for one point,
+      <inlineequation><mml:math><mml:mi>z</mml:mi><mml:mo>=</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>1</mml:mn></mml:msub><mml:mi>x</mml:mi><mml:mo>+</mml:mo><mml:msub><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msub><mml:mi>y</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation>. For the 200 training points of the circle
+      those are 200 sums, and a layer of four neurons forms 800. Writing
+      the inputs of all points one below the other, a row for each point,
+      gives a table of 200 rows and 2 columns, a
+      <emphasis>matrix</emphasis> <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation>. The layer's weights we
+      write as a matrix <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> too, a column for each neuron, so 2
+      rows and 4 columns.</para>
+    <para>The sum of neuron <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> for point <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> is then
+      row <inlineequation><mml:math><mml:mi>p</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> with column <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> of
+      <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, multiplied number by number and added up, plus the
+      neuron's bias:</para>
+    <informalfigure role="beside">
+      <informalequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>1</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>1</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>x</mml:mi><mml:mrow><mml:mi>p</mml:mi><mml:mn>2</mml:mn></mml:mrow></mml:msub><mml:msub><mml:mi>w</mml:mi><mml:mrow><mml:mn>2</mml:mn><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>+</mml:mo><mml:msub><mml:mi>b</mml:mi><mml:mi>j</mml:mi></mml:msub></mml:math></informalequation>
+      <mediaobject>
+        <alt>Three blocks of cells: on the left X, a row for each point and two columns, on top W with two rows and a column for each neuron, below it Z. One row of X and one column of W are orange, and where they cross in Z the one number they make together is strong orange.</alt>
+        <imageobject><imagedata fileref="fig/matmul.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
+    <para>All these sums together are a matrix again, <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation>, a
+      row for each point and a column for each neuron. The computation that
+      forms it from <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation> is called the
+      <emphasis>matrix product</emphasis> and is written like a
+      multiplication:</para>
+    <informalequation><mml:math><mml:mi>Z</mml:mi><mml:mo>=</mml:mo><mml:mi>X</mml:mi><mml:mi>W</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi><mml:mspace width="2em"/><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>The bias is added to every row, and tanh acts on each number by
+      itself. Every further layer is the same line again, with
+      <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> instead of <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> as its input. The whole forward
+      computation of our network is three such lines.</para>
+    <para>What do we gain by this? The computation is exactly the same:
+      the same multiplications and additions in the same order, and the
+      program of this chapter arrives number for number at the field's
+      result. Gained are three things. The program becomes clearer: the
+      forward computation is three lines, and the number of points no
+      longer appears in them. The matrix product is the one computation
+      processors and graphics cards are built for; large matrices spread
+      well over the cores and onto the card. With our 200 points and four
+      neurons none of this shows yet, the matrices are tiny. And it
+      prepares the next chapter: a program that forms derivatives by
+      itself then needs a rule for a handful of matrix operations instead
+      of for every single multiplication.</para>
+  </section>
+</chapter>

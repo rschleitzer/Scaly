@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book SYSTEM "docbook.dtd" [
   <!ENTITY field SYSTEM "ml/field.xml">
+  <!ENTITY matrices SYSTEM "ml/matrices.xml">
 ]>
 <!-- Machine Learning with Scaly: a book of its own beside the specification,
      in English and in German (scaly-ml.de.xml), set by the same stylesheet
@@ -18,4 +19,5 @@
     </abstract>
   </info>
 &field;
+&matrices;
 </book>

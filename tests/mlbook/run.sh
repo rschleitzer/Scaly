@@ -7,7 +7,8 @@
 # and screens, character for character, and the same formulas (parity.py);
 # every formula reaches the page as MathML a browser sets (mathml.py),
 # every picture's program draws its picture (docs/figures.py), and both
-# books set as PDF with their formula font (docs/ml-pdf.sh's way).
+# books set as PDF with their formula font (docs/ml-pdf.sh's way), and
+# every program beside the book (docs/ml/prog/) prints what it must.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -59,6 +60,18 @@ rm -rf "$FIG"
 for ref in $(grep -ho 'fileref="fig/[^"]*"' docs/ml/field.xml docs/ml/de/field.xml | sed 's/fileref="fig\/\(.*\)"/\1/' | sort -u); do
   [ -f "docs/ml/fig/${ref%.png}.scaly" ] || [ -f "docs/ml/shot/$ref" ] || { echo "mlbook: no source for fig/$ref"; rc=1; }
 done
+# the programs beside the book (docs/ml/prog/), each against what it says it
+# matches: circle.scaly, the circle learned with matrices, prints what the
+# field's own program prints for it (`field 0 500`), digit for digit
+SCALY="$("$ROOT/tools/scaly-of.sh" "$BIN")"
+"$SCALY" run docs/ml/prog/circle.scaly > "$FIG.circle" 2>&1
+"$SCALY" run web/field/field.scaly 0 500 > "$FIG.field" 2>&1
+if [ -s "$FIG.circle" ] && cmp -s "$FIG.circle" "$FIG.field"; then
+  echo "prog: circle.scaly prints what field 0 500 prints"
+else
+  echo "mlbook: circle.scaly does not print what field 0 500 prints"; diff "$FIG.field" "$FIG.circle" | head -5; rc=1
+fi
+rm -f "$FIG.circle" "$FIG.field"
 # the chapters that still hold a program (the code of the pages is not the
 # book's to run)
 LISTED=()
