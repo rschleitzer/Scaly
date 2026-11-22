@@ -17414,6 +17414,8 @@ void TaskPlanner_pw_global(TaskPlanner&, PlannedGlobalRef&) asm("_ZN11TaskPlanne
 bool TaskPlanner_is_simd_store(String&) asm("_ZN11TaskPlannerB6scalycB4v0_213is_simd_storeE6String");
 bool TaskPlanner_is_construction_name(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_220is_construction_nameE6String");
 void TaskPlanner_pw_call(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_27pw_callE11PlannedCallB6scalycB4v0_2");
+PlannedCall* TaskPlanner_forwarded_put(scaly_frame*, TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_213forwarded_putEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
+void TaskPlanner_cls_forwarded(TaskPlanner&, PlannedCall&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_213cls_forwardedE11PlannedCallB6scalycB4v0_211PlannedCallB6scalycB4v0_2");
 void TaskPlanner_note_indexed_read(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_217note_indexed_readE11PlannedCallB6scalycB4v0_2");
 bool TaskPlanner_is_slot_store(PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_213is_slot_storeE11PlannedCallB6scalycB4v0_2");
 void TaskPlanner_put_is_disjoint(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_215put_is_disjointE11PlannedCallB6scalycB4v0_2");
@@ -17444,11 +17446,19 @@ bool TaskPlanner_rest_fits(TaskPlanner&, PlannedOperand&, int64_t, uint64_t, uin
 bool TaskPlanner_same_bare(TaskPlanner&, PlannedOperand&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_29same_bareE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 bool TaskPlanner_same_form(TaskPlanner&, uint64_t, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_29same_formEmm");
 uint64_t TaskPlanner_first_put(TaskPlanner&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_29first_putEm");
+PlannedCall* TaskPlanner_forwarded_put_of(scaly_frame*, TaskPlanner&, PlannedFunction&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_216forwarded_put_ofEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_211PlannedCallB6scalycB4v0_2");
+uint64_t TaskPlanner_declared_mask(TaskPlanner&, PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_213declared_maskE15PlannedFunctionB6scalycB4v0_2");
+PlannedOperand* TaskPlanner_sole_operand(Vector<PlannedOperand>*) asm("_ZN11TaskPlannerB6scalycB4v0_212sole_operandE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
+PlannedOperand* TaskPlanner_put_in(scaly_frame*, TaskPlanner&, PlannedOperand&, PlannedFunction&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_26put_inEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_215PlannedFunctionB6scalycB4v0_211PlannedCallB6scalycB4v0_2");
+uint64_t TaskPlanner_parameter_at(PlannedFunction&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_212parameter_atE15PlannedFunctionB6scalycB4v0_26String");
+PlannedOperand TaskPlanner_under_address(scaly_frame*, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_213under_addressEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
+PlannedMemberAccess* Option_unwrap8(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
+PlannedItem* Option_unwrap9(PlannedItem*) asm("_ZN6OptionIR11PlannedItemB6scalycB4v0_2E6unwrapEv");
 bool TaskPlanner_type_is_reference_shaped(PlannedType&) asm("_ZN11TaskPlannerB6scalycB4v0_224type_is_reference_shapedE11PlannedTypeB6scalycB4v0_2");
-PlannedType* Option_unwrap8(PlannedType*) asm("_ZN6OptionIR11PlannedTypeB6scalycB4v0_2E6unwrapEv");
+PlannedType* Option_unwrap10(PlannedType*) asm("_ZN6OptionIR11PlannedTypeB6scalycB4v0_2E6unwrapEv");
 uint64_t TaskPlanner_wm_all() asm("_ZN11TaskPlannerB6scalycB4v0_26wm_allEv");
 void TaskPlanner_memo_written(TaskPlanner&, String&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_212memo_writtenE6Stringm");
-Vector<PlannedItem>* Option_unwrap9(Vector<PlannedItem>*) asm("_ZN6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6unwrapEv");
+Vector<PlannedItem>* Option_unwrap11(Vector<PlannedItem>*) asm("_ZN6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6unwrapEv");
 void TaskPlanner_wr_add_name(TaskPlanner&, String&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_211wr_add_nameE6Stringm");
 void TaskPlanner_wr_action(TaskPlanner&, PlannedAction&) asm("_ZN11TaskPlannerB6scalycB4v0_29wr_actionE13PlannedActionB6scalycB4v0_2");
 uint64_t TaskPlanner_extern_written_mask(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_219extern_written_maskE6String");
@@ -17461,15 +17471,13 @@ void TaskPlanner_wr_operands(TaskPlanner&, Vector<PlannedOperand>*) asm("_ZN11Ta
 void TaskPlanner_wr_statement(TaskPlanner&, PlannedStatement&) asm("_ZN11TaskPlannerB6scalycB4v0_212wr_statementE16PlannedStatementB6scalycB4v0_2");
 void TaskPlanner_wr_statement_ref(TaskPlanner&, PlannedStatement*) asm("_ZN11TaskPlannerB6scalycB4v0_216wr_statement_refE6OptionIR16PlannedStatementB6scalycB4v0_2E");
 void TaskPlanner_wr_call(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_27wr_callE11PlannedCallB6scalycB4v0_2");
-uint64_t TaskPlanner_declared_mask(TaskPlanner&, PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_213declared_maskE15PlannedFunctionB6scalycB4v0_2");
 bool TaskPlanner_masked_args_local(TaskPlanner&, PlannedCall&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_217masked_args_localE11PlannedCallB6scalycB4v0_2m");
-PlannedItem* Option_unwrap10(PlannedItem*) asm("_ZN6OptionIR11PlannedItemB6scalycB4v0_2E6unwrapEv");
-PlannedAttribute* Option_unwrap11(PlannedAttribute*) asm("_ZN6OptionIR16PlannedAttributeB6scalycB4v0_2E6unwrapEv");
+PlannedAttribute* Option_unwrap12(PlannedAttribute*) asm("_ZN6OptionIR16PlannedAttributeB6scalycB4v0_2E6unwrapEv");
 bool TaskPlanner_is_page_type(PlannedType&) asm("_ZN11TaskPlannerB6scalycB4v0_212is_page_typeE11PlannedTypeB6scalycB4v0_2");
 bool TaskPlanner_arg_root_local(TaskPlanner&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_214arg_root_localE14PlannedOperandB6scalycB4v0_2");
 void TaskPlanner_init(TaskPlanner&) asm("_ZN11TaskPlannerB6scalycB4v0_2C1Ev");
 void GpuKernel_take_reductions(GpuKernel&, TaskPlanner*, uint64_t) asm("_ZN9GpuKernelB6scalycB4v0_215take_reductionsER11TaskPlannerB6scalycB4v0_2m");
-PlannedFor* Option_unwrap12(PlannedFor*) asm("_ZN6OptionIR10PlannedForB6scalycB4v0_2E6unwrapEv");
+PlannedFor* Option_unwrap13(PlannedFor*) asm("_ZN6OptionIR10PlannedForB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_classify_loop(GpuKernel&, PlannedFor&) asm("_ZN9GpuKernelB6scalycB4v0_213classify_loopE10PlannedForB6scalycB4v0_2");
 String GpuKernel_verdict(scaly_frame*, GpuKernel&) asm("_ZN9GpuKernelB6scalycB4v0_27verdictEPN4scaly6memory4PageE");
 void GpuKernel_analyze(GpuKernel&, Plan&, TaskPlanner*) asm("_ZN9GpuKernelB6scalycB4v0_27analyzeE4PlanB6scalycB4v0_2R11TaskPlannerB6scalycB4v0_2");
@@ -17502,7 +17510,6 @@ bool GpuKernel_record_writable(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4
 int64_t GpuKernel_kind_by_symbol(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_214kind_by_symbolE6String");
 int64_t GpuKernel_field_at(GpuKernel&, int64_t, PlannedMemberAccess&) asm("_ZN9GpuKernelB6scalycB4v0_28field_atEi19PlannedMemberAccessB6scalycB4v0_2");
 bool GpuKernel_has_members(PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_211has_membersE14PlannedOperandB6scalycB4v0_2");
-PlannedMemberAccess* Option_unwrap13(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
 void GpuKernel_k_members(GpuKernel&, PlannedOperand&, String&) asm("_ZN9GpuKernelB6scalycB4v0_29k_membersE14PlannedOperandB6scalycB4v0_26String");
 int64_t GpuKernel_local_index(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_211local_indexE6String");
 int64_t GpuKernel_kind_at(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_27kind_atEi");
@@ -115783,9 +115790,19 @@ __attribute__((weak)) void TaskPlanner_pw_operand(TaskPlanner& scaly_self, Plann
 __attribute__((weak)) void TaskPlanner_cls_call(TaskPlanner& scaly_self, PlannedCall& call)
 {
     TaskPlanner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (this_->cls_blocked)
     {
         return;
+    }
+    if (((((call).is_operator) == (false)) ? (((call).is_intrinsic) == (false)) : false))
+    {
+        PlannedCall* fwd = TaskPlanner_forwarded_put(&scaly_local.f, *(this_), call);
+        if (((fwd) != (nullptr)))
+        {
+            TaskPlanner_cls_forwarded(*(this_), call, scaly_lvalue(((*(fwd)))));
+            return;
+        }
     }
     TaskPlanner_cls_operands(*(this_), (call).args);
     if (this_->cls_blocked)
@@ -117205,6 +117222,395 @@ __attribute__((weak)) uint64_t TaskPlanner_first_put(TaskPlanner& scaly_self, ui
         q = (q + 1ULL);
     }
     return at;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) PlannedCall* TaskPlanner_forwarded_put(scaly_frame* scaly_rp, TaskPlanner& scaly_self, PlannedCall& call)
+{
+    TaskPlanner* this_ = &scaly_self;
+    if ((((((this_->plan_functions) == (nullptr)) ? true : (((call).args) == (nullptr))) ? true : (call).is_indirect) ? true : (call).can_throw))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    for (auto scaly_t1 = Vector_get_iterator<PlannedFunction>(scaly_rp, *(this_->plan_functions));;)
+    {
+        PlannedFunction* scaly_t1_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t1);
+        if (scaly_t1_at == nullptr)
+            break;
+        PlannedFunction* func = scaly_t1_at;
+        if (String_equals(func->mangled_name, (call).mangled_name))
+        {
+            PlannedCall* put = TaskPlanner_forwarded_put_of(scaly_rp, *(this_), *(func), call);
+            if (((put) != (nullptr)))
+            {
+                return put;
+            }
+        }
+    }
+    return (PlannedCall*)(nullptr);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) PlannedCall* TaskPlanner_forwarded_put_of(scaly_frame* scaly_rp, TaskPlanner& scaly_self, PlannedFunction& func, PlannedCall& call)
+{
+    TaskPlanner* this_ = &scaly_self;
+    if (((((func).input) == (nullptr)) ? true : ((func).input->length != (call).args->length)))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    if ((TaskPlanner_declared_mask(*(this_), func) != 1ULL))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    if (((((func).writes) != (nullptr)) ? ((func).writes->length > 0ULL) : false))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    PlannedOperand* body = (PlannedOperand*)(nullptr);
+    {
+        auto&& scaly_t1 = (func).impl;
+        if (scaly_t1.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t1);
+            body = TaskPlanner_sole_operand((action).source);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if (((body) == (nullptr)))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    PlannedOperand op = ((*(body)));
+    if (TaskPlanner_has_hops(op))
+    {
+        return (PlannedCall*)(nullptr);
+    }
+    {
+        auto&& scaly_t2 = (op).expr;
+        if (scaly_t2.tag == 4)
+        {
+            PlannedCall inner = scaly_payload<PlannedCall>(scaly_t2);
+            if (((TaskPlanner_is_slot_store(inner)) == (false)))
+            {
+                return (PlannedCall*)(nullptr);
+            }
+            Vector<PlannedOperand>* args = ({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t3), 3ULL); scaly_t3; });
+            uint64_t k = 0ULL;
+            while ((k < 3ULL))
+            {
+                PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((inner).args), k);
+                if (((a_ptr) == (nullptr)))
+                {
+                    return (PlannedCall*)(nullptr);
+                }
+                PlannedOperand* put_in = TaskPlanner_put_in(scaly_rp, *(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))), func, call);
+                if (((put_in) == (nullptr)))
+                {
+                    return (PlannedCall*)(nullptr);
+                }
+                Vector_put<PlannedOperand>((*args), k, scaly_lvalue((*({ PlannedOperand* scaly_t4 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t4 = ((*(put_in))); scaly_t4; }))));
+                k = (k + 1ULL);
+            }
+            PlannedCall put = PlannedCall{(call).loc, (inner).name, (inner).mangled_name, (inner).is_intrinsic, (inner).is_operator, (inner).can_throw, (inner).requires_page_param, ({ Vector<PlannedOperand>* scaly_t5 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t5 = (*args); scaly_t5; }), (inner).result_type, (inner).life, (inner).throws_type, (inner).is_indirect};
+            return ({ PlannedCall* scaly_t6 = (PlannedCall*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t6 = put; scaly_t6; });
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (PlannedCall*)(nullptr);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) PlannedOperand* TaskPlanner_sole_operand(Vector<PlannedOperand>* src)
+{
+    if (((src) == (nullptr)))
+    {
+        return (PlannedOperand*)(nullptr);
+    }
+    if ((src->length != 1ULL))
+    {
+        return (PlannedOperand*)(nullptr);
+    }
+    PlannedOperand* op_ptr = Vector_get<PlannedOperand>(*(src), 0ULL);
+    if (((op_ptr) == (nullptr)))
+    {
+        return (PlannedOperand*)(nullptr);
+    }
+    PlannedOperand* op = ((PlannedOperand*)(op_ptr));
+    if (((TaskPlanner_has_hops(scaly_lvalue((*(op))))) == (false)))
+    {
+        {
+            auto&& scaly_t1 = op->expr;
+            if (scaly_t1.tag == 7)
+            {
+                PlannedBlock blk = scaly_payload<PlannedBlock>(scaly_t1);
+                if ((((blk).statements) == (nullptr)))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                if (((blk).statements->length != 1ULL))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                PlannedStatement* s_ptr = Vector_get<PlannedStatement>(*((blk).statements), 0ULL);
+                if (((s_ptr) == (nullptr)))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                PlannedStatement* st = ((PlannedStatement*)(s_ptr));
+                {
+                    auto&& scaly_t2 = st;
+                    if (scaly_t2->tag == 0)
+                    {
+                        PlannedAction act = scaly_payload<PlannedAction>(*scaly_t2);
+                        if (((((act).target) != (nullptr)) ? ((act).target->length > 0ULL) : false))
+                        {
+                            return (PlannedOperand*)(nullptr);
+                        }
+                        return TaskPlanner_sole_operand((act).source);
+                    }
+                    else
+                    {
+                        return (PlannedOperand*)(nullptr);
+                    }
+                }
+            }
+            else
+            {
+                0LL;
+            }
+        }
+    }
+    return op_ptr;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) PlannedOperand* TaskPlanner_put_in(scaly_frame* scaly_rp, TaskPlanner& scaly_self, PlannedOperand& op, PlannedFunction& func, PlannedCall& call)
+{
+    TaskPlanner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            uint64_t p = TaskPlanner_parameter_at(func, (v).name);
+            if ((p >= (call).args->length))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), p);
+            if (((a_ptr) == (nullptr)))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedOperand a = TaskPlanner_under_address(&scaly_local.f, scaly_lvalue((*(((PlannedOperand*)(a_ptr))))));
+            if (((TaskPlanner_has_hops(op)) == (false)))
+            {
+                return ({ PlannedOperand* scaly_t2 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t2 = a; scaly_t2; });
+            }
+            if ((((TaskPlanner_field_hops(a)) == (false)) ? true : ((TaskPlanner_field_hops(op)) == (false))))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            uint64_t al = 0ULL;
+            if ((((a).member_access) != (nullptr)))
+            {
+                al = (a).member_access->length;
+            }
+            uint64_t ol = (op).member_access->length;
+            Vector<PlannedMemberAccess>* hops = ({ Vector<PlannedMemberAccess>* scaly_t3 = (Vector<PlannedMemberAccess>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedMemberAccess>), alignof(Vector<PlannedMemberAccess>)); *scaly_t3 = Vector<PlannedMemberAccess>{}; Vector_init3<PlannedMemberAccess>((*scaly_t3), (al + ol)); scaly_t3; });
+            uint64_t h = 0ULL;
+            while ((h < (al + ol)))
+            {
+                PlannedMemberAccess* hop_ptr = (PlannedMemberAccess*)(nullptr);
+                if ((h < al))
+                {
+                    hop_ptr = Vector_get<PlannedMemberAccess>(*((a).member_access), h);
+                }
+                else
+                {
+                    hop_ptr = Vector_get<PlannedMemberAccess>(*((op).member_access), (h - al));
+                }
+                if (((hop_ptr) == (nullptr)))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                Vector_put<PlannedMemberAccess>((*hops), h, scaly_lvalue((*(((PlannedMemberAccess*)(hop_ptr))))));
+                h = (h + 1ULL);
+            }
+            PlannedOperand joined = PlannedOperand{(a).loc, (a).expr, ({ Vector<PlannedMemberAccess>* scaly_t4 = (Vector<PlannedMemberAccess>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedMemberAccess>), alignof(Vector<PlannedMemberAccess>)); *scaly_t4 = (*hops); scaly_t4; }), (op).result_type};
+            return ({ PlannedOperand* scaly_t5 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t5 = joined; scaly_t5; });
+        }
+        else if (scaly_t1.tag == 0)
+        {
+            PlannedConstant c = scaly_payload<PlannedConstant>(scaly_t1);
+            if (TaskPlanner_has_hops(op))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedOperand at_call = PlannedOperand{(call).loc, (op).expr, (Vector<PlannedMemberAccess>*)(nullptr), (op).result_type};
+            return ({ PlannedOperand* scaly_t6 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t6 = at_call; scaly_t6; });
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall inner = scaly_payload<PlannedCall>(scaly_t1);
+            if ((((TaskPlanner_has_hops(op) ? true : (((inner).is_operator) == (false))) ? true : (inner).is_indirect) ? true : (((inner).args) == (nullptr))))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            uint64_t n = (inner).args->length;
+            Vector<PlannedOperand>* args = ({ Vector<PlannedOperand>* scaly_t7 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t7 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t7), n); scaly_t7; });
+            uint64_t k = 0ULL;
+            while ((k < n))
+            {
+                PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((inner).args), k);
+                if (((a_ptr) == (nullptr)))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                PlannedOperand* put_in = TaskPlanner_put_in(scaly_rp, *(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))), func, call);
+                if (((put_in) == (nullptr)))
+                {
+                    return (PlannedOperand*)(nullptr);
+                }
+                Vector_put<PlannedOperand>((*args), k, scaly_lvalue((*({ PlannedOperand* scaly_t8 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t8 = ((*(put_in))); scaly_t8; }))));
+                k = (k + 1ULL);
+            }
+            PlannedCall pc = PlannedCall{(call).loc, (inner).name, (inner).mangled_name, (inner).is_intrinsic, (inner).is_operator, (inner).can_throw, (inner).requires_page_param, ({ Vector<PlannedOperand>* scaly_t9 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t9 = (*args); scaly_t9; }), (inner).result_type, (inner).life, (inner).throws_type, (inner).is_indirect};
+            PlannedOperand at_call = PlannedOperand{(call).loc, scaly_variant<PlannedExpression>(4, pc), (Vector<PlannedMemberAccess>*)(nullptr), (op).result_type};
+            return ({ PlannedOperand* scaly_t10 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t10 = at_call; scaly_t10; });
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t1);
+            if ((TaskPlanner_has_hops(op) ? true : (((as_expr).value) == (nullptr))))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedOperand* value = TaskPlanner_put_in(scaly_rp, *(this_), scaly_lvalue(((*((as_expr).value)))), func, call);
+            if (((value) == (nullptr)))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedAs pa = PlannedAs{(call).loc, (as_expr).target_type, value};
+            PlannedOperand at_call = PlannedOperand{(call).loc, scaly_variant<PlannedExpression>(19, pa), (Vector<PlannedMemberAccess>*)(nullptr), (op).result_type};
+            return ({ PlannedOperand* scaly_t11 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t11 = at_call; scaly_t11; });
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t1);
+            if ((TaskPlanner_has_hops(op) ? true : ((TaskPlanner_is_grouping(tp)) == (false))))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+            PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+            if ((((c->value) == (nullptr)) ? true : (c->value->length != 1ULL)))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+            if (((in_ptr) == (nullptr)))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            return TaskPlanner_put_in(scaly_rp, *(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))), func, call);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return (PlannedOperand*)(nullptr);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) uint64_t TaskPlanner_parameter_at(PlannedFunction& func, String& name)
+{
+    if ((((func).input) == (nullptr)))
+    {
+        return ((((uint64_t)(0LL))) - (((uint64_t)(1LL))));
+    }
+    uint64_t i = 0ULL;
+    while ((i < (func).input->length))
+    {
+        PlannedItem* it_ptr = Vector_get<PlannedItem>(*((func).input), i);
+        if (((it_ptr) != (nullptr)))
+        {
+            PlannedItem* it = ((PlannedItem*)(it_ptr));
+            if ((((it->name) != (nullptr)) ? String_equals(scaly_lvalue(((*(it->name)))), name) : false))
+            {
+                return i;
+            }
+        }
+        i = (i + 1ULL);
+    }
+    return (func).input->length;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) PlannedOperand TaskPlanner_under_address(scaly_frame* scaly_rp, PlannedOperand& op)
+{
+    if (TaskPlanner_has_hops(op))
+    {
+        return op;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 4)
+        {
+            PlannedCall c = scaly_payload<PlannedCall>(scaly_t1);
+            if (((((c).is_operator ? String_equals((c).name, scaly_lvalue(String{(uint8_t*)"\001&"})) : false) ? (((c).args) != (nullptr)) : false) ? ((c).args->length == 1ULL) : false))
+            {
+                PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*((c).args), 0ULL);
+                if (((in_ptr) != (nullptr)))
+                {
+                    return (*(((PlannedOperand*)(in_ptr))));
+                }
+            }
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return op;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) void TaskPlanner_cls_forwarded(TaskPlanner& scaly_self, PlannedCall& call, PlannedCall& put)
+{
+    TaskPlanner* this_ = &scaly_self;
+    uint64_t k = 1ULL;
+    while ((k < (call).args->length))
+    {
+        PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), k);
+        if (((a_ptr) != (nullptr)))
+        {
+            TaskPlanner_cls_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))));
+        }
+        if (this_->cls_blocked)
+        {
+            return;
+        }
+        k = (k + 1ULL);
+    }
+    PlannedOperand* r_ptr = Vector_get<PlannedOperand>(*((put).args), 0ULL);
+    if (((r_ptr) != (nullptr)))
+    {
+        TaskPlanner_cls_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(r_ptr))))));
+    }
+    if (this_->cls_blocked)
+    {
+        return;
+    }
+    TaskPlanner_put_is_disjoint(*(this_), put);
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
