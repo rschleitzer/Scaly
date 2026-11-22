@@ -138,18 +138,26 @@ class="num"
 ></li
 ><li
 ><a
-href="field.de.htm#field-test"
+href="field.de.htm#field-field"
 ><span
 class="num"
 >1.8</span
->Was es nicht gesehen hat</a
+>Das Spielfeld</a
+></li
+><li
+><a
+href="field.de.htm#field-test"
+><span
+class="num"
+>1.9</span
+>Verallgemeinerung</a
 ></li
 ><li
 ><a
 href="field.de.htm#field-program"
 ><span
 class="num"
->1.9</span
+>1.10</span
 >Das Programm des Spielfelds</a
 ></li
 ></ol
@@ -2598,15 +2606,364 @@ href="../play/model/#model=hidden&#38;lang=de"
 ><p
 >Mehr braucht ein Netz zum Lernen nicht, ganz gleich, wie viele
       Schichten es hat: vorwärts rechnen, den Fehler rückwärts verteilen,
-      jedes Gewicht ein Stück gegen seinen Gradienten schieben. Wie weit
-      das trägt, zeigt das <em
+      jedes Gewicht ein Stück gegen seinen Gradienten schieben.</p
+></section
+><section
+id="field-field"
+><h2
+><a
+class="header"
+href="#field-field"
+>Das Spielfeld</a
+></h2
+><p
+>Die Netze in unseren Kästen waren klein und für je eine Aufgabe
+      gebaut. Das <em
 >Spielfeld</em
->, eine Seite mit
-      einem größeren Netz als in unseren Kästen: bis zu sechs verborgene
-      Schichten mit bis zu acht Neuronen, sieben Eingaben zur Wahl, darunter
-      die Quadrate, und vier Anordnungen von Punkten, darunter eine
-      Spirale. Für jedes Neuron zeigt ein kleines Quadrat, was es über der
-      ganzen Ebene antwortet, so wie unsere Bilder für XOR.</p
+> ist eine Seite, auf der du
+      ein Netz selbst zusammenstellst und ihm beim Lernen zusiehst. Du
+      wählst die Punkte, die Eingaben, wie viele verborgene Schichten es
+      hat und wie viele Neuronen in jeder, und wie es lernt. Gerechnet wird
+      genau so, wie es die letzten Abschnitte hergeleitet haben. Oben auf
+      der Seite liegt eine Leiste mit den Knöpfen. Darunter stehen
+      nebeneinander drei Teile, von links nach rechts die Daten, das Netz
+      und die Ausgabe; auf einem schmalen Bildschirm stehen sie
+      untereinander.</p
+><dl
+><dt
+>Die Leiste</dt
+><dd
+><p
+><span
+class="gui"
+>Pause</span
+> hält das Netz an; derselbe Knopf
+            heißt dann <span
+class="gui"
+>Lernen</span
+> und lässt es weiterlernen.
+            Solange es angehalten ist, macht <span
+class="gui"
+>Ein Schritt</span
+>
+            genau einen Schritt des Gradientenabstiegs über alle
+            Trainingspunkte. <span
+class="gui"
+>Neu beginnen</span
+> gibt dem Netz
+            neue zufällige Gewichte und behält die Punkte. Daneben zählt die
+            Seite die Schritte seit dem Beginn.</p
+><p
+>Die <span
+class="gui"
+>Lernrate</span
+> ist die aus dem Abschnitt
+            „Bergab“, wählbar von 0,001 bis 3. Unter
+            <span
+class="gui"
+>Aktivierungsfunktion</span
+> stehen vier zur Wahl,
+            für die Neuronen der verborgenen Schichten: der Tangens
+            hyperbolicus, ReLU, die Sigmoidfunktion
+            <math
+><mrow
+><mi
+>σ</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></mrow
+><mo
+>=</mo
+><mfrac
+><mn
+>1</mn
+><mrow
+><mn
+>1</mn
+><mo
+>+</mo
+><msup
+><mi
+>e</mi
+><mrow
+><mo
+>−</mo
+><mi
+>z</mi
+></mrow
+></msup
+></mrow
+></mfrac
+></math
+>,
+            die zwischen 0 und 1 verläuft statt zwischen −1 und +1, und
+            <span
+class="gui"
+>keine</span
+>. Ohne Aktivierungsfunktion gibt jedes
+            verborgene Neuron seine gewichtete Summe einfach weiter, und das
+            ganze Netz zieht, wie viele Schichten es auch hat, nur eine
+            Gerade. Das Ausgabeneuron antwortet immer mit dem Tangens
+            hyperbolicus. Die <span
+class="gui"
+>Regularisierung (L2)</span
+>
+            erklärt der nächste Abschnitt.</p
+><p
+>Das <span
+class="gui"
+>Tempo</span
+> sagt, wie viele Schritte das
+            Netz zwischen zwei Bildern macht, in fünf Stufen von 1 bis 100.
+            Die Seite zeichnet höchstens alle 30 Millisekunden ein
+            Bild.</p
+></dd
+><dt
+>Die Daten</dt
+><dd
+><p
+>Fünf kleine Bilder wählen die Punkte:
+            <span
+class="gui"
+>Kreis</span
+>, eine Scheibe in einem Ring;
+            <span
+class="gui"
+>XOR</span
+>, die vier Viertel der Ebene, die Sorte
+            nach dem Vorzeichen von
+            <math
+><mi
+>x</mi
+><mi
+>y</mi
+></math
+>;
+            <span
+class="gui"
+>Wolken</span
+>, zwei Haufen um
+            <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>2</mn
+><mo
+>,</mo
+><mn
+>2</mn
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+>
+            und
+            <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mrow
+><mo
+>−</mo
+><mn
+>2</mn
+></mrow
+><mo
+>,</mo
+><mrow
+><mo
+>−</mo
+><mn
+>2</mn
+></mrow
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+>;
+            <span
+class="gui"
+>Spirale</span
+>, zwei ineinander gewundene Arme;
+            und <span
+class="gui"
+>Eigene</span
+>, eine leere Ebene. In sie setzt
+            du selbst Punkte, mit einem Klick einen orangen, mit
+            Umschalt-Klick oder Rechtsklick einen blauen. Für die anderen
+            vier zieht die Seite 300 Punkte, zur Hälfte von jeder
+            Sorte.</p
+><p
+>Der Regler <span
+class="gui"
+>Rauschen</span
+> verschiebt jeden
+            Punkt zufällig, bis zu 50 %, so dass die Sorten ineinander
+            greifen; bei den Wolken macht er statt dessen die Haufen
+            breiter. <span
+class="gui"
+>Neue Punkte</span
+> zieht dieselbe
+            Anordnung neu. Ein Wechsel der Daten tauscht nur die Punkte aus,
+            das Netz lernt mit seinen bisherigen Gewichten weiter.</p
+></dd
+><dt
+>Das Netz</dt
+><dd
+><p
+>Das Netz steht in Spalten, von links nach rechts in der
+            Reihenfolge, in der gerechnet wird. Die erste Spalte sind die
+            sieben möglichen Eingaben:
+            <math
+><mi
+>x</mi
+></math
+>,
+            <math
+><mi
+>y</mi
+></math
+>,
+            <math
+><msup
+><mi
+>x</mi
+><mn
+>2</mn
+></msup
+></math
+>,
+            <math
+><msup
+><mi
+>y</mi
+><mn
+>2</mn
+></msup
+></math
+>,
+            <math
+><mi
+>x</mi
+><mi
+>y</mi
+></math
+>,
+            <math
+><mi
+>sin</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mi
+>x</mi
+></math
+>
+            und
+            <math
+><mi
+>sin</mi
+><mo
+>⁡</mo
+><mspace
+width="0.1667em"
+></mspace
+><mi
+>y</mi
+></math
+>.
+            Die Quadrate kennst du aus dem Abschnitt „Bessere Eingaben“; neu
+            sind die Sinus der beiden Koordinaten, die über die Ebene hin
+            knapp zweimal auf und ab gehen. Ein Klick auf eine Eingabe gibt sie dem
+            Netz oder nimmt sie ihm weg. Eine weggenommene ist blass und
+            durchgestrichen, und eine bleibt immer.</p
+><p
+>Danach kommen die verborgenen Schichten, jede eine Spalte.
+            Mit − und + über dem Netz nimmst du eine Schicht weg oder fügst
+            eine hinzu, bis zu sechs; mit − und + über einer Spalte ein
+            Neuron dieser Schicht, bis zu acht. Ohne verborgene Schicht ist
+            das Netz ein einzelnes Neuron wie am Anfang des Kapitels. Die
+            letzte Spalte ist das Ausgabeneuron.</p
+><p
+>Jedes Neuron, auch jede Eingabe, ist ein kleines Quadrat. Es
+            zeigt, was das Neuron über der ganzen Ebene antwortet, orange,
+            wo die Antwort positiv ist, blau, wo sie negativ ist, so wie
+            unsere Bilder für XOR. Die Linien zwischen den Quadraten sind die
+            Gewichte: orange positiv, blau negativ, je dicker, desto größer
+            ihr Betrag. Auf jeder Linie läuft ein Licht von links nach
+            rechts, umso schneller, je stärker das Gewicht ist. Ändert sich
+            die Form des Netzes, seine Eingaben oder seine
+            Aktivierungsfunktion, beginnt es mit neuen zufälligen Gewichten
+            von vorn.</p
+></dd
+><dt
+>Die Ausgabe</dt
+><dd
+><p
+>Oben stehen zwei Zahlen, der <span
+class="gui"
+>Fehler beim
+            Training</span
+> und der <span
+class="gui"
+>Fehler beim Test</span
+>,
+            darunter ihr Verlauf seit dem letzten Neubeginn: der
+            Trainingsfehler durchgezogen, der Testfehler gestrichelt. Was
+            Testpunkte sind, erklärt der nächste Abschnitt.</p
+><p
+>Das große Bild ist die Ebene, von −6 bis 6 in beiden
+            Richtungen, mit allen Punkten. Unter ihnen liegt die Antwort des
+            Ausgabeneurons an jeder Stelle, je kräftiger die Farbe, desto
+            näher an +1 oder −1. <span
+class="gui"
+>Nur die Entscheidung</span
+>
+            zeigt statt dessen nur, auf welcher Seite der Null die Antwort
+            liegt, und damit die Grenze, die das Netz zieht.
+            <span
+class="gui"
+>Testpunkte zeigen</span
+> blendet die umrandeten
+            Punkte ein und aus.</p
+></dd
+></dl
+><p
+>Unter den drei Teilen sagt die Seite in wenigen Sätzen, was
+      geschieht, und ganz unten lässt sich das Programm aufklappen, von dem
+      der letzte Abschnitt dieses Kapitels handelt. Die Links in den Kästen
+      stellen die Seite gleich passend ein. Was sie wählen, steht in der
+      Adresse hinter dem #. Ohne solche Angaben beginnt die Seite mit dem
+      Kreis, den Eingaben
+      <math
+><mi
+>x</mi
+></math
+>
+      und
+      <math
+><mi
+>y</mi
+></math
+>
+      und zwei verborgenen Schichten aus vier und zwei Neuronen.</p
 ><aside
 class="tryit"
 ><p
@@ -2627,15 +2984,15 @@ href="../play/field/#data=spiral&#38;inputs=x,y&#38;hidden=4&#38;speed=30&#38;la
 >
         Das Netz lernt sofort los, aber sein Fehler fällt nur langsam und
         bleibt hoch: vier Geraden reichen für die Spirale nicht.
-        Klick dann links auf die Eingaben <span
+        Klick dann in der Spalte der Eingaben auf <span
 class="gui"
 >sin x</span
-> und
-        <span
+>
+        und <span
 class="gui"
 >sin y</span
->. Das Netz beginnt neu, und nach einigen
-        Sekunden ist sein Fehler auf einen Bruchteil gefallen.</p
+>. Das Netz beginnt neu, und nach
+        einigen Sekunden ist sein Fehler auf einen Bruchteil gefallen.</p
 ></aside
 ></section
 ><section
@@ -2644,7 +3001,7 @@ id="field-test"
 ><a
 class="header"
 href="#field-test"
->Was es nicht gesehen hat</a
+>Verallgemeinerung</a
 ></h2
 ><p
 >Ein Modell, das seine Trainingspunkte kennt, nützt noch nichts.
@@ -2722,10 +3079,9 @@ href="#field-program"
 class="filename"
 >field.scaly</code
 >, für WebAssembly gebaut. Es sind die
-      Programme dieses Kapitels, erwachsen geworden: bis zu sechs
-      verborgene Schichten mit bis zu acht Neuronen, sieben Eingaben zur
-      Wahl, vier Aktivierungsfunktionen, Regularisierung, und die Rückwärtsrechnung
-      wie im letzten Abschnitt, nur in Schleifen über die Schichten statt
+      Programme dieses Kapitels, erwachsen geworden: alles, was die Seite
+      einstellen lässt, und die Rückwärtsrechnung wie im Abschnitt
+      „Rückwärtsrechnung“, nur in Schleifen über die Schichten statt
       ausgeschrieben. Alles, was die Seite zeigt, hält es in einem Vektor
       von Zahlen in seinem Speicher, den die Seite direkt liest, ohne
       Kopie; das Bild der Antwort des Netzes über der Ebene ist ein

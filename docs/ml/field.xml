@@ -400,25 +400,151 @@
       weights.</para>
     <para>A network needs nothing more to learn, however many layers it
       has: compute forward, hand the error back, move each weight a little
-      against its gradient. How far that carries shows on the
-      <emphasis>field</emphasis>, a page with a larger network than in our
-      boxes: up to six hidden layers of up to eight neurons, seven inputs
-      to choose from, the squares among them, and four arrangements of
-      points, a spiral among them. For each neuron a small square shows
-      what it answers over the whole plane, like our pictures for
-      XOR.</para>
+      against its gradient.</para>
+  </section>
+
+  <section xml:id="field-field">
+    <title>The Field</title>
+    <para>The networks in our boxes were small and each built for one
+      task. The <emphasis>field</emphasis> is a page on which you put a
+      network together yourself and watch it learn. You choose the
+      points, the inputs, how many hidden layers it has and how many
+      neurons in each, and how it learns. It computes exactly as the last
+      sections derived. At the top of the page lies a bar with the
+      buttons. Below it stand three parts side by side, from left to
+      right the data, the network and the output; on a narrow screen they
+      stand one below the other.</para>
+    <variablelist>
+      <varlistentry>
+        <term>The bar</term>
+        <listitem>
+          <para><guilabel>Pause</guilabel> stops the network; the same
+            button is then called <guilabel>Learn</guilabel> and lets it
+            learn on. While it is stopped, <guilabel>One step</guilabel>
+            takes exactly one step of gradient descent over all the
+            training points. <guilabel>Start again</guilabel> gives the
+            network new random weights and keeps the points. Beside them
+            the page counts the steps since the start.</para>
+          <para>The <guilabel>Learning rate</guilabel> is the one from the
+            section “Downhill”, to choose from 0.001 to 3. Under
+            <guilabel>Activation function</guilabel> there are four to
+            choose from, for the neurons of the hidden layers: the
+            hyperbolic tangent, ReLU, the sigmoid function
+            <inlineequation><mml:math><mml:mrow><mml:mi>σ</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:mrow><mml:mo>=</mml:mo><mml:mfrac><mml:mn>1</mml:mn><mml:mrow><mml:mn>1</mml:mn><mml:mo>+</mml:mo><mml:msup><mml:mi>e</mml:mi><mml:mrow><mml:mo>−</mml:mo><mml:mi>z</mml:mi></mml:mrow></mml:msup></mml:mrow></mml:mfrac></mml:math></inlineequation>,
+            which runs between 0 and 1 instead of between −1 and +1, and
+            <guilabel>none</guilabel>. Without an activation function each
+            hidden neuron simply hands on its weighted sum, and the whole
+            network, however many layers it has, draws only one line. The
+            output neuron always answers with the hyperbolic tangent.
+            <guilabel>Regularization (L2)</guilabel> is explained in the
+            next section.</para>
+          <para>The <guilabel>Speed</guilabel> says how many steps the
+            network takes between two pictures, in five levels from 1 to
+            100. The page draws a picture every 30 milliseconds at
+            most.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>The data</term>
+        <listitem>
+          <para>Five small pictures choose the points:
+            <guilabel>Circle</guilabel>, a disc inside a ring;
+            <guilabel>XOR</guilabel>, the four quarters of the plane, the
+            kind by the sign of
+            <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mi>y</mml:mi></mml:math></inlineequation>;
+            <guilabel>Clouds</guilabel>, two heaps around
+            <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>2</mml:mn><mml:mo>,</mml:mo><mml:mn>2</mml:mn><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></inlineequation>
+            and
+            <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>2</mml:mn></mml:mrow><mml:mo>,</mml:mo><mml:mrow><mml:mo>−</mml:mo><mml:mn>2</mml:mn></mml:mrow><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></inlineequation>;
+            <guilabel>Spiral</guilabel>, two arms wound into each other;
+            and <guilabel>Your own</guilabel>, an empty plane. Into it you
+            put points yourself, an orange one with a click, a blue one with
+            a shift-click or a right-click. For the other four the page
+            draws 300 points, half of each kind.</para>
+          <para>The <guilabel>Noise</guilabel> slider moves each point at
+            random, up to 50 %, so that the kinds reach into each other; for
+            the clouds it makes the heaps wider instead.
+            <guilabel>New points</guilabel> draws the same arrangement
+            anew. A change of data only exchanges the points; the network
+            learns on with the weights it has.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>The network</term>
+        <listitem>
+          <para>The network stands in columns, from left to right in the
+            order in which it is computed. The first column holds the
+            seven possible inputs:
+            <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>,
+            <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>,
+            <inlineequation><mml:math><mml:msup><mml:mi>x</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>,
+            <inlineequation><mml:math><mml:msup><mml:mi>y</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation>,
+            <inlineequation><mml:math><mml:mi>x</mml:mi><mml:mi>y</mml:mi></mml:math></inlineequation>,
+            <inlineequation><mml:math><mml:mi>sin</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mspace width="0.1667em"/><mml:mi>x</mml:mi></mml:math></inlineequation>
+            and
+            <inlineequation><mml:math><mml:mi>sin</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mspace width="0.1667em"/><mml:mi>y</mml:mi></mml:math></inlineequation>.
+            You know the squares from the section “Better Inputs”; new are
+            the sines of the two coordinates, which go up and down a little
+            less than twice across the plane. A click on an input gives it
+            to the network or takes it away. One taken away is pale and
+            struck through, and one always stays.</para>
+          <para>Then come the hidden layers, each a column. With − and +
+            above the network you take a layer away or add one, up to six;
+            with − and + above a column, a neuron of that layer, up to
+            eight. Without a hidden layer the network is a single neuron as
+            at the beginning of the chapter. The last column is the output
+            neuron.</para>
+          <para>Each neuron, each input too, is a small square. It shows
+            what the neuron answers over the whole plane, orange where the
+            answer is positive, blue where it is negative, like our pictures
+            for XOR. The lines between the squares are the weights: orange
+            positive, blue negative, the thicker, the larger their size. On
+            each line a light runs from left to right, the faster, the
+            stronger the weight. When the network's shape, its inputs or its
+            activation function change, it starts over from new random
+            weights.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>The output</term>
+        <listitem>
+          <para>At the top stand two numbers, the <guilabel>Training
+            loss</guilabel> and the <guilabel>Test loss</guilabel>, below
+            them their course since the last start: the training loss
+            solid, the test loss dashed. What test points are is explained
+            in the next section.</para>
+          <para>The large picture is the plane, from −6 to 6 both ways,
+            with all the points. Beneath them lies the output neuron's
+            answer at every place, the stronger the colour, the nearer to
+            +1 or −1. <guilabel>Only the decision</guilabel> shows instead
+            only on which side of zero the answer lies, and with it the
+            border the network draws. <guilabel>Show the test
+            points</guilabel> shows and hides the ringed points.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    <para>Below the three parts the page says in a few sentences what
+      happens, and at the very bottom the program can be unfolded that
+      the last section of this chapter is about. The links in the boxes
+      set the page up to fit. What they choose stands in the address
+      after the #. Without such settings the page starts with the circle,
+      the inputs
+      <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation>
+      and
+      <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation>
+      and two hidden layers of four and two neurons.</para>
     <sidebar role="tryit">
       <para><link xlink:href="../play/field/#data=spiral&amp;inputs=x,y&amp;hidden=4&amp;speed=30">Open the field with the spiral, only <inlineequation><mml:math><mml:mi>x</mml:mi></mml:math></inlineequation> and <inlineequation><mml:math><mml:mi>y</mml:mi></mml:math></inlineequation> as inputs and one hidden layer of four neurons.</link>
         The network starts learning at once, but its loss falls only slowly
         and stays high: four lines are not enough for the spiral. Then click
-        the inputs <guilabel>sin x</guilabel> and <guilabel>sin y</guilabel>
-        on the left. The network starts again, and after a few seconds its
-        loss has fallen to a fraction.</para>
+        <guilabel>sin x</guilabel> and <guilabel>sin y</guilabel> in the
+        column of the inputs. The network starts again, and after a few
+        seconds its loss has fallen to a fraction.</para>
     </sidebar>
   </section>
 
   <section xml:id="field-test">
-    <title>What It Has Not Seen</title>
+    <title>Generalization</title>
     <para>A model that knows its training points is not yet useful. The
       question is how well it guesses points it has never seen. That is
       why the field holds back half of its points as
@@ -447,10 +573,10 @@
   <section xml:id="field-program">
     <title>The Field's Program</title>
     <para>The page runs one Scaly program, <filename>field.scaly</filename>,
-      built for WebAssembly. It is this chapter's programs grown up: up to
-      six hidden layers of up to eight neurons, seven inputs to choose
-      from, four activation functions, regularization, and backpropagation as in
-      the last section, only in loops over layers instead of written out.
+      built for WebAssembly. It is this chapter's programs grown up: everything the page
+      lets you set, and backpropagation as in the section
+      “Backpropagation”, only in loops over layers instead of written
+      out.
       It keeps everything the page shows in one vector of numbers in its
       memory, which the page reads directly, without a copy; the picture
       of the network's answer over the plane is a <literal>for</literal>
