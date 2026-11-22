@@ -49,25 +49,25 @@ function zeros(rows: int, cols: int) returns Matrix
     Matrix(rows, cols, data)
 }
 
-; A layer for all points at once, tanh(X W + b): row p of X is a point's
+; A layer for all points at once, tanh(X W + b): row i of X is a point's
 ; inputs, column j of W the weights of neuron j, b its biases. Each sum
 ; begins with its bias, as in the field.
 function layer(x: Matrix, w: Matrix, b: Matrix) returns Matrix
 {
     var a zeros(x.rows, w.cols)
-    for p in x.rows
+    for i in x.rows
     {
         var j 0
         while j < w.cols
         {
             var z b.at(0, j)
-            var m 0
-            while m < x.cols
+            var k 0
+            while k < x.cols
             {
-                z := z + w.at(m, j) * x.at(p, m)
-                m := m + 1
+                z := z + w.at(k, j) * x.at(i, k)
+                k := k + 1
             }
-            a.put(p, j, tanh(z))
+            a.put(i, j, tanh(z))
             j := j + 1
         }
     }
@@ -78,12 +78,12 @@ function layer(x: Matrix, w: Matrix, b: Matrix) returns Matrix
 function loss(a: Matrix, t: Matrix) returns f64
 {
     var sum 0.0
-    var p 0
-    while p < a.rows
+    var i 0
+    while i < a.rows
     {
-        let e a.at(p, 0) - t.at(p, 0)
+        let e a.at(i, 0) - t.at(i, 0)
         sum := sum + 0.5 * e * e
-        p := p + 1
+        i := i + 1
     }
     sum / (a.rows as f64)
 }
@@ -92,10 +92,10 @@ function loss(a: Matrix, t: Matrix) returns f64
 function out_share(a: Matrix, t: Matrix) returns Matrix
 {
     var d zeros(a.rows, 1)
-    for p in a.rows
+    for i in a.rows
     {
-        let o a.at(p, 0)
-        d.put(p, 0, (o - t.at(p, 0)) * (1.0 - o * o))
+        let o a.at(i, 0)
+        d.put(i, 0, (o - t.at(i, 0)) * (1.0 - o * o))
     }
     d
 }
@@ -104,43 +104,43 @@ function out_share(a: Matrix, t: Matrix) returns Matrix
 function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
 {
     var below zeros(d.rows, w.rows)
-    for p in d.rows
+    for i in d.rows
     {
-        var m 0
-        while m < w.rows
+        var k 0
+        while k < w.rows
         {
             var s 0.0
             var j 0
             while j < w.cols
             {
-                s := s + d.at(p, j) * w.at(m, j)
+                s := s + d.at(i, j) * w.at(k, j)
                 j := j + 1
             }
-            let at h.at(p, m)
-            below.put(p, m, s * (1.0 - at * at))
-            m := m + 1
+            let out h.at(i, k)
+            below.put(i, k, s * (1.0 - out * out))
+            k := k + 1
         }
     }
     below
 }
 
-; The weights' gradient, summed over the points: Aᵀ D.
-function weight_grad(a: Matrix, d: Matrix) returns Matrix
+; The weights' gradient, summed over the points: Hᵀ D.
+function weight_grad(h: Matrix, d: Matrix) returns Matrix
 {
-    var g zeros(a.cols, d.cols)
-    for m in a.cols
+    var g zeros(h.cols, d.cols)
+    for k in h.cols
     {
         var j 0
         while j < d.cols
         {
             var s 0.0
-            var p 0
-            while p < d.rows
+            var i 0
+            while i < d.rows
             {
-                s := s + d.at(p, j) * a.at(p, m)
-                p := p + 1
+                s := s + d.at(i, j) * h.at(i, k)
+                i := i + 1
             }
-            g.put(m, j, s)
+            g.put(k, j, s)
             j := j + 1
         }
     }
@@ -151,16 +151,16 @@ function weight_grad(a: Matrix, d: Matrix) returns Matrix
 function bias_grad(d: Matrix) returns Matrix
 {
     var g zeros(1, d.cols)
-    for i in d.cols
+    for j in d.cols
     {
         var s 0.0
-        var p 0
-        while p < d.rows
+        var i 0
+        while i < d.rows
         {
-            s := s + d.at(p, i)
-            p := p + 1
+            s := s + d.at(i, j)
+            i := i + 1
         }
-        g.put(0, i, s)
+        g.put(0, j, s)
     }
     g
 }

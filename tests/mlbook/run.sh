@@ -72,10 +72,26 @@ else
   echo "mlbook: circle.scaly does not print what field 0 500 prints"; diff "$FIG.field" "$FIG.circle" | head -5; rc=1
 fi
 rm -f "$FIG.circle" "$FIG.field"
-# the chapters that still hold a program (the code of the pages is not the
-# book's to run)
+# every piece of a program the books show (role="fragment") stands in a
+# program beside the book (docs/ml/prog/), character for character
+python3 - "${CHAPTERS[@]}" docs/ml/de/*.xml <<'PY' || rc=1
+import glob, html, re, sys
+progs = [open(p).read() for p in glob.glob('docs/ml/prog/*.scaly')]
+bad = n = 0
+for f in sys.argv[1:]:
+    for m in re.finditer(r'<programlisting role="fragment">(.*?)</programlisting>', open(f).read(), re.S):
+        n += 1
+        if not any(html.unescape(m.group(1)) in p for p in progs):
+            bad += 1
+            print('mlbook: a piece of %s stands in no program of docs/ml/prog: %s' % (f, m.group(1).split('\n')[0]))
+print('prog: %d pieces of programs, each in its program' % n if not bad else '', end='' if bad else '\n')
+sys.exit(1 if bad else 0)
+PY
+# the chapters that hold a whole program (the code of the pages is not the
+# book's to run, and a piece of a program, role="fragment", is checked
+# above with the program it is cut from)
 LISTED=()
-for c in "${CHAPTERS[@]}"; do grep -q '<programlisting' "$c" && LISTED+=("$c"); done
+for c in "${CHAPTERS[@]}"; do grep '<programlisting' "$c" | grep -vq 'role="fragment"' && LISTED+=("$c"); done
 if [ ${#LISTED[@]} -gt 0 ]; then
   BOOK_NAME=mlbook tests/book/run.sh "$BIN" "${LISTED[@]}" || rc=1
 else

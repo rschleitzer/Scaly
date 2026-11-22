@@ -98,5 +98,67 @@
       column sums; and then every weight is decreased by its derivative as
       before, divided by the number of points and times the learning
       rate.</para>
+    <para>In the program of this chapter each of these formulas is a
+      function. <literal>back</literal> makes from the <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> of a layer, its weights <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>
+      and the answers <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> of the layer before it that layer's <inlineequation><mml:math><mml:mi>D</mml:mi><mml:mo>′</mml:mo></mml:math></inlineequation>:</para>
+    <programlisting role="fragment">function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+{
+    var below zeros(d.rows, w.rows)
+    for i in d.rows
+    {
+        var k 0
+        while k &lt; w.rows
+        {
+            var s 0.0
+            var j 0
+            while j &lt; w.cols
+            {
+                s := s + d.at(i, j) * w.at(k, j)
+                j := j + 1
+            }
+            let out h.at(i, k)
+            below.put(i, k, s * (1.0 - out * out))
+            k := k + 1
+        }
+    }
+    below
+}</programlisting>
+    <para>The outer loop goes over the points <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation>, the middle one over
+      the neurons <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> of the layer before, the inner one makes the sum over
+      <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation>. In doing so it reads row <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>, and that is column <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> of
+      <inlineequation><mml:math><mml:msup><mml:mi>W</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation>: the transpose is never written down, it is enough to read <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>
+      the other way round. And the <inlineequation><mml:math><mml:mo>⊙</mml:mo></mml:math></inlineequation> is the multiplication in
+      <literal>below.put</literal>, each sum times the slope of its own tanh.</para>
+    <para><literal>weight_grad</literal> is the matrix product <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi></mml:math></inlineequation> in the same
+      pattern; here too <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation> is never written down, the inner loop reads
+      column <inlineequation><mml:math><mml:mi>k</mml:mi></mml:math></inlineequation> of <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation>. <literal>bias_grad</literal> adds up the columns of <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>,
+      <literal>out_share</literal> makes the <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> of the output, and <literal>descend</literal>
+      decreases every number of a matrix by its derivative. That makes the
+      whole learning step:</para>
+    <programlisting role="fragment">procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+{
+    ; forward, layer by layer
+    let h1 layer(x, net.w1, net.b1)
+    let h2 layer(h1, net.w2, net.b2)
+    let a layer(h2, net.w3, net.b3)
+    ; backward, layer by layer
+    let d3 out_share(a, t)
+    let d2 back(d3, net.w3, h2)
+    let d1 back(d2, net.w2, h1)
+    ; every weight a little against its gradient
+    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
+    descend(net.b3, bias_grad(d3), rate, x.rows)
+    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
+    descend(net.b2, bias_grad(d2), rate, x.rows)
+    descend(net.w1, weight_grad(x, d1), rate, x.rows)
+    descend(net.b1, bias_grad(d1), rate, x.rows)
+}</programlisting>
+    <para>At the top the three lines forward, below them the three
+      backward, from the output to the input, because each <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> comes from
+      the <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> of the layer behind it. Only when all the <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> are there do
+      the weights change: <literal>back</literal> needs the old ones. The points appear
+      in these lines only as <literal>x.rows</literal>, their number, which
+      <literal>descend</literal> divides by. The whole program is <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly">on
+      GitHub</link>.</para>
   </section>
 </chapter>

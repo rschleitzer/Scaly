@@ -1077,6 +1077,206 @@ stretchy="false"
 > und die Spaltensummen, und dann
       wird jedes Gewicht wie bisher um seine Ableitung verringert, geteilt
       durch die Anzahl der Punkte und mal die Lernrate.</p
+><p
+>Im Programm dieses Kapitels ist jede dieser Formeln eine
+      Funktion. <code
+>back</code
+> bildet aus dem <math
+><mi
+>D</mi
+></math
+> einer Schicht, ihren Gewichten
+      <math
+><mi
+>W</mi
+></math
+> und den Antworten <math
+><mi
+>H</mi
+></math
+> der Schicht davor deren <math
+><mi
+>D</mi
+><mo
+>′</mo
+></math
+>:</p
+><pre
+class="listing fragment"
+><code
+>function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+{
+    var below zeros(d.rows, w.rows)
+    for i in d.rows
+    {
+        var k 0
+        while k &#60; w.rows
+        {
+            var s 0.0
+            var j 0
+            while j &#60; w.cols
+            {
+                s := s + d.at(i, j) * w.at(k, j)
+                j := j + 1
+            }
+            let out h.at(i, k)
+            below.put(i, k, s * (1.0 - out * out))
+            k := k + 1
+        }
+    }
+    below
+}</code
+></pre
+><p
+>Die äußere Schleife geht über die Punkte <math
+><mi
+>i</mi
+></math
+>, die mittlere über
+      die Neuronen <math
+><mi
+>k</mi
+></math
+> der Schicht davor, die innere bildet die Summe über
+      <math
+><mi
+>j</mi
+></math
+>. Sie liest dabei Zeile <math
+><mi
+>k</mi
+></math
+> von <math
+><mi
+>W</mi
+></math
+>, und das ist Spalte <math
+><mi
+>k</mi
+></math
+> von
+      <math
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+></math
+>: Die Transponierte wird nie hingeschrieben, es genügt, <math
+><mi
+>W</mi
+></math
+>
+      andersherum zu lesen. Und das <math
+><mo
+>⊙</mo
+></math
+> ist das Malnehmen in
+      <code
+>below.put</code
+>, jede Summe mal die Steigung ihres eigenen
+      tanh.</p
+><p
+><code
+>weight_grad</code
+> ist das Matrixprodukt <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+> nach demselben
+      Muster; auch <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+></math
+> wird nicht hingeschrieben, die innere Schleife liest
+      Spalte <math
+><mi
+>k</mi
+></math
+> von <math
+><mi
+>H</mi
+></math
+>. <code
+>bias_grad</code
+> zählt die Spalten von <math
+><mi
+>D</mi
+></math
+>
+      zusammen, <code
+>out_share</code
+> bildet das <math
+><mi
+>D</mi
+></math
+> der Ausgabe, und
+      <code
+>descend</code
+> verringert jede Zahl einer Matrix um ihre Ableitung.
+      Damit ist der ganze Lernschritt:</p
+><pre
+class="listing fragment"
+><code
+>procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+{
+    ; forward, layer by layer
+    let h1 layer(x, net.w1, net.b1)
+    let h2 layer(h1, net.w2, net.b2)
+    let a layer(h2, net.w3, net.b3)
+    ; backward, layer by layer
+    let d3 out_share(a, t)
+    let d2 back(d3, net.w3, h2)
+    let d1 back(d2, net.w2, h1)
+    ; every weight a little against its gradient
+    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
+    descend(net.b3, bias_grad(d3), rate, x.rows)
+    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
+    descend(net.b2, bias_grad(d2), rate, x.rows)
+    descend(net.w1, weight_grad(x, d1), rate, x.rows)
+    descend(net.b1, bias_grad(d1), rate, x.rows)
+}</code
+></pre
+><p
+>Oben die drei Zeilen vorwärts, darunter die drei rückwärts, von
+      der Ausgabe zur Eingabe, denn jedes <math
+><mi
+>D</mi
+></math
+> entsteht aus dem <math
+><mi
+>D</mi
+></math
+> der
+      Schicht dahinter. Erst wenn alle <math
+><mi
+>D</mi
+></math
+> da sind, ändern sich die
+      Gewichte: <code
+>back</code
+> braucht die alten. Die Punkte kommen in diesen
+      Zeilen nur noch als <code
+>x.rows</code
+> vor, ihre Anzahl, durch die
+      <code
+>descend</code
+> teilt. Das ganze Programm steht <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly"
+>auf
+      GitHub</a
+>.</p
 ></section
 ></article
 ><nav

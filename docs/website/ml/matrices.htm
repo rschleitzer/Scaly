@@ -1075,6 +1075,205 @@ stretchy="false"
       column sums; and then every weight is decreased by its derivative as
       before, divided by the number of points and times the learning
       rate.</p
+><p
+>In the program of this chapter each of these formulas is a
+      function. <code
+>back</code
+> makes from the <math
+><mi
+>D</mi
+></math
+> of a layer, its weights <math
+><mi
+>W</mi
+></math
+>
+      and the answers <math
+><mi
+>H</mi
+></math
+> of the layer before it that layer's <math
+><mi
+>D</mi
+><mo
+>′</mo
+></math
+>:</p
+><pre
+class="listing fragment"
+><code
+>function back(d: Matrix, w: Matrix, h: Matrix) returns Matrix
+{
+    var below zeros(d.rows, w.rows)
+    for i in d.rows
+    {
+        var k 0
+        while k &#60; w.rows
+        {
+            var s 0.0
+            var j 0
+            while j &#60; w.cols
+            {
+                s := s + d.at(i, j) * w.at(k, j)
+                j := j + 1
+            }
+            let out h.at(i, k)
+            below.put(i, k, s * (1.0 - out * out))
+            k := k + 1
+        }
+    }
+    below
+}</code
+></pre
+><p
+>The outer loop goes over the points <math
+><mi
+>i</mi
+></math
+>, the middle one over
+      the neurons <math
+><mi
+>k</mi
+></math
+> of the layer before, the inner one makes the sum over
+      <math
+><mi
+>j</mi
+></math
+>. In doing so it reads row <math
+><mi
+>k</mi
+></math
+> of <math
+><mi
+>W</mi
+></math
+>, and that is column <math
+><mi
+>k</mi
+></math
+> of
+      <math
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+></math
+>: the transpose is never written down, it is enough to read <math
+><mi
+>W</mi
+></math
+>
+      the other way round. And the <math
+><mo
+>⊙</mo
+></math
+> is the multiplication in
+      <code
+>below.put</code
+>, each sum times the slope of its own tanh.</p
+><p
+><code
+>weight_grad</code
+> is the matrix product <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+> in the same
+      pattern; here too <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+></math
+> is never written down, the inner loop reads
+      column <math
+><mi
+>k</mi
+></math
+> of <math
+><mi
+>H</mi
+></math
+>. <code
+>bias_grad</code
+> adds up the columns of <math
+><mi
+>D</mi
+></math
+>,
+      <code
+>out_share</code
+> makes the <math
+><mi
+>D</mi
+></math
+> of the output, and <code
+>descend</code
+>
+      decreases every number of a matrix by its derivative. That makes the
+      whole learning step:</p
+><pre
+class="listing fragment"
+><code
+>procedure step(mutable net: Net, x: Matrix, t: Matrix, rate: f64)
+{
+    ; forward, layer by layer
+    let h1 layer(x, net.w1, net.b1)
+    let h2 layer(h1, net.w2, net.b2)
+    let a layer(h2, net.w3, net.b3)
+    ; backward, layer by layer
+    let d3 out_share(a, t)
+    let d2 back(d3, net.w3, h2)
+    let d1 back(d2, net.w2, h1)
+    ; every weight a little against its gradient
+    descend(net.w3, weight_grad(h2, d3), rate, x.rows)
+    descend(net.b3, bias_grad(d3), rate, x.rows)
+    descend(net.w2, weight_grad(h1, d2), rate, x.rows)
+    descend(net.b2, bias_grad(d2), rate, x.rows)
+    descend(net.w1, weight_grad(x, d1), rate, x.rows)
+    descend(net.b1, bias_grad(d1), rate, x.rows)
+}</code
+></pre
+><p
+>At the top the three lines forward, below them the three
+      backward, from the output to the input, because each <math
+><mi
+>D</mi
+></math
+> comes from
+      the <math
+><mi
+>D</mi
+></math
+> of the layer behind it. Only when all the <math
+><mi
+>D</mi
+></math
+> are there do
+      the weights change: <code
+>back</code
+> needs the old ones. The points appear
+      in these lines only as <code
+>x.rows</code
+>, their number, which
+      <code
+>descend</code
+> divides by. The whole program is <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/circle.scaly"
+>on
+      GitHub</a
+>.</p
 ></section
 ></article
 ><nav
