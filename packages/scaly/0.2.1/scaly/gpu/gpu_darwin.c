@@ -126,7 +126,22 @@ struct gpu_site
     int measured;                     /* runs that count: 0 none, 1 the first (a kernel's first run is slow), 2 measured */
     unsigned long long cards, card_rounds, kept, stops;
     double kept_ns;                   /* the processor's time for what was kept here */
-    double cpu_round_ns;              /* ONE core's time for a round, as it took (0: not told yet) */
+    /* What a round is worth NOW, and each side's cost relative to it
+     * (2026-11-22): the work of a round may change from run to run (a matrix
+     * product whose n grows), so no side's cost per round is kept as such. `work_ns` is one core's time for a round as the driver last
+     * measured it (`per1k` it had not handed before: a cold gate measured this
+     * run, or the site published again) -- or as the side that ran last says:
+     * a card run whose round took twice its share says the work doubled, and
+     * the processor's estimate doubles with it; a kept run the same way. A run
+     * whose work is known (fresh) teaches its side its share instead. */
+    double work_ns;                   /* one core's time for a round now (0: not known) */
+    long long last_per1k;             /* the driver's per1k last seen */
+    int work_fresh;                   /* this run's work was measured by the driver */
+    double decided_work;              /* work_ns the last decision used */
+    double cpu_rel;                   /* the processor's time for a round on ONE core, as kept runs took it, per work_ns (0: 1) */
+    double card_rel;                  /* the card's time for a round per work_ns (0: not learned) */
+    double card_work;                 /* work_ns when the card last ran here */
+    int trial;                        /* this run is the card's trial: its share is learned anew */
     long long gate_workers;           /* the cores the gate last spoke of: a kept run's time is theirs */
     unsigned long long kept_since;    /* runs kept since the card last ran */
     double card_ns, in_ns, run_ns, out_ns;
@@ -382,6 +397,19 @@ static const char *gpu_refusal(long long count, void **buffers, const unsigned l
 
 /* A run is over: what it says the card costs at this site, or that it was
  * given back. */
+/* A new measure of what a round is worth against the old one: within a
+ * quarter either way it is noise, halfway between the two; beyond, the work
+ * changed, and the new one stands. */
+static double gpu_believe(double old, double now)
+{
+    if (old <= 0)
+        return now;
+    double r = now / old;
+    if (r > 0.8 && r < 1.25)
+        return (old + now) / 2;
+    return now;
+}
+
 static void gpu_account(struct gpu_site *site, int ran, int stopped, long long count,
                         double t_begin, double t_in, double t_run, double t_out)
 {
@@ -395,13 +423,26 @@ static void gpu_account(struct gpu_site *site, int ran, int stopped, long long c
             gpu_least_ns = all;
         double fixed = gpu_least_ns;
         double round = (all - fixed) / (double)count;
+        double work = site->decided_work > 0 ? site->decided_work : 1.0;
+        /* only a run whose rounds outweigh the call says what a round costs:
+         * of a short one the rest after the call is noise */
+        int rounds_tell = all - fixed >= fixed;
         /* a kernel's first run pays what no later one does: the second run
          * is the first measurement, and stands alone */
         if (site->measured >= 2)
         {
             fixed = (fixed + site->fixed_ns) / 2;
-            round = (round + site->round_ns) / 2;
+            if (rounds_tell && (site->work_fresh || site->trial || site->card_rel <= 0))
+                /* the work of this run is known: the card's share of it */
+                site->card_rel = site->trial || site->card_rel <= 0 ? round / work : gpu_believe(site->card_rel, round / work);
+            else if (rounds_tell)
+                /* the card says what a round is worth now */
+                site->work_ns = gpu_believe(work, round / site->card_rel);
         }
+        else if (site->measured == 1 && rounds_tell)
+            site->card_rel = round / work;
+        site->card_work = site->work_ns;
+        site->trial = 0;
         site->fixed_ns = fixed;
         site->round_ns = round;
         if (site->measured < 2)
@@ -1084,14 +1125,40 @@ static int gpu_pays(struct gpu_site *site, long long count, long long per1k, lon
         return 0;
     double left = (double)(count - done);
     double cores = (double)(workers > 0 ? workers : 1);
-    double cpu_ns = left * ((double)per1k / 1024.0) / cores;
-    /* what the processor took for a round the last times it was kept */
-    if (site->cpu_round_ns > 0)
-        cpu_ns = left * site->cpu_round_ns / cores;
+    /* what a round is worth: the driver's measure where it is new, else the
+     * site's own, which every run on either side has moved */
+    site->work_fresh = 0;
+    if (per1k > 0 && per1k != site->last_per1k)
+    {
+        site->work_ns = (double)per1k / 1024.0;
+        site->last_per1k = per1k;
+        site->work_fresh = 1;
+    }
+    if (site->work_ns <= 0)
+        site->work_ns = (double)(per1k > 0 ? per1k : 1024) / 1024.0;
+    double work = site->work_ns;
+    site->decided_work = work;
+    double cpu_ns = left * work * (site->cpu_rel > 0 ? site->cpu_rel : 1.0) / cores;
     double gpu_ns;
+    /* the work moved by half or more since the card last ran: its cost
+     * would be extrapolated -- and the card's share of a round is no
+     * constant (measured: 0.15 at n = 256, 0.03 at n = 1024 of a matrix
+     * product: the more work, the better a card is used) -- it runs once to
+     * be measured where it is */
+    site->trial = 0;
+    /* -- unless its call alone costs more than the processor's whole run:
+     * then it cannot win, however fast its rounds */
+    if (site->measured >= 2 && site->card_work > 0 && cpu_ns > site->fixed_ns * GPU_MARGIN
+        && (work > 1.5 * site->card_work || 1.5 * work < site->card_work))
+    {
+        site->trial = 1;
+        return 1;
+    }
     if (site->measured == 1)
         return 1;                     /* tried once: the run that measures comes now */
-    if (site->measured)
+    if (site->measured && site->card_rel > 0)
+        gpu_ns = site->fixed_ns + site->card_rel * work * (double)count;
+    else if (site->measured)
         gpu_ns = site->fixed_ns + site->round_ns * (double)count;
     else
     {
@@ -1130,7 +1197,17 @@ void scaly_gpu_kept(const char *source, const char *wgsl, const char *where, lon
     {
         /* shared out over the cores the gate spoke of: one core's time */
         double round = (double)ns / (double)rounds * (double)(site->gate_workers > 1 ? site->gate_workers : 1);
-        site->cpu_round_ns = site->cpu_round_ns > 0 ? (site->cpu_round_ns + round) / 2 : round;
+        double work = site->decided_work > 0 ? site->decided_work : 1.0;
+        /* a run of under 64us is mostly the driver's own cost: it says
+         * nothing of a round */
+        if (ns < 65536)
+            ;
+        else if (site->work_fresh || site->cpu_rel <= 0)
+            /* the work of this run is known: the processor's share of it */
+            site->cpu_rel = site->cpu_rel > 0 ? gpu_believe(site->cpu_rel, round / work) : round / work;
+        else
+            /* the processor says what a round is worth now */
+            site->work_ns = gpu_believe(work, round / site->cpu_rel);
     }
     pthread_mutex_unlock(&gpu_sites_lock);
 }

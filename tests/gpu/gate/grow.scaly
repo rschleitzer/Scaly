@@ -1,0 +1,62 @@
+; The gate, a loop whose ROUNDS grow dearer (2026-11-22): a
+; matrix product as a `for` over the numbers of C, each round a sum of
+; length n, at n from 64 to 1536 -- the small ones often, on the cores, the
+; large ones on the card. The host must not take what a round cost at n = 64
+; for what it costs at n = 1536: the last nine products (1024 and 1536) go
+; to the card, as forced they would (35 ms against 0.2 s on ten cores at
+; 1024). Before the fix the host kept them on the processor in seven runs of
+; ten (it learned the processor's round at the small sizes, and averaged the
+; card's new measurement with old ones). Every digit is the processor's.
+; last-cards: 9
+function product(a: Vector[f32], b: Vector[f32], n: int) returns Vector[f32]
+{
+    var c Vector[f32]#((n * n) as size_t)
+    for t in n * n
+    {
+        let i t / n
+        let j t % n
+        var s: f32 0.0
+        var k 0
+        while k < n
+        {
+            s := s + a[(i * n + k) as size_t] * b[(k * n + j) as size_t]
+            k := k + 1
+        }
+        c.put(t as size_t, s)
+    }
+    c
+}
+
+procedure once(a: Vector[f32], b: Vector[f32], n: int) returns f32
+{
+    let c product(a, b, n)
+    c[(n + 1) as size_t]
+}
+
+procedure size(n: int, times: int)
+{
+    var a Vector[f32]((n * n) as size_t)
+    var b Vector[f32]((n * n) as size_t)
+    var t 0
+    while t < n * n
+    {
+        a.put(t as size_t, ((t % 7) as f32) * 0.25)
+        b.put(t as size_t, ((t % 5) as f32) * 0.5)
+        t := t + 1
+    }
+    var k 0
+    var check: f32 0.0
+    while k < times
+    {
+        check := check + once(a, b, n)
+        k := k + 1
+    }
+    print "`n` `check as f64`"
+}
+
+size(64, 2000)
+size(128, 1000)
+size(256, 200)
+size(512, 20)
+size(1024, 5)
+size(1536, 4)

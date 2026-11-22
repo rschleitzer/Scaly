@@ -32,6 +32,10 @@
 #   ; declines: N    runs it gave back because a round stopped
 #   ; no-rounds: N   loops of no round, which never reach it
 #   ; expect-rc: N   the program's exit code, with and without the card
+# and a gate's (tests/gpu/gate/), left to the host:
+#   ; cards-min: N   runs the card took at least
+#   ; kept-min: N    runs the processor kept at least
+#   ; last-cards: N  the last N runs all on the card
 #
 # Usage: tests/gpu/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
@@ -138,6 +142,7 @@ else
         min_cards=$(sed -n 's/^; cards-min: //p' "$src")
         exact_cards=$(sed -n 's/^; cards: //p' "$src")
         min_kept=$(sed -n 's/^; kept-min: //p' "$src"); min_kept=${min_kept:-0}
+        last_cards=$(sed -n 's/^; last-cards: //p' "$src")
         if ! "$STAGE" --gpu -O2 -o "$T/$name" "$src" >"$T/$name.build" 2>&1; then
             check "$name builds with --gpu" false
             continue
@@ -155,6 +160,10 @@ else
             check "$name: $exact_cards runs on the card (got $cards)" '[ "$cards" = "$exact_cards" ]'
         fi
         check "$name: at least $min_kept runs kept on the processor (got $kept)" '[ "$kept" -ge "$min_kept" ]'
+        if [ -n "$last_cards" ]; then
+            last=$(grep -E '^gpu: (card|processor) ' "$T/$name.trace" | tail -"$last_cards" | grep -c '^gpu: card ')
+            check "$name: the last $last_cards runs on the card (got $last)" '[ "$last" = "$last_cards" ]'
+        fi
     done
     # the report: one line per loop that came to the host, with its place
     check "the report names the loop the card took"      'grep -q "^gpu: tests/gpu/gate/heavy.scaly:34: 1 on the card, 0 on the processor; the card .* ms for 3000 rounds" "$T/gate_heavy.trace"'
