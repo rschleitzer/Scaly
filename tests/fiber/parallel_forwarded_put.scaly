@@ -1,0 +1,79 @@
+; A routine that only hands one put on (2026-11-22): `m.put(i, j, v)` of a
+; matrix whose put is `this.data.put(i * this.cols + j, v)` is judged as
+; that put, so a `for` over the rows filling them through it runs on the
+; cores. Heavy rows make the driver fork; every number is checked, and the
+; pool must have taken work.
+; Isolated: its verdict counts submits, which follow measured time -- run alone
+; Expected: parallel-forwarded-put-ok done
+
+define Rows
+(
+    rows: int
+    cols: int
+    data: Vector[i64]
+)
+{
+    function at(this: Rows, i: int, j: int) returns i64
+        this.data[(i * this.cols + j) as size_t]
+
+    procedure put(mutable this: Rows, i: int, j: int, v: i64)
+        this.data.put((i * this.cols + j) as size_t, v)
+}
+
+; Pure leaf work: leaf(x, w) = x + w(w-1)/2.
+function leaf(x: i64, w: i64) returns i64
+{
+    var acc x
+    var k 0 as i64
+    while k < w
+    {
+        acc := acc + k
+        k := k + (1 as i64)
+    }
+    acc
+}
+
+procedure fill(mutable m: Rows, w: i64)
+{
+    for i in m.rows
+    {
+        var j 0
+        while j < m.cols
+        {
+            m.put(i, j, leaf((i * 1000 + j) as i64, w))
+            j := j + 1
+        }
+    }
+}
+
+let pool TaskPool.default_pool()
+let before TaskPool.submit_count(pool)
+var m Rows(256, 16, Vector[i64](4096 as size_t))
+var e 0
+while e < 4
+{
+    fill(m, 20000 as i64)
+    e := e + 1
+}
+let tri (20000 as i64) * (19999 as i64) / (2 as i64)
+var i 0
+while i < 256
+{
+    var j 0
+    while j < 16
+    {
+        if m.at(i, j) <> ((i * 1000 + j) as i64) + tri
+        {
+            Console.println "forwarded-put-bad `i` `j`"
+            exit 1
+        }
+        j := j + 1
+    }
+    i := i + 1
+}
+if TaskPool.submit_count(pool) = before
+{
+    Console.println "forwarded-put-never-forked"
+    exit 1
+}
+Console.println "parallel-forwarded-put-ok done"

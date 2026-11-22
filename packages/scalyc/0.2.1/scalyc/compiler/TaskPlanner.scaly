@@ -2907,6 +2907,17 @@ define TaskPlanner
         {
             if cls_blocked
                 return
+            ; a routine that only hands one put on is judged as that put
+            ; (forwarded_put#)
+            if call.is_operator = false and call.is_intrinsic = false
+            {
+                let fwd this.forwarded_put(call)
+                if fwd <> null
+                {
+                    this.cls_forwarded(call, (*fwd))
+                    return
+                }
+            }
             this.cls_operands(call.args)
             if cls_blocked
                 return
@@ -3989,6 +4000,279 @@ define TaskPlanner
                 q := q + 1
             }
             at
+        }
+
+        ; A routine whose whole body hands on one put into a buffer of a
+        ; parameter -- `procedure put(mutable this, i: int, j: int, v: f64)`
+        ; with the body `this.data.put(i * this.cols + j, v)` -- writes that
+        ; one slot and nothing else. Its call is judged as that put, the
+        ; call's arguments put in for the parameters: `a.put(i, j, x)` as
+        ; `a.data.put(i * a.cols + j, x)`. Null where the routine is not
+        ; such a one: its body more than the put, the put's operands more
+        ; than the parameters, numbers, the language's operators on them,
+        ; casts and parentheses, or a parameter but the first `mutable`.
+        procedure forwarded_put(mutable this: TaskPlanner, call: PlannedCall) returns ref[PlannedCall]?
+        {
+            if plan_functions = null or call.args = null or call.is_indirect or call.can_throw
+                return null
+            for func in plan_functions
+            {
+                if func.mangled_name = call.mangled_name
+                {
+                    let put this.forwarded_put_of(func, call)
+                    if put <> null
+                        return put
+                }
+            }
+            null
+        }
+
+        procedure forwarded_put_of(mutable this: TaskPlanner, func: PlannedFunction, call: PlannedCall) returns ref[PlannedCall]?
+        {
+            if func.input = null or func.input.length <> call.args.length
+                return null
+            if this.declared_mask(func) <> 1
+                return null
+            if func.writes <> null and func.writes.length > 0
+                return null
+            var body: ref[PlannedOperand]? null
+            choose func.impl
+                when action: Action
+                    body := TaskPlanner.sole_operand(action.source)
+                else
+                    0
+            if body = null
+                return null
+            let op (*body)
+            if TaskPlanner.has_hops(op)
+                return null
+            choose op.expr
+                when inner: Call
+                {
+                    if TaskPlanner.is_slot_store(inner) = false
+                        return null
+                    var args Vector[PlannedOperand]^this(3)
+                    var k: size_t 0
+                    while k < 3
+                    {
+                        let a_ptr inner.args.get k
+                        if a_ptr = null
+                            return null
+                        let put_in this.put_in(a_ptr.unwrap(), func, call)
+                        if put_in = null
+                            return null
+                        args.put(k, (*put_in))
+                        k := k + 1
+                    }
+                    let put PlannedCall(call.loc, inner.name, inner.mangled_name, inner.is_intrinsic, inner.is_operator, inner.can_throw, inner.requires_page_param, &^this args, inner.result_type, inner.life, inner.throws_type, inner.is_indirect)
+                    return &^this put
+                }
+                else
+                    0
+            null
+        }
+
+        ; the one operand a body is, under a block of one statement
+        function sole_operand(src: ref[Vector[PlannedOperand]]?) returns ref[PlannedOperand]?
+        {
+            if src = null
+                return null
+            if src.length <> 1
+                return null
+            let op_ptr src.get 0
+            if op_ptr = null
+                return null
+            let op op_ptr.unwrap()
+            if TaskPlanner.has_hops(op) = false
+            {
+                choose op.expr
+                    when blk: Block
+                    {
+                        if blk.statements = null
+                            return null
+                        if blk.statements.length <> 1
+                            return null
+                        let s_ptr blk.statements.get 0
+                        if s_ptr = null
+                            return null
+                        let st s_ptr.unwrap()
+                        choose st
+                            when act: Action
+                            {
+                                if act.target <> null and act.target.length > 0
+                                    return null
+                                return TaskPlanner.sole_operand(act.source)
+                            }
+                            else
+                                return null
+                    }
+                    else
+                        0
+            }
+            op_ptr
+        }
+
+        ; An operand of a forwarded put with the call's arguments put in
+        ; for the routine's parameters, built on this page; null for
+        ; anything but a parameter (and the fields it is reached through),
+        ; a number, an operator, a cast and a pair of parentheses. What it
+        ; builds stands where the call is written.
+        procedure put_in(mutable this: TaskPlanner, op: PlannedOperand, func: PlannedFunction, call: PlannedCall) returns ref[PlannedOperand]?
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    let p TaskPlanner.parameter_at(func, v.name)
+                    if p >= call.args.length
+                        return null
+                    let a_ptr call.args.get p
+                    if a_ptr = null
+                        return null
+                    let a TaskPlanner.under_address(a_ptr.unwrap())
+                    if TaskPlanner.has_hops(op) = false
+                        return &^this a
+                    if TaskPlanner.field_hops(a) = false or TaskPlanner.field_hops(op) = false
+                        return null
+                    var al: size_t 0
+                    if a.member_access <> null
+                        al := a.member_access.length
+                    let ol op.member_access.length
+                    var hops Vector[PlannedMemberAccess]^this(al + ol)
+                    var h: size_t 0
+                    while h < al + ol
+                    {
+                        var hop_ptr: ref[PlannedMemberAccess]? null
+                        if h < al
+                            hop_ptr := a.member_access.get h
+                        else
+                            hop_ptr := op.member_access.get(h - al)
+                        if hop_ptr = null
+                            return null
+                        hops.put(h, hop_ptr.unwrap())
+                        h := h + 1
+                    }
+                    let joined PlannedOperand(a.loc, a.expr, &^this hops, op.result_type)
+                    return &^this joined
+                }
+                when c: Constant
+                {
+                    if TaskPlanner.has_hops(op)
+                        return null
+                    let at_call PlannedOperand(call.loc, op.expr, null, op.result_type)
+                    return &^this at_call
+                }
+                when inner: Call
+                {
+                    if TaskPlanner.has_hops(op) or inner.is_operator = false or inner.is_indirect or inner.args = null
+                        return null
+                    let n inner.args.length
+                    var args Vector[PlannedOperand]^this(n)
+                    var k: size_t 0
+                    while k < n
+                    {
+                        let a_ptr inner.args.get k
+                        if a_ptr = null
+                            return null
+                        let put_in this.put_in(a_ptr.unwrap(), func, call)
+                        if put_in = null
+                            return null
+                        args.put(k, (*put_in))
+                        k := k + 1
+                    }
+                    let pc PlannedCall(call.loc, inner.name, inner.mangled_name, inner.is_intrinsic, inner.is_operator, inner.can_throw, inner.requires_page_param, &^this args, inner.result_type, inner.life, inner.throws_type, inner.is_indirect)
+                    let at_call PlannedOperand(call.loc, PlannedExpression.Call pc, null, op.result_type)
+                    return &^this at_call
+                }
+                when as_expr: As
+                {
+                    if TaskPlanner.has_hops(op) or as_expr.value = null
+                        return null
+                    let value this.put_in((*as_expr.value), func, call)
+                    if value = null
+                        return null
+                    let pa PlannedAs(call.loc, as_expr.target_type, value)
+                    let at_call PlannedOperand(call.loc, PlannedExpression.As pa, null, op.result_type)
+                    return &^this at_call
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.has_hops(op) or TaskPlanner.is_grouping(tp) = false
+                        return null
+                    let c_ptr tp.components.get 0
+                    let c c_ptr.unwrap()
+                    if c.value = null or c.value.length <> 1
+                        return null
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return null
+                    return this.put_in(in_ptr.unwrap(), func, call)
+                }
+                else
+                    0
+            null
+        }
+
+        ; the position of the parameter called name, or past the end
+        function parameter_at(func: PlannedFunction, name: String) returns size_t
+        {
+            if func.input = null
+                return (0 as size_t) - (1 as size_t)
+            var i: size_t 0
+            while i < func.input.length
+            {
+                let it_ptr func.input.get i
+                if it_ptr <> null
+                {
+                    let it it_ptr.unwrap()
+                    if it.name <> null and (*it.name) = name
+                        return i
+                }
+                i := i + 1
+            }
+            func.input.length
+        }
+
+        ; an argument as the value it hands on: `&a` is a
+        function under_address(op: PlannedOperand) returns PlannedOperand
+        {
+            if TaskPlanner.has_hops(op)
+                return op
+            choose op.expr
+                when c: Call
+                {
+                    if c.is_operator and c.name = "&" and c.args <> null and c.args.length = 1
+                    {
+                        let in_ptr c.args.get 0
+                        if in_ptr <> null
+                            return in_ptr.unwrap()
+                    }
+                }
+                else
+                    0
+            op
+        }
+
+        ; A forwarded put (forwarded_put#): the arguments as the call
+        ; evaluates them, the receiver as the put names it, through its
+        ; field, and then the put itself.
+        procedure cls_forwarded(mutable this: TaskPlanner, call: PlannedCall, put: PlannedCall)
+        {
+            var k: size_t 1
+            while k < call.args.length
+            {
+                let a_ptr call.args.get k
+                if a_ptr <> null
+                    this.cls_operand(a_ptr.unwrap())
+                if cls_blocked
+                    return
+                k := k + 1
+            }
+            let r_ptr put.args.get 0
+            if r_ptr <> null
+                this.cls_operand(r_ptr.unwrap())
+            if cls_blocked
+                return
+            this.put_is_disjoint(put)
         }
 
         ; out.put(index, value): receiver = args[0], index = args[1].

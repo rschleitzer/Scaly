@@ -25,7 +25,7 @@ out=$("$STAGE" --task-plan "$FIX" 2>&1); rc=$?
 check "report rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^task-plan:')
 check "report matches fixture.expected" 'diff <(printf "%s\n" "$got") tests/task-plan/fixture.expected >/dev/null'
-check "head counts the loops" 'printf "%s\n" "$got" | head -1 | grep -q "^task-plan: 31 for-loops, 18 parallelizable$"'
+check "head counts the loops" 'printf "%s\n" "$got" | head -1 | grep -q "^task-plan: 36 for-loops, 20 parallelizable$"'
 
 # One slot per round, shown.
 check "the counter"                                   'par 47'
@@ -42,6 +42,8 @@ check "a vector the round made"                       'par 191'
 check "a field of the receiver"                       'par 20'
 check "a CardVector at the counter"                   'par 204'
 check "a CardVector at an offset plus the counter"    'par 208'
+check "a routine that only hands a put on"            'par 217'
+check "... the same through a field"                  'par 228'
 
 # Not shown: the loop keeps its order.
 check "half the counter"                              'blk 50 "put into an external vector: its index is not one slot"'
@@ -57,6 +59,9 @@ check "the counter begun at a name"                   'blk 125 "put into an exte
 check "tiles whose condition leaves no room"          'blk 147 "put into an external vector: its index"'
 check "through a name the body bound"                 'blk 185 "put into an external vector: through the alias alias$"'
 check "a put that is no slot store"                   'blk 200 "mutating call on loop-external state: put$"'
+check "a handed-on put below another bound"           'blk 238 "put into an external vector: its index"'
+check "a handed-on put reading the next row"          'blk 248 "reads beside the slot it puts into: r$"'
+check "a routine that puts and does more"             'blk 258 "mutating call on loop-external state: put_counted$"'
 
 # The program says the same on one worker and on all.
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
@@ -65,7 +70,7 @@ if "$STAGE" -o "$T/fixture$SCALY_EXE" "$FIX" >"$T/build" 2>&1; then
   all=$("$T/fixture$SCALY_EXE" 2>&1); r2=$?
   check "runs (rc $r1, $r2)" '[ $r1 -eq 0 ] && [ $r2 -eq 0 ]'
   check "one worker and all print the same" '[ "$one" = "$all" ]'
-  check "the line it prints" '[ "$one" = "0 4 17 1 6 64 10 3" ]'
+  check "the line it prints" '[ "$one" = "0 4 17 1 6 64 10 3 2 8" ]'
 else
   check "the fixture builds" 'false'
 fi

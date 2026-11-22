@@ -210,6 +210,83 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 
     var grid Grid(3, Vector[int](n))
     grid.fill(n)
-    print "`v[0]` `w[1]` `g[5]` `h[2]` `grid.cells[2]` `slots.seen` `c[5]` `cache[n + 3]`"
+
+    ; a routine that only hands a put on (Rows.put): judged as that put,
+    ; here a row the counter of a `while` below the row's width
+    var r Rows(n, m, Vector[int]((n * m) as size_t))
+    for i in r.rows
+    {
+        var j 0
+        while j < r.cols
+        {
+            r.put(i, j, work(j))
+            j := j + 1
+        }
+    }
+    ; ... the same through a field
+    var hold Holder(Rows(n, m, Vector[int]((n * m) as size_t)))
+    for i in hold.r.rows
+    {
+        var j 0
+        while j < hold.r.cols
+        {
+            hold.r.put(i, j, i + j)
+            j := j + 1
+        }
+    }
+    ; ... the row's counter below another bound
+    for i in r.rows
+    {
+        var j 0
+        while j < m
+        {
+            r.put(i, j, 1)
+            j := j + 1
+        }
+    }
+    ; ... reading the next row
+    for i in r.rows - 1
+    {
+        var j 0
+        while j < r.cols
+        {
+            r.put(i, j, r.at(i + 1, j))
+            j := j + 1
+        }
+    }
+    ; a routine that puts and does more
+    for i in r.rows
+    {
+        var j 0
+        while j < r.cols
+        {
+            r.put_counted(i, j, 2)
+            j := j + 1
+        }
+    }
+    print "`v[0]` `w[1]` `g[5]` `h[2]` `grid.cells[2]` `slots.seen` `c[5]` `cache[n + 3]` `r.at(3, 5)` `hold.r.at(3, 5)`"
     0
 }
+
+; A matrix of ints whose put hands one put on, and one that does more.
+define Rows
+(
+    rows: int
+    cols: int
+    data: Vector[int]
+)
+{
+    function at(this: Rows, i: int, j: int) returns int
+        this.data[(i * this.cols + j) as size_t]
+
+    procedure put(mutable this: Rows, i: int, j: int, v: int)
+        this.data.put((i * this.cols + j) as size_t, v)
+
+    procedure put_counted(mutable this: Rows, i: int, j: int, v: int)
+    {
+        this.data.put((i * this.cols + j) as size_t, v)
+        this.data.put(0, this.data[0] + 1)
+    }
+}
+
+define Holder(r: Rows)
