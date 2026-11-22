@@ -7,6 +7,15 @@
 // expect a short write: node sets a pipe on standard output non-blocking, so
 // everything past the pipe's 64 KB was lost to wasi-libc's stdio. They are
 // made blocking again first.
+//
+// V8's fast API calls are turned off before anything is compiled: node 22
+// calls WASI's fd_write from the module through them, and a garbage
+// collection that starts inside such a call -- the write reports external
+// memory, and a module whose memory has grown has brought V8 to its limit --
+// walks a frame it cannot read and crashes node (rc 139, no output;
+// tests/wasm/grow_writes.scaly crashed every run).
+import v8 from 'node:v8';
+v8.setFlagsFromString('--no-turbo-fast-api-calls');
 import { readFile } from 'node:fs/promises';
 import { WASI } from 'node:wasi';
 import process, { argv, cwd, env, exit } from 'node:process';

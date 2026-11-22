@@ -1,0 +1,19 @@
+; A program whose memory grows while it writes (2026-11-22): under node's own
+; WASI host this crashed NODE, rc 139 and no output, every run. node 22 calls
+; its fd_write from the WebAssembly code through V8's fast API path; the
+; write reports a little external memory, the grown memory has brought V8 to
+; its limit, and the garbage collection started inside that call walks a
+; frame it cannot read. tests/wasm/run.mjs turns the fast API calls off
+; (`--no-turbo-fast-api-calls`). Before that `parfor_blocks` crashed one run
+; in twenty.
+; Expected: PASS
+
+var i 0
+while i < 400
+{
+    var v Vector[f64](32768 as size_t)
+    v.put(0, 1.0)
+    Console.println "."
+    i := i + 1
+}
+Console.println "PASS"
