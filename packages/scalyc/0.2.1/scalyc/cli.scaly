@@ -503,6 +503,7 @@ define cli
         Console.println "       scaly install                    what was installed so"
         Console.println "       scaly uninstall <program>        remove one of them"
         Console.println "       scaly clean                      empty the cache of compiled packages and interfaces (they are made again when needed)"
+        Console.println "       scaly update <file>              fetch again the packages it uses whose version is not published yet (taken from their head)"
         Console.println "       scaly publish [remote]           record the new versions of the packages here as published, commit and push (origin)"
         Console.println "       scaly publish --check [remote]   ... only check: no published version changed, each new number says its change"
         Console.println "       scaly next <package> <version>   begin a package's next version: rename its directory, and what names it follows"
@@ -3105,6 +3106,21 @@ define cli
                 return 1
             }
             return tool.clean()
+        }
+        if command.equals("update")
+        {
+            if argc <> 3
+            {
+                Console.println "Usage: scaly update <file>"
+                return 1
+            }
+            var update_seen Array[String]()
+            var looked 0
+            if tool.update(String(*(argv + 2)), &update_seen, &looked) = false
+                return 1
+            if looked = 0
+                Console.println("update: `String(*(argv + 2))` uses no package fetched from git")
+            return 0
         }
         if command.equals("next")
         {

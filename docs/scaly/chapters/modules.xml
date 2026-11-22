@@ -138,7 +138,12 @@ if b.area() = 12
         (<xref linkend="mod-package-versions"/>). The first fetch remembers
         the commit and the content of the version's directory beside it; a
         version that is fetched again and is no longer what it was is refused,
-        with both commits named. One package comes from one source: a program
+        with both commits named. A version taken from a head is a version
+        still being written, and it stays what it was when it was fetched
+        until <userinput>scaly update <replaceable>file</replaceable></userinput>
+        fetches the heads of such versions that the program uses again,
+        naming for each the commit it moved from and the one it moved to; a
+        published version it leaves as it is. One package comes from one source: a program
         that reaches it through two different sources is refused, while two
         spellings of one address are one source.</para>
       <para>A package may bring C or assembly files, which are compiled on the

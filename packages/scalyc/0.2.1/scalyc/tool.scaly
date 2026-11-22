@@ -1474,6 +1474,9 @@ define tool
             return false
         }
         let record "`dir`.fetched"
+        ; what was fetched here does not change by itself -- a version taken
+        ; from a head moves only where `scaly update` is asked (update#,
+        ; which puts this record aside)
         if File.exists(record)
         {
             let had tool.record_value(record, "tree")
@@ -1516,7 +1519,8 @@ define tool
         ; not the place to edit (a copy under ./packages is)
         if tool.triple_os(tool.target_triple(String())).equals("windows") = false
             system("find \"`dir`\" -type f -exec chmod a-w {} + 2>/dev/null".to_c_string())
-        File.write_from_string(record, "commit `commit`\ntree `tree`\nsource `source`\n")
+        let published if listed_tree.get_length() > 0: "yes" else "no"
+        File.write_from_string(record, "commit `commit`\ntree `tree`\nsource `source`\npublished `published`\n")
         ; its author's C runs through this machine's compiler when it is built
         var files Array[String]()
         tool.package_files(dir, "", &files)
@@ -1567,6 +1571,127 @@ define tool
                 return false
         }
         true
+    }
+
+    ; `scaly update <file>`: the packages `root_file` uses -- itself or
+    ; through the packages it uses -- that were fetched from the HEAD of their
+    ; repository, a version not yet published and so still being written,
+    ; fetched again from that head (2026-11-22: before, a fetched copy stayed
+    ; what it was on the day it was first fetched, and a build went on with
+    ; it without a word). A published version does not change and stays. A
+    ; line per package says what happened; `count` counts the packages
+    ; looked at. False when a fetch failed -- the copy there before is then
+    ; put back.
+    procedure update(mutable root_file: String, mutable seen: ref[Array[String]], mutable count: ref[int]) returns bool
+    {
+        var si: size_t 0
+        while si < seen.length
+        {
+            let s seen.at si
+            if s.equals(root_file)
+                return true
+            si := si + 1
+        }
+        let seen_page Page.get(seen)
+        seen.add(String^seen_page(root_file))
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        Modeler.declared_packages(root_file, &names, &versions, &sources)
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at i
+            let version versions.at i
+            var source String(sources.at(i))
+            if source.get_length() = 0
+                source := Modeler.inherited_source(root_file)
+            i := i + 1
+            var dir Modeler.package_directory(name, version, source)
+            if source.get_length() > 0 and dir.starts_with(Modeler.fetched_base())
+            {
+                ; each directory once, however many packages declare it
+                var known false
+                var di: size_t 0
+                while di < seen.length
+                {
+                    let d seen.at di
+                    if d.equals(dir)
+                        known := true
+                    di := di + 1
+                }
+                if known = false
+                {
+                    seen.add(String^seen_page(dir))
+                    count := count + 1
+                    if tool.update_one(source, name, version, dir) = false
+                        return false
+                }
+            }
+            var root "`dir`/`name`.scaly"
+            if File.exists(root) and tool.update(root, seen, count) = false
+                return false
+        }
+        true
+    }
+
+    ; One package of update#: fetched where it is not there yet, fetched
+    ; again where it came from a head.
+    procedure update_one(source: String, name: String, version: String, mutable dir: String) returns bool
+    {
+        if Modeler.has_package_root(dir, name) = false
+            return tool.fetch_package(source, name, version, dir)
+        var record "`dir`.fetched"
+        if tool.record_value(record, "published").equals("yes")
+        {
+            Console.println("`name` `version`: published, it does not change")
+            return true
+        }
+        let was tool.record_value(record, "commit")
+        ; the copy there is put aside and comes back where the fetch fails
+        let aside "`dir`.updating"
+        let record_aside "`record`.updating"
+        if Directory.is_directory(aside)
+        {
+            tool.remove_tree(aside)
+            Directory.remove(aside)
+        }
+        if rename(dir.to_c_string(), aside.to_c_string()) <> 0
+        {
+            Console.println("Error: `name` `version`: cannot move `dir` aside to fetch it again")
+            return false
+        }
+        rename(record.to_c_string(), record_aside.to_c_string())
+        if tool.fetch_package(source, name, version, dir) = false
+        {
+            if Directory.is_directory(dir)
+            {
+                tool.remove_tree(dir)
+                Directory.remove(dir)
+            }
+            rename(aside.to_c_string(), dir.to_c_string())
+            rename(record_aside.to_c_string(), record.to_c_string())
+            return false
+        }
+        tool.remove_tree(aside)
+        Directory.remove(aside)
+        unlink(record_aside.to_c_string())
+        let now tool.record_value(record, "commit")
+        if tool.record_value(record, "published").equals("yes")
+            Console.println("`name` `version`: published now, at `tool.short_commit(now)`")
+        else if now.equals(was)
+            Console.println("`name` `version`: the head is still `tool.short_commit(now)`")
+        else
+            Console.println("`name` `version`: `tool.short_commit(was)` -> `tool.short_commit(now)`")
+        true
+    }
+
+    ; the first seven characters of a commit, all of a shorter text
+    function short_commit(commit: String) returns String
+    {
+        if commit.get_length() <= 7
+            return commit
+        commit.substring(0, 7)
     }
 
     ; ---- generated interfaces in the cache -----------------------------------

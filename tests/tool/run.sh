@@ -109,7 +109,10 @@
 #              files is announced; scalyc alone fetches nothing; one package
 #              asked for out of two sources is refused, two spellings of one
 #              source are one; a declaration is a MINIMUM -- the highest one
-#              asked for is taken, by the program and by the packages built
+#              asked for is taken, by the program and by the packages built;
+#              `scaly update` fetches a head version again (from commit to
+#              commit, the program then runs the new code), says so where the
+#              head did not move, and leaves a published version as it is
 #              for it, on all three routes (the package's interface written
 #              into the cache on the way and read from there afterwards),
 #              two lines of one package (1.0 beside 0.1, 0.2 beside 0.1)
@@ -964,6 +967,24 @@ else
   rm -rf "$fd"
   out=$(ft run main.scaly 2>&1); rc=$?
   [ "$rc" != 0 ] && echo "$out" | grep -q 'is not what it was when it was first fetched here' && [ ! -e "$fd" ] && ok || bad "fetch: a changed version rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  # ... and `scaly update` is how a version taken from a head moves: the
+  # record put aside, the head fetched again, the change said and used
+  rm -f "$fd.fetched"
+  ft run main.scaly > /dev/null 2>&1
+  first=$(sed -n 's/^commit //p' "$fd.fetched")
+  ( cd "$fr/inner" && sed 's/Changed/Updated/' packages/inner/0.1.0/inner.scaly > x && mv x packages/inner/0.1.0/inner.scaly && tg commit -q -am three ) > /dev/null 2>&1
+  stale=$(ft run main.scaly 2> /dev/null)
+  out=$(ft update main.scaly 2>&1); rc=$?
+  now=$(sed -n 's/^commit //p' "$fd.fetched")
+  fresh=$(ft run main.scaly 2> /dev/null)
+  again=$(ft update main.scaly 2>&1)
+  if [ "$stale" = "Changed, Changed, git!!" ] && [ "$rc" = 0 ] && echo "$out" | grep -q "^inner 0.1.0: ${first:0:7} -> ${now:0:7}$" \
+     && echo "$out" | grep -q '^outer 0.1.0: the head is still ' && [ "$fresh" = "Updated, Updated, git!!" ] \
+     && echo "$again" | grep -q "^inner 0.1.0: the head is still ${now:0:7}$" && grep -q '^published no$' "$fd.fetched" && [ ! -e "$fd.updating" ]; then
+    ok
+  else
+    bad "update: stale='$stale' rc=$rc '$(echo "$out" | tr '\n' '|')' fresh='$fresh' again='$(echo "$again" | tr '\n' '|')'"
+  fi
   said=0
   printf 'package nosuch 0.1.0 "%s"\nprint("x")\n' "$fr/inner" > "$fp/a.scaly"
   ft run a.scaly 2>&1 | grep -q 'has no package nosuch 0.1.0 - no directory packages/nosuch/0.1.0' && said=$((said+1))
@@ -1092,7 +1113,7 @@ else
   # repository while outer asks for it out of the first
   cp -R "$fr/inner" "$fr/inner2"
   rm -rf "$fb"
-  ( cd "$fr/inner" && tg checkout -q HEAD~1 -- . && tg commit -q -m back ) > /dev/null 2>&1
+  ( cd "$fr/inner" && tg checkout -q "$(tg rev-list --max-parents=0 HEAD)" -- . && tg commit -q -m back ) > /dev/null 2>&1
   printf 'package inner 0.1.0 "%s"\npackage outer 0.1.0 "%s"\n\nprint(outer.twice("git"))\n' "$fr/inner2" "$fr/outer" > "$fp/two.scaly"
   out=$(ft run two.scaly 2>&1); rc=$?
   [ "$rc" != 0 ] && echo "$out" | grep -q 'package inner is required from two sources' && ok || bad "fetch: two sources rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-160)'"

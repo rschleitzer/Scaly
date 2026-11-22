@@ -130,6 +130,13 @@ sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</progr
           (<xref linkend="tut-install-program"/>).</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><userinput>scaly update <replaceable>file</replaceable></userinput></term>
+        <listitem><para>Fetches again the packages a program uses whose
+          version is not published yet, from the head they came from, and
+          says from which commit to which each moved
+          (<xref linkend="mod-package-source"/>).</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><userinput>scaly clean</userinput></term>
         <listitem><para>Empties the cache of compiled packages; they are
           compiled again when a program needs them
