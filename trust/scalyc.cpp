@@ -18682,6 +18682,7 @@ String Emitter_gpu_site_text(scaly_frame*, Emitter&, PlannedFor&) asm("_ZN7Emitt
 LLVMOpaqueValue* Emitter_emit_card_for(Emitter&, Emitter_GpuOffer&, Array<int64_t>*, Array<int64_t>*, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_213emit_card_forEN7Emitter8GpuOfferB6scalycB4v0_2ER5ArrayIiER5ArrayIiE10PlannedForB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_gpu_offer(Emitter&, Emitter_GpuOffer&, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_214emit_gpu_offerEN7Emitter8GpuOfferB6scalycB4v0_2EP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_212emit_gpu_forE10PlannedForB6scalycB4v0_2");
+void Emitter_emit_parfor_drift(Emitter&, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueBasicBlock*) asm("_ZN7EmitterB6scalycB4v0_217emit_parfor_driftEP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2");
 int64_t Emitter_gpu_store_record(Emitter&, LLVMOpaqueValue*, PlannedOperand&, LLVMOpaqueType*, LLVMOpaqueValue*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_216gpu_store_recordEP15LLVMOpaqueValueB6scalycB4v0_214PlannedOperandB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2m");
 bool Emitter_gpu_store_scalar(Emitter&, LLVMOpaqueValue*, int64_t, LLVMOpaqueType*, LLVMOpaqueValue*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_216gpu_store_scalarEP15LLVMOpaqueValueB6scalycB4v0_2iP14LLVMOpaqueTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2m");
 bool Emitter_gpu_bind_buffer(Emitter&, PlannedOperand&, int64_t, LLVMOpaqueType*, LLVMOpaqueValue*, LLVMOpaqueType*, LLVMOpaqueValue*, uint64_t) asm("_ZN7EmitterB6scalycB4v0_215gpu_bind_bufferE14PlannedOperandB6scalycB4v0_2iP14LLVMOpaqueTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2m");
@@ -158808,6 +158809,32 @@ __attribute__((weak)) String Emitter_gpu_site_text(scaly_frame* scaly_rp, Emitte
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_emit_parfor_drift(Emitter& scaly_self, LLVMOpaqueValue* measured, LLVMOpaqueValue* published, LLVMOpaqueValue* sig_up, LLVMOpaqueValue* sig_down, LLVMOpaqueValue* decisive, LLVMOpaqueValue* site_drift, LLVMOpaqueValue* site_p1k, LLVMOpaqueBasicBlock* next)
+{
+    Emitter* this_ = &scaly_self;
+    LLVMOpaqueType* i64_ty = LLVMInt64TypeInContext(this_->context);
+    LLVMOpaqueValue* c0 = LLVMConstInt(i64_ty, 0ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c1 = LLVMConstInt(i64_ty, 1ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c2 = LLVMConstInt(i64_ty, 2ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* pm = LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), measured, c0, ((const char*)"drift.pos")), measured, c1, ((const char*)"drift.pm"));
+    LLVMOpaqueValue* dearer = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), pm, LLVMBuildMul(this_->builder, published, c2, ((const char*)"drift.p2")), ((const char*)"drift.dearer"));
+    LLVMOpaqueValue* cheaper = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), LLVMBuildMul(this_->builder, pm, c2, ((const char*)"drift.m2")), published, ((const char*)"drift.cheaper"));
+    LLVMOpaqueValue* up = LLVMBuildAnd(this_->builder, dearer, sig_up, ((const char*)"drift.up"));
+    LLVMOpaqueValue* down = LLVMBuildAnd(this_->builder, cheaper, sig_down, ((const char*)"drift.down"));
+    LLVMOpaqueValue* dir = LLVMBuildSelect(this_->builder, up, c1, LLVMBuildSelect(this_->builder, down, c2, c0, ((const char*)"drift.d0")), ((const char*)"drift.dir"));
+    LLVMOpaqueValue* prev = LLVMBuildLoad2(this_->builder, i64_ty, site_drift, ((const char*)"drift.prev"));
+    LLVMOpaqueValue* some = LLVMBuildICmp(this_->builder, LLVMIntPredicate_NE(), dir, c0, ((const char*)"drift.some"));
+    LLVMOpaqueValue* same = LLVMBuildICmp(this_->builder, LLVMIntPredicate_EQ(), dir, prev, ((const char*)"drift.same"));
+    LLVMOpaqueValue* again = LLVMBuildOr(this_->builder, LLVMBuildAnd(this_->builder, some, same, ((const char*)"drift.twice")), LLVMBuildAnd(this_->builder, up, decisive, ((const char*)"drift.at.once")), ((const char*)"drift.again"));
+    LLVMBuildStore(this_->builder, LLVMBuildSelect(this_->builder, again, c0, dir, ((const char*)"drift.keep")), site_drift);
+    LLVMOpaqueBasicBlock* publish = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016pfor.drift.pub"}));
+    LLVMBuildCondBr(this_->builder, again, publish, next);
+    LLVMPositionBuilderAtEnd(this_->builder, publish);
+    LLVMBuildStore(this_->builder, pm, site_p1k);
+    LLVMBuildBr(this_->builder, next);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_offer(Emitter& scaly_self, Emitter_GpuOffer& offer, LLVMOpaqueValue* per1k, LLVMOpaqueValue* done, LLVMOpaqueValue* workers)
 {
     Emitter* this_ = &scaly_self;
@@ -161800,6 +161827,26 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* site_p1k = LLVMAddGlobal(this_->llvm_module, i64_ty, String_c_data(sp_name));
     LLVMSetInitializer(site_p1k, c0);
     LLVMSetLinkage(site_p1k, LLVMLinkage_Private());
+    String ss_name = String{(uint8_t*)"\022parfor.site.sample"};
+    LLVMOpaqueValue* site_sample = LLVMAddGlobal(this_->llvm_module, i64_ty, String_c_data(ss_name));
+    LLVMSetInitializer(site_sample, c0);
+    LLVMSetLinkage(site_sample, LLVMLinkage_Internal());
+    LLVMSetThreadLocal(site_sample, (int32_t)1ULL);
+    String sd_name = String{(uint8_t*)"\021parfor.site.drift"};
+    LLVMOpaqueValue* site_drift = LLVMAddGlobal(this_->llvm_module, i64_ty, String_c_data(sd_name));
+    LLVMSetInitializer(site_drift, c0);
+    LLVMSetLinkage(site_drift, LLVMLinkage_Internal());
+    LLVMSetThreadLocal(site_drift, (int32_t)1ULL);
+    String spr_name = String{(uint8_t*)"\021parfor.site.probe"};
+    LLVMOpaqueValue* site_probe = LLVMAddGlobal(this_->llvm_module, i64_ty, String_c_data(spr_name));
+    LLVMSetInitializer(site_probe, c0);
+    LLVMSetLinkage(site_probe, LLVMLinkage_Internal());
+    LLVMSetThreadLocal(site_probe, (int32_t)1ULL);
+    LLVMOpaqueValue* c_probe_every = LLVMConstInt(i64_ty, 63ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c_sample_every = LLVMConstInt(i64_ty, 15ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c_sample_most = LLVMConstInt(i64_ty, 255ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c_meas_always = LLVMConstInt(i64_ty, 1048576ULL, (int32_t)0ULL);
+    LLVMOpaqueValue* c_drift_floor = LLVMConstInt(i64_ty, 16777216ULL, (int32_t)0ULL);
     LLVMOpaqueValue* iv_drv = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.i"));
     LLVMOpaqueValue* nc_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.nextcheck"));
     LLVMOpaqueValue* t0_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.t0"));
@@ -161813,6 +161860,9 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMOpaqueValue* entryp_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.entryp"));
     LLVMOpaqueValue* tentry_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.tentry"));
     LLVMOpaqueValue* fp1k_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.fp1k"));
+    LLVMOpaqueValue* hft0_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.hf.t0"));
+    LLVMOpaqueValue* hfn_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.hf.ncpu"));
+    LLVMOpaqueValue* probe_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.probe"));
     LLVMOpaqueValue* armed_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.armed"));
     LLVMOpaqueValue* quiet_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.quiet"));
     LLVMBuildStore(this_->builder, c0, iv_drv);
@@ -161820,6 +161870,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMBuildStore(this_->builder, c0, t0_slot);
     LLVMBuildStore(this_->builder, c0, i0_slot);
     LLVMBuildStore(this_->builder, c0, tentry_slot);
+    LLVMBuildStore(this_->builder, c0, hft0_slot);
+    LLVMBuildStore(this_->builder, c0, probe_slot);
     LLVMBuildStore(this_->builder, c0, armed_slot);
     LLVMBuildStore(this_->builder, c0, quiet_slot);
     LLVMOpaqueValue* buf_null = LLVMConstNull(ptr_ty);
@@ -161865,7 +161917,18 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMOpaqueValue* eg_cpos = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), eg_c0, c0, ((const char*)"parfor.gate.cpos"));
         LLVMOpaqueValue* eg_c = LLVMBuildSelect(this_->builder, eg_cpos, eg_c0, c1, ((const char*)"parfor.gate.c"));
         LLVMOpaqueValue* eg_fits = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), n64, eg_c, ((const char*)"parfor.gate.fits"));
-        LLVMBuildCondBr(this_->builder, eg_fits, rg_prom_fork, rg_prom_seq);
+        LLVMOpaqueBasicBlock* rg_prom_probe_chk = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023pfor.gate.probe.chk"}));
+        LLVMOpaqueBasicBlock* rg_prom_probe = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017pfor.gate.probe"}));
+        LLVMBuildCondBr(this_->builder, eg_fits, rg_prom_probe_chk, rg_prom_seq);
+        LLVMPositionBuilderAtEnd(this_->builder, rg_prom_probe_chk);
+        LLVMOpaqueValue* pr_cnt = LLVMBuildLoad2(this_->builder, i64_ty, site_probe, ((const char*)"parfor.pr.cnt"));
+        LLVMOpaqueValue* pr_due = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLE(), pr_cnt, c0, ((const char*)"parfor.pr.due"));
+        LLVMBuildStore(this_->builder, LLVMBuildSelect(this_->builder, pr_due, c_probe_every, LLVMBuildSub(this_->builder, pr_cnt, c1, ((const char*)"parfor.pr.dec")), ((const char*)"parfor.pr.next")), site_probe);
+        LLVMBuildCondBr(this_->builder, pr_due, rg_prom_probe, rg_prom_fork);
+        LLVMPositionBuilderAtEnd(this_->builder, rg_prom_probe);
+        LLVMBuildStore(this_->builder, c0, entryp_slot);
+        LLVMBuildStore(this_->builder, c1, probe_slot);
+        LLVMBuildBr(this_->builder, rg_cold);
         LLVMPositionBuilderAtEnd(this_->builder, rg_prom_fork);
         LLVMOpaqueValue* hs_ncpu = LLVMBuildCall2(this_->builder, np_ty, np_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.ncpu.chk"));
         if (((*offer)).active)
@@ -161905,9 +161968,26 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMBuildStore(this_->builder, eg_p, p1k_slot);
         LLVMBuildStore(this_->builder, hf_group, grp_slot);
         LLVMBuildStore(this_->builder, hf_gpage, gpage_slot);
+        LLVMBuildStore(this_->builder, LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.hf.t")), hft0_slot);
+        LLVMBuildStore(this_->builder, hs_ncpu, hfn_slot);
         LLVMBuildBr(this_->builder, dispatch_block);
         LLVMPositionBuilderAtEnd(this_->builder, rg_prom_seq);
         LLVMBuildStore(this_->builder, n64, nc_slot);
+        LLVMOpaqueValue* ps_work = LLVMBuildMul(this_->builder, n64, eg_p, ((const char*)"parfor.ps.work"));
+        LLVMOpaqueValue* ps_big = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), ps_work, c_meas_always, ((const char*)"parfor.ps.big"));
+        LLVMOpaqueValue* ps_big2 = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), n64, eg_c, ((const char*)"parfor.ps.fits"));
+        LLVMOpaqueValue* ps_cnt = LLVMBuildLoad2(this_->builder, i64_ty, site_sample, ((const char*)"parfor.ps.cnt"));
+        LLVMOpaqueValue* ps_due = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLE(), ps_cnt, c0, ((const char*)"parfor.ps.due"));
+        LLVMOpaqueValue* ps_dec = LLVMBuildSub(this_->builder, ps_cnt, c1, ((const char*)"parfor.ps.dec"));
+        LLVMOpaqueValue* ps_w1 = LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), ps_work, c0, ((const char*)"parfor.ps.wpos")), ps_work, c1, ((const char*)"parfor.ps.w1"));
+        LLVMOpaqueValue* ps_k0 = LLVMBuildSDiv(this_->builder, c_meas_always, ps_w1, ((const char*)"parfor.ps.k0"));
+        LLVMOpaqueValue* ps_k = LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), ps_k0, c_sample_most, ((const char*)"parfor.ps.kbig")), c_sample_most, ps_k0, ((const char*)"parfor.ps.k"));
+        LLVMBuildStore(this_->builder, LLVMBuildSelect(this_->builder, ps_due, ps_k, ps_dec, ((const char*)"parfor.ps.next")), site_sample);
+        LLVMOpaqueValue* ps_take = LLVMBuildOr(this_->builder, LLVMBuildOr(this_->builder, ps_big, ps_big2, ((const char*)"parfor.ps.big3")), ps_due, ((const char*)"parfor.ps.take"));
+        LLVMOpaqueBasicBlock* rg_prom_meas = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\022pfor.gate.seq.meas"}));
+        LLVMBuildCondBr(this_->builder, ps_take, rg_prom_meas, il_cond);
+        LLVMPositionBuilderAtEnd(this_->builder, rg_prom_meas);
+        LLVMBuildStore(this_->builder, LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.ps.t")), tentry_slot);
         LLVMBuildBr(this_->builder, il_cond);
         LLVMPositionBuilderAtEnd(this_->builder, rg_cold);
         if ((check0 == 1ULL))
@@ -161917,7 +161997,9 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
             LLVMBuildStore(this_->builder, c0, i0_slot);
         }
         LLVMOpaqueValue* eg_vol = LLVMBuildLoad2(this_->builder, i64_ty, site_vol, ((const char*)"parfor.volv"));
-        LLVMOpaqueValue* eg_ishot = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), eg_vol, c_hotvol, ((const char*)"parfor.gate.ishot"));
+        LLVMOpaqueValue* eg_ishot0 = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), eg_vol, c_hotvol, ((const char*)"parfor.gate.ishot0"));
+        LLVMOpaqueValue* eg_isprobe = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), LLVMBuildLoad2(this_->builder, i64_ty, probe_slot, ((const char*)"parfor.probe.v")), c0, ((const char*)"parfor.gate.isprobe"));
+        LLVMOpaqueValue* eg_ishot = LLVMBuildOr(this_->builder, eg_ishot0, eg_isprobe, ((const char*)"parfor.gate.ishot"));
         LLVMBuildCondBr(this_->builder, eg_ishot, rg_hot, il_cond);
         LLVMPositionBuilderAtEnd(this_->builder, rg_hot);
         LLVMOpaqueValue* eg_t = LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.tentry"));
@@ -162139,6 +162221,14 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
         LLVMPositionBuilderAtEnd(this_->builder, ig_prom);
         LLVMOpaqueValue* ig_c = LLVMBuildSDiv(this_->builder, c_forkp, ig_p, ((const char*)"parfor.gate.c"));
         LLVMBuildStore(this_->builder, ig_c, nc_slot);
+        LLVMOpaqueValue* is_cnt = LLVMBuildLoad2(this_->builder, i64_ty, site_sample, ((const char*)"parfor.ps.cnt"));
+        LLVMOpaqueValue* is_due = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLE(), is_cnt, c0, ((const char*)"parfor.ps.due"));
+        LLVMOpaqueValue* is_dec = LLVMBuildSub(this_->builder, is_cnt, c1, ((const char*)"parfor.ps.dec"));
+        LLVMBuildStore(this_->builder, LLVMBuildSelect(this_->builder, is_due, c_sample_every, is_dec, ((const char*)"parfor.ps.next")), site_sample);
+        LLVMOpaqueBasicBlock* ig_meas = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023pfor.gate.prom.meas"}));
+        LLVMBuildCondBr(this_->builder, is_due, ig_meas, it_cond);
+        LLVMPositionBuilderAtEnd(this_->builder, ig_meas);
+        LLVMBuildStore(this_->builder, LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.ps.t")), tentry_slot);
         LLVMBuildBr(this_->builder, it_cond);
         LLVMPositionBuilderAtEnd(this_->builder, ig_cold);
         if ((check0 == 1ULL))
@@ -162355,7 +162445,40 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     LLVMPositionBuilderAtEnd(this_->builder, xa_block);
     LLVMOpaqueValue* xa_ep = LLVMBuildLoad2(this_->builder, i64_ty, entryp_slot, ((const char*)"parfor.x.ep"));
     LLVMOpaqueValue* xa_isprom = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xa_ep, c0, ((const char*)"parfor.x.isprom"));
-    LLVMBuildCondBr(this_->builder, xa_isprom, done_block, xa_n_block);
+    LLVMOpaqueBasicBlock* xa_prom_block = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016pfor.exit.prom"}));
+    LLVMOpaqueBasicBlock* xa_cold_block = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016pfor.exit.cold"}));
+    LLVMBuildCondBr(this_->builder, xa_isprom, xa_prom_block, xa_cold_block);
+    LLVMPositionBuilderAtEnd(this_->builder, xa_cold_block);
+    LLVMOpaqueValue* xq_isprobe = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), LLVMBuildLoad2(this_->builder, i64_ty, probe_slot, ((const char*)"parfor.xq.probe")), c0, ((const char*)"parfor.xq.isprobe"));
+    LLVMOpaqueBasicBlock* xq_block = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017pfor.exit.probe"}));
+    LLVMBuildCondBr(this_->builder, xq_isprobe, xq_block, xa_n_block);
+    LLVMPositionBuilderAtEnd(this_->builder, xq_block);
+    LLVMOpaqueValue* xq_t0 = LLVMBuildLoad2(this_->builder, i64_ty, tentry_slot, ((const char*)"parfor.xq.t0"));
+    LLVMOpaqueValue* xq_iters = LLVMBuildLoad2(this_->builder, i64_ty, iv_drv, ((const char*)"parfor.xq.iters"));
+    LLVMOpaqueBasicBlock* xq_pub = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023pfor.exit.probe.pub"}));
+    LLVMBuildCondBr(this_->builder, LLVMBuildAnd(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xq_t0, c0, ((const char*)"parfor.xq.timed")), LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xq_iters, c0, ((const char*)"parfor.xq.ran")), ((const char*)"parfor.xq.any")), xq_pub, done_block);
+    LLVMPositionBuilderAtEnd(this_->builder, xq_pub);
+    LLVMOpaqueValue* xq_el = LLVMBuildSub(this_->builder, LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.xq.te")), xq_t0, ((const char*)"parfor.xq.el"));
+    LLVMOpaqueValue* xq_p0 = LLVMBuildSDiv(this_->builder, LLVMBuildShl(this_->builder, xq_el, c10, ((const char*)"parfor.xq.el10")), xq_iters, ((const char*)"parfor.xq.p0"));
+    LLVMBuildStore(this_->builder, LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xq_p0, c0, ((const char*)"parfor.xq.ppos")), xq_p0, c1, ((const char*)"parfor.xq.p")), site_p1k);
+    LLVMBuildStore(this_->builder, c0, site_drift);
+    LLVMBuildBr(this_->builder, done_block);
+    LLVMPositionBuilderAtEnd(this_->builder, xa_prom_block);
+    LLVMOpaqueValue* xp_t0 = LLVMBuildLoad2(this_->builder, i64_ty, tentry_slot, ((const char*)"parfor.xp.t0"));
+    LLVMOpaqueValue* xp_iters = LLVMBuildLoad2(this_->builder, i64_ty, iv_drv, ((const char*)"parfor.xp.iters"));
+    LLVMOpaqueValue* xp_any = LLVMBuildAnd(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xp_t0, c0, ((const char*)"parfor.xp.timed")), LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xp_iters, c0, ((const char*)"parfor.xp.ran")), ((const char*)"parfor.xp.any"));
+    LLVMOpaqueBasicBlock* xp_meas_block = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023pfor.exit.prom.meas"}));
+    LLVMBuildCondBr(this_->builder, xp_any, xp_meas_block, done_block);
+    LLVMPositionBuilderAtEnd(this_->builder, xp_meas_block);
+    LLVMOpaqueValue* xp_te = LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.xp.te"));
+    LLVMOpaqueValue* xp_el = LLVMBuildSub(this_->builder, xp_te, xp_t0, ((const char*)"parfor.xp.el"));
+    LLVMOpaqueValue* xp_el10 = LLVMBuildShl(this_->builder, xp_el, c10, ((const char*)"parfor.xp.el10"));
+    LLVMOpaqueValue* xp_pm = LLVMBuildSDiv(this_->builder, xp_el10, xp_iters, ((const char*)"parfor.xp.pm"));
+    LLVMOpaqueValue* xp_q = LLVMBuildSDiv(this_->builder, c_drift_floor, xa_ep, ((const char*)"parfor.xp.q"));
+    LLVMOpaqueValue* xp_sig_down = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), xp_iters, xp_q, ((const char*)"parfor.xp.sigdown"));
+    LLVMOpaqueValue* xp_sig_up = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), xp_el10, c_drift_floor, ((const char*)"parfor.xp.sigup"));
+    LLVMOpaqueValue* xp_decisive = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGE(), xp_el10, c_forkp, ((const char*)"parfor.xp.decisive"));
+    Emitter_emit_parfor_drift(*(this_), xp_pm, xa_ep, xp_sig_up, xp_sig_down, xp_decisive, site_drift, site_p1k, done_block);
     LLVMPositionBuilderAtEnd(this_->builder, xa_n_block);
     LLVMOpaqueValue* xa_iters = LLVMBuildLoad2(this_->builder, i64_ty, iv_drv, ((const char*)"parfor.x.iters"));
     LLVMOpaqueValue* xa_ran = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), xa_iters, c0, ((const char*)"parfor.x.ran"));
@@ -162517,6 +162640,27 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_parallel_for(Emitter& scaly_
     Vector<LLVMOpaqueValue*>* gw_args = ({ Vector<LLVMOpaqueValue*>* scaly_t39 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t39 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t39), 1ULL); scaly_t39; });
     Vector_put62<LLVMOpaqueValue*>((*gw_args), 0ULL, ds_grp);
     LLVMBuildCall2(this_->builder, gv_ty, gw_fn, ((*gw_args)).data, (uint32_t)1ULL, ((const char*)""));
+    LLVMOpaqueValue* hj_t0 = LLVMBuildLoad2(this_->builder, i64_ty, hft0_slot, ((const char*)"parfor.hj.t0"));
+    LLVMOpaqueBasicBlock* hj_meas = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016pfor.join.meas"}));
+    LLVMOpaqueBasicBlock* hj_rest = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016pfor.join.rest"}));
+    LLVMBuildCondBr(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), hj_t0, c0, ((const char*)"parfor.hj.timed")), hj_meas, hj_rest);
+    LLVMPositionBuilderAtEnd(this_->builder, hj_meas);
+    LLVMOpaqueValue* hj_te = LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"parfor.hj.te"));
+    LLVMOpaqueValue* hj_wall = LLVMBuildSub(this_->builder, hj_te, hj_t0, ((const char*)"parfor.hj.wall"));
+    LLVMOpaqueValue* hj_ncpu = LLVMBuildLoad2(this_->builder, i64_ty, hfn_slot, ((const char*)"parfor.hj.ncpu"));
+    LLVMOpaqueValue* hj_work = LLVMBuildShl(this_->builder, LLVMBuildMul(this_->builder, hj_wall, hj_ncpu, ((const char*)"parfor.hj.cpuns")), c10, ((const char*)"parfor.hj.work10"));
+    LLVMOpaqueValue* hj_n = LLVMBuildSub(this_->builder, ds_n, ds_lo0, ((const char*)"parfor.hj.n"));
+    LLVMOpaqueValue* hj_n1 = LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), hj_n, c0, ((const char*)"parfor.hj.npos")), hj_n, c1, ((const char*)"parfor.hj.n1"));
+    LLVMOpaqueValue* hj_pm = LLVMBuildSDiv(this_->builder, hj_work, hj_n1, ((const char*)"parfor.hj.pm"));
+    LLVMOpaqueValue* hj_small = LLVMBuildICmp(this_->builder, LLVMIntPredicate_SLT(), hj_work, c_forkp, ((const char*)"parfor.hj.small"));
+    LLVMOpaqueBasicBlock* hj_demote = Emitter_create_block(*(this_), scaly_lvalue(String{(uint8_t*)"\020pfor.join.demote"}));
+    LLVMBuildCondBr(this_->builder, hj_small, hj_demote, hj_rest);
+    LLVMPositionBuilderAtEnd(this_->builder, hj_demote);
+    LLVMOpaqueValue* hj_pd = LLVMBuildSelect(this_->builder, LLVMBuildICmp(this_->builder, LLVMIntPredicate_SGT(), hj_pm, c0, ((const char*)"parfor.hj.pdpos")), hj_pm, c1, ((const char*)"parfor.hj.pd"));
+    LLVMBuildStore(this_->builder, hj_pd, site_p1k);
+    LLVMBuildStore(this_->builder, c0, site_drift);
+    LLVMBuildBr(this_->builder, hj_rest);
+    LLVMPositionBuilderAtEnd(this_->builder, hj_rest);
     if ((n_fp > 0ULL))
     {
         LLVMOpaqueValue* fk_slot = Emitter_entry_alloca(*(this_), i64_ty, ((const char*)"parfor.fp.k"));
