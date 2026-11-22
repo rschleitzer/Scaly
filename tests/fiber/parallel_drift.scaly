@@ -1,0 +1,130 @@
+; A promoted site whose rounds change their cost (2026-11-22): its
+; published cost per iteration is measured again, and moved where it moved.
+; Wave 1: a site promoted with CHEAP rounds (thousands of short executions,
+; promoted sequential, no submits) then runs with heavy rounds -- a few
+; executions later it forks (before: it ran on one core for good, its head
+; deciding from the cheap cost with zero clock reads). Wave 2: a site
+; promoted with HEAVY rounds (one heavy execution forks and publishes) then
+; runs with cheap rounds -- a probe finds it cheap within 64 executions, and
+; from then on it runs sequential (before: every execution forked, a few
+; hundred microseconds for a microsecond of work). Sums verify every
+; execution.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
+; Expected: parallel-drift-ok done
+
+; Pure leaf work: rounds of `w` steps. leaf(i, w) = i + w(w-1)/2.
+function leaf(i: i64, w: i64) returns i64
+{
+    var acc i
+    var k 0 as i64
+    while k < w
+    {
+        acc := acc + k
+        k := k + (1 as i64)
+    }
+    acc
+}
+
+procedure wave_up(mutable r: Vector[i64], n: int, w: i64)
+{
+    for i in n
+        r.put(i, leaf(i as i64, w))
+}
+
+procedure wave_down(mutable r: Vector[i64], n: int, w: i64)
+{
+    for i in n
+        r.put(i, leaf(i as i64, w))
+}
+
+; the sum leaf(i, w) over i below n
+function expected(n: int, w: i64) returns i64
+    ((n * (n - 1) / 2) as i64) + (n as i64) * (w * (w - (1 as i64)) / (2 as i64))
+
+function vsum(r: Vector[i64], n: size_t) returns i64
+{
+    var s 0 as i64
+    var j: size_t 0
+    while j < n
+    {
+        s := s + r[j]
+        j := j + 1
+    }
+    s
+}
+
+let pool TaskPool.default_pool()
+
+; ---- Wave 1: cheap rounds promote the site sequential ...
+var r1 Vector[i64](64)
+var e 0
+while e < 3000
+{
+    wave_up(r1, 8, 2000 as i64)
+    e := e + 1
+}
+if vsum(r1, 8 as size_t) <> expected(8, 2000 as i64)
+{
+    Console.println "wave1-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "wave1-forked-cheap"
+    exit 1
+}
+; ... then heavy rounds (40 000 steps, some 10 microseconds each, 64 of
+; them): measured twice, republished, forked.
+e := 0
+while e < 6
+{
+    wave_up(r1, 64, 40000 as i64)
+    if vsum(r1, 64 as size_t) <> expected(64, 40000 as i64)
+    {
+        Console.println "wave1-heavy-sum-bad"
+        exit 1
+    }
+    e := e + 1
+}
+if TaskPool.submit_count(pool) = (0 as u64)
+{
+    Console.println "wave1-never-forked"
+    exit 1
+}
+
+; ---- Wave 2: one heavy execution of another site forks and publishes
+; its heavy cost ...
+var r2 Vector[i64](512)
+wave_down(r2, 512, 40000 as i64)
+if vsum(r2, 512 as size_t) <> expected(512, 40000 as i64)
+{
+    Console.println "wave2-heavy-sum-bad"
+    exit 1
+}
+; ... then cheap rounds (10 steps): the first ones head-fork from the heavy
+; cost, a probe within 64 executions finds them cheap, and the last
+; hundred run without a submit.
+e := 0
+while e < 200
+{
+    wave_down(r2, 64, 10 as i64)
+    e := e + 1
+}
+if vsum(r2, 64 as size_t) <> expected(64, 10 as i64)
+{
+    Console.println "wave2-cheap-sum-bad"
+    exit 1
+}
+let before TaskPool.submit_count(pool)
+e := 0
+while e < 100
+{
+    wave_down(r2, 64, 10 as i64)
+    e := e + 1
+}
+if TaskPool.submit_count(pool) <> before
+{
+    Console.println "wave2-still-forking"
+    exit 1
+}
+Console.println "parallel-drift-ok done"
