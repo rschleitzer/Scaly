@@ -1,0 +1,84 @@
+; Regression (2026-11-22): a capitalized local is a value, not a type. The
+; Planner's page analysis reads the Model before names resolve and took every
+; capitalized name for a type: `var H zeros(n, m)` returned as `H` was no
+; local whose allocation flows to the caller, so `zeros` built the matrix on
+; the routine's own page, released on return -- at rc 0, a zero or garbage
+; read later (name_is_capitalized#, bind_value_names#). Each routine below
+; returns, through a capitalized name, a value whose buffer it had built;
+; run under SCALY_POISON.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Grid(rows: int, cols: int, data: Vector[f64])
+{
+    function at(this, i: int, j: int) returns f64
+        this.data[i * this.cols + j]
+
+    procedure put(mutable this, i: int, j: int, v: f64)
+        this.data.put(i * this.cols + j, v)
+}
+
+function zeros(rows: int, cols: int) returns Grid
+{
+    var data Vector[f64]#(rows * cols)
+    for k in rows * cols
+        data.put(k, 0.0)
+    Grid(rows, cols, data)
+}
+
+; a capitalized local, returned as the tail
+function filled(n: int, m: int, v: f64) returns Grid
+{
+    var H zeros(n, m)
+    var i 0
+    while i < n
+    {
+        var j 0
+        while j < m
+        {
+            H.put(i, j, v + ((i * m + j) as f64))
+            j := j + 1
+        }
+        i := i + 1
+    }
+    H
+}
+
+; a capitalized parameter read and a capitalized local returned by `return`
+function scaled(X: Grid, s: f64) returns Grid
+{
+    var Y zeros(X.rows, X.cols)
+    for i in X.rows
+    {
+        var j 0
+        while j < Y.cols
+        {
+            Y.put(i, j, X.at(i, j) * s)
+            j := j + 1
+        }
+    }
+    return Y
+}
+
+; a capitalized alias of a capitalized local
+function aliased(n: int) returns Grid
+{
+    let A filled(n, 2, 1.0)
+    let B A
+    B
+}
+
+function check() returns bool
+{
+    let G filled(3, 4, 0.5)
+    let S scaled(scaled(G, 2.0), 0.5)
+    let Q aliased(5)
+    ; something else on the pages in between
+    let noise filled(64, 64, 9.0)
+    G.at(2, 3) = 11.5 and S.at(1, 2) = 6.5 and Q.at(4, 1) = 10.0 and noise.at(1, 1) = 74.0
+}
+
+if check()
+    print "PASS"
+else
+    print "FAIL"

@@ -652,6 +652,12 @@ define Planner
         var rr_class_index: ConceptIndex
         rr_class_vals: Array[size_t]
         rr_class_args: Array[size_t]
+        ; The capitalized names the routine being planned binds -- its
+        ; parameters and every binding of its body, its loops, its `when`s
+        ; and its lambdas -- from value_names_from on (bind_value_names#):
+        ; such a name is a value, not a type (name_is_capitalized#).
+        value_names: Array[String]
+        var value_names_from: size_t
     )
     {
         init()
@@ -691,6 +697,8 @@ define Planner
                 rr_class_index := ConceptIndex.create(16)
                 rr_class_vals := Array[size_t]^this()
                 rr_class_args := Array[size_t]^this()
+                value_names := Array[String]^this()
+                value_names_from := 0
         }
     }
 
@@ -44511,7 +44519,17 @@ define Planner
             false
         }
 
+        ; as function_persists_param_guts_deep_bound#, with f's names bound
+        ; (bind_value_names#): it reads f's body outside its planning
         procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) returns bool
+        {
+            let saved_names this.bind_value_names(f.input, f.implementation)
+            let persists this.function_persists_param_guts_deep_bound(f)
+            this.unbind_value_names(saved_names)
+            persists
+        }
+
+        procedure function_persists_param_guts_deep_bound(mutable this: Planner, f: Function) returns bool
         {
             this.deep_into_reset()
             gate.deep_pageof_mask := 0
@@ -48901,7 +48919,17 @@ define Planner
             false
         }
 
+        ; as rr_classify_once_bound#, with f's names bound
+        ; (bind_value_names#): it reads f's body outside its planning
         procedure rr_classify_once(mutable this: Planner, f: Function, owner: String) returns size_t
+        {
+            let saved_names this.bind_value_names(f.input, f.implementation)
+            let cls this.rr_classify_once_bound(f, owner)
+            this.unbind_value_names(saved_names)
+            cls
+        }
+
+        procedure rr_classify_once_bound(mutable this: Planner, f: Function, owner: String) returns size_t
         {
             residence.rr_owner := Planner.rr_last_segment(owner)
             persistence.persist_masked := false
@@ -54520,13 +54548,241 @@ define Planner
             (c >= 65) && (c <= 90)
         }
 
+        ; A name the Model reads as a type: capitalized, and its head (up to
+        ; the first dot) no name the routine being planned binds -- `H` in
+        ; `var H zeros(n, m)` is a value like `h` (bind_value_names#). Read
+        ; as a type, a returned `H` was no local whose allocation flows to
+        ; the caller (collect_flow_locals#), and its matrix was freed with
+        ; the routine's page, at rc 0 (2026-11-22).
         function name_is_capitalized(this: Planner, n: String) returns bool
         {
             if n.get_length() = 0
                 return false
             let b n.get_buffer()
             let c (*b)
-            (c >= 65) && (c <= 90)
+            if c < 65 or c > 90
+                return false
+            this.names_bound_value(n) = false
+        }
+
+        ; n's head is a name the routine being planned binds
+        function names_bound_value(this: Planner, n: String) returns bool
+        {
+            let names residence.value_names
+            var i residence.value_names_from
+            while i < names.length
+            {
+                if Planner.head_is(n, names[i])
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; n is name, or name followed by a dot and more
+        function head_is(n: String, name: String) returns bool
+        {
+            let l name.get_length()
+            let nl n.get_length()
+            if nl < l or l = 0
+                return false
+            let nb n.get_buffer()
+            let mb name.get_buffer()
+            var i: size_t 0
+            while i < l
+            {
+                if (*(nb + i)) <> (*(mb + i))
+                    return false
+                i := i + 1
+            }
+            nl = l or (*(nb + l)) = ("." as char)
+        }
+
+        ; The capitalized names a routine binds, recorded above the ones of
+        ; the routine whose planning this one interrupts (a generic made on
+        ; the way); the mark to go back to is answered.
+        procedure bind_value_names(mutable this: Planner, input: Vector[Item], impl: Implementation) returns size_t
+        {
+            let saved residence.value_names_from
+            residence.value_names_from := residence.value_names.length
+            this.bind_items(input)
+            choose impl
+                when a: Action
+                    this.bind_walk_action(a)
+                else
+                    0
+            saved
+        }
+
+        procedure unbind_value_names(mutable this: Planner, saved: size_t)
+        {
+            residence.value_names.length := residence.value_names_from
+            residence.value_names_from := saved
+        }
+
+        procedure bind_value_name(mutable this: Planner, name: String)
+        {
+            if name.get_length() = 0
+                return
+            let c name.get(0)
+            if c < ("A" as char) or c > ("Z" as char)
+                return
+            residence.value_names.add(String^this(name))
+        }
+
+        procedure bind_items(mutable this: Planner, items: Vector[Item])
+        {
+            var i: size_t 0
+            while i < items.length
+            {
+                let ip items.get i
+                if ip <> null and (*ip).name <> null
+                    this.bind_value_name((*(*ip).name))
+                i := i + 1
+            }
+        }
+
+        procedure bind_walk_action(mutable this: Planner, a: scalyc.compiler.Model.Action)
+        {
+            this.bind_walk_ops(a.source)
+            this.bind_walk_ops(a.target)
+        }
+
+        procedure bind_walk_stmt(mutable this: Planner, s: Statement)
+        {
+            choose s
+                when a: scalyc.compiler.Model.Action
+                    this.bind_walk_action(a)
+                when b: scalyc.compiler.Model.Binding
+                {
+                    if b.item.name <> null
+                        this.bind_value_name((*b.item.name))
+                    this.bind_walk_ops(b.operation)
+                }
+                when r: scalyc.compiler.Model.Return
+                    this.bind_walk_ops(r.result)
+                when t: scalyc.compiler.Model.Throw
+                    this.bind_walk_ops(t.result)
+                else
+                    0
+        }
+
+        procedure bind_walk_stmts(mutable this: Planner, stmts: Vector[Statement])
+        {
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let sp stmts.get i
+                if sp <> null
+                    this.bind_walk_stmt((*sp))
+                i := i + 1
+            }
+        }
+
+        procedure bind_walk_whens(mutable this: Planner, whens: Vector[When])
+        {
+            var i: size_t 0
+            while i < whens.length
+            {
+                let wp whens.get i
+                if wp <> null
+                {
+                    this.bind_value_name((*wp).name)
+                    this.bind_walk_stmt((*wp).consequent)
+                }
+                i := i + 1
+            }
+        }
+
+        procedure bind_walk_ops(mutable this: Planner, ops: Vector[Operand])
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.bind_walk_op((*op_ptr))
+                i := i + 1
+            }
+        }
+
+        procedure bind_walk_op(mutable this: Planner, op: Operand)
+        {
+            choose op.expression
+                when bk: Block
+                    this.bind_walk_stmts(bk.statements)
+                when iff: scalyc.compiler.Model.If
+                {
+                    this.bind_walk_ops(iff.condition)
+                    if iff.property <> null
+                        this.bind_value_name(iff.property.name)
+                    this.bind_walk_stmt(iff.consequent)
+                    if iff.alternative <> null
+                        this.bind_walk_stmt((*iff.alternative))
+                }
+                when wh: scalyc.compiler.Model.While
+                {
+                    if wh.condition.item.name <> null
+                        this.bind_value_name((*wh.condition.item.name))
+                    this.bind_walk_ops(wh.condition.operation)
+                    this.bind_walk_action(wh.action)
+                }
+                when fr: scalyc.compiler.Model.For
+                {
+                    this.bind_value_name(fr.identifier)
+                    this.bind_walk_ops(fr.expression)
+                    this.bind_walk_action(fr.action)
+                }
+                when ch: scalyc.compiler.Model.Choose
+                {
+                    this.bind_walk_ops(ch.condition)
+                    this.bind_walk_whens(ch.cases)
+                    if ch.alternative <> null
+                        this.bind_walk_stmt((*ch.alternative))
+                }
+                when mt: scalyc.compiler.Model.Match
+                {
+                    this.bind_walk_ops(mt.condition)
+                    var bi: size_t 0
+                    while bi < mt.branches.length
+                    {
+                        let bp mt.branches.get bi
+                        if bp <> null
+                            this.bind_walk_stmt((*bp).consequent)
+                        bi := bi + 1
+                    }
+                    if mt.alternative <> null
+                        this.bind_walk_stmt((*mt.alternative))
+                }
+                when tr: scalyc.compiler.Model.Try
+                {
+                    if tr.binding.item.name <> null
+                        this.bind_value_name((*tr.binding.item.name))
+                    this.bind_walk_ops(tr.binding.operation)
+                    this.bind_walk_whens(tr.catches)
+                    if tr.alternative <> null
+                        this.bind_walk_stmt((*tr.alternative))
+                }
+                when rp: scalyc.compiler.Model.Repeat
+                    this.bind_walk_action(rp.action)
+                when lam: scalyc.compiler.Model.Lambda
+                {
+                    this.bind_items(lam.input)
+                    this.bind_walk_action(lam.body)
+                }
+                when tup: Tuple
+                {
+                    var ci: size_t 0
+                    while ci < tup.components.length
+                    {
+                        let cp tup.components.get ci
+                        if cp <> null
+                            this.bind_walk_ops((*cp).value)
+                        ci := ci + 1
+                    }
+                }
+                else
+                    0
         }
         ; If `ops` is a `RECV.get(...)` call (a dotted Type name ["RECV","get"]),
         ; return RECV (deep-copied onto rp); otherwise the empty string. Used to
@@ -56644,7 +56900,9 @@ define Planner
         ) returns PlannedFunction
         {
             let saved_frame this.lazy_aside()
+            let saved_names this.bind_value_names(f.input, f.implementation)
             let planned this.plan_function_planned(f, parent)
+            this.unbind_value_names(saved_names)
             this.lazy_back(saved_frame)
             planned
         }
@@ -57609,7 +57867,9 @@ define Planner
         ) returns PlannedInitializer
         {
             let saved_frame this.lazy_aside()
+            let saved_names this.bind_value_names(ini.input, ini.implementation)
             let planned this.plan_initializer_planned(ini, parent)
+            this.unbind_value_names(saved_names)
             this.lazy_back(saved_frame)
             planned
         }
@@ -57866,7 +58126,9 @@ define Planner
         ) returns PlannedOperator
         {
             let saved_frame this.lazy_aside()
+            let saved_names this.bind_value_names(op.input, op.implementation)
             let planned this.plan_operator_planned(op, parent)
+            this.unbind_value_names(saved_names)
             this.lazy_back(saved_frame)
             planned
         }
