@@ -490,6 +490,8 @@ div.lead > p { margin: 0; }
 .beside { display: grid; grid-template-columns: 1fr 200px; align-items: center; gap: 2em; margin: 0 0 1.4em; }
 .beside .equation { margin: 0; }
 .beside img { width: 200px; height: auto; border-radius: 6px; }
+.figure { margin: 0 0 1.4em; }
+.figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; }
 @media (max-width: 560px) { .beside { grid-template-columns: 1fr; justify-items: center; } }
 .run-output img.run-drawing { display: block; max-width: 100%; height: auto; margin: 8px 0; }
 

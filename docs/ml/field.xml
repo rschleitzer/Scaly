@@ -413,7 +413,15 @@
       sections derived. At the top of the page lies a bar with the
       buttons. Below it stand three parts side by side, from left to
       right the data, the network and the output; on a narrow screen they
-      stand one below the other.</para>
+      stand one below the other. The picture shows the page with the
+      spiral, after a little over 2000 steps; a click on it shows it at
+      full size.</para>
+    <informalfigure>
+      <mediaobject>
+        <alt>The field: at the top the bar with Pause, One step, Start again, the count of the steps, learning rate, activation function, regularization and speed; below it on the left the data with the spiral chosen, in the middle the network with the seven inputs, two hidden layers of six and four neurons and the output, on the right the two losses, their course and the plane with the points of the spiral.</alt>
+        <imageobject><imagedata fileref="fig/field.png"/></imageobject>
+      </mediaobject>
+    </informalfigure>
     <variablelist>
       <varlistentry>
         <term>The bar</term>

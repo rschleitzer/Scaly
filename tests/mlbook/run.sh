@@ -32,6 +32,11 @@ CHAPTERS=($(python3 "$HERE/parity.py" --chapters docs/scaly-ml.xml))
 FIG="$(mktemp -d)"
 python3 docs/figures.py "$FIG" "$("$ROOT/tools/scaly-of.sh" "$BIN")" docs/ml/fig/*.scaly || rc=1
 rm -rf "$FIG"
+# every picture the books show has its program (docs/ml/fig) or is a picture
+# of a page (docs/ml/shot)
+for ref in $(grep -ho 'fileref="fig/[^"]*"' docs/ml/field.xml docs/ml/de/field.xml | sed 's/fileref="fig\/\(.*\)"/\1/' | sort -u); do
+  [ -f "docs/ml/fig/${ref%.png}.scaly" ] || [ -f "docs/ml/shot/$ref" ] || { echo "mlbook: no source for fig/$ref"; rc=1; }
+done
 # the chapters that still hold a program (the code of the pages is not the
 # book's to run)
 LISTED=()
