@@ -436,7 +436,7 @@
       nebeneinander drei Teile, von links nach rechts die Daten, das Netz
       und die Ausgabe; auf einem schmalen Bildschirm stehen sie
       untereinander. Das Bild zeigt die Seite mit der Spirale, nach gut
-      2000 Schritten; ein Klick darauf zeigt es in voller Größe.</para>
+      2000 Schritten.</para>
     <informalfigure>
       <mediaobject>
         <alt>Das Spielfeld: oben die Leiste mit Pause, Ein Schritt, Neu beginnen, dem Zähler der Schritte, Lernrate, Aktivierungsfunktion, Regularisierung und Tempo; darunter links die Daten mit der gewählten Spirale, in der Mitte das Netz mit den sieben Eingaben, zwei verborgenen Schichten aus sechs und vier Neuronen und der Ausgabe, rechts die beiden Fehler, ihr Verlauf und die Ebene mit den Punkten der Spirale.</alt>
