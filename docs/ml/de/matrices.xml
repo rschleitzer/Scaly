@@ -37,6 +37,15 @@
       Zahl für sich. Jede weitere Schicht ist dieselbe Zeile noch einmal,
       mit <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> statt <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> als Eingabe. Die ganze
       Vorwärtsrechnung unseres Netzes sind drei solche Zeilen.</para>
+    <sidebar role="tryit">
+      <para><link xlink:href="../play/matmul/#lang=de">Sieh dir das Matrixprodukt als Animation an.</link>
+        Für ein kleines Beispiel, <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> mit drei Zeilen, <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>
+        mit drei Spalten, entsteht dort eine Zahl von <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation> nach der
+        anderen: Zeile <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> und Spalte <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> leuchten auf, dann
+        die beiden Paare von Zahlen, die miteinander malgenommen werden, und
+        darunter läuft die Rechnung mit. Mit <guilabel>Ein Schritt</guilabel>
+        kannst du in Ruhe mitrechnen.</para>
+    </sidebar>
     <para>Was gewinnen wir dadurch? Gerechnet wird genau dasselbe:
       dieselben Multiplikationen und Additionen in derselben Reihenfolge,
       und das Programm dieses Kapitels kommt Zahl für Zahl auf das Ergebnis

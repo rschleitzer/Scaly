@@ -37,6 +37,15 @@
       itself. Every further layer is the same line again, with
       <inlineequation><mml:math><mml:mi>H</mml:mi></mml:math></inlineequation> instead of <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> as its input. The whole forward
       computation of our network is three such lines.</para>
+    <sidebar role="tryit">
+      <para><link xlink:href="../play/matmul/#lang=en">Watch the matrix product as an animation.</link>
+        For a small example, <inlineequation><mml:math><mml:mi>X</mml:mi></mml:math></inlineequation> with three rows and <inlineequation><mml:math><mml:mi>W</mml:mi></mml:math></inlineequation>
+        with three columns, one number of <inlineequation><mml:math><mml:mi>Z</mml:mi></mml:math></inlineequation> appears after the
+        other: row <inlineequation><mml:math><mml:mi>i</mml:mi></mml:math></inlineequation> and column <inlineequation><mml:math><mml:mi>j</mml:mi></mml:math></inlineequation> light up, then the two
+        pairs of numbers that are multiplied, and below them the calculation
+        runs along. With <guilabel>One step</guilabel> you can work it out
+        with it at your own pace.</para>
+    </sidebar>
     <para>What do we gain by this? The computation is exactly the same:
       the same multiplications and additions in the same order, and the
       program of this chapter arrives number for number at the field's
