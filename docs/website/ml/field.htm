@@ -2636,8 +2636,8 @@ class="gui"
 class="gui"
 >One step</span
 >
-            takes exactly one step of gradient descent over all the
-            training points. <span
+            takes exactly one step of gradient descent over all the points
+            it learns from. <span
 class="gui"
 >Start again</span
 > gives the
@@ -2914,8 +2914,8 @@ class="gui"
 >Test loss</span
 >, below
             them their course since the last start: the training loss
-            solid, the test loss dashed. What test points are is explained
-            in the next section.</p
+            solid, the test loss dashed. What training and test points are
+            is explained in the next section.</p
 ><p
 >The large picture is the plane, from −6 to 6 both ways,
             with all the points. Beneath them lies the output neuron's
@@ -2991,28 +2991,43 @@ href="#field-test"
 >Generalization</a
 ></h2
 ><p
->A model that knows its training points is not yet useful. The
-      question is how well it guesses points it has never seen. That is
-      why the field holds back half of its points as
+>So far the network has learned from all the points, and we have
+      only asked how well it meets those very points. But a model is meant
+      to place points rightly that it has never seen as well. That is why
+      the field splits its points into two halves. The network learns
+      from the one: these are the <em
+>training points</em
+>,
+      and their mean loss, the <em
+>training loss</em
+>, is the
+      loss gradient descent makes smaller. The other half, the
       <em
 >test points</em
->, drawn with a ring: the network
-      never learns from them, and the loss over them, the
+>, drawn with a ring, the field holds
+      back: the network never learns from them. Their mean loss, the
       <em
 >test loss</em
->, says how well it generalizes.</p
+>, says how well the network
+      <em
+>generalizes</em
+>.</p
 ><p
->When the data is noisy and the network large, the two losses part
-      ways. The network learns the training points ever better, noise
-      included, and draws borders around single stray points; the test
-      loss stops falling and rises. That is
+>When the data is noisy and the network large, the two losses
+      part ways. The network learns the training points ever better, their
+      noise included, and draws borders around single stray points. The
+      test loss then stops falling and rises again. That is
       <em
 >overfitting</em
->. One cure is
+>. One remedy is
       <em
 >regularization</em
->: an extra loss for large
-      weights, <math
+>: for every weight <math
+><mi
+>w</mi
+></math
+> a
+      penalty <math
 ><mi
 >λ</mi
 ><msup
@@ -3022,9 +3037,27 @@ href="#field-test"
 >2</mn
 ></msup
 ></math
-> for each weight. Its derivative
-      shrinks every weight a little in every step, and a network with
-      smaller weights draws smoother borders.</p
+> is added to the loss. <math
+><mi
+>λ</mi
+></math
+> is a small
+      number we choose. Large weights become expensive. The penalty's
+      derivative is <math
+><mn
+>2</mn
+><mi
+>λ</mi
+><mi
+>w</mi
+></math
+>, so every step of gradient descent pulls
+      every weight a little towards zero. Smaller weights give smoother
+      borders, because a neuron with small weights goes over from −1 to +1
+      only slowly. Because the penalty is the square of the weights, this
+      form is called <em
+>L2 regularization</em
+>.</p
 ><aside
 class="tryit"
 ><p
@@ -3036,16 +3069,19 @@ href="../play/field/#data=spiral&#38;noise=30&#38;hidden=8,8,8,8&#38;inputs=x,y,
 >Open the spiral with 30 % noise and four hidden layers of eight.</a
 >
         After some seconds the training loss is far below the test loss,
-        and the plane shows islands around single points. Choose 0.01
-        under <span
+        and while the training loss keeps falling, the test loss rises. The
+        plane shows islands around single points. Choose 0.01 under
+        <span
 class="gui"
 >Regularization (L2)</span
-> and
+> and click
         <span
 class="gui"
 >Start again</span
->: the training loss stays higher,
-        the test loss ends lower, the borders are smoother.</p
+>: the penalty keeps the weights
+        small. The training loss stays higher, but the test loss stays well
+        below the one before and hardly rises any more, and the borders are
+        smoother.</p
 ></aside
 ></section
 ><section

@@ -2659,8 +2659,8 @@ class="gui"
 class="gui"
 >Ein Schritt</span
 >
-            genau einen Schritt des Gradientenabstiegs über alle
-            Trainingspunkte. <span
+            genau einen Schritt des Gradientenabstiegs über alle Punkte,
+            aus denen es lernt. <span
 class="gui"
 >Neu beginnen</span
 > gibt dem Netz
@@ -2940,7 +2940,8 @@ class="gui"
 >,
             darunter ihr Verlauf seit dem letzten Neubeginn: der
             Trainingsfehler durchgezogen, der Testfehler gestrichelt. Was
-            Testpunkte sind, erklärt der nächste Abschnitt.</p
+            Trainings- und Testpunkte sind, erklärt der nächste
+            Abschnitt.</p
 ><p
 >Das große Bild ist die Ebene, von −6 bis 6 in beiden
             Richtungen, mit allen Punkten. Unter ihnen liegt die Antwort des
@@ -3017,23 +3018,34 @@ href="#field-test"
 >Verallgemeinerung</a
 ></h2
 ><p
->Ein Modell, das seine Trainingspunkte kennt, nützt noch nichts.
-      Die Frage ist, wie gut es Punkte errät, die es nie gesehen hat.
-      Deshalb hält das Spielfeld die Hälfte seiner Punkte als
+>Bisher hat das Netz aus allen Punkten gelernt, und wir haben nur
+      gefragt, wie gut es eben diese Punkte trifft. Ein Modell soll aber
+      auch Punkte richtig einordnen, die es nie gesehen hat. Deshalb teilt
+      das Spielfeld seine Punkte in zwei Hälften. Aus der einen lernt das
+      Netz: Das sind die <em
+>Trainingspunkte</em
+>, und ihr
+      mittlerer Fehler, der <em
+>Trainingsfehler</em
+>, ist der
+      Fehler, den der Gradientenabstieg verkleinert. Die andere Hälfte, die
       <em
 >Testpunkte</em
-> zurück, umrandet gezeichnet: Das Netz
-      lernt nie aus ihnen, und der Fehler über ihnen, der
+>, umrandet gezeichnet, hält das
+      Spielfeld zurück:
+      Aus ihnen lernt das Netz nie. Ihr mittlerer Fehler, der
       <em
 >Testfehler</em
->, sagt, wie gut es
-      verallgemeinert.</p
+>, sagt, wie gut das Netz
+      <em
+>verallgemeinert</em
+>.</p
 ><p
 >Wenn die Daten verrauscht sind und das Netz groß ist, gehen die
       beiden Fehler auseinander. Das Netz lernt die Trainingspunkte immer
-      besser, das Rauschen eingeschlossen, und zieht Grenzen um einzelne
-      verirrte Punkte; der Testfehler hört auf zu fallen und steigt. Das
-      ist <em
+      besser, ihr Rauschen eingeschlossen, und zieht Grenzen um einzelne
+      verirrte Punkte. Der Testfehler hört dann auf zu fallen und steigt
+      wieder. Das ist <em
 >Überanpassung</em
 > (englisch
       <em
@@ -3041,8 +3053,12 @@ href="#field-test"
 >). Ein Mittel dagegen ist
       <em
 >Regularisierung</em
->: ein zusätzlicher Fehler für
-      große Gewichte, <math
+>: Zum Fehler kommt für jedes
+      Gewicht <math
+><mi
+>w</mi
+></math
+> ein Strafterm <math
 ><mi
 >λ</mi
 ><msup
@@ -3052,9 +3068,28 @@ href="#field-test"
 >2</mn
 ></msup
 ></math
-> für jedes Gewicht. Seine
-      Ableitung schrumpft jedes Gewicht in jedem Schritt ein wenig, und ein
-      Netz mit kleineren Gewichten zieht glattere Grenzen.</p
+> hinzu.
+      <math
+><mi
+>λ</mi
+></math
+> ist eine kleine Zahl, die wir wählen. Große Gewichte
+      werden dadurch teuer. Die Ableitung des Strafterms ist
+      <math
+><mn
+>2</mn
+><mi
+>λ</mi
+><mi
+>w</mi
+></math
+>, also zieht jeder Schritt des Gradientenabstiegs jedes
+      Gewicht ein Stück zur Null. Kleinere Gewichte geben glattere Grenzen,
+      denn ein Neuron mit kleinen Gewichten geht nur langsam von −1 nach +1
+      über. Weil der Strafterm das Quadrat der Gewichte ist, heißt diese
+      Form <em
+>L2-Regularisierung</em
+>.</p
 ><aside
 class="tryit"
 ><p
@@ -3066,16 +3101,19 @@ href="../play/field/#data=spiral&#38;noise=30&#38;hidden=8,8,8,8&#38;inputs=x,y,
 >Öffne die Spirale mit 30 % Rauschen und vier verborgenen Schichten zu acht.</a
 >
         Nach einigen Sekunden liegt der Trainingsfehler weit unter dem
-        Testfehler, und die Ebene zeigt Inseln um einzelne Punkte. Wähl
-        0,01 unter <span
+        Testfehler, und während der Trainingsfehler weiter fällt, steigt der
+        Testfehler. Die Ebene zeigt Inseln um einzelne Punkte. Wähl 0,01
+        unter <span
 class="gui"
 >Regularisierung (L2)</span
 > und klick auf
         <span
 class="gui"
 >Neu beginnen</span
->: Der Trainingsfehler bleibt höher,
-        der Testfehler endet niedriger, die Grenzen sind glatter.</p
+>: Der Strafterm hält die Gewichte
+        klein. Der Trainingsfehler bleibt höher, aber der Testfehler bleibt
+        deutlich unter dem von vorher und steigt kaum noch, und die Grenzen
+        sind glatter.</p
 ></aside
 ></section
 ><section

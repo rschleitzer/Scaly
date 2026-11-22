@@ -428,8 +428,8 @@
           <para><guilabel>Pause</guilabel> stops the network; the same
             button is then called <guilabel>Learn</guilabel> and lets it
             learn on. While it is stopped, <guilabel>One step</guilabel>
-            takes exactly one step of gradient descent over all the
-            training points. <guilabel>Start again</guilabel> gives the
+            takes exactly one step of gradient descent over all the points
+            it learns from. <guilabel>Start again</guilabel> gives the
             network new random weights and keeps the points. Beside them
             the page counts the steps since the start.</para>
           <para>The <guilabel>Learning rate</guilabel> is the one from the
@@ -518,8 +518,8 @@
           <para>At the top stand two numbers, the <guilabel>Training
             loss</guilabel> and the <guilabel>Test loss</guilabel>, below
             them their course since the last start: the training loss
-            solid, the test loss dashed. What test points are is explained
-            in the next section.</para>
+            solid, the test loss dashed. What training and test points are
+            is explained in the next section.</para>
           <para>The large picture is the plane, from −6 to 6 both ways,
             with all the points. Beneath them lies the output neuron's
             answer at every place, the stronger the colour, the nearer to
@@ -552,28 +552,40 @@
 
   <section xml:id="field-test">
     <title>Generalization</title>
-    <para>A model that knows its training points is not yet useful. The
-      question is how well it guesses points it has never seen. That is
-      why the field holds back half of its points as
-      <emphasis>test points</emphasis>, drawn with a ring: the network
-      never learns from them, and the loss over them, the
-      <emphasis>test loss</emphasis>, says how well it generalizes.</para>
-    <para>When the data is noisy and the network large, the two losses part
-      ways. The network learns the training points ever better, noise
-      included, and draws borders around single stray points; the test
-      loss stops falling and rises. That is
-      <emphasis>overfitting</emphasis>. One cure is
-      <emphasis>regularization</emphasis>: an extra loss for large
-      weights, <inlineequation><mml:math><mml:mi>λ</mml:mi><mml:msup><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> for each weight. Its derivative
-      shrinks every weight a little in every step, and a network with
-      smaller weights draws smoother borders.</para>
+    <para>So far the network has learned from all the points, and we have
+      only asked how well it meets those very points. But a model is meant
+      to place points rightly that it has never seen as well. That is why
+      the field splits its points into two halves. The network learns
+      from the one: these are the <emphasis>training points</emphasis>,
+      and their mean loss, the <emphasis>training loss</emphasis>, is the
+      loss gradient descent makes smaller. The other half, the
+      <emphasis>test points</emphasis>, drawn with a ring, the field holds
+      back: the network never learns from them. Their mean loss, the
+      <emphasis>test loss</emphasis>, says how well the network
+      <emphasis>generalizes</emphasis>.</para>
+    <para>When the data is noisy and the network large, the two losses
+      part ways. The network learns the training points ever better, their
+      noise included, and draws borders around single stray points. The
+      test loss then stops falling and rises again. That is
+      <emphasis>overfitting</emphasis>. One remedy is
+      <emphasis>regularization</emphasis>: for every weight <inlineequation><mml:math><mml:mi>w</mml:mi></mml:math></inlineequation> a
+      penalty <inlineequation><mml:math><mml:mi>λ</mml:mi><mml:msup><mml:mi>w</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> is added to the loss. <inlineequation><mml:math><mml:mi>λ</mml:mi></mml:math></inlineequation> is a small
+      number we choose. Large weights become expensive. The penalty's
+      derivative is <inlineequation><mml:math><mml:mn>2</mml:mn><mml:mi>λ</mml:mi><mml:mi>w</mml:mi></mml:math></inlineequation>, so every step of gradient descent pulls
+      every weight a little towards zero. Smaller weights give smoother
+      borders, because a neuron with small weights goes over from −1 to +1
+      only slowly. Because the penalty is the square of the weights, this
+      form is called <emphasis>L2 regularization</emphasis>.</para>
     <sidebar role="tryit">
       <para><link xlink:href="../play/field/#data=spiral&amp;noise=30&amp;hidden=8,8,8,8&amp;inputs=x,y,sinx,siny&amp;speed=30">Open the spiral with 30 % noise and four hidden layers of eight.</link>
         After some seconds the training loss is far below the test loss,
-        and the plane shows islands around single points. Choose 0.01
-        under <guilabel>Regularization (L2)</guilabel> and
-        <guilabel>Start again</guilabel>: the training loss stays higher,
-        the test loss ends lower, the borders are smoother.</para>
+        and while the training loss keeps falling, the test loss rises. The
+        plane shows islands around single points. Choose 0.01 under
+        <guilabel>Regularization (L2)</guilabel> and click
+        <guilabel>Start again</guilabel>: the penalty keeps the weights
+        small. The training loss stays higher, but the test loss stays well
+        below the one before and hardly rises any more, and the borders are
+        smoother.</para>
     </sidebar>
   </section>
 
