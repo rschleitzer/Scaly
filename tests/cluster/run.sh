@@ -429,10 +429,13 @@ else
   sleep 0.5
   kill -0 $F1 2>/dev/null && kill -0 $F2 2>/dev/null || ok=0
   if [ $ok = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, h: rc $rc '$(tr '\n' '|' < "$OUT/cluster_${t}_h.log" | tail -c 300)'"); fi
-  SCALY_CLUSTER_TRACE=1 "$FB" c > "$OUT/cluster_${t}_c.log" 2>&1
+  # the trace (stderr) apart from what the program prints (stdout): written
+  # into one file, a trace line of another thread could tear the answer's
+  # line (" ms, no helpers)" before "caught 4", 2026-11-23)
+  SCALY_CLUSTER_TRACE=1 "$FB" c > "$OUT/cluster_${t}_c.log" 2> "$OUT/cluster_${t}_c.err"
   want=$(sed -n 's/^; Expected c: //p' tests/cluster/$t.scaly)
   got=$(scaly_lf < "$OUT/cluster_${t}_c.log" | grep -v '^cluster: ')
-  searches=$(grep -c "^cluster: looking for helpers" "$OUT/cluster_${t}_c.log")
+  searches=$(grep -c "^cluster: looking for helpers" "$OUT/cluster_${t}_c.err")
   if [ "$got" = "$want" ] && [ "$searches" -ge 2 ]; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$t, c: '$got', $searches searches"); fi
   kill $F1 $F2 2>/dev/null; wait $F1 $F2 2>/dev/null
 fi
