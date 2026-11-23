@@ -1275,10 +1275,14 @@ define Planner
         ; embedded Array made it OVERSIZED — every Array field's Page.get then
         ; answered the oversized page and stage 1 died at exit 19.
         current_fn_local_filled: ref[Array[String]]
+        ; per bound call: 1 its value is this frame's (by_value_call_local#),
+        ; 2 a container built on this frame whose buffer a reference may point
+        ; into (holder_on_frame#), 0 neither
         current_fn_bind_local: Array[size_t]
         ; beside it, the REFERENCE verdict of the same bound call
         ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local; 2 a class-1
-        ; referent built on this frame, ref_call_built_here#) — behind a
+        ; referent built on this frame, ref_call_built_here#; 3 into the
+        ; buffer of a local holder, holder_ref_verdict#, local as 1 is) — behind a
         ; reference for the Planner's page budget (see current_fn_local_filled)
         current_fn_bind_refv: ref[Array[int]]
         ; names bound from a call whose LIFE is Local: an object built on this
@@ -39873,6 +39877,185 @@ define Planner
                     return false
         }
 
+        ; holder_ref_verdict#: does the plain call `c` answer a reference into
+        ; the BUFFER of a by-value argument that lives on this frame
+        ; (`holder.get(0)` of a local Array or Vector: residence class 5 or 3
+        ; reaching it, deep_by_value_local#)? The narrow half of
+        ; ref_call_verdict# -- a reference-typed argument is not asked: its
+        ; Local stamp is the flat one (`Page.get(this)` carries it), good for
+        ; lifting a stamp, not for setting one (Array.grow's `own_page`, the
+        ; first version of this rule refused it)
+        ; holder_on_frame#: a container's initializer on this frame's page
+        ; (`var holder Array[String]()`: call life Local; a linked init leaves
+        ; the result stamp Unspecified, so by_value_call_local# reads it as
+        ; not this frame's). The container takes its buffer from
+        ; Page.get(this): a reference INTO it is this frame's. Not asked of
+        ; the value itself -- an EMPTY container copied away holds nothing
+        ; here (the Planner's `let vslot String()`, kept in an Array).
+        ; A Call life where the routine has no caller page is this frame too:
+        ; the promotion stamped a page the routine lacks, and the Emitter falls
+        ; back to the frame (operand_lands_on_local_page#).
+        function holder_on_frame(this: Planner, c: PlannedCall) returns bool
+        {
+            var on_frame Planner.lifetime_is_local(c.life)
+            if on_frame = false
+                choose c.life
+                    when cl: Call
+                        on_frame := this.escape_fn_has_page() = false
+                    else
+                        0
+            if on_frame = false
+                return false
+            if c.mangled_name.contains("C1E") = false
+                return false
+            let n c.result_type.name
+            n = "Array" or n = "Vector" or n = "List" or n = "HashMap"
+        }
+
+        ; a by-value argument whose BUFFER is this frame's, for a reference
+        ; into it: deep_by_value_local#, or a container bound from an
+        ; initializer on this frame (current_fn_bind_local 2)
+        function holder_buffer_local(this: Planner, a: PlannedOperand) returns bool
+        {
+            if this.deep_by_value_local(a)
+                return true
+            if a.member_access <> null
+                return false
+            choose a.expr
+                when v: Variable
+                {
+                    if this.escape_name_is_current_param(v.name)
+                        return false
+                    let bi this.bind_index_of(v.name)
+                    if bi < 0
+                        return false
+                    let lp current_fn_bind_local.get(bi as size_t)
+                    return lp <> null and (*lp) = 2
+                }
+                else
+                    return false
+        }
+
+        function holder_ref_verdict(this: Planner, c: PlannedCall) returns bool
+        {
+            if c.is_operator
+                return false
+            if Planner.last_segment_is_capitalized(c.name)
+                return false
+            if c.args = null
+                return false
+            let ci residence.rr_class_index.lookup(c.mangled_name)
+            if ci < 0
+                return false
+            let cvp residence.rr_class_vals.get(ci as size_t)
+            let cap residence.rr_class_args.get(ci as size_t)
+            if cvp = null or cap = null
+                return false
+            let cls (*cvp)
+            if cls = 5
+            {
+                var k: size_t 0
+                while k < 63 and k < c.args.length
+                {
+                    if (((*cap) as u64) & ((1 as u64) << k)) <> (0 as u64)
+                    {
+                        let kp c.args.get k
+                        if kp <> null
+                        {
+                            let ka kp.unwrap()
+                            if this.census_type_is_ref_like(ka.result_type) = false and this.type_owns_buffer(ka.result_type, 0) and this.holder_buffer_local(ka)
+                                return true
+                        }
+                    }
+                    k := k + 1
+                }
+                return false
+            }
+            if cls = 3
+            {
+                let ai (*cap)
+                if ai >= c.args.length
+                    return false
+                let ap c.args.get ai
+                if ap = null
+                    return false
+                let a ap.unwrap()
+                return this.census_type_is_ref_like(a.result_type) = false and this.type_owns_buffer(a.result_type, 0) and this.holder_buffer_local(a)
+            }
+            false
+        }
+
+        ; escape_ref_local#: a REFERENCE into this frame's storage that the
+        ; type does not show -- `holder.get(0)` of a local holder (residence
+        ; class 5: the answer reaches an argument judged local, ref_call_verdict#
+        ; 1), or a local bound to one (current_fn_bind_refv). The residence
+        ; verdict used to LIFT a Local stamp only; this asks it to set one,
+        ; and only at the escape walk, where the per-binding tables are this
+        ; routine's (2026-11-23: a local Array's `get(0)` kept by the receiver,
+        ; rc 0)
+        function escape_ref_local(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > 0
+                    return false
+            }
+            if this.census_type_is_ref_like(op.result_type) = false
+                return false
+            choose op.expr
+                when c: PlannedCall
+                    return this.holder_ref_verdict(c)
+                when v: Variable
+                {
+                    if this.escape_name_is_current_param(v.name)
+                        return false
+                    let bi this.bind_index_of(v.name)
+                    if bi < 0
+                        return false
+                    let rp current_fn_bind_refv.get(bi as size_t)
+                    return rp <> null and (*rp) = 3
+                }
+                else
+                    return false
+        }
+
+        ; escape_tuple_holds_local_ref#: a positional construction one of whose
+        ; components is a reference into this frame -- a frame address
+        ; (tuple_has_frame_ref_arg#) or one escape_ref_local# finds; asked at
+        ; the escape walk only
+        function escape_tuple_holds_local_ref(this: Planner, op: PlannedOperand) returns bool
+        {
+            if this.tuple_has_frame_ref_arg(op)
+                return true
+            choose op.expr
+                when t: Tuple
+                {
+                    if t.components = null
+                        return false
+                    let comps (*t.components)
+                    var i: size_t 0
+                    while i < comps.length
+                    {
+                        let cp comps.get i
+                        if cp <> null and cp.value <> null
+                        {
+                            let vals (*cp.value)
+                            if vals.length = 1
+                            {
+                                let vp vals.get 0
+                                if vp <> null and this.escape_ref_local((*vp))
+                                    return true
+                            }
+                        }
+                        i := i + 1
+                    }
+                    return false
+                }
+                else
+                    return false
+        }
+
         function construction_has_frame_ref_arg(this: Planner, op: PlannedOperand) returns bool
         {
             choose op.expr
@@ -40129,7 +40312,7 @@ define Planner
             if bi < 0
                 return false
             let rp current_fn_bind_refv.get(bi as size_t)
-            if rp <> null and (*rp) = 1
+            if rp <> null and ((*rp) = 1 or (*rp) = 3)
                 return true
             ; the judge's own verdict on the bound result: a page-taking call
             ; in a routine without a page is handed THIS frame (cli.run's
@@ -40519,14 +40702,26 @@ define Planner
                                         if vals.length = 1
                                         {
                                             let vp vals.get 0
+                                            ; a frame address the type shows, or a
+                                            ; reference into a local holder
+                                            ; (`holder.get(0)`, ref[T]?: no
+                                            ; is_reference_like, escape_ref_local#
+                                            ; asks the census shape)
+                                            var seed_local false
                                             if vp <> null
+                                            {
                                                 if Planner.is_reference_like(vp.result_type)
                                                     if this.region_of_operand(vp.unwrap()) < Planner.required_region_for_escape()
-                                                    {
-                                                        current_fn_fpt_names.add(String^this(bind_name))
-                                                        current_fn_fpt_fields.add(i)
-                                                        current_fn_fpt_regions.add(Planner.region_rank_local())
-                                                    }
+                                                        seed_local := true
+                                                if this.escape_ref_local(vp.unwrap())
+                                                    seed_local := true
+                                            }
+                                            if seed_local
+                                            {
+                                                current_fn_fpt_names.add(String^this(bind_name))
+                                                current_fn_fpt_fields.add(i)
+                                                current_fn_fpt_regions.add(Planner.region_rank_local())
+                                            }
                                         }
                                     }
                             }
@@ -41623,7 +41818,9 @@ define Planner
                 ; a record built here with a frame address in a field, handed
                 ; whole to a callee that keeps it (`entries.add(Entry(&s, n))`):
                 ; neither the buffer judge nor the type's stamp sees the field
-                if this.tuple_has_frame_ref_arg(arg)
+                if this.escape_tuple_holds_local_ref(arg)
+                    arg_escapes := true
+                if this.escape_ref_local(arg)
                     arg_escapes := true
             }
             else
@@ -42192,7 +42389,7 @@ define Planner
                         if judged
                             if this.census_type_is_ref_like(arg.result_type) = false
                                 if this.type_owns_buffer(arg.result_type, 0) = false
-                                    if this.tuple_has_frame_ref_arg(arg) = false and this.fpt_any_local(arg) = false
+                                    if this.escape_tuple_holds_local_ref(arg) = false and this.fpt_any_local(arg) = false
                                         judged := false
                     }
                 }
@@ -42210,6 +42407,10 @@ define Planner
                             if by_value = false
                             {
                                 if this.region_of_operand(arg) < Planner.required_region_for_escape()
+                                    local := true
+                                ; a reference into a local holder (`holder.get(0)`,
+                                ; or a name bound to it): local whatever its stamp
+                                if this.escape_ref_local(arg)
                                     local := true
                                 ; a reference out of a plain call whose class puts
                                 ; it on a live page: the Local stamp every
@@ -42235,7 +42436,7 @@ define Planner
                                     local := true
                                 ; kept whole, a field holding a frame address
                                 ; goes along
-                                if this.tuple_has_frame_ref_arg(arg)
+                                if this.escape_tuple_holds_local_ref(arg)
                                     local := true
                                 if this.fpt_any_local(arg)
                                     local := true
@@ -42960,10 +43161,20 @@ define Planner
                                                 var bvv: size_t 0
                                                 if bverdict
                                                     bvv := 1
+                                                ; 2: a container built on this frame
+                                                ; (holder_on_frame#) -- read by
+                                                ; holder_ref_verdict# alone
+                                                if bverdict = false and this.holder_on_frame(bcall)
+                                                    bvv := 2
                                                 current_fn_bind_local.add bvv
                                                 var brv this.ref_call_verdict(bcall)
                                                 if brv < 0 and this.ref_call_built_here(bcall)
                                                     brv := 2
+                                                ; 3: a reference into a local
+                                                ; holder (holder_ref_verdict#),
+                                                ; local wherever 1 is
+                                                if this.holder_ref_verdict(bcall)
+                                                    brv := 3
                                                 current_fn_bind_refv.add brv
                                                 if Planner.lifetime_is_local(bcall.life)
                                                     current_fn_frame_objects.add(String^this((*binding.binding_item.name)))

@@ -1,0 +1,80 @@
+; Control (2026-11-23) for xfail_array_holder_reference_kept: references
+; into a holder that outlives the call -- on the receiver's page, the
+; receiver's own list -- kept by the receiver; a reference into a local
+; holder that only goes to a function that keeps nothing; a value copied out
+; of a local holder and kept. All legal, all read back correctly under
+; SCALY_POISON.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry], var own: Array[String], var copies: Array[String])
+{
+    ; the holder on the receiver's page
+    procedure on_page(mutable this, n: int)
+    {
+        var holder Array[String]^this()
+        holder.add(String^this("page"))
+        let r holder.get(0)
+        this.entries.add(Entry(r, n))
+    }
+
+    ; a reference into the receiver's own list
+    procedure own_list(mutable this, n: int)
+    {
+        let e Entry(this.own.get(0), n)
+        this.entries.add(e)
+    }
+
+    ; a local holder whose reference only goes to a function
+    procedure looked_at(mutable this, n: int)
+    {
+        var holder Array[String]()
+        holder.add(String("look"))
+        let r holder.get(0)
+        if length_of(r) = 4
+            this.entries.add(Entry(null, n))
+    }
+
+    ; a value copied out of a local holder, kept
+    procedure copied(mutable this)
+    {
+        var holder Array[String]()
+        holder.add(String("copy"))
+        this.copies.add(String^this(holder[0]))
+    }
+}
+
+function length_of(s: ref[String]?) returns size_t
+{
+    if s = null
+        return 0
+    (*s).get_length()
+}
+
+var own Array[String]()
+own.add(String("own"))
+var reg Registry(Array[Entry](), own, Array[String]())
+reg.on_page(1)
+reg.own_list(2)
+reg.looked_at(3)
+reg.copied()
+var ok reg.entries.length = 3 and reg.copies.length = 1 and reg.copies[0] = "copy"
+var i: size_t 0
+while i < reg.entries.length
+{
+    let e reg.entries[i]
+    let nm e.name
+    if e.n = 1 and (nm = null or (*nm) <> "page")
+        ok := false
+    if e.n = 2 and (nm = null or (*nm) <> "own")
+        ok := false
+    if e.n = 3 and nm <> null
+        ok := false
+    i := i + 1
+}
+if ok
+    print "PASS"
+else
+    print "FAIL"

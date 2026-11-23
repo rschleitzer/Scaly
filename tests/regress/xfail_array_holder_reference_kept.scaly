@@ -1,0 +1,25 @@
+; Regression (2026-11-23): a reference into a LOCAL Array, `holder.get(0)`,
+; kept by the receiver compiled at rc 0 and read freed. The holder gate of
+; plan_binding# is Vector-only (it counts every argument position and cannot
+; be widened), and the escape net did not know that a `get` result points
+; into its receiver's buffer: the residence verdict was used to LIFT a Local
+; stamp, never to set one. escape_ref_local# asks holder_ref_verdict# now
+; (class 5/3 reaching a by-value receiver whose buffer is this frame's, a
+; container built here: holder_on_frame#), at the escape walk only.
+; See holder_reference_kept_ok for the legal neighbours.
+; xfail: error: reference into a local page escapes via call - the callee keeps this argument
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry], var refs: Array[ref[String]?])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var holder Array[String]()
+        holder.add(String("page"))
+        this.refs.add(holder.get(0))
+    }
+}
+
+var reg Registry(Array[Entry](), Array[ref[String]?]())
+reg.probe(1)

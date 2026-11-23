@@ -1,0 +1,22 @@
+; Regression (2026-11-23): as xfail_array_holder_reference_kept, the
+; reference bound to a name first and kept inside a record: the binding
+; records verdict 3 (current_fn_bind_refv) when holder_ref_verdict# holds,
+; and the holder's own construction -- promoted for a caller page this
+; procedure lacks -- counts as on the frame (holder_on_frame#).
+; xfail: error: reference into a local page escapes via call - the callee keeps this argument
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry], var refs: Array[ref[String]?])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var holder Array[String]()
+        holder.add(String("page"))
+        let r holder.get(0)
+        this.entries.add(Entry(r, n))
+    }
+}
+
+var reg Registry(Array[Entry](), Array[ref[String]?]())
+reg.probe(1)

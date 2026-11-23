@@ -1,0 +1,21 @@
+; Regression (2026-11-23): as xfail_array_holder_reference_kept, the
+; reference a component of a record bound first: the field-points-to map
+; took only components `is_reference_like` answers for, and `ref[T]?` is not
+; one -- escape_seed_field_points_to# asks escape_ref_local# beside it.
+; xfail: error: reference into a local page escapes via call - the callee keeps this argument
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry], var refs: Array[ref[String]?])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var holder Array[String]()
+        holder.add(String("page"))
+        let e Entry(holder.get(0), n)
+        this.entries.add(e)
+    }
+}
+
+var reg Registry(Array[Entry](), Array[ref[String]?]())
+reg.probe(1)
