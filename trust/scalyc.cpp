@@ -16799,14 +16799,21 @@ uint64_t Planner_region_rank_caller() asm("_ZN7PlannerB6scalycB4v0_218region_ran
 bool Planner_census_call_yields_alias(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224census_call_yields_aliasE14PlannedOperandB6scalycB4v0_2");
 bool Planner_operand_is_tainted_local_struct(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_231operand_is_tainted_local_structE14PlannedOperandB6scalycB4v0_2");
 bool Planner_is_reference_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217is_reference_likeE11PlannedTypeB6scalycB4v0_2");
+bool Planner_escape_fn_has_page(Planner&) asm("_ZN7PlannerB6scalycB4v0_218escape_fn_has_pageEv");
+bool Planner_holder_on_frame(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_215holder_on_frameE11PlannedCallB6scalycB4v0_2");
+bool Planner_deep_by_value_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_219deep_by_value_localE14PlannedOperandB6scalycB4v0_2");
+bool Planner_escape_name_is_current_param(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_228escape_name_is_current_paramE6String");
+int64_t Planner_bind_index_of(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_213bind_index_ofE6String");
+bool Planner_holder_buffer_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_219holder_buffer_localE14PlannedOperandB6scalycB4v0_2");
+bool Planner_last_segment_is_capitalized(String&) asm("_ZN7PlannerB6scalycB4v0_227last_segment_is_capitalizedE6String");
+bool Planner_holder_ref_verdict(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_218holder_ref_verdictE11PlannedCallB6scalycB4v0_2");
+bool Planner_escape_ref_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_216escape_ref_localE14PlannedOperandB6scalycB4v0_2");
+bool Planner_escape_tuple_holds_local_ref(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_228escape_tuple_holds_local_refE14PlannedOperandB6scalycB4v0_2");
 PlannedType Planner_make_ref_to_local_inner(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_223make_ref_to_local_innerEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 int64_t Planner_escape_param_index_current(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_226escape_param_index_currentE6String");
 uint64_t Planner_escape_current_param_count(Planner&) asm("_ZN7PlannerB6scalycB4v0_226escape_current_param_countEv");
-bool Planner_escape_name_is_current_param(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_228escape_name_is_current_paramE6String");
-int64_t Planner_bind_index_of(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_213bind_index_ofE6String");
 bool Planner_reference_names_frame_local(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_227reference_names_frame_localE6String");
 bool Planner_bound_ref_points_into_frame(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_227bound_ref_points_into_frameE6String");
-bool Planner_escape_fn_has_page(Planner&) asm("_ZN7PlannerB6scalycB4v0_218escape_fn_has_pageEv");
 bool Planner_escape_dest_arg_outlives(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224escape_dest_arg_outlivesE14PlannedOperandB6scalycB4v0_2");
 bool Planner_binding_inits_stack_closure(Planner&, PlannedBinding&) asm("_ZN7PlannerB6scalycB4v0_227binding_inits_stack_closureE14PlannedBindingB6scalycB4v0_2");
 bool Planner_arg_is_stack_closure(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_220arg_is_stack_closureE14PlannedOperandB6scalycB4v0_2");
@@ -16824,11 +16831,9 @@ bool Planner_type_init_allocates_buffer(PlannedType&) asm("_ZN7PlannerB6scalycB4
 bool Planner_dep_arg_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_213dep_arg_localE14PlannedOperandB6scalycB4v0_2");
 bool Planner_by_value_call_local(Planner&, PlannedCall&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_219by_value_call_localE11PlannedCallB6scalycB4v0_28LifetimeB6scalycB4v0_2");
 bool Planner_ref_arg_lifted(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_214ref_arg_liftedE14PlannedOperandB6scalycB4v0_2");
-bool Planner_deep_by_value_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_219deep_by_value_localE14PlannedOperandB6scalycB4v0_2");
 bool Planner_payload_promoted_without_page(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_229payload_promoted_without_pageE14PlannedOperandB6scalycB4v0_2");
 bool Planner_variant_payload_local(Planner&, PlannedVariantConstruction&) asm("_ZN7PlannerB6scalycB4v0_221variant_payload_localE26PlannedVariantConstructionB6scalycB4v0_2");
 bool Planner_deref_bound_ref_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221deref_bound_ref_localE14PlannedOperandB6scalycB4v0_2");
-bool Planner_last_segment_is_capitalized(String&) asm("_ZN7PlannerB6scalycB4v0_227last_segment_is_capitalizedE6String");
 bool Planner_ref_call_built_here(Planner&, PlannedCall&) asm("_ZN7PlannerB6scalycB4v0_219ref_call_built_hereE11PlannedCallB6scalycB4v0_2");
 bool Planner_census_carry(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_212census_carryE14PlannedOperandB6scalycB4v0_2");
 bool Planner_fpt_any_local(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_213fpt_any_localE14PlannedOperandB6scalycB4v0_2");
@@ -75252,6 +75257,238 @@ __attribute__((weak)) bool Planner_tuple_has_frame_ref_arg(Planner& scaly_self, 
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_holder_on_frame(Planner& scaly_self, PlannedCall& c)
+{
+    Planner* this_ = &scaly_self;
+    bool on_frame = Planner_lifetime_is_local((c).life);
+    if (((on_frame) == (false)))
+    {
+        {
+            auto&& scaly_t1 = (c).life;
+            if (scaly_t1.tag == 1)
+            {
+                Call cl = scaly_payload<Call>(scaly_t1);
+                on_frame = ((Planner_escape_fn_has_page(*(this_))) == (false));
+            }
+            else
+            {
+                0LL;
+            }
+        }
+    }
+    if (((on_frame) == (false)))
+    {
+        return false;
+    }
+    if (((String_contains((c).mangled_name, scaly_lvalue(String{(uint8_t*)"\003C1E"}))) == (false)))
+    {
+        return false;
+    }
+    String n = ((c).result_type).name;
+    if (((String_equals(n, scaly_lvalue(String{(uint8_t*)"\005Array"})) ? true : String_equals(n, scaly_lvalue(String{(uint8_t*)"\006Vector"}))) ? true : String_equals(n, scaly_lvalue(String{(uint8_t*)"\004List"}))))
+    {
+        return true;
+    }
+    else
+    {
+        return String_equals(n, scaly_lvalue(String{(uint8_t*)"\007HashMap"}));
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_holder_buffer_local(Planner& scaly_self, PlannedOperand& a)
+{
+    Planner* this_ = &scaly_self;
+    if (Planner_deep_by_value_local(*(this_), a))
+    {
+        return true;
+    }
+    if ((((a).member_access) != (nullptr)))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (a).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            if (Planner_escape_name_is_current_param(*(this_), (v).name))
+            {
+                return false;
+            }
+            int64_t bi = Planner_bind_index_of(*(this_), (v).name);
+            if ((bi < 0LL))
+            {
+                return false;
+            }
+            uint64_t* lp = Array_get<uint64_t>(this_->current_fn_bind_local, ((uint64_t)(bi)));
+            return (((lp) != (nullptr)) ? (((*(lp))) == 2ULL) : false);
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_holder_ref_verdict(Planner& scaly_self, PlannedCall& c)
+{
+    Planner* this_ = &scaly_self;
+    if ((c).is_operator)
+    {
+        return false;
+    }
+    if (Planner_last_segment_is_capitalized((c).name))
+    {
+        return false;
+    }
+    if ((((c).args) == (nullptr)))
+    {
+        return false;
+    }
+    int64_t ci = ConceptIndex_lookup(this_->residence->rr_class_index, (c).mangled_name);
+    if ((ci < 0LL))
+    {
+        return false;
+    }
+    uint64_t* cvp = Array_get<uint64_t>(this_->residence->rr_class_vals, ((uint64_t)(ci)));
+    uint64_t* cap = Array_get<uint64_t>(this_->residence->rr_class_args, ((uint64_t)(ci)));
+    if ((((cvp) == (nullptr)) ? true : ((cap) == (nullptr))))
+    {
+        return false;
+    }
+    uint64_t cls = ((*(cvp)));
+    if ((cls == 5ULL))
+    {
+        uint64_t k = 0ULL;
+        while (((k < 63ULL) ? (k < (c).args->length) : false))
+        {
+            if (((((((uint64_t)(((*(cap)))))) & (((uint64_t)((uint64_t)((((uint64_t)(1LL)))) << (uint64_t)(k)))))) != (((uint64_t)(0LL)))))
+            {
+                PlannedOperand* kp = Vector_get<PlannedOperand>(*((c).args), k);
+                if (((kp) != (nullptr)))
+                {
+                    PlannedOperand* ka = ((PlannedOperand*)(kp));
+                    if (((((Planner_census_type_is_ref_like(*(this_), ka->result_type)) == (false)) ? Planner_type_owns_buffer(*(this_), ka->result_type, 0ULL) : false) ? Planner_holder_buffer_local(*(this_), scaly_lvalue((*(ka)))) : false))
+                    {
+                        return true;
+                    }
+                }
+            }
+            k = (k + 1ULL);
+        }
+        return false;
+    }
+    if ((cls == 3ULL))
+    {
+        uint64_t ai = ((*(cap)));
+        if ((ai >= (c).args->length))
+        {
+            return false;
+        }
+        PlannedOperand* ap = Vector_get<PlannedOperand>(*((c).args), ai);
+        if (((ap) == (nullptr)))
+        {
+            return false;
+        }
+        PlannedOperand* a = ((PlannedOperand*)(ap));
+        return ((((Planner_census_type_is_ref_like(*(this_), a->result_type)) == (false)) ? Planner_type_owns_buffer(*(this_), a->result_type, 0ULL) : false) ? Planner_holder_buffer_local(*(this_), scaly_lvalue((*(a)))) : false);
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_escape_ref_local(Planner& scaly_self, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    if ((((op).member_access) != (nullptr)))
+    {
+        Vector<PlannedMemberAccess> ma = ((*((op).member_access)));
+        if (((ma).length > 0ULL))
+        {
+            return false;
+        }
+    }
+    if (((Planner_census_type_is_ref_like(*(this_), (op).result_type)) == (false)))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 4)
+        {
+            PlannedCall c = scaly_payload<PlannedCall>(scaly_t1);
+            return Planner_holder_ref_verdict(*(this_), c);
+        }
+        else if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            if (Planner_escape_name_is_current_param(*(this_), (v).name))
+            {
+                return false;
+            }
+            int64_t bi = Planner_bind_index_of(*(this_), (v).name);
+            if ((bi < 0LL))
+            {
+                return false;
+            }
+            int64_t* rp = Array_get<int64_t>(*(this_->current_fn_bind_refv), ((uint64_t)(bi)));
+            return (((rp) != (nullptr)) ? (((*(rp))) == 3LL) : false);
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_escape_tuple_holds_local_ref(Planner& scaly_self, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    if (Planner_tuple_has_frame_ref_arg(*(this_), op))
+    {
+        return true;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 5)
+        {
+            PlannedTuple t = scaly_payload<PlannedTuple>(scaly_t1);
+            if ((((t).components) == (nullptr)))
+            {
+                return false;
+            }
+            Vector<PlannedComponent> comps = ((*((t).components)));
+            uint64_t i = 0ULL;
+            while ((i < (comps).length))
+            {
+                PlannedComponent* cp = Vector_get<PlannedComponent>(comps, i);
+                if ((((cp) != (nullptr)) ? ((cp->value) != (nullptr)) : false))
+                {
+                    Vector<PlannedOperand> vals = ((*(cp->value)));
+                    if (((vals).length == 1ULL))
+                    {
+                        PlannedOperand* vp = Vector_get<PlannedOperand>(vals, 0ULL);
+                        if ((((vp) != (nullptr)) ? Planner_escape_ref_local(*(this_), scaly_lvalue(((*(vp))))) : false))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                i = (i + 1ULL);
+            }
+            return false;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) bool Planner_construction_has_frame_ref_arg(Planner& scaly_self, PlannedOperand& op)
 {
     Planner* this_ = &scaly_self;
@@ -75505,7 +75742,7 @@ __attribute__((weak)) bool Planner_bound_ref_points_into_frame(Planner& scaly_se
         return false;
     }
     int64_t* rp = Array_get<int64_t>(*(this_->current_fn_bind_refv), ((uint64_t)(bi)));
-    if ((((rp) != (nullptr)) ? (((*(rp))) == 1LL) : false))
+    if ((((rp) != (nullptr)) ? (((((*(rp))) == 1LL) ? true : (((*(rp))) == 3LL))) : false))
     {
         return true;
     }
@@ -75959,17 +76196,26 @@ __attribute__((weak)) void Planner_escape_seed_field_points_to(Planner& scaly_se
                                 if (((vals).length == 1ULL))
                                 {
                                     PlannedOperand* vp = Vector_get<PlannedOperand>(vals, 0ULL);
+                                    bool seed_local = false;
                                     if (((vp) != (nullptr)))
                                     {
                                         if (Planner_is_reference_like(vp->result_type))
                                         {
                                             if ((Planner_region_of_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(vp)))))) < Planner_required_region_for_escape()))
                                             {
-                                                Array_add<String>(this_->current_fn_fpt_names, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), bind_name); scaly_t3; }))));
-                                                Array_add88<uint64_t>(this_->current_fn_fpt_fields, i);
-                                                Array_add88<uint64_t>(this_->current_fn_fpt_regions, Planner_region_rank_local());
+                                                seed_local = true;
                                             }
                                         }
+                                        if (Planner_escape_ref_local(*(this_), scaly_lvalue((*(((PlannedOperand*)(vp)))))))
+                                        {
+                                            seed_local = true;
+                                        }
+                                    }
+                                    if (seed_local)
+                                    {
+                                        Array_add<String>(this_->current_fn_fpt_names, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), bind_name); scaly_t3; }))));
+                                        Array_add88<uint64_t>(this_->current_fn_fpt_fields, i);
+                                        Array_add88<uint64_t>(this_->current_fn_fpt_regions, Planner_region_rank_local());
                                     }
                                 }
                             }
@@ -77387,7 +77633,11 @@ __attribute__((weak)) void Planner_escape_check_call_record(Planner& scaly_self,
         {
             arg_escapes = true;
         }
-        if (Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg)))))
+        if (Planner_escape_tuple_holds_local_ref(*(this_), scaly_lvalue((*(arg)))))
+        {
+            arg_escapes = true;
+        }
+        if (Planner_escape_ref_local(*(this_), scaly_lvalue((*(arg)))))
         {
             arg_escapes = true;
         }
@@ -78045,7 +78295,7 @@ __attribute__((weak)) void Planner_escape_check_deep(Planner& scaly_self, Planne
                     {
                         if (((Planner_type_owns_buffer(*(this_), arg->result_type, 0ULL)) == (false)))
                         {
-                            if ((((Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg))))) == (false)) ? ((Planner_fpt_any_local(*(this_), scaly_lvalue((*(arg))))) == (false)) : false))
+                            if ((((Planner_escape_tuple_holds_local_ref(*(this_), scaly_lvalue((*(arg))))) == (false)) ? ((Planner_fpt_any_local(*(this_), scaly_lvalue((*(arg))))) == (false)) : false))
                             {
                                 judged = false;
                             }
@@ -78074,6 +78324,10 @@ __attribute__((weak)) void Planner_escape_check_deep(Planner& scaly_self, Planne
                         {
                             local = true;
                         }
+                        if (Planner_escape_ref_local(*(this_), scaly_lvalue((*(arg)))))
+                        {
+                            local = true;
+                        }
                         if (((local ? ((this_->escape_census) == (false)) : false) ? Planner_ref_arg_lifted(*(this_), scaly_lvalue((*(arg)))) : false))
                         {
                             local = false;
@@ -78092,7 +78346,7 @@ __attribute__((weak)) void Planner_escape_check_deep(Planner& scaly_self, Planne
                         {
                             local = true;
                         }
-                        if (Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg)))))
+                        if (Planner_escape_tuple_holds_local_ref(*(this_), scaly_lvalue((*(arg)))))
                         {
                             local = true;
                         }
@@ -78943,11 +79197,19 @@ __attribute__((weak)) void Planner_escape_walk_statement(scaly_frame* scaly_rp, 
                                         {
                                             bvv = 1ULL;
                                         }
+                                        if ((((bverdict) == (false)) ? Planner_holder_on_frame(*(this_), bcall) : false))
+                                        {
+                                            bvv = 2ULL;
+                                        }
                                         Array_add88<uint64_t>(this_->current_fn_bind_local, bvv);
                                         int64_t brv = Planner_ref_call_verdict(*(this_), bcall);
                                         if (((brv < 0LL) ? Planner_ref_call_built_here(*(this_), bcall) : false))
                                         {
                                             brv = 2LL;
+                                        }
+                                        if (Planner_holder_ref_verdict(*(this_), bcall))
+                                        {
+                                            brv = 3LL;
                                         }
                                         Array_add88<int64_t>(*(this_->current_fn_bind_refv), brv);
                                         if (Planner_lifetime_is_local((bcall).life))
