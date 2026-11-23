@@ -3764,11 +3764,11 @@ template <class K, class V> static bool HashMapBuilder_add_internal(HashMapBuild
 template <class K, class V> static bool HashMapBuilder_contains(HashMapBuilder<K, V>&, K&);
 template <class K, class V> static V* HashMapBuilder_get(HashMapBuilder<K, V>&, K&);
 template <class K, class V> static void HashMapBuilder_init(HashMapBuilder<K, V>&, Vector<KeyValuePair<K, V>>&);
-template <class T1, class T2> static T2* HashMapBuilder2(scaly_frame*, HashMapBuilder<T1, T2>&, T1&);
+template <class T1, class T2> static T2* HashMapBuilder2(HashMapBuilder<T1, T2>&, T1&);
 bool HashMap_contains2(HashMap<String, int64_t>&, String&) asm("_ZN7HashMapI6StringiE8containsE6String");
 int64_t* HashMap_get2(HashMap<String, int64_t>&, String&) asm("_ZN7HashMapI6StringiE3getE6String");
 void HashMap_init2(HashMap<String, int64_t>&, HashMapBuilder<String, int64_t>&) asm("_ZN7HashMapI6StringiEC1E14HashMapBuilderI6StringiE");
-int64_t* HashMap3(scaly_frame*, HashMap<String, int64_t>&, String&) asm("_ZN7HashMapI6StringiEixEPN4scaly6memory4PageE6String");
+int64_t* HashMap3(HashMap<String, int64_t>&, String&) asm("_ZN7HashMapI6StringiEixE6String");
 int64_t Slice3(Slice<int64_t>&, uint64_t) asm("_ZN5SliceIiEixEm");
 uint8_t Slice4(Slice<uint8_t>&, uint64_t) asm("_ZN5SliceI2u8EixEm");
 bool Slice6(Slice<uint8_t>&, Slice<uint8_t>&) asm("_ZN5SliceI2u8EeqE5SliceI2u8E");
@@ -6918,10 +6918,10 @@ template <class K, class V> static void HashMapBuilder_init(HashMapBuilder<K, V>
 }
 
 // packages/scaly/0.2.1/scaly/containers.scaly
-template <class T1, class T2> static T2* HashMapBuilder2(scaly_frame* scaly_rp, HashMapBuilder<T1, T2>& scaly_self, T1& key)
+template <class T1, class T2> static T2* HashMapBuilder2(HashMapBuilder<T1, T2>& scaly_self, T1& key)
 {
     HashMapBuilder<T1, T2>* this_ = &scaly_self;
-    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     if (((this_->slots) == (nullptr)))
     {
         return (T2*)(nullptr);
@@ -7022,7 +7022,7 @@ __attribute__((weak)) void HashMap_init2(HashMap<String, int64_t>& scaly_self, H
 }
 
 // packages/scaly/0.2.1/scaly/containers.scaly
-__attribute__((weak)) int64_t* HashMap3(scaly_frame* scaly_rp, HashMap<String, int64_t>& scaly_self, String& key)
+__attribute__((weak)) int64_t* HashMap3(HashMap<String, int64_t>& scaly_self, String& key)
 {
     HashMap<String, int64_t>* this_ = &scaly_self;
     if (((this_->slots) == (nullptr)))

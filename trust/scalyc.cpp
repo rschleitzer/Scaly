@@ -12997,6 +12997,7 @@ struct Planner
     Array<KeyValuePair<String, Operator>> model_operators;
     FunctionIndex model_operator_index;
     bool resolved_op_is_intrinsic;
+    bool resolved_op_has_page;
     Vector<PlannedType> resolved_op_fold_params;
     Array<KeyValuePair<String, Module>> loaded_packages;
     Array<KeyValuePair<String, Module>> loaded_module_paths;
@@ -16307,8 +16308,9 @@ MethodMatch* Planner_instantiate_explicit_generic_call(scaly_frame*, Planner&, F
 MethodMatch* Planner_resolve_function_call_generic(scaly_frame*, Planner&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, Vector<PlannedType>*) asm("_ZN7PlannerB6scalycB4v0_229resolve_function_call_genericEPN4scaly6memory4PageE6String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E6OptionIR6VectorI11PlannedTypeB6scalycB4v0_2EE");
 MethodMatch* Planner_resolve_free_call(scaly_frame*, Planner&, bool, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, Vector<PlannedType>*) asm("_ZN7PlannerB6scalycB4v0_217resolve_free_callEPN4scaly6memory4PageEb6String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E6OptionIR6VectorI11PlannedTypeB6scalycB4v0_2EE");
 Function* Planner_widening_method_candidate(Planner&, Vector<Function>&, Vector<PlannedType>&, bool) asm("_ZN7PlannerB6scalycB4v0_225widening_method_candidateE6VectorI8FunctionB6scalycB4v0_2E6VectorI11PlannedTypeB6scalycB4v0_2Eb");
+String Planner_mangle_operator_paged(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool) asm("_ZN7PlannerB6scalycB4v0_221mangle_operator_pagedEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb");
 String Planner_mangle_operator(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_215mangle_operatorEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2E");
-String Planner_mangle_binary_operator(scaly_frame*, Planner&, String&, PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_222mangle_binary_operatorEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
+String Planner_mangle_binary_operator(scaly_frame*, Planner&, String&, PlannedType&, PlannedType&, bool) asm("_ZN7PlannerB6scalycB4v0_222mangle_binary_operatorEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2b");
 String Planner_mangle_unary_operator(scaly_frame*, Planner&, String&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_221mangle_unary_operatorEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_2");
 PlannedCall Planner_make_planned_call(scaly_frame*, Planner&, Span&, String&, String&, PlannedType&, Vector<PlannedOperand>&, bool) asm("_ZN7PlannerB6scalycB4v0_217make_planned_callEPN4scaly6memory4PageE4SpanB6scalycB4v0_26String6String11PlannedTypeB6scalycB4v0_26VectorI14PlannedOperandB6scalycB4v0_2Eb");
 bool Planner_type_is_cstr_pointer(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_220type_is_cstr_pointerE11PlannedTypeB6scalycB4v0_2");
@@ -16463,6 +16465,7 @@ PlannedType Planner_plan_simd_binary(scaly_frame*, Planner&, String&, PlannedTyp
 PlannedType* Planner_check_operator_match(Planner&, Operator&, Vector<PlannedType>&, bool, bool, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_220check_operator_matchE8OperatorB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2Ebb6VectorI14PlannedOperandB6scalycB4v0_2E");
 Vector<PlannedType> Planner_operator_planned_param_types(scaly_frame*, Planner&, Operator&) asm("_ZN7PlannerB6scalycB4v0_228operator_planned_param_typesEPN4scaly6memory4PageE8OperatorB6scalycB4v0_2");
 bool Planner_operator_is_intrinsic(Operator&) asm("_ZN7PlannerB6scalycB4v0_221operator_is_intrinsicE8OperatorB6scalycB4v0_2");
+bool Planner_operator_has_page(Operator&) asm("_ZN7PlannerB6scalycB4v0_217operator_has_pageE8OperatorB6scalycB4v0_2");
 String Planner_encode_parent(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_213encode_parentEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 String Planner_encode_name(scaly_frame*, String&) asm("_ZN7PlannerB6scalycB4v0_211encode_nameEPN4scaly6memory4PageE6String");
 String Planner_mangle_method(scaly_frame*, Planner&, String&, PlannedType&, Vector<PlannedType>&, bool) asm("_ZN7PlannerB6scalycB4v0_213mangle_methodEPN4scaly6memory4PageE6String11PlannedTypeB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2Eb");
@@ -16479,7 +16482,6 @@ MethodMatch* Planner_lookup_method_in(scaly_frame*, Planner&, PlannedType&, Stri
 void Planner_report_method_arg_types(Planner&, Function&, PlannedType&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, Span&) asm("_ZN7PlannerB6scalycB4v0_223report_method_arg_typesE8FunctionB6scalycB4v0_211PlannedTypeB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E4SpanB6scalycB4v0_2");
 bool Planner_is_lazy_machinery_generic(String&) asm("_ZN7PlannerB6scalycB4v0_225is_lazy_machinery_genericE6String");
 PlannedOperator Planner_plan_operator(scaly_frame*, Planner&, Operator&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_213plan_operatorEPN4scaly6memory4PageE8OperatorB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
-String Planner_join_dotted_name(scaly_frame*, Vector<String>&) asm("_ZN7PlannerB6scalycB4v0_216join_dotted_nameEPN4scaly6memory4PageE6VectorI6StringE");
 PlannedOperand Planner_generate_page_get_this(scaly_frame*, Planner&, Span&) asm("_ZN7PlannerB6scalycB4v0_222generate_page_get_thisEPN4scaly6memory4PageE4SpanB6scalycB4v0_2");
 Vector<PlannedMemberAccess> Planner_resolve_member_access_by_package(scaly_frame*, Planner&, PlannedType&, Vector<String>&, Span&) asm("_ZN7PlannerB6scalycB4v0_232resolve_member_access_by_packageEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26VectorI6StringE4SpanB6scalycB4v0_2");
 Vector<PlannedMemberAccess> Planner_resolve_member_access_in(scaly_frame*, Planner&, PlannedType&, Vector<String>&, Span&) asm("_ZN7PlannerB6scalycB4v0_224resolve_member_access_inEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26VectorI6StringE4SpanB6scalycB4v0_2");
@@ -16529,6 +16531,7 @@ void Planner_report_unknown_qualifier(Planner&, Type&) asm("_ZN7PlannerB6scalycB
 Vector<String> Planner_split_dotted(scaly_frame*, String&) asm("_ZN7PlannerB6scalycB4v0_212split_dottedEPN4scaly6memory4PageE6String");
 bool Planner_ns_path_in_scope(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_216ns_path_in_scopeE6String");
 void Planner_report_unknown_page_name(Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_224report_unknown_page_nameE4TypeB6scalycB4v0_2");
+String Planner_join_dotted_name(scaly_frame*, Vector<String>&) asm("_ZN7PlannerB6scalycB4v0_216join_dotted_nameEPN4scaly6memory4PageE6VectorI6StringE");
 bool Planner_model_type_has_alias(Planner&, Type&, int64_t) asm("_ZN7PlannerB6scalycB4v0_220model_type_has_aliasE4TypeB6scalycB4v0_2i");
 Type Planner_resolve_model_type_aliases(scaly_frame*, Planner&, Type&, int64_t) asm("_ZN7PlannerB6scalycB4v0_226resolve_model_type_aliasesEPN4scaly6memory4PageE4TypeB6scalycB4v0_2i");
 PlannedType Planner_tuple_type(scaly_frame*, Vector<PlannedType>&, bool, Vector<String>&) asm("_ZN7PlannerB6scalycB4v0_210tuple_typeEPN4scaly6memory4PageE6VectorI11PlannedTypeB6scalycB4v0_2Eb6VectorI6StringE");
@@ -17127,10 +17130,11 @@ PlannedImplementation Planner_plan_implementation(scaly_frame*, Planner&, Implem
 void Planner_report_entry_caller_page(Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_224report_entry_caller_pageE8FunctionB6scalycB4v0_2");
 void Planner_report_mutable_in_function(Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_226report_mutable_in_functionE8FunctionB6scalycB4v0_2");
 void Planner_report_declared_caller_page(Planner&, Vector<Item>&) asm("_ZN7PlannerB6scalycB4v0_227report_declared_caller_pageE6VectorI4ItemB6scalycB4v0_2E");
+bool Planner_is_ref_or_pointer_type(Type&) asm("_ZN7PlannerB6scalycB4v0_222is_ref_or_pointer_typeE4TypeB6scalycB4v0_2");
+PlannedImplementation Planner_plan_routine_body(scaly_frame*, Planner&, Function&, PlannedType*, bool) asm("_ZN7PlannerB6scalycB4v0_217plan_routine_bodyEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2Eb");
 uint64_t Planner_lazy_aside(Planner&) asm("_ZN7PlannerB6scalycB4v0_210lazy_asideEv");
 PlannedFunction Planner_plan_function_planned(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_221plan_function_plannedEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 void Planner_lazy_back(Planner&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_29lazy_backEm");
-bool Planner_is_ref_or_pointer_type(Type&) asm("_ZN7PlannerB6scalycB4v0_222is_ref_or_pointer_typeE4TypeB6scalycB4v0_2");
 bool Planner_init_block_checkable(Planner&, PlannedBlock&) asm("_ZN7PlannerB6scalycB4v0_220init_block_checkableE12PlannedBlockB6scalycB4v0_2");
 bool Planner_init_if_checkable(Planner&, PlannedIf&) asm("_ZN7PlannerB6scalycB4v0_217init_if_checkableE9PlannedIfB6scalycB4v0_2");
 bool Planner_init_choose_checkable(Planner&, PlannedChoose&) asm("_ZN7PlannerB6scalycB4v0_221init_choose_checkableE13PlannedChooseB6scalycB4v0_2");
@@ -17144,7 +17148,7 @@ bool Planner_init_stmt_assigns(Planner&, PlannedStatement&, String&) asm("_ZN7Pl
 PlannedInitializer Planner_plan_initializer_planned(scaly_frame*, Planner&, Initializer&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_224plan_initializer_plannedEPN4scaly6memory4PageE11InitializerB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 PlannedInitializer Planner_plan_initializer(scaly_frame*, Planner&, Initializer&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_216plan_initializerEPN4scaly6memory4PageE11InitializerB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 PlannedOperator Planner_plan_operator_planned(scaly_frame*, Planner&, Operator&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_221plan_operator_plannedEPN4scaly6memory4PageE8OperatorB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
-String Planner_mangle_operator_paged(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool) asm("_ZN7PlannerB6scalycB4v0_221mangle_operator_pagedEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb");
+Function Planner_operator_as_function(scaly_frame*, Operator&) asm("_ZN7PlannerB6scalycB4v0_220operator_as_functionEPN4scaly6memory4PageE8OperatorB6scalycB4v0_2");
 PlannedVariant Planner_plan_variant(scaly_frame*, Planner&, Variant&, int64_t) asm("_ZN7PlannerB6scalycB4v0_212plan_variantEPN4scaly6memory4PageE7VariantB6scalycB4v0_2i");
 PlannedStructure Planner_plan_structure_in(scaly_frame*, Planner&, Structure&, String&) asm("_ZN7PlannerB6scalycB4v0_217plan_structure_inEPN4scaly6memory4PageE9StructureB6scalycB4v0_26String");
 String Planner_concept_scope(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_213concept_scopeEPN4scaly6memory4PageE6String");
@@ -50189,12 +50193,16 @@ __attribute__((weak)) MethodMatch* Planner_resolve_function_call_generic(scaly_f
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
-__attribute__((weak)) String Planner_mangle_binary_operator(scaly_frame* scaly_rp, Planner& scaly_self, String& op_name, PlannedType& left, PlannedType& right)
+__attribute__((weak)) String Planner_mangle_binary_operator(scaly_frame* scaly_rp, Planner& scaly_self, String& op_name, PlannedType& left, PlannedType& right, bool has_page)
 {
     Planner* this_ = &scaly_self;
     Vector<PlannedItem>* items = ({ Vector<PlannedItem>* scaly_t1 = (Vector<PlannedItem>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedItem>), alignof(Vector<PlannedItem>)); *scaly_t1 = Vector<PlannedItem>{}; Vector_init3<PlannedItem>((*scaly_t1), 2ULL); scaly_t1; });
     Vector_put<PlannedItem>((*items), 0ULL, scaly_lvalue((*({ PlannedItem* scaly_t2 = (PlannedItem*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedItem), alignof(PlannedItem)); *scaly_t2 = PlannedItem{(*({ Span* scaly_t3 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t3 = Span{0ULL, 0ULL}; scaly_t3; })), false, (String*)(nullptr), ({ PlannedType* scaly_t4 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t4 = left; scaly_t4; }), (Vector<PlannedAttribute>*)(nullptr)}; scaly_t2; }))));
     Vector_put<PlannedItem>((*items), 1ULL, scaly_lvalue((*({ PlannedItem* scaly_t5 = (PlannedItem*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedItem), alignof(PlannedItem)); *scaly_t5 = PlannedItem{(*({ Span* scaly_t6 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t6 = Span{0ULL, 0ULL}; scaly_t6; })), false, (String*)(nullptr), ({ PlannedType* scaly_t7 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t7 = right; scaly_t7; }), (Vector<PlannedAttribute>*)(nullptr)}; scaly_t5; }))));
+    if (has_page)
+    {
+        return Planner_mangle_operator_paged(scaly_rp, op_name, (&((*items))), (PlannedType*)(nullptr), true);
+    }
     return Planner_mangle_operator(scaly_rp, op_name, (&((*items))), (PlannedType*)(nullptr));
 }
 
@@ -56086,7 +56094,12 @@ __attribute__((weak)) PlannedOperand Planner_raw_operation(scaly_frame* scaly_rp
     {
         bin_is_intrinsic = this_->resolved_op_is_intrinsic;
     }
-    PlannedCall* call = ({ PlannedCall* scaly_t38 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t38 = PlannedCall{(result).loc, op_name, Planner_mangle_binary_operator(scaly_rp, *(this_), op_name, (op_left).result_type, (op_right).result_type), bin_is_intrinsic, true, false, false, (&((*two_args_holder))), combined_type, scaly_variant<Lifetime>(0, Unspecified{}), (PlannedType*)(nullptr), false}; scaly_t38; });
+    bool bin_page = false;
+    if ((((resolved) != (nullptr)) ? ((bin_is_intrinsic) == (false)) : false))
+    {
+        bin_page = this_->resolved_op_has_page;
+    }
+    PlannedCall* call = ({ PlannedCall* scaly_t38 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t38 = PlannedCall{(result).loc, op_name, Planner_mangle_binary_operator(scaly_rp, *(this_), op_name, (op_left).result_type, (op_right).result_type, bin_page), bin_is_intrinsic, true, false, bin_page, (&((*two_args_holder))), combined_type, scaly_variant<Lifetime>(0, Unspecified{}), (PlannedType*)(nullptr), false}; scaly_t38; });
     result = (*({ PlannedOperand* scaly_t39 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t39 = PlannedOperand{(result).loc, scaly_variant<PlannedExpression>(4, (*call)), (Vector<PlannedMemberAccess>*)(nullptr), combined_type}; scaly_t39; }));
     return result;
 }
@@ -56283,6 +56296,7 @@ __attribute__((weak)) PlannedType* Planner_resolve_prefix_operator_call(scaly_fr
             if (((rt) != (nullptr)))
             {
                 this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                this_->resolved_op_has_page = Planner_operator_has_page((*o));
                 return rt;
             }
         }
@@ -56299,6 +56313,7 @@ __attribute__((weak)) PlannedType* Planner_resolve_prefix_operator_call(scaly_fr
             if (((rt) != (nullptr)))
             {
                 this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                this_->resolved_op_has_page = Planner_operator_has_page((*o));
                 return rt;
             }
         }
@@ -56332,6 +56347,7 @@ __attribute__((weak)) PlannedType* Planner_resolve_operator_call(scaly_frame* sc
             if (((rt) != (nullptr)))
             {
                 this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                this_->resolved_op_has_page = Planner_operator_has_page((*o));
                 if (((this_->resolved_op_is_intrinsic) == (false)))
                 {
                     this_->resolved_op_fold_params = Planner_operator_planned_param_types(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), (*o));
@@ -56352,6 +56368,7 @@ __attribute__((weak)) PlannedType* Planner_resolve_operator_call(scaly_frame* sc
             if (((rt) != (nullptr)))
             {
                 this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                this_->resolved_op_has_page = Planner_operator_has_page((*o));
                 if (((this_->resolved_op_is_intrinsic) == (false)))
                 {
                     this_->resolved_op_fold_params = Planner_operator_planned_param_types(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), (*o));
@@ -56374,6 +56391,7 @@ __attribute__((weak)) PlannedType* Planner_resolve_operator_call(scaly_frame* sc
                 if (((rt) != (nullptr)))
                 {
                     this_->resolved_op_is_intrinsic = false;
+                    this_->resolved_op_has_page = Planner_operator_has_page((*o));
                     this_->resolved_op_fold_params = Planner_operator_planned_param_types(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), (*o));
                     return rt;
                 }
@@ -56445,10 +56463,12 @@ __attribute__((weak)) PlannedType* Planner_resolve_operator_call(scaly_frame* sc
                             PlannedType* r = ({ PlannedType* scaly_t10 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t10 = Planner_plan_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), rt_model); scaly_t10; });
                             (this_->type_substitutions).length = saved_len;
                             this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                            this_->resolved_op_has_page = Planner_operator_has_page((*o));
                             return r;
                         }
                         (this_->type_substitutions).length = saved_len;
                         this_->resolved_op_is_intrinsic = Planner_operator_is_intrinsic((*o));
+                        this_->resolved_op_has_page = Planner_operator_has_page((*o));
                         return ({ PlannedType* scaly_t11 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t11 = Planner_make_void_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr})); scaly_t11; });
                     }
                 }
@@ -57899,25 +57919,7 @@ __attribute__((weak)) MethodMatch* Planner_find_member_operator(scaly_frame* sca
     {
         (this_->instantiating_methods).length = ((this_->instantiating_methods).length - 1ULL);
     }
-    bool op_has_page = false;
-    if (((Planner_is_extern_impl((op).implementation)) == (false)))
-    {
-        if ((((op).returns_) != (nullptr)))
-        {
-            Type ort = ((*((op).returns_)));
-            if ((((ort).name).length > 0ULL))
-            {
-                String ojoined = Planner_join_dotted_name(&scaly_local.f, (ort).name);
-                if (((Planner_is_primitive_type_name(ojoined)) == (false)))
-                {
-                    if (((Planner_is_generic_type_param_name(ojoined)) == (false)))
-                    {
-                        op_has_page = true;
-                    }
-                }
-            }
-        }
-    }
+    bool op_has_page = Planner_operator_has_page(op);
     PlannedType return_type = Planner_make_void_type(scaly_rp);
     if ((((planned_op).return_type) != (nullptr)))
     {
@@ -57929,8 +57931,8 @@ __attribute__((weak)) MethodMatch* Planner_find_member_operator(scaly_frame* sca
         String* page_param_ref = (String*)(nullptr);
         if (op_has_page)
         {
-            Vector<String>* pp_holder = ({ Vector<String>* scaly_t26 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t26 = Vector<String>{}; Vector_init3<String>((*scaly_t26), 1ULL); scaly_t26; });
-            Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t27 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t27 = String{}; String_init2((*scaly_t27), scaly_lvalue(String{(uint8_t*)"\003_rp"})); scaly_t27; }))));
+            Vector<String>* pp_holder = ({ Vector<String>* scaly_t26 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t26 = Vector<String>{}; Vector_init3<String>((*scaly_t26), 1ULL); scaly_t26; });
+            Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t27 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t27 = String{}; String_init2((*scaly_t27), scaly_lvalue(String{(uint8_t*)"\003_rp"})); scaly_t27; }))));
             page_param_ref = Vector_get<String>((*pp_holder), 0ULL);
         }
         PlannedType* rt_ref = (PlannedType*)(nullptr);
@@ -96415,6 +96417,93 @@ __attribute__((weak)) void Planner_report_declared_caller_page(Planner& scaly_se
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedImplementation Planner_plan_routine_body(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, PlannedType* return_type, bool promote_tail)
+{
+    Planner* this_ = &scaly_self;
+    PlannedType* saved_return_type = this_->current_return_type;
+    this_->current_return_type = return_type;
+    uint64_t saved_lcn = (this_->local_closure_names).length;
+    uint64_t saved_lbn = (this_->local_box_names).length;
+    uint64_t saved_erl = (this_->escaping_return_locals).length;
+    uint64_t saved_vrl = (this_->view_receiver_locals).length;
+    uint64_t saved_val = (this_->view_alias_locals).length;
+    uint64_t saved_pbn = (this_->promoted_binding_names).length;
+    uint64_t saved_etg = (this_->escaping_targets).length;
+    uint64_t saved_lts = (this_->local_tainted_struct_bindings).length;
+    uint64_t saved_lfr = (this_->local_frame_ref_struct_bindings).length;
+    uint64_t saved_atl = (this_->address_taken_locals).length;
+    uint64_t saved_fwl = (this_->field_written_locals).length;
+    uint64_t saved_gra = (this_->getref_arg_locals).length;
+    uint64_t saved_gan = (this_->getref_alias_names).length;
+    uint64_t saved_gar = (this_->getref_alias_receivers).length;
+    uint64_t saved_lfh = (this_->local_frame_holder_names).length;
+    uint64_t saved_lfb = this_->local_frame_holder_base;
+    this_->local_frame_holder_base = (this_->local_frame_holder_names).length;
+    uint64_t saved_gab = this_->getref_arg_base;
+    this_->getref_arg_base = (this_->getref_arg_locals).length;
+    uint64_t pp = 0ULL;
+    while ((pp < ((f).input).length))
+    {
+        Item* pip = Vector_get<Item>((f).input, pp);
+        if (((pip) != (nullptr)))
+        {
+            Item* pit = ({ Item* scaly_t1 = (Item*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Item), alignof(Item)); *scaly_t1 = ((*(pip))); scaly_t1; });
+            if (((((*pit)).name) != (nullptr)))
+            {
+                if (((((*pit)).type) != (nullptr)))
+                {
+                    String* pnm = ({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = ((*(((*pit)).name))); scaly_t2; });
+                    if (((!(String_equals((*pnm), scaly_lvalue(String{(uint8_t*)"\004this"})))) ? Planner_is_ref_or_pointer_type(scaly_lvalue(((*(((*pit)).type))))) : false))
+                    {
+                        Planner_add_escaping_target(*(this_), (*pnm));
+                    }
+                }
+            }
+        }
+        pp = (pp + 1ULL);
+    }
+    Planner_scan_address_taken(*(this_), (f).implementation);
+    Planner_scan_getref_args(*(this_), (f).implementation);
+    this_->scan_returns_view = Planner_function_returns_view(f);
+    Planner_scan_top_level_returns(*(this_), (f).implementation);
+    this_->scan_returns_view = false;
+    bool saved_ptr = this_->promote_tail_return;
+    this_->promote_tail_return = promote_tail;
+    bool saved_cte = this_->check_tail_escape;
+    bool saved_itv = this_->in_tail_value;
+    this_->in_tail_value = false;
+    bool f_has_return = false;
+    if ((((f).returns_) != (nullptr)))
+    {
+        f_has_return = true;
+    }
+    this_->check_tail_escape = f_has_return;
+    PlannedImplementation planned_impl = Planner_plan_implementation(scaly_rp, *(this_), (f).implementation);
+    this_->promote_tail_return = saved_ptr;
+    this_->check_tail_escape = saved_cte;
+    this_->in_tail_value = saved_itv;
+    (this_->escaping_return_locals).length = saved_erl;
+    (this_->view_receiver_locals).length = saved_vrl;
+    (this_->view_alias_locals).length = saved_val;
+    (this_->promoted_binding_names).length = saved_pbn;
+    (this_->escaping_targets).length = saved_etg;
+    (this_->local_tainted_struct_bindings).length = saved_lts;
+    (this_->local_frame_ref_struct_bindings).length = saved_lfr;
+    (this_->address_taken_locals).length = saved_atl;
+    (this_->field_written_locals).length = saved_fwl;
+    (this_->getref_arg_locals).length = saved_gra;
+    (this_->getref_alias_names).length = saved_gan;
+    (this_->getref_alias_receivers).length = saved_gar;
+    (this_->local_frame_holder_names).length = saved_lfh;
+    this_->local_frame_holder_base = saved_lfb;
+    this_->getref_arg_base = saved_gab;
+    (this_->local_closure_names).length = saved_lcn;
+    (this_->local_box_names).length = saved_lbn;
+    this_->current_return_type = saved_return_type;
+    return planned_impl;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) PlannedFunction Planner_plan_function(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, PlannedType* parent)
 {
     Planner* this_ = &scaly_self;
@@ -96577,54 +96666,6 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
         Type tt = ((*((f).throws_)));
         throws_type = ({ PlannedType* scaly_t14 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t14 = Planner_plan_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), tt); scaly_t14; });
     }
-    PlannedType* saved_return_type = this_->current_return_type;
-    this_->current_return_type = return_type;
-    uint64_t saved_lcn = (this_->local_closure_names).length;
-    uint64_t saved_lbn = (this_->local_box_names).length;
-    uint64_t saved_erl = (this_->escaping_return_locals).length;
-    uint64_t saved_vrl = (this_->view_receiver_locals).length;
-    uint64_t saved_val = (this_->view_alias_locals).length;
-    uint64_t saved_pbn = (this_->promoted_binding_names).length;
-    uint64_t saved_etg = (this_->escaping_targets).length;
-    uint64_t saved_lts = (this_->local_tainted_struct_bindings).length;
-    uint64_t saved_lfr = (this_->local_frame_ref_struct_bindings).length;
-    uint64_t saved_atl = (this_->address_taken_locals).length;
-    uint64_t saved_fwl = (this_->field_written_locals).length;
-    uint64_t saved_gra = (this_->getref_arg_locals).length;
-    uint64_t saved_gan = (this_->getref_alias_names).length;
-    uint64_t saved_gar = (this_->getref_alias_receivers).length;
-    uint64_t saved_lfh = (this_->local_frame_holder_names).length;
-    uint64_t saved_lfb = this_->local_frame_holder_base;
-    this_->local_frame_holder_base = (this_->local_frame_holder_names).length;
-    uint64_t saved_gab = this_->getref_arg_base;
-    this_->getref_arg_base = (this_->getref_arg_locals).length;
-    uint64_t pp = 0ULL;
-    while ((pp < ((f).input).length))
-    {
-        Item* pip = Vector_get<Item>((f).input, pp);
-        if (((pip) != (nullptr)))
-        {
-            Item* pit = ({ Item* scaly_t15 = (Item*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Item), alignof(Item)); *scaly_t15 = ((*(pip))); scaly_t15; });
-            if (((((*pit)).name) != (nullptr)))
-            {
-                if (((((*pit)).type) != (nullptr)))
-                {
-                    String* pnm = ({ String* scaly_t16 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t16 = ((*(((*pit)).name))); scaly_t16; });
-                    if (((!(String_equals((*pnm), scaly_lvalue(String{(uint8_t*)"\004this"})))) ? Planner_is_ref_or_pointer_type(scaly_lvalue(((*(((*pit)).type))))) : false))
-                    {
-                        Planner_add_escaping_target(*(this_), (*pnm));
-                    }
-                }
-            }
-        }
-        pp = (pp + 1ULL);
-    }
-    Planner_scan_address_taken(*(this_), (f).implementation);
-    Planner_scan_getref_args(*(this_), (f).implementation);
-    this_->scan_returns_view = Planner_function_returns_view(f);
-    Planner_scan_top_level_returns(*(this_), (f).implementation);
-    this_->scan_returns_view = false;
-    bool saved_ptr = this_->promote_tail_return;
     bool f_promote_tail = false;
     if ((((f).page_parameter) != (nullptr)))
     {
@@ -96638,42 +96679,13 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     {
         Planner_report_entry_caller_page(*(this_), f);
     }
-    this_->promote_tail_return = f_promote_tail;
-    bool saved_cte = this_->check_tail_escape;
-    bool saved_itv = this_->in_tail_value;
-    this_->in_tail_value = false;
-    bool f_has_return = false;
-    if ((((f).returns_) != (nullptr)))
-    {
-        f_has_return = true;
-    }
-    this_->check_tail_escape = f_has_return;
-    PlannedImplementation planned_impl = Planner_plan_implementation(scaly_rp, *(this_), (f).implementation);
-    this_->promote_tail_return = saved_ptr;
-    this_->check_tail_escape = saved_cte;
-    this_->in_tail_value = saved_itv;
-    (this_->escaping_return_locals).length = saved_erl;
-    (this_->view_receiver_locals).length = saved_vrl;
-    (this_->view_alias_locals).length = saved_val;
-    (this_->promoted_binding_names).length = saved_pbn;
-    (this_->escaping_targets).length = saved_etg;
-    (this_->local_tainted_struct_bindings).length = saved_lts;
-    (this_->local_frame_ref_struct_bindings).length = saved_lfr;
-    (this_->address_taken_locals).length = saved_atl;
-    (this_->field_written_locals).length = saved_fwl;
-    (this_->getref_arg_locals).length = saved_gra;
-    (this_->getref_alias_names).length = saved_gan;
-    (this_->getref_alias_receivers).length = saved_gar;
-    (this_->local_frame_holder_names).length = saved_lfh;
-    this_->local_frame_holder_base = saved_lfb;
-    this_->getref_arg_base = saved_gab;
-    (this_->local_closure_names).length = saved_lcn;
-    (this_->local_box_names).length = saved_lbn;
+    PlannedType* saved_return_type = this_->current_return_type;
+    PlannedImplementation planned_impl = Planner_plan_routine_body(scaly_rp, *(this_), f, return_type, f_promote_tail);
     this_->current_return_type = saved_return_type;
     this_->planning_template = saved_template;
     Planner_pop_scope(*(this_));
     (this_->type_substitutions).length = saved_subst_len;
-    Vector<PlannedItem>* input_holder = ({ Vector<PlannedItem>* scaly_t17 = (Vector<PlannedItem>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedItem>), alignof(Vector<PlannedItem>)); *scaly_t17 = Vector<PlannedItem>{}; Vector_init5<PlannedItem>((*scaly_t17), planned_input); scaly_t17; });
+    Vector<PlannedItem>* input_holder = ({ Vector<PlannedItem>* scaly_t15 = (Vector<PlannedItem>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedItem>), alignof(Vector<PlannedItem>)); *scaly_t15 = Vector<PlannedItem>{}; Vector_init5<PlannedItem>((*scaly_t15), planned_input); scaly_t15; });
     bool has_page = false;
     if ((((f).page_parameter) != (nullptr)))
     {
@@ -96683,11 +96695,11 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     {
         has_page = true;
     }
-    Vector<String>* mname_holder = ({ Vector<String>* scaly_t18 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t18 = Vector<String>{}; Vector_init3<String>((*scaly_t18), 1ULL); scaly_t18; });
-    Vector_put<String>((*mname_holder), 0ULL, scaly_lvalue((*({ String* scaly_t19 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t19 = String{}; String_init2((*scaly_t19), (f).name); scaly_t19; }))));
+    Vector<String>* mname_holder = ({ Vector<String>* scaly_t16 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t16 = Vector<String>{}; Vector_init3<String>((*scaly_t16), 1ULL); scaly_t16; });
+    Vector_put<String>((*mname_holder), 0ULL, scaly_lvalue((*({ String* scaly_t17 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t17 = String{}; String_init2((*scaly_t17), (f).name); scaly_t17; }))));
     if ((((f).parameters).length > 0ULL))
     {
-        StringBuilder* nb = ({ StringBuilder* scaly_t20 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t20 = StringBuilder{}; StringBuilder_init((*scaly_t20)); scaly_t20; });
+        StringBuilder* nb = ({ StringBuilder* scaly_t18 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t18 = StringBuilder{}; StringBuilder_init((*scaly_t18)); scaly_t18; });
         StringBuilder_append2((*nb), (f).name);
         uint64_t tpi = 0ULL;
         while ((tpi < ((f).parameters).length))
@@ -96705,20 +96717,20 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
         }
         Vector_put<String>((*mname_holder), 0ULL, scaly_lvalue(StringBuilder_to_string(scaly_rp, (*nb))));
     }
-    String* mname = ({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t21 = ((*(Vector_get<String>((*mname_holder), 0ULL)))); scaly_t21; });
-    Vector<String>* mangled_holder = ({ Vector<String>* scaly_t22 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t22 = Vector<String>{}; Vector_init3<String>((*scaly_t22), 1ULL); scaly_t22; });
+    String* mname = ({ String* scaly_t19 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t19 = ((*(Vector_get<String>((*mname_holder), 0ULL)))); scaly_t19; });
+    Vector<String>* mangled_holder = ({ Vector<String>* scaly_t20 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t20 = Vector<String>{}; Vector_init3<String>((*scaly_t20), 1ULL); scaly_t20; });
     if (Planner_is_extern_impl((f).implementation))
     {
-        Vector_put<String>((*mangled_holder), 0ULL, scaly_lvalue((*({ String* scaly_t23 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t23 = String{}; String_init2((*scaly_t23), (f).name); scaly_t23; }))));
+        Vector_put<String>((*mangled_holder), 0ULL, scaly_lvalue((*({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t21 = String{}; String_init2((*scaly_t21), (f).name); scaly_t21; }))));
     }
     if (((Planner_is_extern_impl((f).implementation)) == (false)))
     {
         Vector_put<String>((*mangled_holder), 0ULL, scaly_lvalue(Planner_mangle_function_in(scaly_rp, (*mname), (&((*input_holder))), parent, has_page, scaly_lvalue(Planner_package_tag(scaly_rp, scaly_lvalue(Planner_function_package(scaly_rp, *(this_), f)))))));
     }
-    String* mangled = ({ String* scaly_t24 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t24 = ((*(Vector_get<String>((*mangled_holder), 0ULL)))); scaly_t24; });
+    String* mangled = ({ String* scaly_t22 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t22 = ((*(Vector_get<String>((*mangled_holder), 0ULL)))); scaly_t22; });
     if ((Planner_attributes_have((f).attributes, scaly_lvalue(Slice<uint8_t>{6ULL, ((uint8_t*)"inline")})) ? ((this_->planning_template) == (false)) : false))
     {
-        Array_add<String>(this_->generic_work->inline_names, scaly_lvalue((*({ String* scaly_t25 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t25 = String{}; String_init2((*scaly_t25), (*mangled)); scaly_t25; }))));
+        Array_add<String>(this_->generic_work->inline_names, scaly_lvalue((*({ String* scaly_t23 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t23 = String{}; String_init2((*scaly_t23), (*mangled)); scaly_t23; }))));
     }
     PlannedImplementation* tail_impl = (PlannedImplementation*)(nullptr);
     if (((return_type) != (nullptr)))
@@ -96733,10 +96745,10 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     }
     bool needs_local_page = false;
     {
-        auto&& scaly_t26 = planned_impl;
-        if (scaly_t26.tag == 0)
+        auto&& scaly_t24 = planned_impl;
+        if (scaly_t24.tag == 0)
         {
-            PlannedAction ia = scaly_payload<PlannedAction>(scaly_t26);
+            PlannedAction ia = scaly_payload<PlannedAction>(scaly_t24);
             if ((((ia).source) != (nullptr)))
             {
                 Vector<PlannedOperand> src = ((*((ia).source)));
@@ -96764,25 +96776,25 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     String* page_param_ref = (String*)(nullptr);
     if ((((f).page_parameter) != (nullptr)))
     {
-        Vector<String>* pp_holder = ({ Vector<String>* scaly_t27 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t27 = Vector<String>{}; Vector_init3<String>((*scaly_t27), 1ULL); scaly_t27; });
-        Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t28 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t28 = String{}; String_init2((*scaly_t28), scaly_lvalue((*({ String* scaly_t29 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t29 = ((*((f).page_parameter))); scaly_t29; })))); scaly_t28; }))));
+        Vector<String>* pp_holder = ({ Vector<String>* scaly_t25 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t25 = Vector<String>{}; Vector_init3<String>((*scaly_t25), 1ULL); scaly_t25; });
+        Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t26 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t26 = String{}; String_init2((*scaly_t26), scaly_lvalue((*({ String* scaly_t27 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t27 = ((*((f).page_parameter))); scaly_t27; })))); scaly_t26; }))));
         page_param_ref = Vector_get<String>((*pp_holder), 0ULL);
     }
     if ((((f).page_parameter) == (nullptr)))
     {
         if (Planner_function_needs_caller_page(*(this_), f))
         {
-            Vector<String>* pp_holder = ({ Vector<String>* scaly_t30 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t30 = Vector<String>{}; Vector_init3<String>((*scaly_t30), 1ULL); scaly_t30; });
+            Vector<String>* pp_holder = ({ Vector<String>* scaly_t28 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t28 = Vector<String>{}; Vector_init3<String>((*scaly_t28), 1ULL); scaly_t28; });
             Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue(String{(uint8_t*)"\003_rp"}));
             page_param_ref = Vector_get<String>((*pp_holder), 0ULL);
         }
     }
-    PlannedFunction* result = ({ PlannedFunction* scaly_t31 = (PlannedFunction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedFunction), alignof(PlannedFunction)); *scaly_t31 = PlannedFunction{(f).span, (f).private_, (f).pure, (f).name, (*mangled), page_param_ref, (&((*input_holder))), return_type, throws_type, (f).lifetime, body_impl, (InstantiationInfo*)(nullptr), needs_local_page, can_throw, (TypeScheme*)(nullptr), this_->file, ({ Vector<String>* scaly_t32 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t32 = (f).writes; scaly_t32; }), false, 0ULL}; scaly_t31; });
+    PlannedFunction* result = ({ PlannedFunction* scaly_t29 = (PlannedFunction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedFunction), alignof(PlannedFunction)); *scaly_t29 = PlannedFunction{(f).span, (f).private_, (f).pure, (f).name, (*mangled), page_param_ref, (&((*input_holder))), return_type, throws_type, (f).lifetime, body_impl, (InstantiationInfo*)(nullptr), needs_local_page, can_throw, (TypeScheme*)(nullptr), this_->file, ({ Vector<String>* scaly_t30 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t30 = (f).writes; scaly_t30; }), false, 0ULL}; scaly_t29; });
     Planner_record_function(*(this_), (*result));
     uint64_t smask = Planner_store_mask_of(*(this_), scaly_lvalue(Planner_store_key(&scaly_local.f, f)));
     if ((smask != 0ULL))
     {
-        Array_add<String>(*(this_->store_mangled_recv), scaly_lvalue((*({ String* scaly_t33 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t33 = String{}; String_init2((*scaly_t33), (*mangled)); scaly_t33; }))));
+        Array_add<String>(*(this_->store_mangled_recv), scaly_lvalue((*({ String* scaly_t31 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t31 = String{}; String_init2((*scaly_t31), (*mangled)); scaly_t31; }))));
         Array_add88<uint64_t>(*(this_->store_mangled_masks), smask);
         bool takes_this = false;
         if ((((f).input).length > 0ULL))
@@ -96798,7 +96810,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
     if (this_->host_report)
     {
         Array_add<Function>(this_->gate->deep_fns, f);
-        Array_add<String>(this_->gate->deep_mangled, scaly_lvalue((*({ String* scaly_t34 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t34 = String{}; String_init2((*scaly_t34), ((*result)).mangled_name); scaly_t34; }))));
+        Array_add<String>(this_->gate->deep_mangled, scaly_lvalue((*({ String* scaly_t32 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t32 = String{}; String_init2((*scaly_t32), ((*result)).mangled_name); scaly_t32; }))));
         Array_add88<uint64_t>(this_->gate->deep_state, 0ULL);
         Array_add88<uint64_t>(this_->gate->deep_state_this, 0ULL);
         Array_add88<uint64_t>(this_->gate->deep_state_beyond, 0ULL);
@@ -96843,7 +96855,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                 {
                     if (((Planner_persist_names_contain(this_->persistence->persist_deep_names, ((*result)).mangled_name)) == (false)))
                     {
-                        Array_add<String>(this_->persistence->persist_deep_names, scaly_lvalue((*({ String* scaly_t35 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t35 = String{}; String_init2((*scaly_t35), ((*result)).mangled_name); scaly_t35; }))));
+                        Array_add<String>(this_->persistence->persist_deep_names, scaly_lvalue((*({ String* scaly_t33 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t33 = String{}; String_init2((*scaly_t33), ((*result)).mangled_name); scaly_t33; }))));
                         Array_add88<uint64_t>(this_->persistence->persist_deep_vals, ((*(rgst))));
                     }
                 }
@@ -96855,7 +96867,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                 {
                     if (((Planner_persist_names_contain(this_->gate->deep_returns_mangled, ((*result)).mangled_name)) == (false)))
                     {
-                        Array_add<String>(this_->gate->deep_returns_mangled, scaly_lvalue((*({ String* scaly_t36 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t36 = String{}; String_init2((*scaly_t36), ((*result)).mangled_name); scaly_t36; }))));
+                        Array_add<String>(this_->gate->deep_returns_mangled, scaly_lvalue((*({ String* scaly_t34 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t34 = String{}; String_init2((*scaly_t34), ((*result)).mangled_name); scaly_t34; }))));
                     }
                 }
             }
@@ -96921,7 +96933,7 @@ __attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame*
                         gwhole = ((uint64_t)(((*(gws)))));
                     }
                     ConceptIndex_insert(this_->gate->deep_gate_index, ((*result)).mangled_name, (this_->gate->deep_gate_mangled).length);
-                    Array_add<String>(this_->gate->deep_gate_mangled, scaly_lvalue((*({ String* scaly_t37 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t37 = String{}; String_init2((*scaly_t37), ((*result)).mangled_name); scaly_t37; }))));
+                    Array_add<String>(this_->gate->deep_gate_mangled, scaly_lvalue((*({ String* scaly_t35 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t35 = String{}; String_init2((*scaly_t35), ((*result)).mangled_name); scaly_t35; }))));
                     Array_add88<uint64_t>(this_->gate->deep_gate_masks, ((uint64_t)(((*(gst))))));
                     Array_add88<uint64_t>(this_->gate->deep_gate_this, gthis);
                     Array_add88<uint64_t>(this_->gate->deep_gate_beyond, gbeyond);
@@ -97518,7 +97530,6 @@ __attribute__((weak)) PlannedOperator Planner_plan_operator(scaly_frame* scaly_r
 __attribute__((weak)) PlannedOperator Planner_plan_operator_planned(scaly_frame* scaly_rp, Planner& scaly_self, Operator& op, PlannedType* parent)
 {
     Planner* this_ = &scaly_self;
-    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     Planner_push_scope(*(this_));
     uint64_t saved_subst_len = (this_->type_substitutions).length;
     uint64_t gi = 0ULL;
@@ -97617,25 +97628,7 @@ __attribute__((weak)) PlannedOperator Planner_plan_operator_planned(scaly_frame*
         }
         i = (i + 1ULL);
     }
-    bool op_has_page = false;
-    if (((Planner_is_extern_impl((op).implementation)) == (false)))
-    {
-        if ((((op).returns_) != (nullptr)))
-        {
-            Type ort = ((*((op).returns_)));
-            if ((((ort).name).length > 0ULL))
-            {
-                String ojoined = Planner_join_dotted_name(&scaly_local.f, (ort).name);
-                if (((Planner_is_primitive_type_name(ojoined)) == (false)))
-                {
-                    if (((Planner_is_generic_type_param_name(ojoined)) == (false)))
-                    {
-                        op_has_page = true;
-                    }
-                }
-            }
-        }
-    }
+    bool op_has_page = Planner_operator_has_page(op);
     if (op_has_page)
     {
         PlannedType* pp_page_ty = ({ PlannedType* scaly_t12 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t12 = PlannedType{(op).span, String{(uint8_t*)"\004Page"}, String{nullptr}, (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t12; });
@@ -97654,10 +97647,8 @@ __attribute__((weak)) PlannedOperator Planner_plan_operator_planned(scaly_frame*
         Type tt = ((*((op).throws_)));
         throws_type = ({ PlannedType* scaly_t14 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t14 = Planner_plan_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), tt); scaly_t14; });
     }
-    PlannedType* saved_return_type = this_->current_return_type;
-    this_->current_return_type = return_type;
-    PlannedImplementation planned_impl = Planner_plan_implementation(scaly_rp, *(this_), (op).implementation);
-    this_->current_return_type = saved_return_type;
+    Function as_function = Planner_operator_as_function(scaly_rp, op);
+    PlannedImplementation planned_impl = Planner_plan_routine_body(scaly_rp, *(this_), as_function, return_type, op_has_page);
     Planner_pop_scope(*(this_));
     (this_->type_substitutions).length = saved_subst_len;
     String mangled = Planner_mangle_operator_paged(scaly_rp, (op).name, (&((*full_input))), parent, op_has_page);
@@ -98398,8 +98389,8 @@ __attribute__((weak)) void Planner_record_free_operator(Planner& scaly_self, Ope
         String* op_page_param = (String*)(nullptr);
         if (Planner_needs_implicit_return_page(synth_fn))
         {
-            Vector<String>* pp_holder = ({ Vector<String>* scaly_t5 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t5 = Vector<String>{}; Vector_init3<String>((*scaly_t5), 1ULL); scaly_t5; });
-            Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue(String{(uint8_t*)"\003_rp"}));
+            Vector<String>* pp_holder = ({ Vector<String>* scaly_t5 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t5 = Vector<String>{}; Vector_init3<String>((*scaly_t5), 1ULL); scaly_t5; });
+            Vector_put<String>((*pp_holder), 0ULL, scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue(String{(uint8_t*)"\003_rp"})); scaly_t6; }))));
             op_page_param = Vector_get<String>((*pp_holder), 0ULL);
         }
         bool op_can_throw = false;
@@ -102517,6 +102508,7 @@ __attribute__((weak)) void Planner_init(Planner& scaly_self, String& filename)
     this_->model_operators = (*({ Array<KeyValuePair<String, Operator>>* scaly_t72 = (Array<KeyValuePair<String, Operator>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Operator>>), alignof(Array<KeyValuePair<String, Operator>>)); *scaly_t72 = Array<KeyValuePair<String, Operator>>{}; (void)0; scaly_t72; }));
     this_->model_operator_index = FunctionIndex_create(&scaly_local.f, 65536ULL, 262144ULL);
     this_->resolved_op_is_intrinsic = false;
+    this_->resolved_op_has_page = false;
     this_->stack_base = 0ULL;
     this_->stack_budget = 0ULL;
     this_->loaded_packages = (*({ Array<KeyValuePair<String, Module>>* scaly_t73 = (Array<KeyValuePair<String, Module>>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<KeyValuePair<String, Module>>), alignof(Array<KeyValuePair<String, Module>>)); *scaly_t73 = Array<KeyValuePair<String, Module>>{}; (void)0; scaly_t73; }));
@@ -107188,6 +107180,19 @@ __attribute__((weak)) bool Planner_type_mentions_generic_param(PlannedType& t)
         }
     }
     return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) Function Planner_operator_as_function(scaly_frame* scaly_rp, Operator& op)
+{
+    return Function{(op).span, (op).private_, true, (op).name, (op).parameters, (String*)(nullptr), (op).input, (op).returns_, (op).throws_, scaly_variant<Lifetime>(0, Unspecified{}), (op).implementation, (*({ Vector<String>* scaly_t4 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t4 = Vector<String>{}; Vector_init3<String>((*scaly_t4), 0ULL); scaly_t4; })), (*({ Vector<String>* scaly_t5 = (Vector<String>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t5 = Vector<String>{}; Vector_init3<String>((*scaly_t5), 0ULL); scaly_t5; })), (*({ Vector<Attribute>* scaly_t6 = (Vector<Attribute>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Attribute>), alignof(Vector<Attribute>)); *scaly_t6 = Vector<Attribute>{}; Vector_init3<Attribute>((*scaly_t6), 0ULL); scaly_t6; }))};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_operator_has_page(Operator& op)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    return Planner_needs_implicit_return_page(scaly_lvalue(Planner_operator_as_function(&scaly_local.f, op)));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
