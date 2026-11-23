@@ -1,0 +1,80 @@
+; Regression (2026-11-23): an operator returning a record is planned as the
+; function it is. Its body was planned bare (plan_operator#), so a record it
+; built from a local -- `let v filled(n)` then `Grid(v)` -- lay on the
+; operator's own frame, released on return: read freed at rc 0. A FREE
+; operator returning a record took the compiler down (its recorded page
+; parameter pointed into a released holder), and its call named it without
+; the caller page its definition takes (operator_has_page#,
+; plan_routine_body#, resolve_operator_call#). Each operator below returns
+; a record whose buffer it built; run under SCALY_POISON.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Grid(n: int, data: Vector[f64])
+{
+    ; a member operator: the sum built in a local, then wrapped
+    operator +(this, other: Grid) returns Grid
+    {
+        let sum filled(this.n, 0.0)
+        var data sum.data
+        for k in this.n
+            data.put(k, this.data[k] + other.data[k])
+        Grid(this.n, data)
+    }
+
+    ; a member operator whose result comes out of an `if` arm
+    operator -(this, other: Grid) returns Grid
+    {
+        if this.n = 0
+            return filled(0, 0.0)
+        var data Vector[f64](this.n)
+        for k in this.n
+            data.put(k, this.data[k] - other.data[k])
+        Grid(this.n, data)
+    }
+}
+
+function filled(n: int, x: f64) returns Grid
+{
+    var data Vector[f64](n)
+    for k in n
+        data.put(k, x)
+    Grid(n, data)
+}
+
+; a free operator: the elementwise product
+operator <*>(a: Grid, b: Grid) returns Grid
+{
+    var data Vector[f64](a.n)
+    for k in a.n
+        data.put(k, a.data[k] * b.data[k])
+    Grid(a.n, data)
+}
+
+function total(g: Grid) returns f64
+{
+    var s 0.0
+    for k in g.n
+        s := s + g.data[k]
+    s
+}
+
+let a filled(4, 1.0)
+let b filled(4, 2.0)
+let c filled(4, 3.0)
+let sum a + b + c
+let difference c - a
+let product b <*> c
+; a chain across operators: (a + b) <*> (c - a), every step a new record
+let mixed (a + b) <*> (c - a)
+var acc filled(4, 0.0)
+var i 0
+while i < 10
+{
+    acc := acc + a
+    i := i + 1
+}
+if total(sum) = 24.0 and total(difference) = 8.0 and total(product) = 24.0 and total(mixed) = 24.0 and total(acc) = 40.0
+    print "PASS"
+else
+    print "FAIL `total(sum)` `total(difference)` `total(product)` `total(mixed)` `total(acc)`"

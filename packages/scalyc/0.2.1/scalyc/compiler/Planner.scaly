@@ -1098,6 +1098,9 @@ define Planner
         ; mangled function instead of being routed to emit_intrinsic_*_op.
         ; Mirrors stage-0's OperatorMatch.IsIntrinsic (Planner.cpp:3118/4470).
         var resolved_op_is_intrinsic: bool
+        ; and whether it takes the caller page (operator_has_page#): its call
+        ; then names and passes it, as its definition has it (2026-11-23)
+        var resolved_op_has_page: bool
 
         ; Set by resolve_operator_call# to the matched operator's planned
         ; parameter types (excluding `this`) ONLY when the match succeeded via
@@ -1732,6 +1735,7 @@ define Planner
             model_operators := Array[KeyValuePair[String, Operator]]^this()
             model_operator_index := FunctionIndex.create(65536, 262144)
             resolved_op_is_intrinsic := false
+            resolved_op_has_page := false
             stack_base := 0
             stack_budget := 0
             loaded_packages := Array[KeyValuePair[String, Module]]^this()
@@ -12619,7 +12623,8 @@ define Planner
             mutable this: Planner,
             op_name: String,
             left: PlannedType,
-            right: PlannedType
+            right: PlannedType,
+            has_page: bool
         ) returns String
         {
             var items Vector[PlannedItem](2)
@@ -12630,6 +12635,8 @@ define Planner
                 Span(0, 0), false, null, &^this right, null
             ))
 
+            if has_page
+                return Planner.mangle_operator_paged(op_name, &items, null, true)
             Planner.mangle_operator(op_name, &items, null)
         }
 
@@ -20212,14 +20219,19 @@ define Planner
             var bin_is_intrinsic: bool true
             if resolved <> null
                 bin_is_intrinsic := this.resolved_op_is_intrinsic
+            ; a user operator that takes the caller page is named and called
+            ; with it, as plan_operator# defines it (operator_has_page#)
+            var bin_page false
+            if resolved <> null and bin_is_intrinsic = false
+                bin_page := this.resolved_op_has_page
             let call PlannedCall(
                 result.loc,
                 op_name,
-                this.mangle_binary_operator(op_name, op_left.result_type, op_right.result_type),
+                this.mangle_binary_operator(op_name, op_left.result_type, op_right.result_type, bin_page),
                 bin_is_intrinsic,
                 true,
                 false,
-                false,
+                bin_page,
                 &two_args_holder,
                 combined_type,
                 Lifetime.Unspecified(Unspecified()),
@@ -20414,6 +20426,7 @@ define Planner
                     if rt <> null
                     {
                         this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                        this.resolved_op_has_page := Planner.operator_has_page(o)
                         return rt
                     }
                 }
@@ -20432,6 +20445,7 @@ define Planner
                     if rt <> null
                     {
                         this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                        this.resolved_op_has_page := Planner.operator_has_page(o)
                         return rt
                     }
                 }
@@ -20477,6 +20491,7 @@ define Planner
                     if rt <> null
                     {
                         this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                        this.resolved_op_has_page := Planner.operator_has_page(o)
                         ; A user (non-intrinsic) operator is dispatched as a real
                         ; call mangled under its DECLARED parameter types. Record
                         ; them so the construction site mangles (and, where a
@@ -20505,6 +20520,7 @@ define Planner
                     if rt <> null
                     {
                         this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                        this.resolved_op_has_page := Planner.operator_has_page(o)
                         if this.resolved_op_is_intrinsic = false
                             this.resolved_op_fold_params := this.operator_planned_param_types(o)
                         return rt
@@ -20538,6 +20554,7 @@ define Planner
                         if rt <> null
                         {
                             this.resolved_op_is_intrinsic := false
+                            this.resolved_op_has_page := Planner.operator_has_page(o)
                             this.resolved_op_fold_params := this.operator_planned_param_types(o)
                             return rt
                         }
@@ -20625,10 +20642,12 @@ define Planner
                                     let r &^this this.plan_type(rt_model)
                                     type_substitutions.length := saved_len
                                     this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                                    this.resolved_op_has_page := Planner.operator_has_page(o)
                                     return r
                                 }
                                 type_substitutions.length := saved_len
                                 this.resolved_op_is_intrinsic := Planner.operator_is_intrinsic(o)
+                                this.resolved_op_has_page := Planner.operator_has_page(o)
                                 return &^this Planner.make_void_type()
                             }
                         }
@@ -22230,21 +22249,7 @@ define Planner
             ; Record as a dispatchable function on first use (dedup by
             ; mangled name). The same implicit-return-page rule as
             ; plan_operator's mangling decides the rp slot.
-            var op_has_page: bool false
-            if Planner.is_extern_impl(op.implementation) = false
-            {
-                if op.returns_ <> null
-                {
-                    let ort (*op.returns_)
-                    if ort.name.length > 0
-                    {
-                        let ojoined Planner.join_dotted_name(ort.name)
-                        if Planner.is_primitive_type_name(ojoined) = false
-                            if Planner.is_generic_type_param_name(ojoined) = false
-                                op_has_page := true
-                    }
-                }
-            }
+            let op_has_page Planner.operator_has_page(op)
 
             var return_type: PlannedType Planner.make_void_type()
             if planned_op.return_type <> null
@@ -22255,11 +22260,15 @@ define Planner
 
             if this.has_recorded_function(planned_op.mangled_name) = false
             {
+                ; the page parameter's name on the Planner's page: the function
+                ; is recorded (record_function# keeps it), and a holder on this
+                ; frame was read freed by the WriteCensus -- a free operator
+                ; returning a record took the compiler down (2026-11-23)
                 var page_param_ref: ref[String]? null
                 if op_has_page
                 {
-                    var pp_holder Vector[String](1)
-                    pp_holder.put(0, String("_rp"))
+                    var pp_holder Vector[String]^this(1)
+                    pp_holder.put(0, String^this("_rp"))
                     page_param_ref := pp_holder.get(0)
                 }
                 var rt_ref: ref[PlannedType]? null
@@ -56893,6 +56902,144 @@ define Planner
         ; ban on `return` (2026-11-10: `pick(true, "n is `n`")` was rc 4 in
         ; Slice.scaly). An empty name in lazy_putins and lazy_shadows is the
         ; barrier the checks stop at; lazy_frame hides the arguments.
+        ; plan_routine_body#: the body of a function or an operator, planned as
+        ; the routine's RESULT needs it -- what flows into the return goes to
+        ; the caller page where the routine owns one (`promote_tail`), and the
+        ; pre-scans that find those flows (bare returns, address-taken and
+        ; get-ref locals, out-parameters as escape targets) run first. An
+        ; operator is planned through here as the function it is (2026-11-23):
+        ; before, plan_operator# planned its body bare, so a record it built
+        ; from a local (`let v filled(n)` then `Box(v, 1)`) lay on the
+        ; operator's own frame, released on return -- read freed at rc 0.
+        procedure plan_routine_body(mutable this: Planner, mutable f: Function, return_type: ref[PlannedType]?, promote_tail: bool) returns PlannedImplementation
+        {
+            ; GAP B: expose the return type to the body so a returned lambda
+            ; becomes an escaping closure (env on the caller page). Track stack
+            ; closures bound in this function for the return-escape check; the
+            ; set is truncated back at the boundary so nested functions are
+            ; isolated.
+            let saved_return_type this.current_return_type
+            this.current_return_type := return_type
+            let saved_lcn local_closure_names.length
+            let saved_lbn local_box_names.length
+            ; Page inference, gap 1: pre-scan the body for bare `return x`
+            ; targets so plan_binding# can promote their allocations to the
+            ; caller page. Sets are truncated at the function boundary so
+            ; nested functions stay isolated.
+            let saved_erl escaping_return_locals.length
+            let saved_vrl view_receiver_locals.length
+            let saved_val view_alias_locals.length
+            let saved_pbn promoted_binding_names.length
+            let saved_etg escaping_targets.length
+            let saved_lts local_tainted_struct_bindings.length
+            let saved_lfr local_frame_ref_struct_bindings.length
+            let saved_atl address_taken_locals.length
+            let saved_fwl field_written_locals.length
+            let saved_gra getref_arg_locals.length
+            let saved_gan getref_alias_names.length
+            let saved_gar getref_alias_receivers.length
+            let saved_lfh local_frame_holder_names.length
+            ; Option B: scope the NEW consultations (stamp + no-rp gate) to
+            ; entries recorded by THIS function — a lazily-instantiated
+            ; generic method planned mid-function must not see the outer
+            ; function's holder names (see the field comment).
+            let saved_lfb this.local_frame_holder_base
+            this.local_frame_holder_base := local_frame_holder_names.length
+            let saved_gab this.getref_arg_base
+            this.getref_arg_base := getref_arg_locals.length
+            ; Page inference: a value stored through a ref/pointer out-parameter
+            ; escapes to the caller, so seed those param names as escape targets.
+            ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
+            ; caller page (e.g. handle_constituent's `var fns Vector[Function]`
+            ; stored into the `symbols_builder` pointer param). `this` excluded.
+            var pp: size_t 0
+            while pp < f.input.length
+            {
+                let pip f.input.get pp
+                if pip <> null
+                {
+                    let pit (*pip)
+                    if pit.name <> null
+                        if pit.type <> null
+                        {
+                            let pnm (*pit.name)
+                            if pnm <> "this" and Planner.is_ref_or_pointer_type((*pit.type))
+                                this.add_escaping_target(pnm)
+                        }
+                }
+                pp := pp + 1
+            }
+            ; Page inference (address-taken rule): record every bare `&NAME`
+            ; FIRST, so the scan_top_level_returns# fixpoint below can treat an
+            ; address-taken Vector binding as an escaping-target (its feeding
+            ; Array + the values .add'd into it must reach the caller page too,
+            ; exactly as the `^rp` holder's escaping-ctor lifetime did).
+            this.scan_address_taken(f.implementation)
+            ; Ref-flow provenance (2026-07-02f): record holder locals whose
+            ; get-refs reach argument/return positions — see scan_getref_args#.
+            this.scan_getref_args(f.implementation)
+            scan_returns_view := Planner.function_returns_view(f)
+            this.scan_top_level_returns(f.implementation)
+            scan_returns_view := false
+            ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
+            ; page-owning-return function to the caller page. R2 only sees
+            ; explicit `return`; a function whose body's last expression is a
+            ; bare construction/call (`{ ... Vector[T](0) }`) or a choose/if
+            ; whose arms construct the result needs the tail promoted too, or
+            ; it dangles on the local page. plan_action# reads-and-clears the
+            ; flag so only the outermost body action promotes.
+            let saved_ptr this.promote_tail_return
+            ; The question tail promotion has to ask is whether this function
+            ; OWNS a caller page, and that is the SAME disjunction has_page is
+            ; built from below: a DECLARED page (`function f(rp, ...)`) counts
+            ; exactly as much as an inferred one. Reading needs_implicit_return_
+            ; page -- rule 1 of the seven in function_needs_caller_page -- tied
+            ; the PLACEMENT of a tail construction to a rule about the return
+            ; TYPE, so a function that owns its page for any other reason
+            ; promoted or not depending on WHICH rule answered. Measured cost of
+            ; the narrow reading: giving fifteen functions an explicit `rp` when
+            ; an experiment dropped their inferred page kept the page and
+            ; silently lost the promotion -- every tail construction landed on
+            ; the local frame, and the compiler that built from it died on its
+            ; own source with SIGBUS. (WP7 is rule 5, so the OR that used to
+            ; stand here is subsumed, not dropped.)
+            this.promote_tail_return := promote_tail
+            ; Hole-1 (2026-07-02f): the tail ref-escape CHECK runs for every
+            ; function with a return type, not just page-owning-value returns
+            ; (unify returns ref[Vector[...]]? — needs_implicit_return_page is
+            ; false there, yet its tail `&result` is a return position).
+            let saved_cte this.check_tail_escape
+            let saved_itv this.in_tail_value
+            this.in_tail_value := false
+            var f_has_return false
+            if f.returns_ <> null
+                f_has_return := true
+            this.check_tail_escape := f_has_return
+            let planned_impl this.plan_implementation(f.implementation)
+            this.promote_tail_return := saved_ptr
+            this.check_tail_escape := saved_cte
+            this.in_tail_value := saved_itv
+            escaping_return_locals.length := saved_erl
+            view_receiver_locals.length := saved_vrl
+            view_alias_locals.length := saved_val
+            promoted_binding_names.length := saved_pbn
+            escaping_targets.length := saved_etg
+            local_tainted_struct_bindings.length := saved_lts
+            local_frame_ref_struct_bindings.length := saved_lfr
+            address_taken_locals.length := saved_atl
+            field_written_locals.length := saved_fwl
+            getref_arg_locals.length := saved_gra
+            getref_alias_names.length := saved_gan
+            getref_alias_receivers.length := saved_gar
+            local_frame_holder_names.length := saved_lfh
+            this.local_frame_holder_base := saved_lfb
+            this.getref_arg_base := saved_gab
+            local_closure_names.length := saved_lcn
+            local_box_names.length := saved_lbn
+            this.current_return_type := saved_return_type
+            planned_impl
+        }
+
         procedure plan_function(
             mutable this: Planner,
             mutable f: Function,
@@ -57123,96 +57270,6 @@ define Planner
                 throws_type := &^this this.plan_type(tt)
             }
 
-            ; GAP B: expose the return type to the body so a returned lambda
-            ; becomes an escaping closure (env on the caller page). Track stack
-            ; closures bound in this function for the return-escape check; the
-            ; set is truncated back at the boundary so nested functions are
-            ; isolated.
-            let saved_return_type this.current_return_type
-            this.current_return_type := return_type
-            let saved_lcn local_closure_names.length
-            let saved_lbn local_box_names.length
-            ; Page inference, gap 1: pre-scan the body for bare `return x`
-            ; targets so plan_binding# can promote their allocations to the
-            ; caller page. Sets are truncated at the function boundary so
-            ; nested functions stay isolated.
-            let saved_erl escaping_return_locals.length
-            let saved_vrl view_receiver_locals.length
-            let saved_val view_alias_locals.length
-            let saved_pbn promoted_binding_names.length
-            let saved_etg escaping_targets.length
-            let saved_lts local_tainted_struct_bindings.length
-            let saved_lfr local_frame_ref_struct_bindings.length
-            let saved_atl address_taken_locals.length
-            let saved_fwl field_written_locals.length
-            let saved_gra getref_arg_locals.length
-            let saved_gan getref_alias_names.length
-            let saved_gar getref_alias_receivers.length
-            let saved_lfh local_frame_holder_names.length
-            ; Option B: scope the NEW consultations (stamp + no-rp gate) to
-            ; entries recorded by THIS function — a lazily-instantiated
-            ; generic method planned mid-function must not see the outer
-            ; function's holder names (see the field comment).
-            let saved_lfb this.local_frame_holder_base
-            this.local_frame_holder_base := local_frame_holder_names.length
-            let saved_gab this.getref_arg_base
-            this.getref_arg_base := getref_arg_locals.length
-            ; Page inference: a value stored through a ref/pointer out-parameter
-            ; escapes to the caller, so seed those param names as escape targets.
-            ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
-            ; caller page (e.g. handle_constituent's `var fns Vector[Function]`
-            ; stored into the `symbols_builder` pointer param). `this` excluded.
-            var pp: size_t 0
-            while pp < f.input.length
-            {
-                let pip f.input.get pp
-                if pip <> null
-                {
-                    let pit (*pip)
-                    if pit.name <> null
-                        if pit.type <> null
-                        {
-                            let pnm (*pit.name)
-                            if pnm <> "this" and Planner.is_ref_or_pointer_type((*pit.type))
-                                this.add_escaping_target(pnm)
-                        }
-                }
-                pp := pp + 1
-            }
-            ; Page inference (address-taken rule): record every bare `&NAME`
-            ; FIRST, so the scan_top_level_returns# fixpoint below can treat an
-            ; address-taken Vector binding as an escaping-target (its feeding
-            ; Array + the values .add'd into it must reach the caller page too,
-            ; exactly as the `^rp` holder's escaping-ctor lifetime did).
-            this.scan_address_taken(f.implementation)
-            ; Ref-flow provenance (2026-07-02f): record holder locals whose
-            ; get-refs reach argument/return positions — see scan_getref_args#.
-            this.scan_getref_args(f.implementation)
-            scan_returns_view := Planner.function_returns_view(f)
-            this.scan_top_level_returns(f.implementation)
-            scan_returns_view := false
-            ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
-            ; page-owning-return function to the caller page. R2 only sees
-            ; explicit `return`; a function whose body's last expression is a
-            ; bare construction/call (`{ ... Vector[T](0) }`) or a choose/if
-            ; whose arms construct the result needs the tail promoted too, or
-            ; it dangles on the local page. plan_action# reads-and-clears the
-            ; flag so only the outermost body action promotes.
-            let saved_ptr this.promote_tail_return
-            ; The question tail promotion has to ask is whether this function
-            ; OWNS a caller page, and that is the SAME disjunction has_page is
-            ; built from below: a DECLARED page (`function f(rp, ...)`) counts
-            ; exactly as much as an inferred one. Reading needs_implicit_return_
-            ; page -- rule 1 of the seven in function_needs_caller_page -- tied
-            ; the PLACEMENT of a tail construction to a rule about the return
-            ; TYPE, so a function that owns its page for any other reason
-            ; promoted or not depending on WHICH rule answered. Measured cost of
-            ; the narrow reading: giving fifteen functions an explicit `rp` when
-            ; an experiment dropped their inferred page kept the page and
-            ; silently lost the promotion -- every tail construction landed on
-            ; the local frame, and the compiler that built from it died on its
-            ; own source with SIGBUS. (WP7 is rule 5, so the OR that used to
-            ; stand here is subsumed, not dropped.)
             var f_promote_tail: bool false
             if f.page_parameter <> null
                 f_promote_tail := true
@@ -57220,39 +57277,8 @@ define Planner
                 f_promote_tail := true
             if f_promote_tail and parent = null and f.name = "main"
                 this.report_entry_caller_page(f)
-            this.promote_tail_return := f_promote_tail
-            ; Hole-1 (2026-07-02f): the tail ref-escape CHECK runs for every
-            ; function with a return type, not just page-owning-value returns
-            ; (unify returns ref[Vector[...]]? — needs_implicit_return_page is
-            ; false there, yet its tail `&result` is a return position).
-            let saved_cte this.check_tail_escape
-            let saved_itv this.in_tail_value
-            this.in_tail_value := false
-            var f_has_return false
-            if f.returns_ <> null
-                f_has_return := true
-            this.check_tail_escape := f_has_return
-            let planned_impl this.plan_implementation(f.implementation)
-            this.promote_tail_return := saved_ptr
-            this.check_tail_escape := saved_cte
-            this.in_tail_value := saved_itv
-            escaping_return_locals.length := saved_erl
-            view_receiver_locals.length := saved_vrl
-            view_alias_locals.length := saved_val
-            promoted_binding_names.length := saved_pbn
-            escaping_targets.length := saved_etg
-            local_tainted_struct_bindings.length := saved_lts
-            local_frame_ref_struct_bindings.length := saved_lfr
-            address_taken_locals.length := saved_atl
-            field_written_locals.length := saved_fwl
-            getref_arg_locals.length := saved_gra
-            getref_alias_names.length := saved_gan
-            getref_alias_receivers.length := saved_gar
-            local_frame_holder_names.length := saved_lfh
-            this.local_frame_holder_base := saved_lfb
-            this.getref_arg_base := saved_gab
-            local_closure_names.length := saved_lcn
-            local_box_names.length := saved_lbn
+            let saved_return_type this.current_return_type
+            let planned_impl this.plan_routine_body(f, return_type, f_promote_tail)
             this.current_return_type := saved_return_type
             this.planning_template := saved_template
 
@@ -58260,21 +58286,7 @@ define Planner
             ; ref[T]?) takes the caller's page, exactly like Vector.get.
             ; Register `rp` as a pointer[Page] local (s152 mirror) and
             ; carry the slot in the mangled name below.
-            var op_has_page: bool false
-            if Planner.is_extern_impl(op.implementation) = false
-            {
-                if op.returns_ <> null
-                {
-                    let ort (*op.returns_)
-                    if ort.name.length > 0
-                    {
-                        let ojoined Planner.join_dotted_name(ort.name)
-                        if Planner.is_primitive_type_name(ojoined) = false
-                            if Planner.is_generic_type_param_name(ojoined) = false
-                                op_has_page := true
-                    }
-                }
-            }
+            let op_has_page Planner.operator_has_page(op)
             if op_has_page
             {
                 let pp_page_ty PlannedType(
@@ -58323,10 +58335,12 @@ define Planner
             ; value here is a memory question, not only a diagnostic subject.
             ; Latent in this tree: all six package roots emit BYTE-IDENTICALLY
             ; across this fix, because no operator body's tail depends on it.
-            let saved_return_type this.current_return_type
-            this.current_return_type := return_type
-            let planned_impl this.plan_implementation(op.implementation)
-            this.current_return_type := saved_return_type
+            ; The body is planned as the function the operator is
+            ; (plan_routine_body#, 2026-11-23): pure, no declared page, its
+            ; caller page the one op_has_page gave it above -- so what flows
+            ; into its result is built on that page, as in a function.
+            var as_function Planner.operator_as_function(op)
+            let planned_impl this.plan_routine_body(as_function, return_type, op_has_page)
 
             this.pop_scope()
             type_substitutions.length := saved_subst_len
@@ -59314,11 +59328,15 @@ define Planner
                     Vector[String](0),
                     Vector[Attribute](0)
                 )
+                ; the page parameter's name on the Planner's page: the function
+                ; is recorded (record_function# keeps it), and a holder on this
+                ; frame was read freed by the WriteCensus -- a free operator
+                ; returning a record took the compiler down (2026-11-23)
                 var op_page_param: ref[String]? null
                 if Planner.needs_implicit_return_page(synth_fn)
                 {
-                    var pp_holder Vector[String](1)
-                    pp_holder.put(0, "_rp")
+                    var pp_holder Vector[String]^this(1)
+                    pp_holder.put(0, String^this("_rp"))
                     op_page_param := pp_holder.get(0)
                 }
                 var op_can_throw: bool false
@@ -67118,6 +67136,33 @@ define Planner
     ; function was declared with `#`; treat every function uniformly for
     ; now. Extern functions bail early because they don't participate in
     ; RBMM.
+    ; operator_as_function#: an operator as the function it is -- pure, no
+    ; declared page -- for the rules a function's planning asks
+    function operator_as_function(op: Operator) returns Function
+        Function(
+            op.span,
+            op.private_,
+            true,
+            op.name,
+            op.parameters,
+            null,
+            op.input,
+            op.returns_,
+            op.throws_,
+            Lifetime.Unspecified(Unspecified()),
+            op.implementation,
+            Vector[String](0),
+            Vector[String](0),
+            Vector[Attribute](0)
+        )
+
+    ; operator_has_page#: whether an operator takes the caller page -- the
+    ; rule of its return type a function's has (needs_implicit_return_page#);
+    ; its definition (plan_operator#, record_free_operator#) and every call
+    ; of it (find_member_operator#, resolve_operator_call#) ask this one
+    function operator_has_page(op: Operator) returns bool
+        Planner.needs_implicit_return_page(Planner.operator_as_function(op))
+
     function needs_implicit_return_page(func: Function) returns bool
     {
         if Planner.is_extern_impl(func.implementation)
