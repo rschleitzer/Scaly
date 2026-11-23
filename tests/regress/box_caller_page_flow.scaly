@@ -1,0 +1,66 @@
+; Regression (2026-11-23): a box on the caller page, `&# Entry(p, 1)`, copies
+; the construction's HEADER there; a local `p` built before it kept its
+; buffer on the routine's frame, released on return -- read freed at rc 0,
+; no diagnostic (inline, `&# Entry(filled(n), 1)`, was right: the planner
+; restamps an inline construction to the box's page). What flows into a
+; caller-page box flows to the caller now (collect_flow_locals#,
+; ops_box_on_caller_page#): p is built on the caller page, as for a returned
+; `Entry(p, 1)`. Tail, bound and returned, and inside an operator; run under
+; SCALY_POISON.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Grid(n: int, data: Vector[f64])
+
+function filled(n: int, x: f64) returns Grid
+{
+    var data Vector[f64](n)
+    for k in n
+        data.put(k, x)
+    Grid(n, data)
+}
+
+define Entry(value: Grid, tag: int)
+
+define Handle(at: ref[Entry])
+{
+    operator +(this, other: Handle) returns Handle
+    {
+        var sum filled(this.at.value.n, 0.0)
+        for k in sum.n
+            sum.data.put(k, this.at.value.data[k] + other.at.value.data[k])
+        Handle(&# Entry(sum, 3))
+    }
+}
+
+function boxed_tail() returns ref[Entry]
+{
+    var p filled(4, 7.0)
+    &# Entry(p, 1)
+}
+
+function boxed_bound() returns ref[Entry]
+{
+    var p filled(4, 8.0)
+    let e &# Entry(p, 2)
+    e
+}
+
+function handle(x: f64) returns Handle
+{
+    var p filled(4, x)
+    Handle(&# Entry(p, 0))
+}
+
+procedure run()
+{
+    let a boxed_tail()
+    let b boxed_bound()
+    let h handle(1.0) + handle(2.0) + handle(4.0)
+    if a.value.data[3] = 7.0 and b.value.data[3] = 8.0 and h.at.value.data[3] = 7.0 and h.at.tag = 3
+        print "PASS"
+    else
+        print "FAIL"
+}
+
+run()

@@ -1,0 +1,21 @@
+; Regression (2026-11-23): as xfail_box_frame_buffer_this, the box on a page
+; handed in, `&^host Entry(p, 2)`.
+; xfail: error: a part of the boxed value is built on this routine's page
+
+define Grid(n: int, data: Vector[f64])
+
+function filled(n: int, x: f64) returns Grid
+{
+    var data Vector[f64](n)
+    for k in n
+        data.put(k, x)
+    Grid(n, data)
+}
+
+define Entry(value: Grid, tag: int)
+
+function on_host(host: ref[Page]) returns ref[Entry]
+{
+    var p filled(4, 8.0)
+    &^host Entry(p, 2)
+}

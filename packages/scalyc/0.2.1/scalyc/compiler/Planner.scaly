@@ -1276,8 +1276,9 @@ define Planner
         ; answered the oversized page and stage 1 died at exit 19.
         current_fn_local_filled: ref[Array[String]]
         ; per bound call: 1 its value is this frame's (by_value_call_local#),
-        ; 2 a container built on this frame whose buffer a reference may point
-        ; into (holder_on_frame#), 0 neither
+        ; 2 a value whose buffer was built on this frame -- a container's
+        ; initializer (holder_on_frame#) or a class-1 call handed this frame
+        ; (built_on_frame#) -- read by holder_buffer_local# alone, 0 neither
         current_fn_bind_local: Array[size_t]
         ; beside it, the REFERENCE verdict of the same bound call
         ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local; 2 a class-1
@@ -39912,6 +39913,37 @@ define Planner
             n = "Array" or n = "Vector" or n = "List" or n = "HashMap"
         }
 
+        ; built_on_frame#: a call handed THIS frame's page (Local life, or Call
+        ; life without `_rp`) whose class says it builds its answer there
+        ; (residence class 1), the answer owning a buffer: `var p filled(n)`.
+        ; by_value_call_local# leaves a user record's buffer UNKNOWN (it may
+        ; come from a component the call was handed) -- the safe default for
+        ; what keeps a value; this is asked only where a box or a reference
+        ; INTO the value would otherwise copy a dying buffer (2026-11-23)
+        function built_on_frame(this: Planner, c: PlannedCall) returns bool
+        {
+            if c.is_operator
+                return false
+            var on_frame Planner.lifetime_is_local(c.life)
+            if on_frame = false
+                choose c.life
+                    when cl: Call
+                        on_frame := this.escape_fn_has_page() = false
+                    else
+                        0
+            if on_frame = false
+                return false
+            if this.census_type_is_ref_like(c.result_type)
+                return false
+            if this.type_owns_buffer(c.result_type, 0) = false
+                return false
+            let ci residence.rr_class_index.lookup(c.mangled_name)
+            if ci < 0
+                return false
+            let cvp residence.rr_class_vals.get(ci as size_t)
+            cvp <> null and (*cvp) = 1
+        }
+
         ; a by-value argument whose BUFFER is this frame's, for a reference
         ; into it: deep_by_value_local#, or a container bound from an
         ; initializer on this frame (current_fn_bind_local 2)
@@ -43071,8 +43103,83 @@ define Planner
                 }
                 when rp: Repeat
                     this.escape_walk_action(rp.body)
+                ; a box copies its value's HEADER onto the page: a buffer the
+                ; value took from a local of this frame stays here (`&^this
+                ; Entry(p, 1)`, p built locally: read freed, rc 0 until
+                ; 2026-11-23). A caller-page box promotes such a local
+                ; (collect_flow_locals#, ops_box_on_caller_page#); any other
+                ; page cannot be reached that way -- refused.
+                when bx: Box
+                {
+                    if bx.value <> null
+                    {
+                        let bv (*bx.value)
+                        if escape_checking and escape_census = false and this.box_holds_frame_buffer(bv)
+                        {
+                            let cur_fn instantiated_functions.get escape_fn_index
+                            if cur_fn <> null
+                                this.file := String^this(cur_fn.file)
+                            this.add_diagnostic(bx.loc, "a part of the boxed value is built on this routine's page and dies when it returns - the box copies only the value's header: build that part on the box's page ('^name'), or inside the boxed construction")
+                            this.escape_note_found()
+                        }
+                        this.escape_walk_operand(bv)
+                    }
+                }
                 else
                     0
+        }
+
+        ; box_holds_frame_buffer#: a boxed value that is, or whose positional
+        ; construction holds, a by-value local whose buffer is this frame's
+        ; (deep_by_value_local#: a binding promoted onto a caller page the
+        ; routine has is not)
+        function box_holds_frame_buffer(this: Planner, v: PlannedOperand) returns bool
+        {
+            if this.frame_buffer_local(v)
+                return true
+            choose v.expr
+                when t: Tuple
+                {
+                    if t.components = null
+                        return false
+                    let comps (*t.components)
+                    var i: size_t 0
+                    while i < comps.length
+                    {
+                        let cp comps.get i
+                        if cp <> null and cp.value <> null
+                        {
+                            let vals (*cp.value)
+                            if vals.length = 1
+                            {
+                                let vp vals.get 0
+                                if vp <> null and this.frame_buffer_local((*vp))
+                                    return true
+                            }
+                        }
+                        i := i + 1
+                    }
+                    return false
+                }
+                else
+                    return false
+        }
+
+        function frame_buffer_local(this: Planner, v: PlannedOperand) returns bool
+        {
+            if v.member_access <> null
+                return false
+            choose v.expr
+                when vv: Variable
+                {
+                    if this.census_type_is_ref_like(v.result_type)
+                        return false
+                    if this.type_owns_buffer(v.result_type, 0) = false
+                        return false
+                    return this.holder_buffer_local(v)
+                }
+                else
+                    return false
         }
 
         ; Walk one statement by value. choose stmt mirrors emit_statement.
@@ -43164,7 +43271,7 @@ define Planner
                                                 ; 2: a container built on this frame
                                                 ; (holder_on_frame#) -- read by
                                                 ; holder_ref_verdict# alone
-                                                if bverdict = false and this.holder_on_frame(bcall)
+                                                if bverdict = false and (this.holder_on_frame(bcall) or this.built_on_frame(bcall))
                                                     bvv := 2
                                                 current_fn_bind_local.add bvv
                                                 var brv this.ref_call_verdict(bcall)
@@ -55421,6 +55528,51 @@ define Planner
             (*lp) = "Slice"
         }
 
+        ; ops_box_on_caller_page#: `&# v` / `&^rp v` -- the operator `&`, then
+        ; the lifetime marker (an empty-name Type, Modeler.handle_expression's
+        ; LifetimeSyntax arm) naming the caller page
+        function ops_box_on_caller_page(ops: Vector[Operand]) returns bool
+        {
+            if ops.length < 3
+                return false
+            let h ops.get 0
+            let m ops.get 1
+            if h = null or m = null
+                return false
+            if (*h).member_access <> null or (*m).member_access <> null
+                return false
+            var amp false
+            choose (*h).expression
+                when ht: scalyc.compiler.Model.Type
+                {
+                    if ht.generics = null and ht.name.length = 1
+                    {
+                        let n0 ht.name.get 0
+                        if n0 <> null and (*n0) = "&"
+                            amp := true
+                    }
+                }
+                else
+                    0
+            if amp = false
+                return false
+            choose (*m).expression
+                when mt: scalyc.compiler.Model.Type
+                {
+                    if mt.name.length <> 0
+                        return false
+                    choose mt.lifetime
+                        when c: Call
+                            return true
+                        when r: Reference
+                            return r.location = "rp"
+                        else
+                            return false
+                }
+                else
+                    return false
+        }
+
         procedure collect_flow_locals(mutable this: Planner, ops: Vector[Operand])
         {
             ; A trailing `as` is transparent here for the same reason it is in
@@ -55590,6 +55742,28 @@ define Planner
                             else
                                 0
                 }
+            }
+            ; A BOX on the caller page, `&# v` (or `&^rp v`): v is copied onto
+            ; the caller's page, so what flows into v flows to the caller --
+            ; a local `p` in `&# Entry(p, 1)` is promoted as in `Entry(p, 1)`
+            ; returned. The box copies v's header only; p's buffer stayed on
+            ; the frame and was read freed (2026-11-23). A plain `&` is the
+            ; address of a frame value and collects nothing (the escape checker
+            ; refuses `return &b`); a box on another page is not the caller's.
+            if eff >= 3 and Planner.ops_box_on_caller_page(ops)
+            {
+                var rest Array[Operand]()
+                var ri: size_t 2
+                while ri < ops.length
+                {
+                    let rp_ptr ops.get ri
+                    if rp_ptr <> null
+                        rest.add((*rp_ptr))
+                    ri := ri + 1
+                }
+                var rest_vec Vector[Operand](rest)
+                this.collect_flow_locals(rest_vec)
+                return
             }
             if eff >= 2
             {

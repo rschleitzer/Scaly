@@ -1,0 +1,31 @@
+; Regression (2026-11-23): a box on the RECEIVER's page, `&^this Entry(p, 1)`,
+; copies the construction's header there while the local `p` keeps its
+; buffer on the routine's frame: read freed at rc 0. A caller-page box
+; promotes such a local (box_caller_page_flow); another page cannot be
+; reached that way, and the escape walk refuses it (its Box arm,
+; box_holds_frame_buffer#, built_on_frame#).
+; xfail: error: a part of the boxed value is built on this routine's page
+
+define Grid(n: int, data: Vector[f64])
+
+function filled(n: int, x: f64) returns Grid
+{
+    var data Vector[f64](n)
+    for k in n
+        data.put(k, x)
+    Grid(n, data)
+}
+
+define Entry(value: Grid, tag: int)
+
+define Keeper(var last: ref[Entry]?)
+{
+    procedure keep(mutable this)
+    {
+        var p filled(4, 7.0)
+        this.last := &^this Entry(p, 1)
+    }
+}
+
+var k Keeper(null)
+k.keep()
