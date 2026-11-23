@@ -1,0 +1,240 @@
+<chapter xml:id="tape">
+  <title>The Tape</title>
+
+  <para>In chapter 3 we derived every derivative by hand and wrote a
+    function for each. In this chapter the program forms them itself: we
+    write only the forward computation, the way the formulas read, and the
+    way back follows from it.</para>
+
+  <section xml:id="tape-values">
+    <title>Values That Remember Where They Came From</title>
+    <para>The backward computation of chapter 3 follows a pattern. Every
+      step forward has a step backward, and which one depends only on what
+      was computed going forward: a matrix product, a sum, a tanh. If every
+      value remembers how it came about, a program can walk that way back
+      without our writing it down. This is called <emphasis>automatic
+      differentiation</emphasis>, and the record it walks is called the
+      <emphasis>tape</emphasis>.</para>
+    <para>In our program every value has an entry for it:</para>
+    <programlisting role="fragment">define Entry(kind: int, a: ref[Entry]?, b: ref[Entry]?, value: Matrix,
+             var grad: Matrix, var seen: bool)</programlisting>
+    <para><literal>kind</literal> says what was computed, <literal>a</literal> and
+      <literal>b</literal> are the entries the value came from, and
+      <literal>value</literal> is the value itself, a matrix. The question mark
+      after <literal>ref[Entry]</literal> means the reference may be missing: a
+      tanh has only an <literal>a</literal>, and the points and the weights the
+      computation starts from have none. <literal>grad</literal> is as large as
+      <literal>value</literal> and takes the derivatives on the way back;
+      <literal>seen</literal> is needed there too.</para>
+    <para>For a matrix <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation> we write these derivatives as a matrix <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub></mml:math></inlineequation>
+      of the same size:</para>
+    <informalequation><mml:math><mml:msub><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></informalequation>
+    <para>The number at place <literal>i, j</literal> says how strongly the
+      loss <inlineequation><mml:math><mml:mi>L</mml:mi></mml:math></inlineequation> changes when <inlineequation><mml:math><mml:msub><mml:mi>a</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> changes a little. The <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> of
+      chapter 3 is such a matrix, a layer's <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>Z</mml:mi></mml:msub></mml:math></inlineequation>.</para>
+    <para>A value of the computation is a reference to its entry, and for
+      values we write the operators <literal>*</literal> and <literal>+</literal>
+      ourselves:</para>
+    <programlisting role="fragment">define Value(at: ref[Entry])
+{
+    operator *(this, other: Value) returns Value
+    {
+        let m product(this.at.value, other.at.value)
+        Value(&amp;# Entry(TIMES, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+
+    operator +(this, other: Value) returns Value
+    {
+        let m plus(this.at.value, other.at.value)
+        Value(&amp;# Entry(PLUS, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+}</programlisting>
+    <para>Each computes with the matrices of its two values, with
+      <literal>product</literal>, the matrix product, and with <literal>plus</literal>,
+      which adds one row to every row like the bias. For the result it makes
+      a new entry that points to the two. Matrices the computation starts
+      from become values through <literal>leaf</literal>, and <literal>tanh</literal>
+      is a function that makes an entry like the operators do:</para>
+    <programlisting role="fragment">function leaf(m: Matrix) returns Value
+    Value(&amp;# Entry(LEAF, null, null, m, zeros(m.rows, m.cols), false))
+
+function tanh(x: Value) returns Value
+{
+    let m apply_tanh(x.at.value)
+    Value(&amp;# Entry(TANH, x.at, null, m, zeros(m.rows, m.cols), false))
+}</programlisting>
+    <para>With them a layer is written like its formulas <inlineequation><mml:math><mml:mi>Z</mml:mi><mml:mo>=</mml:mo><mml:mi>X</mml:mi><mml:mi>W</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation> and
+      <inlineequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></inlineequation>, in one line: <literal>tanh(leaf(X) * w1 + b1)</literal>.</para>
+    <para>Libraries such as PyTorch keep the tape as a list: every
+      computation appends itself while it runs. In Scaly that does not
+      work. Operators and functions are pure; they return their result and
+      change nothing else, no list outside either. So here every entry
+      points to the ones it came from. Together the entries form a graph
+      that reaches from the loss to the points and the weights, and the
+      order, the tape proper, is made from it only on the way back.</para>
+    <para>That leaves the question where the entries live.
+      <literal>&amp;# Entry(…)</literal> makes an entry and, with
+      <literal>&amp;</literal>, hands out a reference to it. The <literal>#</literal>
+      says where, as in <literal>zeros</literal>: on the caller's page. The
+      operators and <literal>tanh</literal> are called in <literal>step</literal>, so all
+      the entries of a learning step lie on its page and go with it, like
+      the matrices in chapter 3. No number is copied on the way: handing on
+      a matrix hands on its sizes and the reference to its numbers, so the
+      entry <literal>leaf(net.W1)</literal> makes sees the same numbers as the
+      network.</para>
+  </section>
+
+  <section xml:id="tape-back">
+    <title>The Way Back</title>
+    <para>At the end of the forward computation stands the loss <inlineequation><mml:math><mml:mi>L</mml:mi></mml:math></inlineequation>, a
+      matrix with a single number, and its derivative by itself is 1. From
+      there the way leads back: every entry hands its derivatives on to the
+      entries it came from. It may do so only once every entry that reads
+      it has given it its share. <literal>order</literal> puts the entries in an
+      order for that, each after the ones it came from, and
+      <literal>backward</literal> walks it from the end to the front:</para>
+    <programlisting role="fragment">procedure order(mutable e: ref[Entry], mutable tape: Array[ref[Entry]])
+{
+    if e.seen
+        return
+    e.seen := true
+    let a e.a
+    if a &lt;&gt; null
+        order(a, tape)
+    let b e.b
+    if b &lt;&gt; null
+        order(b, tape)
+    tape.add(e)
+}
+
+procedure backward(mutable loss: Value)
+{
+    var tape Array[ref[Entry]]()
+    order(loss.at, tape)
+    loss.at.grad.put(0, 0, 1.0)
+    var k tape.length
+    while k &gt; 0
+    {
+        k := k - 1
+        back(tape[k])
+    }
+}</programlisting>
+    <para><literal>order</literal> goes to <literal>a</literal> and <literal>b</literal>
+      first and appends the entry itself only after them. <literal>seen</literal>
+      makes sure that an entry two computations read comes onto the tape
+      only once. In our network every value is read by just one
+      computation, but this way <literal>backward</literal> is right for any.</para>
+    <para>What an entry hands on depends only on its kind. For the matrix
+      product:</para>
+    <informalequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mi>B</mml:mi><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub><mml:msup><mml:mi>B</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mo>,</mml:mo><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>B</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msup><mml:mi>A</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></informalequation>
+    <para>These are the two products of chapter 3: <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub><mml:msup><mml:mi>B</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation> is the <inlineequation><mml:math><mml:mi>D</mml:mi><mml:msup><mml:mi>W</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation>
+      that hands the loss one layer forward, and <inlineequation><mml:math><mml:msup><mml:mi>A</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></inlineequation> is the <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi></mml:math></inlineequation>,
+      the derivative of the weights. The sum <inlineequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation> hands <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></inlineequation> on
+      unchanged, to <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation> and to <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>; since <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> was added to every row,
+      it gets the column sums, like the bias in chapter 3. For tanh each
+      number is multiplied by the slope at its place:</para>
+    <informalequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>Z</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>H</mml:mi></mml:msub><mml:mo>⊙</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>H</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>And for the loss, the mean over the <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> points:</para>
+    <informalequation><mml:math><mml:mi>L</mml:mi><mml:mo>=</mml:mo><mml:mfrac><mml:mn>1</mml:mn><mml:mi>n</mml:mi></mml:mfrac><mml:msub><mml:mo>∑</mml:mo><mml:mrow><mml:mi>i</mml:mi></mml:mrow></mml:msub><mml:mfrac><mml:mn>1</mml:mn><mml:mn>2</mml:mn></mml:mfrac><mml:msup><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>−</mml:mo><mml:msub><mml:mi>t</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mn>2</mml:mn></mml:msup><mml:mspace width="2em"/><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>−</mml:mo><mml:msub><mml:mi>t</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></informalequation>
+    <para>One after the other these rules give the formulas of chapter 3.
+      The loss hands <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></inlineequation> to the network's answer, its tanh makes
+      <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></inlineequation> of it, the <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> of the output, here already divided by the
+      number of points. The sum hands it on to the product and to
+      <literal>b3</literal>, the product to <literal>h2</literal> and to
+      <literal>w3</literal>, and so on down to the points.</para>
+    <para>When two computations read the same value, two derivatives arrive
+      at its entry, and they add up. That is why the rules in the program
+      add to <literal>grad</literal> instead of setting it. <literal>back</literal>
+      picks the rule by the entry's kind:</para>
+    <programlisting role="fragment">procedure back(mutable e: ref[Entry])
+{
+    let a e.a
+    if a = null
+        return
+    if e.kind = TANH
+        back_tanh(e.value, e.grad, a)
+    let b e.b
+    if b = null
+        return
+    if e.kind = TIMES
+        back_times(e.grad, a, b)
+    if e.kind = PLUS
+        back_plus(e.grad, a, b)
+    if e.kind = LOSS
+        back_loss(e.grad, a, b)
+}</programlisting>
+    <para>Each rule is a small procedure. The one for tanh:</para>
+    <programlisting role="fragment">procedure back_tanh(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        let h H.data[k]
+        a.grad.data.put(k, a.grad.data[k] + G.data[k] * (1.0 - h * h))
+    }
+}</programlisting>
+    <para>And this is the whole learning step:</para>
+    <programlisting role="fragment">procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
+{
+    let w1 leaf(net.W1)
+    let b1 leaf(net.b1)
+    let w2 leaf(net.W2)
+    let b2 leaf(net.b2)
+    let w3 leaf(net.W3)
+    let b3 leaf(net.b3)
+    let h1 tanh(leaf(X) * w1 + b1)
+    let h2 tanh(h1 * w2 + b2)
+    let a tanh(h2 * w3 + b3)
+    var l loss(a, leaf(T))
+    backward(l)
+    descend(net.W1, w1, rate)
+    descend(net.b1, b1, rate)
+    descend(net.W2, w2, rate)
+    descend(net.b2, b2, rate)
+    descend(net.W3, w3, rate)
+    descend(net.b3, b3, rate)
+}</programlisting>
+    <para>The three lines forward read like the formulas, and the backward
+      computation, three lines and four functions in chapter 3, is one call
+      of <literal>backward</literal>. After it the entry of every weight holds its
+      derivative, and <literal>descend</literal> moves the weight by it, times the
+      learning rate. Another network, with one more layer or another
+      activation, needs no new backward computation, only a rule for each
+      new kind of computation. The whole program is <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">on GitHub</link>.</para>
+  </section>
+
+  <section xml:id="tape-same">
+    <title>The Same Numbers</title>
+    <para>Does the tape compute right? This chapter's program learns the
+      circle from the same starting weights and with the same learning rate
+      as the one of chapter 3, so it must print the same losses. Nearly all
+      numbers agree digit for digit; three differ:</para>
+    <informaltable>
+      <tgroup cols="3">
+        <thead>
+          <row><entry>Step</entry><entry>Chapter 3</entry><entry>Tape</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>100, training</entry><entry>0.48325308228643143</entry><entry>0.48325308228643155</entry></row>
+          <row><entry>300, test</entry><entry>0.39850079637612984</entry><entry>0.3985007963761298</entry></row>
+          <row><entry>500, training</entry><entry>0.1922356094085751</entry><entry>0.19223560940857506</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>The difference is in the 16th or 17th digit, and it has nothing to
+      do with the tape: the program computes in another order. Chapter 3
+      begins every sum with the bias, the tape adds it last. Chapter 3
+      divides the finished derivative by the number of points, the tape
+      divides every share before adding it. Mathematically that is the
+      same, but a floating-point number has only 53 binary digits, and
+      every operation rounds to them. In another order the rounding falls
+      in other places. The outcome does not change: both programs get 188
+      of the 200 test points right.</para>
+    <para>The tape is not free. It makes a second matrix for every value,
+      and it also forms derivatives nobody needs, the ones by the points.
+      For 50,000 learning steps it takes 1.65 seconds instead of 1.02, both
+      built with <command>scaly build --release</command>, on the same M1 Pro.
+      Memory does not grow all the same: at most 2.06 MB, for 500 steps as
+      for 50,000, because the entries go with the page of
+      <literal>step</literal>.</para>
+  </section>
+</chapter>

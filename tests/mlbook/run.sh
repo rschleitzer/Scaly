@@ -97,6 +97,32 @@ if command -v python3 > /dev/null; then
 else
   echo "prog: circle.py SKIPPED (no python3)"
 fi
+# tape.scaly, the circle learned with a tape (chapter 4), prints what
+# tests/mlbook/tape.expected holds -- chapter 4's table shows three of its
+# lines beside circle.scaly's, so a line that moves owes a look at it --,
+# every loss within a few last places of circle.scaly's (the sums are
+# rounded in another order), and the same last line
+SCALY_POISON=1 "$SCALY" run docs/ml/prog/tape.scaly > "$FIG.tape" 2>&1
+if ! cmp -s "$FIG.tape" tests/mlbook/tape.expected; then
+  echo "mlbook: tape.scaly's numbers moved (tests/mlbook/tape.expected):"; diff tests/mlbook/tape.expected "$FIG.tape" | head -8; rc=1
+elif python3 - "$FIG.circle" "$FIG.tape" <<'NEAR'
+import re, sys
+a, b = (open(f).read().split('\n') for f in sys.argv[1:3])
+num = re.compile(r'[0-9.]+e?-?[0-9]*')
+ok = len(a) == len(b) and a[-2] == b[-2] and a[-2].startswith('test right')
+for x, y in zip(a[:-2], b[:-2]):
+    nx, ny = x.split(), y.split()
+    ok = ok and len(nx) == len(ny) and all(
+        u == v or (num.fullmatch(u) and abs(float(u) - float(v)) <= 1e-14 * abs(float(u)))
+        for u, v in zip(nx, ny))
+sys.exit(0 if ok else 1)
+NEAR
+then
+  echo "prog: tape.scaly prints what circle.scaly prints, to the last places"
+else
+  echo "mlbook: tape.scaly does not print what circle.scaly prints"; diff "$FIG.circle" "$FIG.tape" | head -5; rc=1
+fi
+rm -f "$FIG.tape"
 rm -f "$FIG.circle" "$FIG.field"
 # the model page's numbers (model_check.py: web/model/model.scaly's routines
 # on web/model/index.html's start), which chapter 2's boxes tell in words:

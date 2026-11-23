@@ -3,6 +3,7 @@
   <!ENTITY why SYSTEM "ml/de/why.xml">
   <!ENTITY field SYSTEM "ml/de/field.xml">
   <!ENTITY matrices SYSTEM "ml/de/matrices.xml">
+  <!ENTITY tape SYSTEM "ml/de/tape.xml">
 ]>
 <!-- Machine Learning with Scaly in German (scaly-ml.xml says the rest).
      Every chapter and section has the id of its English twin, and the
@@ -19,4 +20,5 @@
 &why;
 &field;
 &matrices;
+&tape;
 </book>

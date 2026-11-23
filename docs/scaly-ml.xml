@@ -3,6 +3,7 @@
   <!ENTITY why SYSTEM "ml/why.xml">
   <!ENTITY field SYSTEM "ml/field.xml">
   <!ENTITY matrices SYSTEM "ml/matrices.xml">
+  <!ENTITY tape SYSTEM "ml/tape.xml">
 ]>
 <!-- Machine Learning with Scaly: a book of its own beside the specification,
      in English and in German (scaly-ml.de.xml), set by the same stylesheet
@@ -22,4 +23,5 @@
 &why;
 &field;
 &matrices;
+&tape;
 </book>

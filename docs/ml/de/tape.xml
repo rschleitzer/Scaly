@@ -1,0 +1,246 @@
+<chapter xml:id="tape">
+  <title>Das Band</title>
+
+  <para>In Kapitel 3 haben wir jede Ableitung von Hand hergeleitet und für
+    jede eine Funktion geschrieben. In diesem Kapitel bildet das Programm
+    sie selbst: Wir schreiben nur noch die Vorwärtsrechnung, so wie die
+    Formeln, und der Weg zurück ergibt sich aus ihr.</para>
+
+  <section xml:id="tape-values">
+    <title>Werte, die sich ihre Herkunft merken</title>
+    <para>Die Rückwärtsrechnung aus Kapitel 3 folgt einem Muster. Zu jedem
+      Schritt vorwärts gehört ein Schritt rückwärts, und welcher, hängt nur
+      davon ab, was vorwärts gerechnet wurde: ein Matrixprodukt, eine Summe,
+      ein tanh. Merkt sich jeder Wert, wie er entstanden ist, kann ein
+      Programm diesen Weg rückwärts gehen, ohne dass wir ihn hinschreiben.
+      Das heißt <emphasis>automatisches Differenzieren</emphasis>, und die
+      Aufzeichnung, die es dabei abschreitet, heißt das
+      <emphasis>Band</emphasis>.</para>
+    <para>In unserem Programm hat jeder Wert dafür einen Eintrag:</para>
+    <programlisting role="fragment">define Entry(kind: int, a: ref[Entry]?, b: ref[Entry]?, value: Matrix,
+             var grad: Matrix, var seen: bool)</programlisting>
+    <para><literal>kind</literal> sagt, was gerechnet wurde, <literal>a</literal> und
+      <literal>b</literal> sind die Einträge, aus denen der Wert entstand, und
+      <literal>value</literal> ist der Wert selbst, eine Matrix. Das Fragezeichen
+      hinter <literal>ref[Entry]</literal> heißt, dass ein Verweis fehlen darf: Ein
+      tanh hat nur ein <literal>a</literal>, die Punkte und die Gewichte, mit denen
+      die Rechnung beginnt, haben keins. <literal>grad</literal> ist so groß wie
+      <literal>value</literal> und nimmt auf dem Weg zurück die Ableitungen auf;
+      <literal>seen</literal> brauchen wir dort auch.</para>
+    <para>Für eine Matrix <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation> schreiben wir diese Ableitungen als Matrix
+      <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub></mml:math></inlineequation>, gleich groß:</para>
+    <informalequation><mml:math><mml:msub><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>=</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></informalequation>
+    <para>Die Zahl an Stelle <literal>i, j</literal> sagt, wie stark sich der
+      Fehler <inlineequation><mml:math><mml:mi>L</mml:mi></mml:math></inlineequation> ändert, wenn sich <inlineequation><mml:math><mml:msub><mml:mi>a</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub></mml:math></inlineequation> ein wenig ändert. Das <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation>
+      aus Kapitel 3 ist so eine Matrix, das <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>Z</mml:mi></mml:msub></mml:math></inlineequation> einer Schicht.</para>
+    <para>Ein Wert der Rechnung ist ein Verweis auf seinen Eintrag, und für
+      Werte schreiben wir die Operatoren <literal>*</literal> und
+      <literal>+</literal> selbst:</para>
+    <programlisting role="fragment">define Value(at: ref[Entry])
+{
+    operator *(this, other: Value) returns Value
+    {
+        let m product(this.at.value, other.at.value)
+        Value(&amp;# Entry(TIMES, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+
+    operator +(this, other: Value) returns Value
+    {
+        let m plus(this.at.value, other.at.value)
+        Value(&amp;# Entry(PLUS, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+}</programlisting>
+    <para>Jeder rechnet mit den Matrizen seiner beiden Werte, mit
+      <literal>product</literal>, dem Matrixprodukt, und mit <literal>plus</literal>,
+      das eine Zeile wie den Bias zu jeder Zeile zählt. Für das Ergebnis legt er
+      einen neuen Eintrag an, der auf die beiden zeigt. Matrizen, mit denen
+      die Rechnung beginnt, macht <literal>leaf</literal> zu Werten, und
+      <literal>tanh</literal> ist eine Funktion, die wie die Operatoren einen
+      Eintrag anlegt:</para>
+    <programlisting role="fragment">function leaf(m: Matrix) returns Value
+    Value(&amp;# Entry(LEAF, null, null, m, zeros(m.rows, m.cols), false))
+
+function tanh(x: Value) returns Value
+{
+    let m apply_tanh(x.at.value)
+    Value(&amp;# Entry(TANH, x.at, null, m, zeros(m.rows, m.cols), false))
+}</programlisting>
+    <para>Damit schreibt sich eine Schicht so wie ihre Formeln <inlineequation><mml:math><mml:mi>Z</mml:mi><mml:mo>=</mml:mo><mml:mi>X</mml:mi><mml:mi>W</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation> und
+      <inlineequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></inlineequation>, in einer Zeile: <literal>tanh(leaf(X) * w1 + b1)</literal>.</para>
+    <para>Bibliotheken wie PyTorch führen das Band als Liste: Jede Rechnung
+      hängt sich an, während sie läuft. In Scaly geht das nicht so.
+      Operatoren und Funktionen sind rein, sie geben ihr Ergebnis zurück und
+      ändern sonst nichts, auch keine Liste außerhalb. Darum zeigt hier jeder
+      Eintrag auf die, aus denen er entstand. Zusammen bilden die Einträge
+      einen Graphen, der vom Fehler bis zu den Punkten und Gewichten reicht,
+      und die Reihenfolge, das eigentliche Band, bildet erst der Weg zurück
+      aus ihm.</para>
+    <para>Bleibt die Frage, wo die Einträge liegen. <literal>&amp;# Entry(…)</literal>
+      legt einen Eintrag an und gibt mit <literal>&amp;</literal> einen Verweis
+      darauf. Das <literal>#</literal> sagt wie in <literal>zeros</literal>, wo: auf der
+      Seite des Aufrufers. Aufgerufen werden die Operatoren und
+      <literal>tanh</literal> in <literal>step</literal>, also liegen alle Einträge eines
+      Lernschritts auf dessen Seite und gehen mit ihr, wie die Matrizen in
+      Kapitel 3. Kopiert wird dabei keine Zahl: Eine Matrix weiterzugeben
+      gibt ihre Größen und den Verweis auf ihre Zahlen weiter, und so sieht
+      der Eintrag, den <literal>leaf(net.W1)</literal> anlegt, dieselben Zahlen wie
+      das Netz.</para>
+  </section>
+
+  <section xml:id="tape-back">
+    <title>Der Weg zurück</title>
+    <para>Am Ende der Vorwärtsrechnung steht der Fehler <inlineequation><mml:math><mml:mi>L</mml:mi></mml:math></inlineequation>, eine Matrix
+      mit einer einzigen Zahl, und seine Ableitung nach sich selbst ist 1.
+      Von dort geht es zurück: Jeder Eintrag reicht seine Ableitungen an die
+      Einträge weiter, aus denen er entstand. Das darf er erst, wenn alle
+      Einträge, die ihn lesen, ihm ihren Teil schon gegeben haben.
+      <literal>order</literal> bringt die Einträge dafür in eine Reihenfolge, jeden
+      nach denen, aus denen er entstand, und <literal>backward</literal> geht sie
+      von hinten nach vorn ab:</para>
+    <programlisting role="fragment">procedure order(mutable e: ref[Entry], mutable tape: Array[ref[Entry]])
+{
+    if e.seen
+        return
+    e.seen := true
+    let a e.a
+    if a &lt;&gt; null
+        order(a, tape)
+    let b e.b
+    if b &lt;&gt; null
+        order(b, tape)
+    tape.add(e)
+}
+
+procedure backward(mutable loss: Value)
+{
+    var tape Array[ref[Entry]]()
+    order(loss.at, tape)
+    loss.at.grad.put(0, 0, 1.0)
+    var k tape.length
+    while k &gt; 0
+    {
+        k := k - 1
+        back(tape[k])
+    }
+}</programlisting>
+    <para><literal>order</literal> geht zuerst zu <literal>a</literal> und <literal>b</literal>
+      und hängt den Eintrag selbst erst danach an. <literal>seen</literal> sorgt
+      dafür, dass ein Eintrag, den zwei Rechnungen lesen, nur einmal aufs
+      Band kommt. In unserem Netz liest jeden Wert nur eine Rechnung, aber
+      so stimmt <literal>backward</literal> für jede.</para>
+    <para>Was ein Eintrag weiterreicht, hängt nur von seiner Art ab. Für das
+      Matrixprodukt:</para>
+    <informalequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mi>B</mml:mi><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>A</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub><mml:msup><mml:mi>B</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mo>,</mml:mo><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>B</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msup><mml:mi>A</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></informalequation>
+    <para>Das sind die beiden Produkte aus Kapitel 3: <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub><mml:msup><mml:mi>B</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation> ist das
+      <inlineequation><mml:math><mml:mi>D</mml:mi><mml:msup><mml:mi>W</mml:mi><mml:mi>T</mml:mi></mml:msup></mml:math></inlineequation>, das den Fehler eine Schicht nach vorn reicht, und <inlineequation><mml:math><mml:msup><mml:mi>A</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></inlineequation> ist
+      das <inlineequation><mml:math><mml:msup><mml:mi>H</mml:mi><mml:mi>T</mml:mi></mml:msup><mml:mi>D</mml:mi></mml:math></inlineequation>, die Ableitung der Gewichte. Die Summe <inlineequation><mml:math><mml:mi>C</mml:mi><mml:mo>=</mml:mo><mml:mi>A</mml:mi><mml:mo>+</mml:mo><mml:mi>b</mml:mi></mml:math></inlineequation> reicht
+      <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>C</mml:mi></mml:msub></mml:math></inlineequation> unverändert weiter, an <inlineequation><mml:math><mml:mi>A</mml:mi></mml:math></inlineequation> und an <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation>; weil <inlineequation><mml:math><mml:mi>b</mml:mi></mml:math></inlineequation> zu jeder
+      Zeile gezählt wurde, bekommt es die Spaltensummen, wie der Bias in
+      Kapitel 3. Für tanh wird jede Zahl mit der Steigung an ihrer Stelle
+      malgenommen:</para>
+    <informalequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>tanh</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mspace width="2em"/><mml:msub><mml:mi>G</mml:mi><mml:mi>Z</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:msub><mml:mi>G</mml:mi><mml:mi>H</mml:mi></mml:msub><mml:mo>⊙</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>H</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>Und für den Fehler, den Mittelwert über die <inlineequation><mml:math><mml:mi>n</mml:mi></mml:math></inlineequation> Punkte:</para>
+    <informalequation><mml:math><mml:mi>L</mml:mi><mml:mo>=</mml:mo><mml:mfrac><mml:mn>1</mml:mn><mml:mi>n</mml:mi></mml:mfrac><mml:msub><mml:mo>∑</mml:mo><mml:mrow><mml:mi>i</mml:mi></mml:mrow></mml:msub><mml:mfrac><mml:mn>1</mml:mn><mml:mn>2</mml:mn></mml:mfrac><mml:msup><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>−</mml:mo><mml:msub><mml:mi>t</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mn>2</mml:mn></mml:msup><mml:mspace width="2em"/><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:mi>L</mml:mi><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mo lspace="0" rspace="0">∂</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>=</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:msub><mml:mi>a</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo>−</mml:mo><mml:msub><mml:mi>t</mml:mi><mml:mi>i</mml:mi></mml:msub><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></informalequation>
+    <para>Hintereinander ergeben diese Regeln die Formeln aus Kapitel 3. Der
+      Fehler reicht <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></inlineequation> an die Antwort des Netzes, ihr tanh macht daraus
+      <inlineequation><mml:math><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mi>a</mml:mi><mml:mo>−</mml:mo><mml:mi>t</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>a</mml:mi><mml:mn>2</mml:mn></mml:msup><mml:mo stretchy="false">)</mml:mo></mml:mrow><mml:mo lspace="0" rspace="0">/</mml:mo><mml:mi>n</mml:mi></mml:math></inlineequation>, das <inlineequation><mml:math><mml:mi>D</mml:mi></mml:math></inlineequation> der Ausgabe, hier schon durch die Zahl der Punkte
+      geteilt. Die Summe reicht es an das Produkt und an
+      <literal>b3</literal> weiter, das Produkt an <literal>h2</literal> und an
+      <literal>w3</literal>, und so fort bis zu den Punkten.</para>
+    <para>Lesen zwei Rechnungen denselben Wert, kommen bei seinem Eintrag
+      zwei Ableitungen an, und sie zählen sich zusammen. Darum zählen die
+      Regeln im Programm zu <literal>grad</literal> dazu, statt es zu setzen.
+      <literal>back</literal> wählt die Regel nach der Art des Eintrags:</para>
+    <programlisting role="fragment">procedure back(mutable e: ref[Entry])
+{
+    let a e.a
+    if a = null
+        return
+    if e.kind = TANH
+        back_tanh(e.value, e.grad, a)
+    let b e.b
+    if b = null
+        return
+    if e.kind = TIMES
+        back_times(e.grad, a, b)
+    if e.kind = PLUS
+        back_plus(e.grad, a, b)
+    if e.kind = LOSS
+        back_loss(e.grad, a, b)
+}</programlisting>
+    <para>Jede Regel ist eine kleine Prozedur. Die für tanh:</para>
+    <programlisting role="fragment">procedure back_tanh(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        let h H.data[k]
+        a.grad.data.put(k, a.grad.data[k] + G.data[k] * (1.0 - h * h))
+    }
+}</programlisting>
+    <para>Und das ist der ganze Lernschritt:</para>
+    <programlisting role="fragment">procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
+{
+    let w1 leaf(net.W1)
+    let b1 leaf(net.b1)
+    let w2 leaf(net.W2)
+    let b2 leaf(net.b2)
+    let w3 leaf(net.W3)
+    let b3 leaf(net.b3)
+    let h1 tanh(leaf(X) * w1 + b1)
+    let h2 tanh(h1 * w2 + b2)
+    let a tanh(h2 * w3 + b3)
+    var l loss(a, leaf(T))
+    backward(l)
+    descend(net.W1, w1, rate)
+    descend(net.b1, b1, rate)
+    descend(net.W2, w2, rate)
+    descend(net.b2, b2, rate)
+    descend(net.W3, w3, rate)
+    descend(net.b3, b3, rate)
+}</programlisting>
+    <para>Die drei Zeilen vorwärts stehen da wie die Formeln, und die
+      Rückwärtsrechnung, in Kapitel 3 drei Zeilen und vier Funktionen, ist
+      ein Aufruf von <literal>backward</literal>. Danach steht im Eintrag jedes
+      Gewichts seine Ableitung, und <literal>descend</literal> verringert das
+      Gewicht um sie, mal die Lernrate. Ein anderes Netz, mit einer Schicht
+      mehr oder einer anderen Aktivierung, braucht keine neue
+      Rückwärtsrechnung, nur für jede neue Art von Rechnung ihre Regel. Das
+      ganze Programm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">auf GitHub</link>.</para>
+  </section>
+
+  <section xml:id="tape-same">
+    <title>Dieselben Zahlen</title>
+    <para>Rechnet das Band richtig? Das Programm dieses Kapitels lernt den
+      Kreis aus denselben Startgewichten und mit derselben Lernrate wie das
+      aus Kapitel 3, also muss es dieselben Fehler ausgeben. Fast alle Zahlen
+      stimmen Ziffer für Ziffer, drei weichen ab:</para>
+    <informaltable>
+      <tgroup cols="3">
+        <thead>
+          <row><entry>Schritt</entry><entry>Kapitel 3</entry><entry>Band</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>100, Training</entry><entry>0.48325308228643143</entry><entry>0.48325308228643155</entry></row>
+          <row><entry>300, Test</entry><entry>0.39850079637612984</entry><entry>0.3985007963761298</entry></row>
+          <row><entry>500, Training</entry><entry>0.1922356094085751</entry><entry>0.19223560940857506</entry></row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>Die Abweichung steht in der 16. oder 17. Stelle, und mit dem Band
+      hat sie nichts zu tun: Das Programm rechnet in einer anderen
+      Reihenfolge. Kapitel 3 beginnt jede Summe mit dem Bias, das Band zählt
+      ihn zuletzt dazu. Kapitel 3 teilt die fertige Ableitung durch die Zahl
+      der Punkte, das Band teilt jeden Anteil, bevor es ihn dazuzählt.
+      Mathematisch ist das gleich, aber eine Kommazahl hat nur 53 Binärstellen,
+      und jede Rechnung rundet auf sie. In anderer Reihenfolge wird an
+      anderen Stellen gerundet. Am Ergebnis ändert das nichts: Beide
+      Programme raten 188 der 200 Testpunkte richtig.</para>
+    <para>Ganz umsonst ist das Band nicht. Es legt für jeden Wert eine
+      zweite Matrix an, und es bildet auch Ableitungen, die niemand braucht,
+      die nach den Punkten. Für 50 000 Lernschritte braucht es 1,65 Sekunden
+      statt 1,02, beide mit <command>scaly build --release</command> gebaut, auf
+      demselben M1 Pro. Der Speicher wächst trotzdem nicht: höchstens 2,06 MB,
+      bei 500 Schritten wie bei 50 000, denn die Einträge gehen mit der Seite
+      von <literal>step</literal>.</para>
+  </section>
+</chapter>
