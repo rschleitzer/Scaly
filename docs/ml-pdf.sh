@@ -4,8 +4,8 @@
 # dsssl/scaly-ml-print.dsl over the DocBook print stylesheet, into
 # website/ml/scaly-ml.pdf and scaly-ml.de.pdf. The pictures are those of the
 # web pages, so docs/ml.sh runs first; the book is set in website/ml, where
-# they lie in fig/. The formulas' font is the web pages' (book/fonts), the
-# others the system's.
+# they lie in fig/. The formulas' font is the web pages' (book/fonts), and
+# so is the text's, Latin Modern Roman; the others are the system's.
 cd "$(dirname "$0")" || exit 1
 export SP_ENCODING=utf-8
 

@@ -33,6 +33,16 @@
 (define %graphic-default-extension% "png")
 (define %admon-graphics% #f)
 
+;; the text in Latin Modern Roman, the formulas' family (book/fonts)
+(define %body-font-family% "LM Roman 10")
+
+;; the lines of a paragraph the line spacing apart (11 on 14.3): the engine
+;; measures a font's natural height by its ascender and descender, which
+;; for Latin Modern are far apart (1.42 of the size), so a minimum leading
+;; would open every line; a formula or a picture in a line makes room by
+;; itself
+(define %min-leading% #f)
+
 ;; the language is DocBook 5's xml:lang
 (define ($lang$ #!optional (target (current-node)) (xref-context #f))
   (let loop ((n target))
