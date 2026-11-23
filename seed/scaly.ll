@@ -14550,11 +14550,11 @@ while.exit:                                       ; preds = %while.cond
   br label %if.end
 }
 
-define linkonce_odr ptr @_ZN14HashMapBuilderI6StringiEixEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr noalias %2) {
+define linkonce_odr ptr @_ZN14HashMapBuilderI6StringiEixE6String(ptr %0, ptr noalias %1) {
 entry:
   %iterator = alloca ptr, align 8
   %sret.result = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6StringiEEE, align 8
-  %load.struct = load %_Z14HashMapBuilderI6StringiE, ptr %1, align 8
+  %load.struct = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
   %slots = extractvalue %_Z14HashMapBuilderI6StringiE %load.struct, 1
   %eq = icmp eq ptr %slots, null
   br i1 %eq, label %if.then, label %if.end
@@ -14563,10 +14563,10 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6StringiE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6StringiE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @_ZN6String4hashEv(ptr %2)
-  %load.struct1 = load %_Z14HashMapBuilderI6StringiE, ptr %1, align 8
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct1 = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
   %slots2 = extractvalue %_Z14HashMapBuilderI6StringiE %load.struct1, 1
   %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %slots2, align 8
   %length = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE %deref, 0
@@ -14585,7 +14585,7 @@ while.cond:                                       ; preds = %if.end10, %if.end
 while.body:                                       ; preds = %while.cond
   %field.inplace6 = getelementptr inbounds nuw %_Z4SlotI12KeyValuePairI6StringiEE, ptr %call5, i32 0, i32 0
   %field.inplace7 = getelementptr inbounds nuw %_Z12KeyValuePairI6StringiE, ptr %field.inplace6, i32 0, i32 0
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %field.inplace7)
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace7)
   br i1 %call8, label %if.then9, label %if.end10
 
 while.exit:                                       ; preds = %while.cond
@@ -16204,10 +16204,10 @@ frame.forced44:                                   ; preds = %frame.force43, %if.
   br label %if.end34
 }
 
-define linkonce_odr ptr @_ZN7HashMapI6StringiEixEPN4scaly6memory4PageE6String(ptr %0, ptr noalias %1, ptr noalias %2) {
+define linkonce_odr ptr @_ZN7HashMapI6StringiEixE6String(ptr noalias %0, ptr noalias %1) {
 entry:
   %i = alloca i64, align 8
-  %load.struct = load %_Z7HashMapI6StringiE, ptr %1, align 8
+  %load.struct = load %_Z7HashMapI6StringiE, ptr %0, align 8
   %slots = extractvalue %_Z7HashMapI6StringiE %load.struct, 0
   %eq = icmp eq ptr %slots, null
   br i1 %eq, label %if.then, label %if.end
@@ -16216,13 +16216,13 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %call = call i64 @_ZN6String4hashEv(ptr %2)
-  %load.struct1 = load %_Z7HashMapI6StringiE, ptr %1, align 8
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct1 = load %_Z7HashMapI6StringiE, ptr %0, align 8
   %slots2 = extractvalue %_Z7HashMapI6StringiE %load.struct1, 0
   %deref = load %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %slots2, align 8
   %length = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %deref, 0
   %urem = urem i64 %call, %length
-  %field.inplace = getelementptr inbounds nuw %_Z7HashMapI6StringiE, ptr %1, i32 0, i32 0
+  %field.inplace = getelementptr inbounds nuw %_Z7HashMapI6StringiE, ptr %0, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call3 = call ptr @_ZN6VectorI6VectorI12KeyValuePairI6StringiEEE2atEm(ptr %deref.recv, i64 %urem)
   %load.struct4 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %call3, align 8
@@ -16239,7 +16239,7 @@ while.body:                                       ; preds = %while.cond
   %i7 = load i64, ptr %i, align 8
   %call8 = call ptr @_ZN6VectorI12KeyValuePairI6StringiEE2atEm(ptr %call3, i64 %i7)
   %field.inplace9 = getelementptr inbounds nuw %_Z12KeyValuePairI6StringiE, ptr %call8, i32 0, i32 0
-  %call10 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %field.inplace9)
+  %call10 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace9)
   br i1 %call10, label %if.then11, label %if.end12
 
 while.exit:                                       ; preds = %while.cond
@@ -20077,11 +20077,11 @@ stub.entry:
   ret void
 }
 
-define linkonce_odr ptr @_ZN14HashMapBuilderI6StringmEixEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr noalias %2) {
+define linkonce_odr ptr @_ZN14HashMapBuilderI6StringmEixE6String(ptr %0, ptr noalias %1) {
 entry:
   %iterator = alloca ptr, align 8
   %sret.result = alloca %_Z12ListIteratorI4SlotI12KeyValuePairI6StringmEEE, align 8
-  %load.struct = load %_Z14HashMapBuilderI6StringmE, ptr %1, align 8
+  %load.struct = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
   %slots = extractvalue %_Z14HashMapBuilderI6StringmE %load.struct, 1
   %eq = icmp eq ptr %slots, null
   br i1 %eq, label %if.then, label %if.end
@@ -20090,10 +20090,10 @@ if.then:                                          ; preds = %entry
   ret ptr null
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6StringmE, ptr %1, i32 0, i32 1
+  %field.inplace = getelementptr inbounds nuw %_Z14HashMapBuilderI6StringmE, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call i64 @_ZN6String4hashEv(ptr %2)
-  %load.struct1 = load %_Z14HashMapBuilderI6StringmE, ptr %1, align 8
+  %call = call i64 @_ZN6String4hashEv(ptr %1)
+  %load.struct1 = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
   %slots2 = extractvalue %_Z14HashMapBuilderI6StringmE %load.struct1, 1
   %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %slots2, align 8
   %length = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE %deref, 0
@@ -20112,7 +20112,7 @@ while.cond:                                       ; preds = %if.end10, %if.end
 while.body:                                       ; preds = %while.cond
   %field.inplace6 = getelementptr inbounds nuw %_Z4SlotI12KeyValuePairI6StringmEE, ptr %call5, i32 0, i32 0
   %field.inplace7 = getelementptr inbounds nuw %_Z12KeyValuePairI6StringmE, ptr %field.inplace6, i32 0, i32 0
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %field.inplace7)
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %1, ptr %field.inplace7)
   br i1 %call8, label %if.then9, label %if.end10
 
 while.exit:                                       ; preds = %while.cond
