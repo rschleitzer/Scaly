@@ -83,25 +83,42 @@
                 (process-children)))))))
 
 ;; "Try it": its word above, in the accent colour, all of it on the faint
-;; green of the web pages' boxes
+;; green of the web pages' boxes. The box is a table of one cell: a cell's
+;; background covers the whole cell, its margins included, so the margins
+;; are the air between the green's edge and the text (the engine paints a
+;; paragraph's background only behind its lines)
+(define %tryit-pad-side% 8pt)
+(define %tryit-pad-top% 5pt)
+(define %tryit-pad-bottom% 6pt)
+
 (element sidebar
   (if (equal? (attribute-string "role") "tryit")
-      (make display-group
+      (make table
         space-before: %block-sep%
         space-after: %block-sep%
-        start-indent: (+ (inherited-start-indent) 8pt)
-        end-indent: (+ (inherited-end-indent) 8pt)
-        background-color: %accent-faint%
-        (make paragraph
-          font-family-name: %title-font-family%
-          font-weight: 'bold
-          font-size: (* %bf-size% 0.8)
-          color: %accent%
-          space-after: 0pt
-          keep-with-next?: #t
-          background-color: %accent-faint%
-          (literal (if (german?) "AUSPROBIEREN" "TRY IT")))
-        (process-children))
+        table-width: (- %text-width% (inherited-start-indent))
+        (make table-column
+          column-number: 1
+          width: (- %text-width% (inherited-start-indent)))
+        (make table-row
+          (make table-cell
+            cell-background?: #t
+            background-color: %accent-faint%
+            cell-before-row-margin: %tryit-pad-top%
+            cell-after-row-margin: %tryit-pad-bottom%
+            cell-before-column-margin: %tryit-pad-side%
+            cell-after-column-margin: %tryit-pad-side%
+            start-indent: 0pt
+            end-indent: 0pt
+            (make paragraph
+              font-family-name: %title-font-family%
+              font-weight: 'bold
+              font-size: (* %bf-size% 0.8)
+              color: %accent%
+              space-after: 2pt
+              keep-with-next?: #t
+              (literal (if (german?) "AUSPROBIEREN" "TRY IT")))
+            (process-children))))
       (make display-group
         space-before: %block-sep%
         space-after: %block-sep%
@@ -134,12 +151,11 @@
           (process-children-trim))
         ($paragraph$))))
 
-;; the paragraphs of a box on its green
+;; the paragraphs of a box, close together
 (element (sidebar para)
   (make paragraph
     space-before: 0pt
     space-after: 0pt
-    background-color: (if (equal? (attribute-string "role" (parent (current-node))) "tryit") %accent-faint% #f)
     (process-children)))
 
 ;; a picture: a mediaobject's image, as wide as it may be
