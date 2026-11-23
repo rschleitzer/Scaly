@@ -1,0 +1,22 @@
+; Regression (2026-11-23): a record built with the address of a frame local
+; and handed WHOLE to a callee that keeps it compiled at rc 0. The record owns
+; no buffer of its own -- a reference and an int -- so escape_check_deep#
+; took it for a value that cannot dangle ("whatever keeps it"); its FIELD
+; holds the frame address. Kept whole, a record built here with a frame
+; address, or one the field-points-to map proves holds one, is local now.
+; xfail: error: reference into a local page escapes via call - the callee keeps this argument
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var s String("page")
+        let e Entry(&s, n)
+        this.entries.add(e)
+    }
+}
+
+var reg Registry(Array[Entry]())
+reg.probe(1)

@@ -1,0 +1,24 @@
+; Regression (2026-11-23): a reference into a LOCAL Vector, bound to a name
+; first and then stored by the receiver inside a record, compiled at rc 0 and
+; read freed (0xDD under SCALY_POISON). Written inline, `Entry(holder.get(0),
+; n)`, it was refused; bound first, `let r holder.get(0)`, an earlier
+; promotion stamped the holder for a caller page the procedure does not have,
+; the Emitter put it on the frame anyway, and the no-page gate of
+; plan_binding# asked for a Local life alone (operand_lands_on_local_page#).
+; xfail: error: reference into a local page escapes via a container ref
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var holder Vector[String](1)
+        holder.put(0, "page")
+        let r holder.get(0)
+        this.entries.add(Entry(r, n))
+    }
+}
+
+var reg Registry(Array[Entry]())
+reg.probe(1)

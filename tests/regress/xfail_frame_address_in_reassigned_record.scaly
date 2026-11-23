@@ -1,0 +1,21 @@
+; Regression (2026-11-23): as xfail_frame_address_in_kept_record, but the
+; record reaches its local by an assignment, `e := Entry(&s, n)`: the
+; field-points-to map was seeded by bindings alone (escape_seed_field_points_to#
+; is asked by escape_walk_action# too now).
+; xfail: error: reference into a local page escapes via call - the callee keeps this argument
+
+define Entry(name: ref[String]?, n: int)
+
+define Registry(var entries: Array[Entry])
+{
+    procedure probe(mutable this, n: int)
+    {
+        var s String("page")
+        var e Entry(null, n)
+        e := Entry(&s, n)
+        this.entries.add(e)
+    }
+}
+
+var reg Registry(Array[Entry]())
+reg.probe(1)

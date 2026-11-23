@@ -1,0 +1,20 @@
+; Regression (2026-11-23): a record built with the address of a frame local
+; and stored straight into a field of the receiver compiled at rc 0: page
+; inference rule 3 moved the fresh construction onto the receiver's page and
+; took the store for safe -- but moving the record moves nothing it points
+; to, and its field still held the frame address.
+; xfail: error: reference into a local page escapes via store
+
+define Entry(name: ref[String]?, n: int)
+
+define Keeper(var last: Entry)
+{
+    procedure keep(mutable this, n: int)
+    {
+        var s String("page")
+        this.last := Entry(&s, n)
+    }
+}
+
+var k Keeper(Entry(null, 0))
+k.keep(1)

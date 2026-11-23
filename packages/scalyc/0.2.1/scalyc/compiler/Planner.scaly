@@ -34040,7 +34040,7 @@ define Planner
                             ; (not the address-taken set) to keep the error
                             ; surface exactly the interior-ref class.
                             if this.array_contains_name_from(getref_arg_locals, this.getref_arg_base, abn)
-                                if this.operand_is_local_page_construction(collapsed)
+                                if this.operand_lands_on_local_page(collapsed)
                                     this.add_diagnostic(b.span, "reference into a local page escapes via a container ref - no caller page is in scope to promote the holder to; allocate the holder on a surviving region ('^this') or copy the value out instead of passing the reference")
                         }
                     }
@@ -38407,8 +38407,12 @@ define Planner
                         ; page to wrap an arbitrary param in Page.get (not yet
                         ; supported), and the split `let x ...; set f: &x` shape
                         ; needs the deferred dataflow pass; both keep the error.
+                        ; A construction handed a frame address is not made safe
+                        ; by moving it: the field still points into this frame
+                        ; (`this.last := Entry(&s, n)` passed at rc 0,
+                        ; 2026-11-23) -- it keeps the error.
                         var promoted_done false
-                        if base_is_this
+                        if base_is_this and this.tuple_has_frame_ref_arg(planned_source_collapsed) = false
                         {
                             let ref_life Lifetime.Reference(scalyc.compiler.Model.Reference(action_loc, "this"))
                             let promoted this.restamp_operand_life(planned_source_collapsed, ref_life)
@@ -38673,6 +38677,49 @@ define Planner
                 }
                 else
                     return false
+            false
+        }
+
+        ; operand_lands_on_local_page#: a construction that ends up on this
+        ; routine's own page -- Local life, or Call life where no caller page is
+        ; in scope: a promotion stamped it for a page the routine does not have,
+        ; and the Emitter falls back to the local frame (`emit_call`: no `_rp`,
+        ; get_local_frame). An explicit `#` gives the routine its page (R4), so
+        ; without one a Call life can only come from such a promotion. The
+        ; no-rp gate of plan_binding# asked Local alone and let `let r
+        ; holder.get(0)` then `Entry(r, n)` stored into `this` pass at rc 0 --
+        ; the alias was promoted first (2026-11-23).
+        function operand_lands_on_local_page(this: Planner, op: PlannedOperand) returns bool
+        {
+            if this.operand_is_local_page_construction(op)
+                return true
+            if this.lookup_local_binding("_rp") <> null
+                return false
+            if Planner.result_owns_page_guts(op.result_type) = false
+                return false
+            if op.result_type.name = "Slice"
+                return false
+            choose op.expr
+                when c: PlannedCall
+                {
+                    if c.is_operator
+                        return false
+                    choose c.life
+                        when l: Call
+                            return true
+                        else
+                            return false
+                }
+                when t: PlannedTuple
+                {
+                    choose t.life
+                        when l: Call
+                            return true
+                        else
+                            return false
+                }
+                else
+                    0
             false
         }
 
@@ -39611,6 +39658,14 @@ define Planner
                     0
             if Planner.is_reference_to_local_page(op.result_type)
                 return Planner.region_rank_local()
+            ; a record built with the address of something in this frame, or a
+            ; local bound to one, holds that address in a field: stored or
+            ; handed to a storing callee whole, it takes the address along
+            ; (`this.entries.add(Entry(&s, n))` passed at rc 0, 2026-11-23)
+            if this.tuple_has_frame_ref_arg(op)
+                return Planner.region_rank_local()
+            if this.operand_is_tainted_local_struct(op)
+                return Planner.region_rank_local()
             Planner.region_rank_caller()
         }
 
@@ -39803,6 +39858,21 @@ define Planner
         ; asks the argument's type alone, and a holder the planner moves to the
         ; caller page (`var gens ...`, `PlannedType(..., &gens, ...)`) carries
         ; the Local stamp too
+        ; tuple_has_frame_ref_arg#: construction_has_frame_ref_arg# for a
+        ; POSITIONAL construction only -- each component IS a field, so a frame
+        ; address handed in is held. An initializer may copy what it is handed
+        ; (`StringC^gpage(&v, 1)` copies the character, dazzle's Grove): where
+        ; the holding has to be known, not assumed, it is not asked
+        ; (2026-11-23).
+        function tuple_has_frame_ref_arg(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when t: Tuple
+                    return this.construction_has_frame_ref_arg(op)
+                else
+                    return false
+        }
+
         function construction_has_frame_ref_arg(this: Planner, op: PlannedOperand) returns bool
         {
             choose op.expr
@@ -40404,7 +40474,16 @@ define Planner
                 return
             if binding.operation = null
                 return
-            let ops (*binding.operation)
+            this.escape_seed_field_points_to((*binding.binding_item.name), (*binding.operation))
+        }
+
+        ; escape_seed_field_points_to#: the seeding of
+        ; escape_record_field_points_to# for a local `bind_name` given the
+        ; value `ops` -- by its binding, or by a `bind_name := Ctor(...)` that
+        ; replaces it (escape_walk_action#, 2026-11-23: `e := Entry(&s, n)`
+        ; then `entries.add(e)` passed at rc 0)
+        procedure escape_seed_field_points_to(mutable this: Planner, bind_name: String, ops: Vector[PlannedOperand])
+        {
             if ops.length = 0
                 return
             let op0_ptr ops.get 0
@@ -40419,7 +40498,6 @@ define Planner
                 if ma.length > 0
                     return
             }
-            let bind_name (*binding.binding_item.name)
             choose op0.expr
                 when tp: Tuple
                 {
@@ -41542,6 +41620,11 @@ define Planner
                         arg_escapes := true
                 if arg_is_closure
                     arg_escapes := true
+                ; a record built here with a frame address in a field, handed
+                ; whole to a callee that keeps it (`entries.add(Entry(&s, n))`):
+                ; neither the buffer judge nor the type's stamp sees the field
+                if this.tuple_has_frame_ref_arg(arg)
+                    arg_escapes := true
             }
             else
             {
@@ -42102,10 +42185,15 @@ define Planner
                         ; a value that is neither a reference nor owns a buffer
                         ; cannot dangle, whatever keeps it: the `value: T` of a
                         ; generic `Slice[char].put` (258 tscaly findings)
+                        ; -- unless it carries a reference in a FIELD: a record
+                        ; built here with a frame address (`Entry(&s, n)`), or
+                        ; one the field-points-to map proves holds one, keeps
+                        ; that address wherever it is kept (2026-11-23)
                         if judged
                             if this.census_type_is_ref_like(arg.result_type) = false
                                 if this.type_owns_buffer(arg.result_type, 0) = false
-                                    judged := false
+                                    if this.tuple_has_frame_ref_arg(arg) = false and this.fpt_any_local(arg) = false
+                                        judged := false
                     }
                 }
                 if judged
@@ -42144,6 +42232,12 @@ define Planner
                             if (wmask & bit) <> (0 as u64)
                             {
                                 if this.deep_by_value_local(arg)
+                                    local := true
+                                ; kept whole, a field holding a frame address
+                                ; goes along
+                                if this.tuple_has_frame_ref_arg(arg)
+                                    local := true
+                                if this.fpt_any_local(arg)
                                     local := true
                             }
                             else
@@ -42935,6 +43029,22 @@ define Planner
             if escape_found
                 return
             this.escape_handle_store(act)
+            ; `x := Ctor(..., &local, ...)` gives x a frame address in a field,
+            ; as `let x Ctor(...)` does
+            if act.target <> null and act.source <> null
+            {
+                let tg (*act.target)
+                if tg.length = 1
+                {
+                    let t0 tg.get 0
+                    if t0 <> null and (*t0).member_access = null
+                        choose (*t0).expr
+                            when tv: Variable
+                                this.escape_seed_field_points_to(tv.name, (*act.source))
+                            else
+                                0
+                }
+            }
             this.escape_walk_operands(act.source)
             this.escape_walk_operands(act.target)
         }
