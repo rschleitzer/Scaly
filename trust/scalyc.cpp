@@ -16721,10 +16721,11 @@ bool Planner_is_namespace_sibling_function(Planner&, String&) asm("_ZN7PlannerB6
 bool Planner_has_this_method(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_215has_this_methodE6String");
 bool Planner_operand_life_is_defaulted_construction(PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_238operand_life_is_defaulted_constructionE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand* Planner_promote_tail_operand(scaly_frame*, Planner&, PlannedOperand&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_220promote_tail_operandEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_28LifetimeB6scalycB4v0_2");
-bool Planner_operand_is_local_page_construction(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_234operand_is_local_page_constructionE14PlannedOperandB6scalycB4v0_2");
+bool Planner_operand_lands_on_local_page(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_227operand_lands_on_local_pageE14PlannedOperandB6scalycB4v0_2");
 bool Planner_result_type_is_value_struct(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_227result_type_is_value_structE11PlannedTypeB6scalycB4v0_2");
 bool Planner_construction_has_local_ref_arg(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_230construction_has_local_ref_argE14PlannedOperandB6scalycB4v0_2");
 bool Planner_construction_has_frame_ref_arg(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_230construction_has_frame_ref_argE14PlannedOperandB6scalycB4v0_2");
+bool Planner_operand_is_local_page_construction(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_234operand_is_local_page_constructionE14PlannedOperandB6scalycB4v0_2");
 void Planner_report_ambiguous_bare_variant(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_229report_ambiguous_bare_variantE14PlannedOperandB6scalycB4v0_2");
 void Planner_report_null_into_ref(Planner&, PlannedType&, PlannedOperand&, Span&) asm("_ZN7PlannerB6scalycB4v0_220report_null_into_refE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_2");
 void Planner_report_type_mismatch(Planner&, PlannedType&, PlannedOperand&, Span&, String&) asm("_ZN7PlannerB6scalycB4v0_220report_type_mismatchE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_26String");
@@ -16775,6 +16776,7 @@ PlannedOperand* Planner_convert_tail_literal(scaly_frame*, Planner&, PlannedOper
 bool Planner_value_is_plain(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_214value_is_plainE11PlannedTypeB6scalycB4v0_2");
 bool Planner_operand_carries_local_guts(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_226operand_carries_local_gutsE14PlannedOperandB6scalycB4v0_2");
 bool Planner_operand_is_pageless_caller_construction(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_239operand_is_pageless_caller_constructionE14PlannedOperandB6scalycB4v0_2");
+bool Planner_tuple_has_frame_ref_arg(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_223tuple_has_frame_ref_argE14PlannedOperandB6scalycB4v0_2");
 bool Planner_operand_is_local_resident_construction(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_238operand_is_local_resident_constructionE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand* Planner_resident_store_promotion(scaly_frame*, Planner&, PlannedOperand&, PlannedOperand&, Span&) asm("_ZN7PlannerB6scalycB4v0_224resident_store_promotionEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_2");
 bool Planner_operand_is_stack_closure(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224operand_is_stack_closureE14PlannedOperandB6scalycB4v0_2");
@@ -16795,8 +16797,8 @@ bool Planner_census_is_candidate(Planner&, PlannedOperand&) asm("_ZN7PlannerB6sc
 uint64_t Planner_region_rank_local() asm("_ZN7PlannerB6scalycB4v0_217region_rank_localEv");
 uint64_t Planner_region_rank_caller() asm("_ZN7PlannerB6scalycB4v0_218region_rank_callerEv");
 bool Planner_census_call_yields_alias(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224census_call_yields_aliasE14PlannedOperandB6scalycB4v0_2");
-bool Planner_is_reference_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217is_reference_likeE11PlannedTypeB6scalycB4v0_2");
 bool Planner_operand_is_tainted_local_struct(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_231operand_is_tainted_local_structE14PlannedOperandB6scalycB4v0_2");
+bool Planner_is_reference_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217is_reference_likeE11PlannedTypeB6scalycB4v0_2");
 PlannedType Planner_make_ref_to_local_inner(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_223make_ref_to_local_innerEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 int64_t Planner_escape_param_index_current(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_226escape_param_index_currentE6String");
 uint64_t Planner_escape_current_param_count(Planner&) asm("_ZN7PlannerB6scalycB4v0_226escape_current_param_countEv");
@@ -16812,6 +16814,7 @@ int64_t Planner_escape_alias_param_index(Planner&, String&) asm("_ZN7PlannerB6sc
 PlannedOperand* Planner_peel_operand(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_212peel_operandE14PlannedOperandB6scalycB4v0_2");
 EscapeAccess Planner_escape_resolve_access(scaly_frame*, Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221escape_resolve_accessEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 EscapeAccess Planner_escape_value_param_access(scaly_frame*, Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_225escape_value_param_accessEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
+void Planner_escape_seed_field_points_to(Planner&, String&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_227escape_seed_field_points_toE6String6VectorI14PlannedOperandB6scalycB4v0_2E");
 void Planner_escape_record_field_points_to(Planner&, PlannedBinding&) asm("_ZN7PlannerB6scalycB4v0_229escape_record_field_points_toE14PlannedBindingB6scalycB4v0_2");
 int64_t Planner_escape_value_param_root(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_223escape_value_param_rootE14PlannedOperandB6scalycB4v0_2");
 void Planner_add_escape_record(Planner&, EscapeRecord&) asm("_ZN7PlannerB6scalycB4v0_217add_escape_recordE12EscapeRecordB6scalycB4v0_2");
@@ -69821,7 +69824,7 @@ __attribute__((weak)) PlannedBinding Planner_plan_binding(scaly_frame* scaly_rp,
                 {
                     if (Planner_array_contains_name_from(*(this_), this_->getref_arg_locals, this_->getref_arg_base, (*abn)))
                     {
-                        if (Planner_operand_is_local_page_construction(*(this_), collapsed))
+                        if (Planner_operand_lands_on_local_page(*(this_), collapsed))
                         {
                             Planner_add_diagnostic(*(this_), (b).span, scaly_lvalue(String{(uint8_t*)"\331\001reference into a local page escapes via a container ref - no caller page is in scope to promote the holder to; allocate the holder on a surviving region (\047^this\047) or copy the value out instead of passing the reference"}));
                         }
@@ -73600,7 +73603,7 @@ __attribute__((weak)) PlannedAction Planner_plan_action(scaly_frame* scaly_rp, P
             if (external)
             {
                 bool promoted_done = false;
-                if (base_is_this)
+                if ((base_is_this ? ((Planner_tuple_has_frame_ref_arg(*(this_), planned_source_collapsed)) == (false)) : false))
                 {
                     Lifetime ref_life = scaly_variant<Lifetime>(3, Reference{action_loc, String{(uint8_t*)"\004this"}});
                     PlannedOperand* promoted = Planner_restamp_operand_life(scaly_rp, *(this_), planned_source_collapsed, ref_life);
@@ -73813,6 +73816,72 @@ __attribute__((weak)) bool Planner_tail_is_unspecified_value_ctor(Planner& scaly
         else
         {
             return false;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_operand_lands_on_local_page(Planner& scaly_self, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    if (Planner_operand_is_local_page_construction(*(this_), op))
+    {
+        return true;
+    }
+    if (((Planner_lookup_local_binding(*(this_), scaly_lvalue(String{(uint8_t*)"\003_rp"}))) != (nullptr)))
+    {
+        return false;
+    }
+    if (((Planner_result_owns_page_guts((op).result_type)) == (false)))
+    {
+        return false;
+    }
+    if (String_equals(((op).result_type).name, scaly_lvalue(String{(uint8_t*)"\005Slice"})))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 4)
+        {
+            PlannedCall c = scaly_payload<PlannedCall>(scaly_t1);
+            if ((c).is_operator)
+            {
+                return false;
+            }
+            {
+                auto&& scaly_t2 = (c).life;
+                if (scaly_t2.tag == 1)
+                {
+                    Call l = scaly_payload<Call>(scaly_t2);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple t = scaly_payload<PlannedTuple>(scaly_t1);
+            {
+                auto&& scaly_t3 = (t).life;
+                if (scaly_t3.tag == 1)
+                {
+                    Call l = scaly_payload<Call>(scaly_t3);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            0LL;
         }
     }
     return false;
@@ -74949,6 +75018,14 @@ __attribute__((weak)) uint64_t Planner_region_of_operand(Planner& scaly_self, Pl
     {
         return Planner_region_rank_local();
     }
+    if (Planner_tuple_has_frame_ref_arg(*(this_), op))
+    {
+        return Planner_region_rank_local();
+    }
+    if (Planner_operand_is_tainted_local_struct(*(this_), op))
+    {
+        return Planner_region_rank_local();
+    }
     return Planner_region_rank_caller();
 }
 
@@ -75148,6 +75225,24 @@ __attribute__((weak)) bool Planner_operand_is_tainted_local_struct(Planner& scal
         {
             PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
             return Planner_array_contains_name(*(this_), this_->local_frame_ref_struct_bindings, (v).name);
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_tuple_has_frame_ref_arg(Planner& scaly_self, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 5)
+        {
+            PlannedTuple t = scaly_payload<PlannedTuple>(scaly_t1);
+            return Planner_construction_has_frame_ref_arg(*(this_), op);
         }
         else
         {
@@ -75815,7 +75910,13 @@ __attribute__((weak)) void Planner_escape_record_field_points_to(Planner& scaly_
     {
         return;
     }
-    Vector<PlannedOperand> ops = ((*((binding).operation)));
+    Planner_escape_seed_field_points_to(*(this_), scaly_lvalue(((*(((binding).binding_item).name)))), scaly_lvalue(((*((binding).operation)))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_escape_seed_field_points_to(Planner& scaly_self, String& bind_name, Vector<PlannedOperand>& ops)
+{
+    Planner* this_ = &scaly_self;
     if (((ops).length == 0ULL))
     {
         return;
@@ -75834,7 +75935,6 @@ __attribute__((weak)) void Planner_escape_record_field_points_to(Planner& scaly_
             return;
         }
     }
-    String bind_name = ((*(((binding).binding_item).name)));
     {
         auto&& scaly_t1 = op0->expr;
         if (scaly_t1.tag == 5)
@@ -77287,6 +77387,10 @@ __attribute__((weak)) void Planner_escape_check_call_record(Planner& scaly_self,
         {
             arg_escapes = true;
         }
+        if (Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg)))))
+        {
+            arg_escapes = true;
+        }
     }
     else
     {
@@ -77941,7 +78045,10 @@ __attribute__((weak)) void Planner_escape_check_deep(Planner& scaly_self, Planne
                     {
                         if (((Planner_type_owns_buffer(*(this_), arg->result_type, 0ULL)) == (false)))
                         {
-                            judged = false;
+                            if ((((Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg))))) == (false)) ? ((Planner_fpt_any_local(*(this_), scaly_lvalue((*(arg))))) == (false)) : false))
+                            {
+                                judged = false;
+                            }
                         }
                     }
                 }
@@ -77982,6 +78089,14 @@ __attribute__((weak)) void Planner_escape_check_deep(Planner& scaly_self, Planne
                     if ((((wmask & bit)) != (((uint64_t)(0LL)))))
                     {
                         if (Planner_deep_by_value_local(*(this_), scaly_lvalue((*(arg)))))
+                        {
+                            local = true;
+                        }
+                        if (Planner_tuple_has_frame_ref_arg(*(this_), scaly_lvalue((*(arg)))))
+                        {
+                            local = true;
+                        }
+                        if (Planner_fpt_any_local(*(this_), scaly_lvalue((*(arg)))))
                         {
                             local = true;
                         }
@@ -78916,6 +79031,29 @@ __attribute__((weak)) void Planner_escape_walk_action(scaly_frame* scaly_rp, Pla
         return;
     }
     Planner_escape_handle_store(*(this_), act);
+    if (((((act).target) != (nullptr)) ? (((act).source) != (nullptr)) : false))
+    {
+        Vector<PlannedOperand> tg = ((*((act).target)));
+        if (((tg).length == 1ULL))
+        {
+            PlannedOperand* t0 = Vector_get<PlannedOperand>(tg, 0ULL);
+            if ((((t0) != (nullptr)) ? (((((*(t0)))).member_access) == (nullptr)) : false))
+            {
+                {
+                    auto&& scaly_t1 = ((*({ PlannedOperand* scaly_t2 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t2 = ((*(t0))); scaly_t2; }))).expr;
+                    if (scaly_t1.tag == 2)
+                    {
+                        PlannedVariable tv = scaly_payload<PlannedVariable>(scaly_t1);
+                        Planner_escape_seed_field_points_to(*(this_), (tv).name, scaly_lvalue(((*((act).source)))));
+                    }
+                    else
+                    {
+                        0LL;
+                    }
+                }
+            }
+        }
+    }
     Planner_escape_walk_operands(scaly_rp, *(this_), (act).source);
     Planner_escape_walk_operands(scaly_rp, *(this_), (act).target);
 }
