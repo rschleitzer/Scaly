@@ -97,15 +97,23 @@ if command -v python3 > /dev/null; then
 else
   echo "prog: circle.py SKIPPED (no python3)"
 fi
-# tape.scaly, the circle learned with a tape (chapter 4), prints what
-# tests/mlbook/tape.expected holds -- chapter 4's table shows three of its
-# lines beside circle.scaly's, so a line that moves owes a look at it --,
-# every loss within a few last places of circle.scaly's (the sums are
-# rounded in another order), and the same last line
-SCALY_POISON=1 "$SCALY" run docs/ml/prog/tape.scaly > "$FIG.tape" 2>&1
-if ! cmp -s "$FIG.tape" tests/mlbook/tape.expected; then
-  echo "mlbook: tape.scaly's numbers moved (tests/mlbook/tape.expected):"; diff tests/mlbook/tape.expected "$FIG.tape" | head -8; rc=1
-elif python3 - "$FIG.circle" "$FIG.tape" <<'NEAR'
+# the programs of chapter 4, each against its expected output and against
+# the program whose numbers it must reproduce: tape.scaly, the circle
+# learned with a tape, against circle.scaly, and relu.scaly, the same with
+# ReLU in the hidden layers, against the field's own program with ReLU,
+# whose way back is written by hand. The expected outputs are what chapter
+# 4 tells (its table shows three lines of tape.expected, its last section
+# what relu.expected says about steps 500, 2000, 2500 and 3000), so a line
+# that moves owes a look at the chapter. Against the other program every
+# loss agrees within a few last places (the sums are rounded in another
+# order), and the last line is the same.
+"$SCALY" run web/field/field.scaly relu 0 3000 > "$FIG.relu.field" 2>&1
+for pair in "tape:$FIG.circle" "relu:$FIG.relu.field"; do
+  p=${pair%%:*}; other=${pair#*:}
+  SCALY_POISON=1 "$SCALY" run docs/ml/prog/$p.scaly > "$FIG.$p" 2>&1
+  if ! cmp -s "$FIG.$p" tests/mlbook/$p.expected; then
+    echo "mlbook: $p.scaly's numbers moved (tests/mlbook/$p.expected):"; diff tests/mlbook/$p.expected "$FIG.$p" | head -8; rc=1
+  elif python3 - "$other" "$FIG.$p" <<'NEAR'
 import re, sys
 a, b = (open(f).read().split('\n') for f in sys.argv[1:3])
 num = re.compile(r'[0-9.]+e?-?[0-9]*')
@@ -117,12 +125,14 @@ for x, y in zip(a[:-2], b[:-2]):
         for u, v in zip(nx, ny))
 sys.exit(0 if ok else 1)
 NEAR
-then
-  echo "prog: tape.scaly prints what circle.scaly prints, to the last places"
-else
-  echo "mlbook: tape.scaly does not print what circle.scaly prints"; diff "$FIG.circle" "$FIG.tape" | head -5; rc=1
-fi
-rm -f "$FIG.tape"
+  then
+    echo "prog: $p.scaly prints what it must, to the last places"
+  else
+    echo "mlbook: $p.scaly does not print what it must"; diff "$other" "$FIG.$p" | head -5; rc=1
+  fi
+  rm -f "$FIG.$p"
+done
+rm -f "$FIG.relu.field"
 rm -f "$FIG.circle" "$FIG.field"
 # the model page's numbers (model_check.py: web/model/model.scaly's routines
 # on web/model/index.html's start), which chapter 2's boxes tell in words:

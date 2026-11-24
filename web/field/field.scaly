@@ -9,10 +9,12 @@
 ; them on its next round. Nothing is copied between the two.
 ;
 ;   field                         run for the page, until the page ends it
-;   field <data> <steps> [<hidden>...]   train without a page and print the
-;                                 losses: data 0 circle, 1 xor, 2 two
-;                                 clouds, 3 spiral; the hidden layers'
-;                                 widths, default 4 2
+;   field [<activation>] <data> <steps> [<hidden>...]   train without a
+;                                 page and print the losses: the hidden
+;                                 layers' activation tanh (the default),
+;                                 relu, sigmoid or none; data 0 circle,
+;                                 1 xor, 2 two clouds, 3 spiral; the hidden
+;                                 layers' widths, default 4 2
 ;
 ; The head of the board, what the page writes (the slots are numbers, as
 ; the rest of the board):
@@ -481,18 +483,36 @@ var shape Vector[int](LAYERS + 2)
 begin(net)
 
 let args os.arguments()
-if args.length >= 2
+; a first argument that is not a number names the activation by its first
+; letter: t(anh), r(elu), s(igmoid), n(one)
+var act 0
+var from: size_t 0
+if args.length >= 1 and args[0].length > 0
+{
+    let c args[0][0] as int
+    if c < 48 or c > 57
+    {
+        from := 1
+        if c = 114
+            act := 1
+        if c = 115
+            act := 2
+        if c = 110
+            act := 3
+    }
+}
+if args.length >= from + 2
 {
     ; without a page: train and print the losses
-    let data whole(args[0])
-    let steps whole(args[1])
-    if args.length >= 3
+    let data whole(args[from])
+    let steps whole(args[from + 1])
+    if args.length >= from + 3
     {
-        board.put(5, ((args.length - 2) as int) as f64)
-        var l 2
+        board.put(5, ((args.length - from - 2) as int) as f64)
+        var l from + 2
         while l < args.length
         {
-            board.put(4 + l, whole(args[l as size_t]) as f64)
+            board.put(4 + ((l - from) as int), whole(args[l]) as f64)
             l := l + 1
         }
     }
@@ -505,19 +525,19 @@ if args.length >= 2
     {
         if s % 100 = 0
         {
-            let train loss(net, shape, depth, 0, 3, board, n, 0, a)
-            let test loss(net, shape, depth, 0, 3, board, n, 1, a)
+            let train loss(net, shape, depth, act, 3, board, n, 0, a)
+            let test loss(net, shape, depth, act, 3, board, n, 1, a)
             print "step `s` train `train` test `test`"
         }
-        step(net, grad, a, d, shape, depth, 0, 3, board, n, 0.03, 0.0)
+        step(net, grad, a, d, shape, depth, act, 3, board, n, 0.03, 0.0)
         s := s + 1
     }
-    picture(board, net, shape, depth, 0, 3)
+    picture(board, net, shape, depth, act, 3)
     var right 0
     var p 1
     while p < n
     {
-        let o neuron(net, shape, depth, 0, 3, board[HEAD + 3 * p], board[HEAD + 3 * p + 1], depth, 0)
+        let o neuron(net, shape, depth, act, 3, board[HEAD + 3 * p], board[HEAD + 3 * p + 1], depth, 0)
         if o * board[HEAD + 3 * p + 2] > 0.0
             right := right + 1
         p := p + 2

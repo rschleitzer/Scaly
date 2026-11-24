@@ -204,8 +204,8 @@ procedure backward(mutable loss: Value)
       Gewichts seine Ableitung, und <literal>descend</literal> verringert das
       Gewicht um sie, mal die Lernrate. Ein anderes Netz, mit einer Schicht
       mehr oder einer anderen Aktivierung, braucht keine neue
-      Rückwärtsrechnung, nur für jede neue Art von Rechnung ihre Regel. Das
-      ganze Programm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">auf GitHub</link>.</para>
+      Rückwärtsrechnung, nur für jede neue Art von Rechnung ihre Regel; der
+      letzte Abschnitt probiert das aus. Das ganze Programm steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">auf GitHub</link>.</para>
   </section>
 
   <section xml:id="tape-same">
@@ -242,5 +242,59 @@ procedure backward(mutable loss: Value)
       demselben M1 Pro. Der Speicher wächst trotzdem nicht: höchstens 2,06 MB,
       bei 500 Schritten wie bei 50 000, denn die Einträge gehen mit der Seite
       von <literal>step</literal>.</para>
+  </section>
+
+  <section xml:id="tape-relu">
+    <title>Eine andere Aktivierung</title>
+    <para>Was bringt das Band, wenn es dieselben Zahlen langsamer
+      ausrechnet? Es zahlt sich aus, sobald sich das Netz ändert. Nehmen wir
+      in den beiden verborgenen Schichten statt tanh die Aktivierung, die
+      Kapitel 2 für große Netze erwähnt hat, ReLU:</para>
+    <informalequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>max</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>0</mml:mn><mml:mo>,</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>Die Ausgabe bleibt tanh, sie soll weiter zwischen −1 und 1
+      antworten. Mit dem Band braucht ReLU dasselbe wie tanh: eine Funktion,
+      die einen Eintrag anlegt, und eine Regel für den Weg zurück.</para>
+    <programlisting role="fragment">function relu(x: Value) returns Value
+{
+    let m apply_relu(x.at.value)
+    Value(&amp;# Entry(RELU, x.at, null, m, zeros(m.rows, m.cols), false))
+}</programlisting>
+    <para><literal>apply_relu</literal> setzt jede negative Zahl auf 0. Die
+      Steigung von ReLU ist 1, wo die Summe positiv ist, und sonst 0. Die
+      Regel reicht <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>H</mml:mi></mml:msub></mml:math></inlineequation> also dort unverändert weiter, wo <inlineequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>></mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation> ist, und
+      sonst nichts. Ob die Summe positiv war, sieht sie an der Antwort,
+      denn ReLU gibt genau dort mehr als 0:</para>
+    <programlisting role="fragment">procedure back_relu(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        if H.data[k] &gt; 0.0
+            a.grad.data.put(k, a.grad.data[k] + G.data[k])
+    }
+}</programlisting>
+    <para>Dazu kommt eine Zeile in <literal>back</literal>, die diese Regel für
+      die Art <literal>RELU</literal> aufruft, und im Lernschritt wird an zwei
+      Stellen aus <literal>tanh</literal> ein <literal>relu</literal>:
+      <literal>relu(leaf(X) * w1 + b1)</literal>. Das ist alles.</para>
+    <para>Ohne Band wäre mehr zu überlegen. In Kapitel 3 steckt die Steigung
+      von tanh an zwei Stellen der hergeleiteten Rückwärtsrechnung: als
+      <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> in <literal>back</literal>, für die verborgenen Schichten, und
+      in <literal>out_share</literal>, für die Ausgabe. Wir müssten wissen, welche
+      davon zur Steigung von ReLU wird und welche bleibt, und für eine
+      Operation, die nicht einfach Zahl für Zahl wirkt, die Kette neu
+      herleiten. Mit dem Band bleibt jede Regel bei ihrer Operation, und wie
+      die Regeln sich verketten, ergibt sich aus dem Netz.</para>
+    <para>Ob die neue Regel stimmt, lässt sich am Spielfeld aus Kapitel 2
+      prüfen: Sein Programm kann ReLU auch, mit einer Rückwärtsrechnung von
+      Hand. Aus denselben Startgewichten druckt das Programm dieses
+      Abschnitts dieselben Fehler wie das Spielfeld, wieder bis auf die
+      letzten Stellen.</para>
+    <para>Dabei zeigt sich, dass ReLU hier anders lernt. Nach 500 Schritten
+      stimmen erst 132 der 200 Testpunkte, nach 2000 Schritten 157, und der
+      Fehler sinkt in dieser Zeit nur von 0,51 auf 0,33. Dann geht es
+      schnell: Nach 2500 Schritten stimmen alle 200. Mit tanh war das schon
+      nach 1000 Schritten so. Welche Aktivierung besser ist, hängt vom Netz
+      und von den Daten ab, und ausprobieren lässt es sich jetzt mit einem
+      Wort. Das Programm mit ReLU steht <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/relu.scaly">auf GitHub</link>.</para>
   </section>
 </chapter>

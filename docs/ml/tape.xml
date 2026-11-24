@@ -199,7 +199,7 @@ procedure backward(mutable loss: Value)
       derivative, and <literal>descend</literal> moves the weight by it, times the
       learning rate. Another network, with one more layer or another
       activation, needs no new backward computation, only a rule for each
-      new kind of computation. The whole program is <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">on GitHub</link>.</para>
+      new kind of computation; the last section tries it. The whole program is <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly">on GitHub</link>.</para>
   </section>
 
   <section xml:id="tape-same">
@@ -236,5 +236,59 @@ procedure backward(mutable loss: Value)
       Memory does not grow all the same: at most 2.06 MB, for 500 steps as
       for 50,000, because the entries go with the page of
       <literal>step</literal>.</para>
+  </section>
+
+  <section xml:id="tape-relu">
+    <title>Another Activation</title>
+    <para>What does the tape bring if it computes the same numbers more
+      slowly? It pays off as soon as the network changes. In the two hidden
+      layers, let us take instead of tanh the activation chapter 2
+      mentioned for large networks, ReLU:</para>
+    <informalequation><mml:math><mml:mi>H</mml:mi><mml:mo>=</mml:mo><mml:mi>max</mml:mi><mml:mo>&#x2061;</mml:mo><mml:mrow><mml:mo stretchy="false">(</mml:mo><mml:mn>0</mml:mn><mml:mo>,</mml:mo><mml:mi>Z</mml:mi><mml:mo stretchy="false">)</mml:mo></mml:mrow></mml:math></informalequation>
+    <para>The output stays tanh; it is still to answer between −1 and 1.
+      With the tape ReLU needs what tanh needs: a function that makes an
+      entry, and a rule for the way back.</para>
+    <programlisting role="fragment">function relu(x: Value) returns Value
+{
+    let m apply_relu(x.at.value)
+    Value(&amp;# Entry(RELU, x.at, null, m, zeros(m.rows, m.cols), false))
+}</programlisting>
+    <para><literal>apply_relu</literal> sets every negative number to 0. The
+      slope of ReLU is 1 where the sum is positive, and 0 elsewhere. So the
+      rule hands <inlineequation><mml:math><mml:msub><mml:mi>G</mml:mi><mml:mi>H</mml:mi></mml:msub></mml:math></inlineequation> on unchanged where <inlineequation><mml:math><mml:msub><mml:mi>z</mml:mi><mml:mrow><mml:mi>i</mml:mi><mml:mi>j</mml:mi></mml:mrow></mml:msub><mml:mo>></mml:mo><mml:mn>0</mml:mn></mml:math></inlineequation>, and nothing elsewhere.
+      Whether the sum was positive it sees from the answer, since ReLU gives
+      more than 0 exactly there:</para>
+    <programlisting role="fragment">procedure back_relu(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        if H.data[k] &gt; 0.0
+            a.grad.data.put(k, a.grad.data[k] + G.data[k])
+    }
+}</programlisting>
+    <para>Add a line in <literal>back</literal> that calls this rule for the kind
+      <literal>RELU</literal>, and in the learning step <literal>tanh</literal>
+      becomes <literal>relu</literal> in two places:
+      <literal>relu(leaf(X) * w1 + b1)</literal>. That is all.</para>
+    <para>Without the tape there would be more to think about. In chapter 3
+      the slope of tanh sits in two places of the derived backward
+      computation: as <inlineequation><mml:math><mml:mn>1</mml:mn><mml:mo>−</mml:mo><mml:msup><mml:mi>h</mml:mi><mml:mn>2</mml:mn></mml:msup></mml:math></inlineequation> in <literal>back</literal>, for the hidden
+      layers, and in <literal>out_share</literal>, for the output. We would have to
+      know which of them becomes the slope of ReLU and which stays, and for
+      an operation that does not simply act number by number, derive the
+      chain anew. With the tape every rule stays with its operation, and how
+      the rules chain follows from the network.</para>
+    <para>Whether the new rule is right can be checked against the field of
+      chapter 2: its program can do ReLU too, with a backward computation
+      written by hand. From the same starting weights this section's
+      program prints the same losses as the field, again up to the last
+      places.</para>
+    <para>It also shows that ReLU learns differently here. After 500 steps
+      only 132 of the 200 test points are right, after 2000 steps 157, and
+      the loss falls only from 0.51 to 0.33 in that time. Then it goes fast:
+      after 2500 steps all 200 are right. With tanh that was so after 1000
+      steps already. Which activation is better depends on the network and
+      the data, and trying it now takes one word. The program with ReLU is
+      <link xlink:href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/relu.scaly">on GitHub</link>.</para>
   </section>
 </chapter>
