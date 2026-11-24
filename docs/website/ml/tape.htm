@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>The Tape - Machine Learning with Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="why.htm"
+><span
+class="num"
+>1.</span
+>Why Without Python</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="why.htm#why-two"
+><span
+class="num"
+>1.1</span
+>Two Languages</a
+></li
+><li
+><a
+href="why.htm#why-one"
+><span
+class="num"
+>1.2</span
+>One Language Down to the Card</a
+></li
+><li
+><a
+href="why.htm#why-cost"
+><span
+class="num"
+>1.3</span
+>What We Give Up</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.htm"
+><span
+class="num"
+>2.</span
+>A First Model</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.htm#field-points"
+><span
+class="num"
+>2.1</span
+>Two Kinds of Points</a
+></li
+><li
+><a
+href="field.htm#field-neuron"
+><span
+class="num"
+>2.2</span
+>One Neuron</a
+></li
+><li
+><a
+href="field.htm#field-loss"
+><span
+class="num"
+>2.3</span
+>How Wrong</a
+></li
+><li
+><a
+href="field.htm#field-gradient"
+><span
+class="num"
+>2.4</span
+>Downhill</a
+></li
+><li
+><a
+href="field.htm#field-features"
+><span
+class="num"
+>2.5</span
+>Better Inputs</a
+></li
+><li
+><a
+href="field.htm#field-hidden"
+><span
+class="num"
+>2.6</span
+>Hidden Layers</a
+></li
+><li
+><a
+href="field.htm#field-backprop"
+><span
+class="num"
+>2.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.htm#field-field"
+><span
+class="num"
+>2.8</span
+>The Field</a
+></li
+><li
+><a
+href="field.htm#field-test"
+><span
+class="num"
+>2.9</span
+>Generalization</a
+></li
+><li
+><a
+href="field.htm#field-program"
+><span
+class="num"
+>2.10</span
+>The Field's Program</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="matrices.htm"
+><span
+class="num"
+>3.</span
+>Many Points at Once</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="matrices.htm#matrices-rows"
+><span
+class="num"
+>3.1</span
+>A Row for Each Point</a
+></li
+><li
+><a
+href="matrices.htm#matrices-backprop"
+><span
+class="num"
+>3.2</span
+>Backpropagation with Matrices</a
+></li
+><li
+><a
+href="matrices.htm#matrices-memory"
+><span
+class="num"
+>3.3</span
+>Where the Numbers Live</a
+></li
+><li
+><a
+href="matrices.htm#matrices-fast"
+><span
+class="num"
+>3.4</span
+>Fast</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="tape.htm"
+aria-current="page"
+><span
+class="num"
+>4.</span
+>The Tape</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tape.htm#tape-values"
+><span
+class="num"
+>4.1</span
+>Values That Remember Where They Came From</a
+></li
+><li
+><a
+href="tape.htm#tape-back"
+><span
+class="num"
+>4.2</span
+>The Way Back</a
+></li
+><li
+><a
+href="tape.htm#tape-same"
+><span
+class="num"
+>4.3</span
+>The Same Numbers</a
+></li
+><li
+><a
+href="tape.htm#tape-relu"
+><span
+class="num"
+>4.4</span
+>Another Activation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>Machine Learning with Scaly</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="tape.de.htm"
+>Deutsch</a
+><a
+href="scaly-ml.pdf"
+>PDF</a
+><a
+href="../play/"
+>The playground</a
+><a
+href="../lang/"
+>The language</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 4</p
+><h1
+id="tape"
+>The Tape</h1
+><p
+>In chapter 3 we derived every derivative by hand and wrote a
+    function for each. In this chapter the program forms them itself: we
+    write only the forward computation, the way the formulas read, and the
+    way back follows from it.</p
+><section
+id="tape-values"
+><h2
+><a
+class="header"
+href="#tape-values"
+>Values That Remember Where They Came From</a
+></h2
+><p
+>The backward computation of chapter 3 follows a pattern. Every
+      step forward has a step backward, and which one depends only on what
+      was computed going forward: a matrix product, a sum, a tanh. If every
+      value remembers how it came about, a program can walk that way back
+      without our writing it down. This is called <em
+>automatic
+      differentiation</em
+>, and the record it walks is called the
+      <em
+>tape</em
+>.</p
+><p
+>In our program every value has an entry for it:</p
+><pre
+class="listing fragment"
+><code
+>define Entry(kind: int, a: ref[Entry]?, b: ref[Entry]?, value: Matrix,
+             var grad: Matrix, var seen: bool)</code
+></pre
+><p
+><code
+>kind</code
+> says what was computed, <code
+>a</code
+> and
+      <code
+>b</code
+> are the entries the value came from, and
+      <code
+>value</code
+> is the value itself, a matrix. The question mark
+      after <code
+>ref[Entry]</code
+> means the reference may be missing: a
+      tanh has only an <code
+>a</code
+>, and the points and the weights the
+      computation starts from have none. <code
+>grad</code
+> is as large as
+      <code
+>value</code
+> and takes the derivatives on the way back;
+      <code
+>seen</code
+> is needed there too.</p
+><p
+>For a matrix <math
+><mi
+>A</mi
+></math
+> we write these derivatives as a matrix <math
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+></math
+>
+      of the same size:</p
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>=</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>a</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+></div
+><p
+>The number at place <code
+>i, j</code
+> says how strongly the
+      loss <math
+><mi
+>L</mi
+></math
+> changes when <math
+><msub
+><mi
+>a</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> changes a little. The <math
+><mi
+>D</mi
+></math
+> of
+      chapter 3 is such a matrix, a layer's <math
+><msub
+><mi
+>G</mi
+><mi
+>Z</mi
+></msub
+></math
+>.</p
+><p
+>A value of the computation is a reference to its entry, and for
+      values we write the operators <code
+>*</code
+> and <code
+>+</code
+>
+      ourselves:</p
+><pre
+class="listing fragment"
+><code
+>define Value(at: ref[Entry])
+{
+    operator *(this, other: Value) returns Value
+    {
+        let m product(this.at.value, other.at.value)
+        Value(&#38;# Entry(TIMES, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+
+    operator +(this, other: Value) returns Value
+    {
+        let m plus(this.at.value, other.at.value)
+        Value(&#38;# Entry(PLUS, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+}</code
+></pre
+><p
+>Each computes with the matrices of its two values, with
+      <code
+>product</code
+>, the matrix product, and with <code
+>plus</code
+>,
+      which adds one row to every row like the bias. For the result it makes
+      a new entry that points to the two. Matrices the computation starts
+      from become values through <code
+>leaf</code
+>, and <code
+>tanh</code
+>
+      is a function that makes an entry like the operators do:</p
+><pre
+class="listing fragment"
+><code
+>function leaf(m: Matrix) returns Value
+    Value(&#38;# Entry(LEAF, null, null, m, zeros(m.rows, m.cols), false))
+
+function tanh(x: Value) returns Value
+{
+    let m apply_tanh(x.at.value)
+    Value(&#38;# Entry(TANH, x.at, null, m, zeros(m.rows, m.cols), false))
+}</code
+></pre
+><p
+>With them a layer is written like its formulas <math
+><mi
+>Z</mi
+><mo
+>=</mo
+><mi
+>X</mi
+><mi
+>W</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> and
+      <math
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+>, in one line: <code
+>tanh(leaf(X) * w1 + b1)</code
+>.</p
+><p
+>Libraries such as PyTorch keep the tape as a list: every
+      computation appends itself while it runs. In Scaly that does not
+      work. Operators and functions are pure; they return their result and
+      change nothing else, no list outside either. So here every entry
+      points to the ones it came from. Together the entries form a graph
+      that reaches from the loss to the points and the weights, and the
+      order, the tape proper, is made from it only on the way back.</p
+><p
+>That leaves the question where the entries live.
+      <code
+>&#38;# Entry(…)</code
+> makes an entry and, with
+      <code
+>&#38;</code
+>, hands out a reference to it. The <code
+>#</code
+>
+      says where, as in <code
+>zeros</code
+>: on the caller's page. The
+      operators and <code
+>tanh</code
+> are called in <code
+>step</code
+>, so all
+      the entries of a learning step lie on its page and go with it, like
+      the matrices in chapter 3. No number is copied on the way: handing on
+      a matrix hands on its sizes and the reference to its numbers, so the
+      entry <code
+>leaf(net.W1)</code
+> makes sees the same numbers as the
+      network.</p
+></section
+><section
+id="tape-back"
+><h2
+><a
+class="header"
+href="#tape-back"
+>The Way Back</a
+></h2
+><p
+>At the end of the forward computation stands the loss <math
+><mi
+>L</mi
+></math
+>, a
+      matrix with a single number, and its derivative by itself is 1. From
+      there the way leads back: every entry hands its derivatives on to the
+      entries it came from. It may do so only once every entry that reads
+      it has given it its share. <code
+>order</code
+> puts the entries in an
+      order for that, each after the ones it came from, and
+      <code
+>backward</code
+> walks it from the end to the front:</p
+><pre
+class="listing fragment"
+><code
+>procedure order(mutable e: ref[Entry], mutable tape: Array[ref[Entry]])
+{
+    if e.seen
+        return
+    e.seen := true
+    let a e.a
+    if a &#60;&#62; null
+        order(a, tape)
+    let b e.b
+    if b &#60;&#62; null
+        order(b, tape)
+    tape.add(e)
+}
+
+procedure backward(mutable loss: Value)
+{
+    var tape Array[ref[Entry]]()
+    order(loss.at, tape)
+    loss.at.grad.put(0, 0, 1.0)
+    var k tape.length
+    while k &#62; 0
+    {
+        k := k - 1
+        back(tape[k])
+    }
+}</code
+></pre
+><p
+><code
+>order</code
+> goes to <code
+>a</code
+> and <code
+>b</code
+>
+      first and appends the entry itself only after them. <code
+>seen</code
+>
+      makes sure that an entry two computations read comes onto the tape
+      only once. In our network every value is read by just one
+      computation, but this way <code
+>backward</code
+> is right for any.</p
+><p
+>What an entry hands on depends only on its kind. For the matrix
+      product:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>C</mi
+><mo
+>=</mo
+><mi
+>A</mi
+><mi
+>B</mi
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+><msup
+><mi
+>B</mi
+><mi
+>T</mi
+></msup
+><mo
+>,</mo
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>B</mi
+></msub
+><mo
+>=</mo
+><msup
+><mi
+>A</mi
+><mi
+>T</mi
+></msup
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+></div
+><p
+>These are the two products of chapter 3: <math
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+><msup
+><mi
+>B</mi
+><mi
+>T</mi
+></msup
+></math
+> is the <math
+><mi
+>D</mi
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+></math
+>
+      that hands the loss one layer forward, and <math
+><msup
+><mi
+>A</mi
+><mi
+>T</mi
+></msup
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+> is the <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+>,
+      the derivative of the weights. The sum <math
+><mi
+>C</mi
+><mo
+>=</mo
+><mi
+>A</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> hands <math
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+> on
+      unchanged, to <math
+><mi
+>A</mi
+></math
+> and to <math
+><mi
+>b</mi
+></math
+>; since <math
+><mi
+>b</mi
+></math
+> was added to every row,
+      it gets the column sums, like the bias in chapter 3. For tanh each
+      number is multiplied by the slope at its place:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>Z</mi
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>G</mi
+><mi
+>H</mi
+></msub
+><mo
+>⊙</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>H</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>And for the loss, the mean over the <math
+><mi
+>n</mi
+></math
+> points:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>L</mi
+><mo
+>=</mo
+><mfrac
+><mn
+>1</mn
+><mi
+>n</mi
+></mfrac
+><msub
+><mo
+>∑</mo
+><mrow
+><mi
+>i</mi
+></mrow
+></msub
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>−</mo
+><msub
+><mi
+>t</mi
+><mi
+>i</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+><mspace
+width="2em"
+></mspace
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>−</mo
+><msub
+><mi
+>t</mi
+><mi
+>i</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+></div
+><p
+>One after the other these rules give the formulas of chapter 3.
+      The loss hands <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+> to the network's answer, its tanh makes
+      <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+> of it, the <math
+><mi
+>D</mi
+></math
+> of the output, here already divided by the
+      number of points. The sum hands it on to the product and to
+      <code
+>b3</code
+>, the product to <code
+>h2</code
+> and to
+      <code
+>w3</code
+>, and so on down to the points.</p
+><p
+>When two computations read the same value, two derivatives arrive
+      at its entry, and they add up. That is why the rules in the program
+      add to <code
+>grad</code
+> instead of setting it. <code
+>back</code
+>
+      picks the rule by the entry's kind:</p
+><pre
+class="listing fragment"
+><code
+>procedure back(mutable e: ref[Entry])
+{
+    let a e.a
+    if a = null
+        return
+    if e.kind = TANH
+        back_tanh(e.value, e.grad, a)
+    let b e.b
+    if b = null
+        return
+    if e.kind = TIMES
+        back_times(e.grad, a, b)
+    if e.kind = PLUS
+        back_plus(e.grad, a, b)
+    if e.kind = LOSS
+        back_loss(e.grad, a, b)
+}</code
+></pre
+><p
+>Each rule is a small procedure. The one for tanh:</p
+><pre
+class="listing fragment"
+><code
+>procedure back_tanh(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        let h H.data[k]
+        a.grad.data.put(k, a.grad.data[k] + G.data[k] * (1.0 - h * h))
+    }
+}</code
+></pre
+><p
+>And this is the whole learning step:</p
+><pre
+class="listing fragment"
+><code
+>procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
+{
+    let w1 leaf(net.W1)
+    let b1 leaf(net.b1)
+    let w2 leaf(net.W2)
+    let b2 leaf(net.b2)
+    let w3 leaf(net.W3)
+    let b3 leaf(net.b3)
+    let h1 tanh(leaf(X) * w1 + b1)
+    let h2 tanh(h1 * w2 + b2)
+    let a tanh(h2 * w3 + b3)
+    var l loss(a, leaf(T))
+    backward(l)
+    descend(net.W1, w1, rate)
+    descend(net.b1, b1, rate)
+    descend(net.W2, w2, rate)
+    descend(net.b2, b2, rate)
+    descend(net.W3, w3, rate)
+    descend(net.b3, b3, rate)
+}</code
+></pre
+><p
+>The three lines forward read like the formulas, and the backward
+      computation, three lines and four functions in chapter 3, is one call
+      of <code
+>backward</code
+>. After it the entry of every weight holds its
+      derivative, and <code
+>descend</code
+> moves the weight by it, times the
+      learning rate. Another network, with one more layer or another
+      activation, needs no new backward computation, only a rule for each
+      new kind of computation; the last section tries it. The whole program is <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly"
+>on GitHub</a
+>.</p
+></section
+><section
+id="tape-same"
+><h2
+><a
+class="header"
+href="#tape-same"
+>The Same Numbers</a
+></h2
+><p
+>Does the tape compute right? This chapter's program learns the
+      circle from the same starting weights and with the same learning rate
+      as the one of chapter 3, so it must print the same losses. Nearly all
+      numbers agree digit for digit; three differ:</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Step</th
+><th
+>Chapter 3</th
+><th
+>Tape</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>100, training</td
+><td
+>0.48325308228643143</td
+><td
+>0.48325308228643155</td
+></tr
+><tr
+><td
+>300, test</td
+><td
+>0.39850079637612984</td
+><td
+>0.3985007963761298</td
+></tr
+><tr
+><td
+>500, training</td
+><td
+>0.1922356094085751</td
+><td
+>0.19223560940857506</td
+></tr
+></tbody
+></table
+></div
+><p
+>The difference is in the 16th or 17th digit, and it has nothing to
+      do with the tape: the program computes in another order. Chapter 3
+      begins every sum with the bias, the tape adds it last. Chapter 3
+      divides the finished derivative by the number of points, the tape
+      divides every share before adding it. Mathematically that is the
+      same, but a floating-point number has only 53 binary digits, and
+      every operation rounds to them. In another order the rounding falls
+      in other places. The outcome does not change: both programs get 188
+      of the 200 test points right.</p
+><p
+>The tape is not free. It makes a second matrix for every value,
+      and it also forms derivatives nobody needs, the ones by the points.
+      For 50,000 learning steps it takes 1.65 seconds instead of 1.02, both
+      built with <code
+class="command"
+>scaly build --release</code
+>, on the same M1 Pro.
+      Memory does not grow all the same: at most 2.06 MB, for 500 steps as
+      for 50,000, because the entries go with the page of
+      <code
+>step</code
+>.</p
+></section
+><section
+id="tape-relu"
+><h2
+><a
+class="header"
+href="#tape-relu"
+>Another Activation</a
+></h2
+><p
+>What does the tape bring if it computes the same numbers more
+      slowly? It pays off as soon as the network changes. In the two hidden
+      layers, let us take instead of tanh the activation chapter 2
+      mentioned for large networks, ReLU:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>max</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>0</mn
+><mo
+>,</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>The output stays tanh; it is still to answer between −1 and 1.
+      With the tape ReLU needs what tanh needs: a function that makes an
+      entry, and a rule for the way back.</p
+><pre
+class="listing fragment"
+><code
+>function relu(x: Value) returns Value
+{
+    let m apply_relu(x.at.value)
+    Value(&#38;# Entry(RELU, x.at, null, m, zeros(m.rows, m.cols), false))
+}</code
+></pre
+><p
+><code
+>apply_relu</code
+> sets every negative number to 0. The
+      slope of ReLU is 1 where the sum is positive, and 0 elsewhere. So the
+      rule hands <math
+><msub
+><mi
+>G</mi
+><mi
+>H</mi
+></msub
+></math
+> on unchanged where <math
+><msub
+><mi
+>z</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>&#62;</mo
+><mn
+>0</mn
+></math
+>, and nothing elsewhere.
+      Whether the sum was positive it sees from the answer, since ReLU gives
+      more than 0 exactly there:</p
+><pre
+class="listing fragment"
+><code
+>procedure back_relu(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        if H.data[k] &#62; 0.0
+            a.grad.data.put(k, a.grad.data[k] + G.data[k])
+    }
+}</code
+></pre
+><p
+>Add a line in <code
+>back</code
+> that calls this rule for the kind
+      <code
+>RELU</code
+>, and in the learning step <code
+>tanh</code
+>
+      becomes <code
+>relu</code
+> in two places:
+      <code
+>relu(leaf(X) * w1 + b1)</code
+>. That is all.</p
+><p
+>Without the tape there would be more to think about. In chapter 3
+      the slope of tanh sits in two places of the derived backward
+      computation: as <math
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>h</mi
+><mn
+>2</mn
+></msup
+></math
+> in <code
+>back</code
+>, for the hidden
+      layers, and in <code
+>out_share</code
+>, for the output. We would have to
+      know which of them becomes the slope of ReLU and which stays, and for
+      an operation that does not simply act number by number, derive the
+      chain anew. With the tape every rule stays with its operation, and how
+      the rules chain follows from the network.</p
+><p
+>Whether the new rule is right can be checked against the field of
+      chapter 2: its program can do ReLU too, with a backward computation
+      written by hand. From the same starting weights this section's
+      program prints the same losses as the field, again up to the last
+      places.</p
+><p
+>It also shows that ReLU learns differently here. After 500 steps
+      only 132 of the 200 test points are right, after 2000 steps 157, and
+      the loss falls only from 0.51 to 0.33 in that time. Then it goes fast:
+      after 2500 steps all 200 are right. With tanh that was so after 1000
+      steps already. Which activation is better depends on the network and
+      the data, and trying it now takes one word. The program with ReLU is
+      <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/relu.scaly"
+>on GitHub</a
+>.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="matrices.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Many Points at Once</span
+></a
+><span
+class="next"
+></span
+></nav
+></main
+></div
+></body
+></html
+>

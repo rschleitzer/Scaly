@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html
+lang="de"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Das Band - Maschinelles Lernen mit Scaly</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.de.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Inhalt"
+><a
+class="sidebar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="why.de.htm"
+><span
+class="num"
+>1.</span
+>Warum ohne Python</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="why.de.htm#why-two"
+><span
+class="num"
+>1.1</span
+>Zwei Sprachen</a
+></li
+><li
+><a
+href="why.de.htm#why-one"
+><span
+class="num"
+>1.2</span
+>Eine Sprache bis auf die Karte</a
+></li
+><li
+><a
+href="why.de.htm#why-cost"
+><span
+class="num"
+>1.3</span
+>Was wir aufgeben</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="field.de.htm"
+><span
+class="num"
+>2.</span
+>Ein erstes Modell</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="field.de.htm#field-points"
+><span
+class="num"
+>2.1</span
+>Zwei Sorten von Punkten</a
+></li
+><li
+><a
+href="field.de.htm#field-neuron"
+><span
+class="num"
+>2.2</span
+>Ein Neuron</a
+></li
+><li
+><a
+href="field.de.htm#field-loss"
+><span
+class="num"
+>2.3</span
+>Wie falsch</a
+></li
+><li
+><a
+href="field.de.htm#field-gradient"
+><span
+class="num"
+>2.4</span
+>Bergab</a
+></li
+><li
+><a
+href="field.de.htm#field-features"
+><span
+class="num"
+>2.5</span
+>Bessere Eingaben</a
+></li
+><li
+><a
+href="field.de.htm#field-hidden"
+><span
+class="num"
+>2.6</span
+>Verborgene Schichten</a
+></li
+><li
+><a
+href="field.de.htm#field-backprop"
+><span
+class="num"
+>2.7</span
+>Backpropagation</a
+></li
+><li
+><a
+href="field.de.htm#field-field"
+><span
+class="num"
+>2.8</span
+>Das Spielfeld</a
+></li
+><li
+><a
+href="field.de.htm#field-test"
+><span
+class="num"
+>2.9</span
+>Verallgemeinerung</a
+></li
+><li
+><a
+href="field.de.htm#field-program"
+><span
+class="num"
+>2.10</span
+>Das Programm des Spielfelds</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="matrices.de.htm"
+><span
+class="num"
+>3.</span
+>Viele Punkte auf einmal</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="matrices.de.htm#matrices-rows"
+><span
+class="num"
+>3.1</span
+>Eine Zeile je Punkt</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-backprop"
+><span
+class="num"
+>3.2</span
+>Backpropagation mit Matrizen</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-memory"
+><span
+class="num"
+>3.3</span
+>Wo die Zahlen liegen</a
+></li
+><li
+><a
+href="matrices.de.htm#matrices-fast"
+><span
+class="num"
+>3.4</span
+>Schnell</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="tape.de.htm"
+aria-current="page"
+><span
+class="num"
+>4.</span
+>Das Band</a
+><button
+class="fold"
+type="button"
+aria-label="Abschnitte zeigen"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tape.de.htm#tape-values"
+><span
+class="num"
+>4.1</span
+>Werte, die sich ihre Herkunft merken</a
+></li
+><li
+><a
+href="tape.de.htm#tape-back"
+><span
+class="num"
+>4.2</span
+>Der Weg zurück</a
+></li
+><li
+><a
+href="tape.de.htm#tape-same"
+><span
+class="num"
+>4.3</span
+>Dieselben Zahlen</a
+></li
+><li
+><a
+href="tape.de.htm#tape-relu"
+><span
+class="num"
+>4.4</span
+>Eine andere Aktivierung</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Inhalt"
+title="Inhalt"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Farben"
+title="Farben"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Suchen (S)"
+title="Suchen (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.de.html"
+>Maschinelles Lernen mit Scaly</a
+><nav
+class="topbar-links"
+aria-label="Anderswo"
+><a
+href="tape.htm"
+>English</a
+><a
+href="scaly-ml.de.pdf"
+>PDF</a
+><a
+href="../play/"
+>Der Playground</a
+><a
+href="../lang/"
+>Die Sprache</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Im Buch suchen"
+aria-label="Im Buch suchen"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Kapitel 4</p
+><h1
+id="tape"
+>Das Band</h1
+><p
+>In Kapitel 3 haben wir jede Ableitung von Hand hergeleitet und für
+    jede eine Funktion geschrieben. In diesem Kapitel bildet das Programm
+    sie selbst: Wir schreiben nur noch die Vorwärtsrechnung, so wie die
+    Formeln, und der Weg zurück ergibt sich aus ihr.</p
+><section
+id="tape-values"
+><h2
+><a
+class="header"
+href="#tape-values"
+>Werte, die sich ihre Herkunft merken</a
+></h2
+><p
+>Die Rückwärtsrechnung aus Kapitel 3 folgt einem Muster. Zu jedem
+      Schritt vorwärts gehört ein Schritt rückwärts, und welcher, hängt nur
+      davon ab, was vorwärts gerechnet wurde: ein Matrixprodukt, eine Summe,
+      ein tanh. Merkt sich jeder Wert, wie er entstanden ist, kann ein
+      Programm diesen Weg rückwärts gehen, ohne dass wir ihn hinschreiben.
+      Das heißt <em
+>automatisches Differenzieren</em
+>, und die
+      Aufzeichnung, die es dabei abschreitet, heißt das
+      <em
+>Band</em
+>.</p
+><p
+>In unserem Programm hat jeder Wert dafür einen Eintrag:</p
+><pre
+class="listing fragment"
+><code
+>define Entry(kind: int, a: ref[Entry]?, b: ref[Entry]?, value: Matrix,
+             var grad: Matrix, var seen: bool)</code
+></pre
+><p
+><code
+>kind</code
+> sagt, was gerechnet wurde, <code
+>a</code
+> und
+      <code
+>b</code
+> sind die Einträge, aus denen der Wert entstand, und
+      <code
+>value</code
+> ist der Wert selbst, eine Matrix. Das Fragezeichen
+      hinter <code
+>ref[Entry]</code
+> heißt, dass ein Verweis fehlen darf: Ein
+      tanh hat nur ein <code
+>a</code
+>, die Punkte und die Gewichte, mit denen
+      die Rechnung beginnt, haben keins. <code
+>grad</code
+> ist so groß wie
+      <code
+>value</code
+> und nimmt auf dem Weg zurück die Ableitungen auf;
+      <code
+>seen</code
+> brauchen wir dort auch.</p
+><p
+>Für eine Matrix <math
+><mi
+>A</mi
+></math
+> schreiben wir diese Ableitungen als Matrix
+      <math
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+></math
+>, gleich groß:</p
+><div
+class="equation"
+><math
+display="block"
+><msub
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>=</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>a</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+></div
+><p
+>Die Zahl an Stelle <code
+>i, j</code
+> sagt, wie stark sich der
+      Fehler <math
+><mi
+>L</mi
+></math
+> ändert, wenn sich <math
+><msub
+><mi
+>a</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+></math
+> ein wenig ändert. Das <math
+><mi
+>D</mi
+></math
+>
+      aus Kapitel 3 ist so eine Matrix, das <math
+><msub
+><mi
+>G</mi
+><mi
+>Z</mi
+></msub
+></math
+> einer Schicht.</p
+><p
+>Ein Wert der Rechnung ist ein Verweis auf seinen Eintrag, und für
+      Werte schreiben wir die Operatoren <code
+>*</code
+> und
+      <code
+>+</code
+> selbst:</p
+><pre
+class="listing fragment"
+><code
+>define Value(at: ref[Entry])
+{
+    operator *(this, other: Value) returns Value
+    {
+        let m product(this.at.value, other.at.value)
+        Value(&#38;# Entry(TIMES, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+
+    operator +(this, other: Value) returns Value
+    {
+        let m plus(this.at.value, other.at.value)
+        Value(&#38;# Entry(PLUS, this.at, other.at, m, zeros(m.rows, m.cols), false))
+    }
+}</code
+></pre
+><p
+>Jeder rechnet mit den Matrizen seiner beiden Werte, mit
+      <code
+>product</code
+>, dem Matrixprodukt, und mit <code
+>plus</code
+>,
+      das eine Zeile wie den Bias zu jeder Zeile zählt. Für das Ergebnis legt er
+      einen neuen Eintrag an, der auf die beiden zeigt. Matrizen, mit denen
+      die Rechnung beginnt, macht <code
+>leaf</code
+> zu Werten, und
+      <code
+>tanh</code
+> ist eine Funktion, die wie die Operatoren einen
+      Eintrag anlegt:</p
+><pre
+class="listing fragment"
+><code
+>function leaf(m: Matrix) returns Value
+    Value(&#38;# Entry(LEAF, null, null, m, zeros(m.rows, m.cols), false))
+
+function tanh(x: Value) returns Value
+{
+    let m apply_tanh(x.at.value)
+    Value(&#38;# Entry(TANH, x.at, null, m, zeros(m.rows, m.cols), false))
+}</code
+></pre
+><p
+>Damit schreibt sich eine Schicht so wie ihre Formeln <math
+><mi
+>Z</mi
+><mo
+>=</mo
+><mi
+>X</mi
+><mi
+>W</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> und
+      <math
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+>, in einer Zeile: <code
+>tanh(leaf(X) * w1 + b1)</code
+>.</p
+><p
+>Bibliotheken wie PyTorch führen das Band als Liste: Jede Rechnung
+      hängt sich an, während sie läuft. In Scaly geht das nicht so.
+      Operatoren und Funktionen sind rein, sie geben ihr Ergebnis zurück und
+      ändern sonst nichts, auch keine Liste außerhalb. Darum zeigt hier jeder
+      Eintrag auf die, aus denen er entstand. Zusammen bilden die Einträge
+      einen Graphen, der vom Fehler bis zu den Punkten und Gewichten reicht,
+      und die Reihenfolge, das eigentliche Band, bildet erst der Weg zurück
+      aus ihm.</p
+><p
+>Bleibt die Frage, wo die Einträge liegen. <code
+>&#38;# Entry(…)</code
+>
+      legt einen Eintrag an und gibt mit <code
+>&#38;</code
+> einen Verweis
+      darauf. Das <code
+>#</code
+> sagt wie in <code
+>zeros</code
+>, wo: auf der
+      Seite des Aufrufers. Aufgerufen werden die Operatoren und
+      <code
+>tanh</code
+> in <code
+>step</code
+>, also liegen alle Einträge eines
+      Lernschritts auf dessen Seite und gehen mit ihr, wie die Matrizen in
+      Kapitel 3. Kopiert wird dabei keine Zahl: Eine Matrix weiterzugeben
+      gibt ihre Größen und den Verweis auf ihre Zahlen weiter, und so sieht
+      der Eintrag, den <code
+>leaf(net.W1)</code
+> anlegt, dieselben Zahlen wie
+      das Netz.</p
+></section
+><section
+id="tape-back"
+><h2
+><a
+class="header"
+href="#tape-back"
+>Der Weg zurück</a
+></h2
+><p
+>Am Ende der Vorwärtsrechnung steht der Fehler <math
+><mi
+>L</mi
+></math
+>, eine Matrix
+      mit einer einzigen Zahl, und seine Ableitung nach sich selbst ist 1.
+      Von dort geht es zurück: Jeder Eintrag reicht seine Ableitungen an die
+      Einträge weiter, aus denen er entstand. Das darf er erst, wenn alle
+      Einträge, die ihn lesen, ihm ihren Teil schon gegeben haben.
+      <code
+>order</code
+> bringt die Einträge dafür in eine Reihenfolge, jeden
+      nach denen, aus denen er entstand, und <code
+>backward</code
+> geht sie
+      von hinten nach vorn ab:</p
+><pre
+class="listing fragment"
+><code
+>procedure order(mutable e: ref[Entry], mutable tape: Array[ref[Entry]])
+{
+    if e.seen
+        return
+    e.seen := true
+    let a e.a
+    if a &#60;&#62; null
+        order(a, tape)
+    let b e.b
+    if b &#60;&#62; null
+        order(b, tape)
+    tape.add(e)
+}
+
+procedure backward(mutable loss: Value)
+{
+    var tape Array[ref[Entry]]()
+    order(loss.at, tape)
+    loss.at.grad.put(0, 0, 1.0)
+    var k tape.length
+    while k &#62; 0
+    {
+        k := k - 1
+        back(tape[k])
+    }
+}</code
+></pre
+><p
+><code
+>order</code
+> geht zuerst zu <code
+>a</code
+> und <code
+>b</code
+>
+      und hängt den Eintrag selbst erst danach an. <code
+>seen</code
+> sorgt
+      dafür, dass ein Eintrag, den zwei Rechnungen lesen, nur einmal aufs
+      Band kommt. In unserem Netz liest jeden Wert nur eine Rechnung, aber
+      so stimmt <code
+>backward</code
+> für jede.</p
+><p
+>Was ein Eintrag weiterreicht, hängt nur von seiner Art ab. Für das
+      Matrixprodukt:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>C</mi
+><mo
+>=</mo
+><mi
+>A</mi
+><mi
+>B</mi
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>A</mi
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+><msup
+><mi
+>B</mi
+><mi
+>T</mi
+></msup
+><mo
+>,</mo
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>B</mi
+></msub
+><mo
+>=</mo
+><msup
+><mi
+>A</mi
+><mi
+>T</mi
+></msup
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+></div
+><p
+>Das sind die beiden Produkte aus Kapitel 3: <math
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+><msup
+><mi
+>B</mi
+><mi
+>T</mi
+></msup
+></math
+> ist das
+      <math
+><mi
+>D</mi
+><msup
+><mi
+>W</mi
+><mi
+>T</mi
+></msup
+></math
+>, das den Fehler eine Schicht nach vorn reicht, und <math
+><msup
+><mi
+>A</mi
+><mi
+>T</mi
+></msup
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+> ist
+      das <math
+><msup
+><mi
+>H</mi
+><mi
+>T</mi
+></msup
+><mi
+>D</mi
+></math
+>, die Ableitung der Gewichte. Die Summe <math
+><mi
+>C</mi
+><mo
+>=</mo
+><mi
+>A</mi
+><mo
+>+</mo
+><mi
+>b</mi
+></math
+> reicht
+      <math
+><msub
+><mi
+>G</mi
+><mi
+>C</mi
+></msub
+></math
+> unverändert weiter, an <math
+><mi
+>A</mi
+></math
+> und an <math
+><mi
+>b</mi
+></math
+>; weil <math
+><mi
+>b</mi
+></math
+> zu jeder
+      Zeile gezählt wurde, bekommt es die Spaltensummen, wie der Bias in
+      Kapitel 3. Für tanh wird jede Zahl mit der Steigung an ihrer Stelle
+      malgenommen:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>tanh</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mspace
+width="2em"
+></mspace
+><msub
+><mi
+>G</mi
+><mi
+>Z</mi
+></msub
+><mo
+>=</mo
+><msub
+><mi
+>G</mi
+><mi
+>H</mi
+></msub
+><mo
+>⊙</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>H</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>Und für den Fehler, den Mittelwert über die <math
+><mi
+>n</mi
+></math
+> Punkte:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>L</mi
+><mo
+>=</mo
+><mfrac
+><mn
+>1</mn
+><mi
+>n</mi
+></mfrac
+><msub
+><mo
+>∑</mo
+><mrow
+><mi
+>i</mi
+></mrow
+></msub
+><mfrac
+><mn
+>1</mn
+><mn
+>2</mn
+></mfrac
+><msup
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>−</mo
+><msub
+><mi
+>t</mi
+><mi
+>i</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mn
+>2</mn
+></msup
+><mspace
+width="2em"
+></mspace
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><mi
+>L</mi
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mo
+lspace="0"
+rspace="0"
+>∂</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>=</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><msub
+><mi
+>a</mi
+><mi
+>i</mi
+></msub
+><mo
+>−</mo
+><msub
+><mi
+>t</mi
+><mi
+>i</mi
+></msub
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+></div
+><p
+>Hintereinander ergeben diese Regeln die Formeln aus Kapitel 3. Der
+      Fehler reicht <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+> an die Antwort des Netzes, ihr tanh macht daraus
+      <math
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mi
+>a</mi
+><mo
+>−</mo
+><mi
+>t</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>a</mi
+><mn
+>2</mn
+></msup
+><mo
+stretchy="false"
+>)</mo
+></mrow
+><mo
+lspace="0"
+rspace="0"
+>/</mo
+><mi
+>n</mi
+></math
+>, das <math
+><mi
+>D</mi
+></math
+> der Ausgabe, hier schon durch die Zahl der Punkte
+      geteilt. Die Summe reicht es an das Produkt und an
+      <code
+>b3</code
+> weiter, das Produkt an <code
+>h2</code
+> und an
+      <code
+>w3</code
+>, und so fort bis zu den Punkten.</p
+><p
+>Lesen zwei Rechnungen denselben Wert, kommen bei seinem Eintrag
+      zwei Ableitungen an, und sie zählen sich zusammen. Darum zählen die
+      Regeln im Programm zu <code
+>grad</code
+> dazu, statt es zu setzen.
+      <code
+>back</code
+> wählt die Regel nach der Art des Eintrags:</p
+><pre
+class="listing fragment"
+><code
+>procedure back(mutable e: ref[Entry])
+{
+    let a e.a
+    if a = null
+        return
+    if e.kind = TANH
+        back_tanh(e.value, e.grad, a)
+    let b e.b
+    if b = null
+        return
+    if e.kind = TIMES
+        back_times(e.grad, a, b)
+    if e.kind = PLUS
+        back_plus(e.grad, a, b)
+    if e.kind = LOSS
+        back_loss(e.grad, a, b)
+}</code
+></pre
+><p
+>Jede Regel ist eine kleine Prozedur. Die für tanh:</p
+><pre
+class="listing fragment"
+><code
+>procedure back_tanh(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        let h H.data[k]
+        a.grad.data.put(k, a.grad.data[k] + G.data[k] * (1.0 - h * h))
+    }
+}</code
+></pre
+><p
+>Und das ist der ganze Lernschritt:</p
+><pre
+class="listing fragment"
+><code
+>procedure step(mutable net: Net, X: Matrix, T: Matrix, rate: f64)
+{
+    let w1 leaf(net.W1)
+    let b1 leaf(net.b1)
+    let w2 leaf(net.W2)
+    let b2 leaf(net.b2)
+    let w3 leaf(net.W3)
+    let b3 leaf(net.b3)
+    let h1 tanh(leaf(X) * w1 + b1)
+    let h2 tanh(h1 * w2 + b2)
+    let a tanh(h2 * w3 + b3)
+    var l loss(a, leaf(T))
+    backward(l)
+    descend(net.W1, w1, rate)
+    descend(net.b1, b1, rate)
+    descend(net.W2, w2, rate)
+    descend(net.b2, b2, rate)
+    descend(net.W3, w3, rate)
+    descend(net.b3, b3, rate)
+}</code
+></pre
+><p
+>Die drei Zeilen vorwärts stehen da wie die Formeln, und die
+      Rückwärtsrechnung, in Kapitel 3 drei Zeilen und vier Funktionen, ist
+      ein Aufruf von <code
+>backward</code
+>. Danach steht im Eintrag jedes
+      Gewichts seine Ableitung, und <code
+>descend</code
+> verringert das
+      Gewicht um sie, mal die Lernrate. Ein anderes Netz, mit einer Schicht
+      mehr oder einer anderen Aktivierung, braucht keine neue
+      Rückwärtsrechnung, nur für jede neue Art von Rechnung ihre Regel; der
+      letzte Abschnitt probiert das aus. Das ganze Programm steht <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/tape.scaly"
+>auf GitHub</a
+>.</p
+></section
+><section
+id="tape-same"
+><h2
+><a
+class="header"
+href="#tape-same"
+>Dieselben Zahlen</a
+></h2
+><p
+>Rechnet das Band richtig? Das Programm dieses Kapitels lernt den
+      Kreis aus denselben Startgewichten und mit derselben Lernrate wie das
+      aus Kapitel 3, also muss es dieselben Fehler ausgeben. Fast alle Zahlen
+      stimmen Ziffer für Ziffer, drei weichen ab:</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Schritt</th
+><th
+>Kapitel 3</th
+><th
+>Band</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>100, Training</td
+><td
+>0.48325308228643143</td
+><td
+>0.48325308228643155</td
+></tr
+><tr
+><td
+>300, Test</td
+><td
+>0.39850079637612984</td
+><td
+>0.3985007963761298</td
+></tr
+><tr
+><td
+>500, Training</td
+><td
+>0.1922356094085751</td
+><td
+>0.19223560940857506</td
+></tr
+></tbody
+></table
+></div
+><p
+>Die Abweichung steht in der 16. oder 17. Stelle, und mit dem Band
+      hat sie nichts zu tun: Das Programm rechnet in einer anderen
+      Reihenfolge. Kapitel 3 beginnt jede Summe mit dem Bias, das Band zählt
+      ihn zuletzt dazu. Kapitel 3 teilt die fertige Ableitung durch die Zahl
+      der Punkte, das Band teilt jeden Anteil, bevor es ihn dazuzählt.
+      Mathematisch ist das gleich, aber eine Kommazahl hat nur 53 Binärstellen,
+      und jede Rechnung rundet auf sie. In anderer Reihenfolge wird an
+      anderen Stellen gerundet. Am Ergebnis ändert das nichts: Beide
+      Programme raten 188 der 200 Testpunkte richtig.</p
+><p
+>Ganz umsonst ist das Band nicht. Es legt für jeden Wert eine
+      zweite Matrix an, und es bildet auch Ableitungen, die niemand braucht,
+      die nach den Punkten. Für 50 000 Lernschritte braucht es 1,65 Sekunden
+      statt 1,02, beide mit <code
+class="command"
+>scaly build --release</code
+> gebaut, auf
+      demselben M1 Pro. Der Speicher wächst trotzdem nicht: höchstens 2,06 MB,
+      bei 500 Schritten wie bei 50 000, denn die Einträge gehen mit der Seite
+      von <code
+>step</code
+>.</p
+></section
+><section
+id="tape-relu"
+><h2
+><a
+class="header"
+href="#tape-relu"
+>Eine andere Aktivierung</a
+></h2
+><p
+>Was bringt das Band, wenn es dieselben Zahlen langsamer
+      ausrechnet? Es zahlt sich aus, sobald sich das Netz ändert. Nehmen wir
+      in den beiden verborgenen Schichten statt tanh die Aktivierung, die
+      Kapitel 2 für große Netze erwähnt hat, ReLU:</p
+><div
+class="equation"
+><math
+display="block"
+><mi
+>H</mi
+><mo
+>=</mo
+><mi
+>max</mi
+><mo
+>⁡</mo
+><mrow
+><mo
+stretchy="false"
+>(</mo
+><mn
+>0</mn
+><mo
+>,</mo
+><mi
+>Z</mi
+><mo
+stretchy="false"
+>)</mo
+></mrow
+></math
+></div
+><p
+>Die Ausgabe bleibt tanh, sie soll weiter zwischen −1 und 1
+      antworten. Mit dem Band braucht ReLU dasselbe wie tanh: eine Funktion,
+      die einen Eintrag anlegt, und eine Regel für den Weg zurück.</p
+><pre
+class="listing fragment"
+><code
+>function relu(x: Value) returns Value
+{
+    let m apply_relu(x.at.value)
+    Value(&#38;# Entry(RELU, x.at, null, m, zeros(m.rows, m.cols), false))
+}</code
+></pre
+><p
+><code
+>apply_relu</code
+> setzt jede negative Zahl auf 0. Die
+      Steigung von ReLU ist 1, wo die Summe positiv ist, und sonst 0. Die
+      Regel reicht <math
+><msub
+><mi
+>G</mi
+><mi
+>H</mi
+></msub
+></math
+> also dort unverändert weiter, wo <math
+><msub
+><mi
+>z</mi
+><mrow
+><mi
+>i</mi
+><mi
+>j</mi
+></mrow
+></msub
+><mo
+>&#62;</mo
+><mn
+>0</mn
+></math
+> ist, und
+      sonst nichts. Ob die Summe positiv war, sieht sie an der Antwort,
+      denn ReLU gibt genau dort mehr als 0:</p
+><pre
+class="listing fragment"
+><code
+>procedure back_relu(H: Matrix, G: Matrix, mutable a: ref[Entry])
+{
+    for k in H.rows * H.cols
+    {
+        if H.data[k] &#62; 0.0
+            a.grad.data.put(k, a.grad.data[k] + G.data[k])
+    }
+}</code
+></pre
+><p
+>Dazu kommt eine Zeile in <code
+>back</code
+>, die diese Regel für
+      die Art <code
+>RELU</code
+> aufruft, und im Lernschritt wird an zwei
+      Stellen aus <code
+>tanh</code
+> ein <code
+>relu</code
+>:
+      <code
+>relu(leaf(X) * w1 + b1)</code
+>. Das ist alles.</p
+><p
+>Ohne Band wäre mehr zu überlegen. In Kapitel 3 steckt die Steigung
+      von tanh an zwei Stellen der hergeleiteten Rückwärtsrechnung: als
+      <math
+><mn
+>1</mn
+><mo
+>−</mo
+><msup
+><mi
+>h</mi
+><mn
+>2</mn
+></msup
+></math
+> in <code
+>back</code
+>, für die verborgenen Schichten, und
+      in <code
+>out_share</code
+>, für die Ausgabe. Wir müssten wissen, welche
+      davon zur Steigung von ReLU wird und welche bleibt, und für eine
+      Operation, die nicht einfach Zahl für Zahl wirkt, die Kette neu
+      herleiten. Mit dem Band bleibt jede Regel bei ihrer Operation, und wie
+      die Regeln sich verketten, ergibt sich aus dem Netz.</p
+><p
+>Ob die neue Regel stimmt, lässt sich am Spielfeld aus Kapitel 2
+      prüfen: Sein Programm kann ReLU auch, mit einer Rückwärtsrechnung von
+      Hand. Aus denselben Startgewichten druckt das Programm dieses
+      Abschnitts dieselben Fehler wie das Spielfeld, wieder bis auf die
+      letzten Stellen.</p
+><p
+>Dabei zeigt sich, dass ReLU hier anders lernt. Nach 500 Schritten
+      stimmen erst 132 der 200 Testpunkte, nach 2000 Schritten 157, und der
+      Fehler sinkt in dieser Zeit nur von 0,51 auf 0,33. Dann geht es
+      schnell: Nach 2500 Schritten stimmen alle 200. Mit tanh war das schon
+      nach 1000 Schritten so. Welche Aktivierung besser ist, hängt vom Netz
+      und von den Daten ab, und ausprobieren lässt es sich jetzt mit einem
+      Wort. Das Programm mit ReLU steht <a
+href="https://github.com/rschleitzer/Scaly/blob/master/docs/ml/prog/relu.scaly"
+>auf GitHub</a
+>.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Kapitel"
+><a
+class="prev"
+rel="prev"
+href="matrices.de.htm"
+><span
+class="pager-label"
+>Zurück</span
+><span
+class="pager-title"
+>Viele Punkte auf einmal</span
+></a
+><span
+class="next"
+></span
+></nav
+></main
+></div
+></body
+></html
+>
