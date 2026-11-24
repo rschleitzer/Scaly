@@ -1,0 +1,21 @@
+; Regression (2026-11-24): a prefix operator on a record that declares none
+; -- here only a binary `-` -- has nothing to call. Lowered as an intrinsic
+; it stopped in LLVM's verifier (rc 134); now the line says so
+; (report_prefix_on_record#).
+; xfail: error: no prefix operator - on Grid: the record declares no operator -(this)
+
+define Grid(n: int, data: Vector[f64])
+{
+    operator -(this, other: Grid) returns Grid
+    {
+        var data Vector[f64](this.n)
+        for k in this.n
+            data.put(k, this.data[k] - other.data[k])
+        Grid(this.n, data)
+    }
+}
+
+var data Vector[f64](2)
+let g Grid(2, data)
+let h -g
+print "`h.n`"

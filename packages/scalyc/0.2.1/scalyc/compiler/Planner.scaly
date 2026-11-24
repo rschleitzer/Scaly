@@ -12649,7 +12649,8 @@ define Planner
         procedure mangle_unary_operator(
             mutable this: Planner,
             op_name: String,
-            operand: PlannedType
+            operand: PlannedType,
+            has_page: bool
         ) returns String
         {
             var items Vector[PlannedItem](1)
@@ -12657,6 +12658,8 @@ define Planner
                 Span(0, 0), false, null, &^this operand, null
             ))
 
+            if has_page
+                return Planner.mangle_operator_paged(op_name, &items, null, true)
             Planner.mangle_operator(op_name, &items, null)
         }
 
@@ -15320,7 +15323,7 @@ define Planner
                                                                             padd_arr.add pidx_op
                                                                             var padd_vec Vector[PlannedOperand](padd_arr)
                                                                             let psum_op this.collapse_operand_sequence(padd_vec)
-                                                                            let pderef_mangled this.mangle_unary_operator(String("*"), psum_op.result_type)
+                                                                            let pderef_mangled this.mangle_unary_operator(String("*"), psum_op.result_type, false)
                                                                             var pderef_args Vector[PlannedOperand](1)
                                                                             pderef_args.put(0, psum_op)
                                                                             let pderef_call PlannedCall(
@@ -15670,6 +15673,79 @@ define Planner
                         let rt_ref this.resolve_prefix_operator_call(
                             prefix_name, rest_result.result_type
                         )
+                        ; A user operator found there is a call of its function,
+                        ; with the caller page where its definition takes one
+                        ; (operator_has_page#), as the binary one; only the
+                        ; built-in ones are intrinsic. Read here: what follows
+                        ; resolves more operators.
+                        var pre_intrinsic: bool true
+                        var pre_page: bool false
+                        if rt_ref <> null
+                        {
+                            pre_intrinsic := this.resolved_op_is_intrinsic
+                            if pre_intrinsic = false
+                                pre_page := this.resolved_op_has_page
+                        }
+                        ; A prefix operator a record declares, `operator -(this)`,
+                        ; is found as the binary ones are (find_member_operator#)
+                        ; and called with the operand as `this`. Lowered as an
+                        ; intrinsic it built `sub %Grid zeroinitializer, ...` and
+                        ; LLVM's verifier aborted; a record that declares none is
+                        ; rc 4 here (2026-11-24).
+                        ; A reference reads as its record (`-r`, r a ref[Grid]).
+                        var pm_recv rest_result
+                        let pm_pointee Planner.ref_record_pointee(rest_result.result_type)
+                        if rt_ref = null and pm_pointee <> null and prefix_name <> "*" and prefix_name <> "&"
+                            pm_recv := this.make_deref_operand(rest_result, (*pm_pointee))
+                        if rt_ref = null and Planner.prefix_may_be_member(prefix_name, pm_recv.result_type)
+                        {
+                            let pm_no_types Vector[PlannedType]()
+                            let pm_no_ops Vector[PlannedOperand]()
+                            let pm_ref this.find_member_operator(pm_recv.result_type, prefix_name, pm_no_types, pm_no_ops, result.loc)
+                            if pm_ref <> null
+                            {
+                                let pm (*pm_ref)
+                                this.ensure_type_layout(pm_recv.result_type)
+                                this.ensure_type_layout(pm.return_type)
+                                var pm_args Vector[PlannedOperand](1)
+                                pm_args.put(0, pm_recv)
+                                let pm_call PlannedCall(
+                                    result.loc,
+                                    String(prefix_name),
+                                    pm.mangled_name,
+                                    false,
+                                    true,
+                                    pm.can_throw,
+                                    pm.requires_page_param,
+                                    &pm_args,
+                                    pm.return_type,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    pm.throws_type,
+                                    false
+                                )
+                                let pm_op PlannedOperand(
+                                    result.loc,
+                                    PlannedExpression.Call pm_call,
+                                    null,
+                                    pm.return_type
+                                )
+                                if consumed >= ops.length
+                                    return pm_op
+                                var pm_cont Array[PlannedOperand]()
+                                pm_cont.add pm_op
+                                var pmc: size_t consumed
+                                while pmc < ops.length
+                                {
+                                    let pmc_ptr ops.get pmc
+                                    if pmc_ptr <> null
+                                        pm_cont.add((*pmc_ptr))
+                                    pmc := pmc + 1
+                                }
+                                var pm_cont_vec Vector[PlannedOperand](pm_cont)
+                                return this.collapse_operand_sequence(pm_cont_vec)
+                            }
+                            this.report_prefix_on_record(prefix_name, pm_recv.result_type, result.loc)
+                        }
                         ; For built-in primitive prefix ops the operator
                         ; isn't in the registry — derive the result type
                         ; from the operator. Mirrors Planner.cpp:4138-4157.
@@ -15994,7 +16070,7 @@ define Planner
                         }
 
                         let mangled this.mangle_unary_operator(
-                            prefix_name, rest_result.result_type
+                            prefix_name, rest_result.result_type, pre_page
                         )
                         var args_v Vector[PlannedOperand](1)
                         args_v.put(0, rest_result)
@@ -16002,16 +16078,17 @@ define Planner
                         ; primitive types are intrinsic (is_intrinsic=true,
                         ; is_operator=true). emit_call dispatches to
                         ; emit_intrinsic_operator instead of looking up a
-                        ; non-existent library function.
+                        ; non-existent library function. A user operator
+                        ; (pre_intrinsic false) is a real call.
                         var args_holder_p Vector[PlannedOperand](args_v)
                         let call PlannedCall(
                             result.loc,
                             prefix_name,
                             mangled,
-                            true,
+                            pre_intrinsic,
                             true,
                             false,
-                            false,
+                            pre_page,
                             &args_holder_p,
                             rt,
                             Lifetime.Unspecified(Unspecified()),
@@ -19839,9 +19916,18 @@ define Planner
             ; non-generic String, whose call sites already dispatch).
             if resolved = null
             {
+                ; A reference reads as its record: `r - s` with r a
+                ; ref[Grid] calls Grid's operator on the record r refers
+                ; to (it was an intrinsic `sub ptr` LLVM refused). Not `=`
+                ; and `<>`: between references to records they test
+                ; identity.
+                var mop_recv result
+                let mop_pointee Planner.ref_record_pointee(result.result_type)
+                if mop_pointee <> null and op_name <> "=" and op_name <> "<>"
+                    mop_recv := this.make_deref_operand(result, (*mop_pointee))
                 ; PlannedType.name is already a joined string (unlike
                 ; Model.Type.name's Vector[String]) — no join needed.
-                let lop_name result.result_type.name
+                let lop_name mop_recv.result_type.name
                 if Planner.is_primitive_type_name(lop_name) = false
                 {
                     if Planner.is_generic_type_param_name(lop_name) = false
@@ -19852,14 +19938,14 @@ define Planner
                         mop_arg_types.put(0, rhs.result_type)
                         var mop_match_ops Vector[PlannedOperand](1)
                         mop_match_ops.put(0, rhs)
-                        let mop_ref this.find_member_operator(result.result_type, op_name, mop_arg_types, mop_match_ops, result.loc)
+                        let mop_ref this.find_member_operator(mop_recv.result_type, op_name, mop_arg_types, mop_match_ops, result.loc)
                         if mop_ref <> null
                         {
                             let m (*mop_ref)
-                            this.ensure_type_layout(result.result_type)
+                            this.ensure_type_layout(mop_recv.result_type)
                             this.ensure_type_layout(m.return_type)
                             var mop_args Vector[PlannedOperand](2)
-                            mop_args.put(0, result)
+                            mop_args.put(0, mop_recv)
                             mop_args.put(1, rhs)
                             ; Fold a bare char/float literal rhs to the
                             ; matched operator's parameter type (mirrors
@@ -19988,7 +20074,7 @@ define Planner
                                 if eq_negate
                                 {
                                     let not_ty Planner.make_bool_type()
-                                    let not_mangled this.mangle_unary_operator(String("!"), em.return_type)
+                                    let not_mangled this.mangle_unary_operator(String("!"), em.return_type, false)
                                     var not_args Vector[PlannedOperand](1)
                                     not_args.put(0, eq_op_res)
                                     let not_call PlannedCall(
@@ -22027,6 +22113,22 @@ define Planner
                 }
                 else
                     0
+            ; A prefix call (no argument but the receiver, any name but
+            ; `[]`) takes only an operator of `this` alone: a record may
+            ; declare a binary one of the same name beside it.
+            if arg_types.length = 0 and op_name <> "[]"
+            {
+                var unary_holder Array[Operator]()
+                var ui: size_t 0
+                while ui < op_holder.length
+                {
+                    let u_ptr op_holder.get ui
+                    if u_ptr <> null and u_ptr.input.length = 1
+                        unary_holder.add((*u_ptr))
+                    ui := ui + 1
+                }
+                op_holder := unary_holder
+            }
             if op_holder.length = 0
                 return null
             let op_ptr op_holder.get 0
@@ -22039,8 +22141,10 @@ define Planner
             ; body would recurse forever (recording happens only after
             ; planning completes). Keyed distinctly from the struct
             ; mangled so the s188 lazy-instantiation entries are not
-            ; disturbed.
-            let guard_key "ix:`op_name`:`this.type_symbol(lookup_st.name, lookup_st.generics)`"
+            ; disturbed. The arity is part of the key: a prefix operator's
+            ; body may call the binary one of its name (`zero - this` in
+            ; `operator -(this)`).
+            let guard_key "ix:`op_name`:`arg_types.length`:`this.type_symbol(lookup_st.name, lookup_st.generics)`"
             var gi_i: size_t 0
             while gi_i < instantiating_methods.length
             {
@@ -35970,7 +36074,7 @@ define Planner
             elem: PlannedType
         ) returns PlannedOperand
         {
-            let mangled this.mangle_unary_operator(String("*"), op.result_type)
+            let mangled this.mangle_unary_operator(String("*"), op.result_type, false)
             var args_v Vector[PlannedOperand](1)
             args_v.put(0, op)
             let call PlannedCall(
@@ -39194,6 +39298,61 @@ define Planner
         ; emitter lowers the ones below and stopped with exit 14 and no line
         ; for any other (`~~ 5`, 2026-11-01). The names are
         ; emit_intrinsic_unary_op#'s.
+        ; The record a non-optional `ref[T]` refers to, where T is a record
+        ; (not a scalar, a SIMD vector, a pointer or a generic parameter):
+        ; an operator on the reference is the record's.
+        function ref_record_pointee(t: PlannedType) returns ref[PlannedType]?
+        {
+            if t.name <> "ref" or t.generics = null
+                return null
+            let gens (*t.generics)
+            if gens.length <> 1
+                return null
+            let inner_ptr gens.get 0
+            if inner_ptr = null
+                return null
+            let n inner_ptr.name
+            if n = "pointer" or n = "ref" or Planner.is_value_scalar_name(n) or Planner.is_simd_type_name(n)
+                return null
+            if Planner.is_primitive_type_name(n) or Planner.is_generic_type_param_name(n)
+                return null
+            inner_ptr
+        }
+
+        ; May a prefix operator on this operand be one its record declares?
+        ; Not `&` or `*` (address and dereference), and not on a scalar, a
+        ; SIMD vector, a reference or a generic parameter.
+        function prefix_may_be_member(name: String, operand: PlannedType) returns bool
+        {
+            if name = "&" or name = "*"
+                return false
+            let n operand.name
+            if n = "pointer" or n = "ref" or Planner.is_value_scalar_name(n) or Planner.is_simd_type_name(n)
+                return false
+            if Planner.is_primitive_type_name(n) or Planner.is_generic_type_param_name(n)
+                return false
+            true
+        }
+
+        ; A prefix operator on a record that declares none: there is nothing
+        ; to call, and lowered as an intrinsic it stopped in LLVM's verifier.
+        procedure report_prefix_on_record(mutable this: Planner, op_name: String, operand: PlannedType, at: Span)
+        {
+            let concept_ref this.lookup_concept(operand.name)
+            if concept_ref = null
+                return
+            let conc (*concept_ref)
+            var is_record false
+            choose conc.definition
+                when s: Structure
+                    is_record := true
+                else
+                    0
+            if is_record = false
+                return
+            this.add_diagnostic(at, String^this("no prefix operator `op_name` on `operand.name`: the record declares no operator `op_name`(this)"))
+        }
+
         procedure report_unknown_scalar_prefix(mutable this: Planner, op_name: String, operand: PlannedType, at: Span)
         {
             if Planner.is_value_scalar_name(operand.name) = false

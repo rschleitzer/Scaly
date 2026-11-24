@@ -1,0 +1,88 @@
+; Regression (2026-11-24): a PREFIX operator a program declares on a record
+; is a call of its function. The prefix construction always lowered it as
+; an intrinsic: `-g` for a record built `sub %Grid zeroinitializer, ...` and
+; LLVM's verifier aborted; a free prefix operator was planned without the
+; caller page its definition takes and crashed. A member one is now found
+; as the binary ones are (find_member_operator#, only an operator of
+; `this` alone), a free one is called with its page (pre_intrinsic,
+; pre_page in collapse_operand_sequence#), and a reference reads as its
+; record for both (ref_record_pointee#). Run under SCALY_POISON: each
+; operator returns a record whose buffer it built.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Grid(n: int, data: Vector[f64])
+{
+    ; a unary and a binary operator of one name
+    operator -(this) returns Grid
+    {
+        let zero filled(this.n, 0.0)
+        zero - this
+    }
+
+    operator -(this, other: Grid) returns Grid
+    {
+        var data Vector[f64](this.n)
+        for k in this.n
+            data.put(k, this.data[k] - other.data[k])
+        Grid(this.n, data)
+    }
+}
+
+function filled(n: int, x: f64) returns Grid
+{
+    var data Vector[f64](n)
+    for k in n
+        data.put(k, x)
+    Grid(n, data)
+}
+
+; a free prefix operator, its result built from a local
+operator ~(g: Grid) returns Grid
+{
+    let twice filled(g.n, 2.0)
+    var data Vector[f64](g.n)
+    for k in g.n
+        data.put(k, twice.data[k] * g.data[k])
+    Grid(g.n, data)
+}
+
+; a generic record's prefix operator
+define Pair[T](a: T, b: T)
+{
+    operator ~(this) returns Pair[T]
+        Pair[T](this.b, this.a)
+}
+
+function total(g: Grid) returns f64
+{
+    var s 0.0
+    for k in g.n
+        s := s + g.data[k]
+    s
+}
+
+; through a reference: the operators of the record it refers to
+function through(r: ref[Grid]) returns f64
+{
+    let negated -r
+    let difference r - r
+    total(negated) + total(difference)
+}
+
+let a filled(4, 1.5)
+let b filled(4, 0.5)
+let negated -a
+let doubled ~a
+; prefix then binary, binary of two prefixes, a prefix of a prefix
+let chain -a - b
+let both -a - -b
+let again -(-a)
+let mixed ~(-a)
+let p Pair[int](1, 2)
+let q ~p
+let t through(&a)
+if total(negated) = 0.0 - 6.0 and total(doubled) = 12.0 and total(chain) = 0.0 - 8.0 and total(both) = 0.0 - 4.0 and total(again) = 6.0 and total(mixed) = 0.0 - 12.0 and q.a = 2 and q.b = 1 and t = 0.0 - 6.0
+    print "PASS"
+else
+    print "FAIL `total(negated)` `total(doubled)` `total(chain)` `total(both)` `total(again)` `total(mixed)` `q.a` `t`"
